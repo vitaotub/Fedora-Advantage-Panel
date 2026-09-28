@@ -11,7 +11,11 @@
 <div class="sessao-container" id="sessao-03-repositorios">
 <div class="sessao-titulo">
 <span class="sessao-label">Sessão</span>
-<span data-i18n="sessoes.03-repositorios.titulo">📦 Repositórios, Codecs e Aceleração Gráfica</span>
+<span data-i18n="sessoes.03-repositorios.titulo">📦 Repositórios</span>
+</div>
+
+<div class="sessao-descricao" data-i18n="sessoes.03-repositorios.descricao">
+Ativa os repositórios essenciais para o Fedora: RPM Fusion (pacotes não incluídos nos repositórios oficiais) e Flathub (catálogo de aplicativos Flatpak). Estes repositórios são pré-requisito para várias das próximas sessões.
 </div>
 
 <!-- RPM Fusion -->
@@ -60,52 +64,6 @@ Configurar Flatpak
 </div>
 </div>
 
-<!-- Codecs -->
-<div class="bloco-comando">
-<div class="comando-info">
-<h3 data-i18n="sessoes.03-repositorios.codecs_titulo">Instalar Codecs Multimídia Essenciais</h3>
-<p data-i18n="sessoes.03-repositorios.codecs_desc">Substitui o ffmpeg-free pela versão completa sem restrições, instala plugins gstreamer essenciais e habilita o Cisco OpenH264.</p>
-<div class="grupo-botoes">
-<button class="btn-executar"
-onclick="executarCodecs()"
-data-comando="codecs-essenciais"
-data-logbox="log-sessao-03-repositorios"
-id="btn-codecs-essenciais"
-data-i18n="sessoes.03-repositorios.btn_instalar_codecs">
-Instalar Codecs
-</button>
-</div>
-</div>
-
-<div class="progress-container" id="progress-codecs-essenciais">
-<div class="progress-bar"><div class="progress-fill" id="progress-fill-codecs-essenciais"></div></div>
-<div class="progress-text"><span class="status" id="progress-status-codecs-essenciais">⏳ Iniciando...</span><span class="percentage" id="progress-percent-codecs-essenciais">0%</span></div>
-</div>
-</div>
-
-<!-- Extras Tainted -->
-<div class="bloco-comando">
-<div class="comando-info">
-<h3 data-i18n="sessoes.03-repositorios.extras_titulo">Extras e DVD Play (Repositórios Tainted)</h3>
-<p data-i18n="sessoes.03-repositorios.extras_desc">Habilita sub-repositórios restritos para habilitar reprodução de DVDs comerciais e firmware proprietário.</p>
-<div class="grupo-botoes">
-<button class="btn-executar"
-onclick="executarExtrasTainted()"
-data-comando="extras-tainted"
-data-logbox="log-sessao-03-repositorios"
-id="btn-extras-tainted"
-data-i18n="sessoes.03-repositorios.btn_instalar_extras">
-Instalar Extras
-</button>
-</div>
-</div>
-
-<div class="progress-container" id="progress-extras-tainted">
-<div class="progress-bar"><div class="progress-fill" id="progress-fill-extras-tainted"></div></div>
-<div class="progress-text"><span class="status" id="progress-status-extras-tainted">⏳ Iniciando...</span><span class="percentage" id="progress-percent-extras-tainted">0%</span></div>
-</div>
-</div>
-
 <!-- Log único da sessão -->
 <div class="terminal-log sessao-compartilhado" id="log-sessao-03-repositorios"></div>
 </div>
@@ -113,93 +71,73 @@ Instalar Extras
 <!-- ===== JAVASCRIPT ESPECÍFICO DA SESSÃO ===== -->
 <script>
 // ============================================================
-// SESSÃO 03: REPOSITÓRIOS, CODECS E ACELERAÇÃO GRÁFICA
+// SESSÃO 03: REPOSITÓRIOS
 // ============================================================
+//
+// Esta sessão cuida apenas de INFRAESTRUTURA de repositórios:
+// - RPM Fusion (habilitar repositórios livre e não-livre)
+// - Flathub (repositório global de aplicativos Flatpak)
+//
+// Os codecs multimídia e os extras tainted foram movidos para a
+// sessão 04-codecs-compatibilidade, que agrupa conteúdo de
+// compatibilidade (codecs, fontes MS, DVD play) numa narrativa
+// mais coerente.
 
 function _t(chave, fallback) {
-return (typeof tOr === 'function') ? tOr(chave, fallback) : fallback;
+    return (typeof tOr === 'function') ? tOr(chave, fallback) : fallback;
 }
 
 async function executarRPMFusion() {
-const idComando = 'rpm-fusion';
-const comando = 'sudo dnf install -y https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm && sudo dnf install -y rpmfusion-*-appstream-data && sudo dnf update -y --refresh';
-await executarComandoGenerico(idComando, comando, _t('sessoes.03-repositorios.btn_ativar_rpm', 'Ativar RPM Fusion'));
+    const idComando = 'rpm-fusion';
+    const comando = 'sudo dnf install -y https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm && sudo dnf install -y rpmfusion-*-appstream-data && sudo dnf update -y --refresh';
+    await executarComandoGenerico(idComando, comando, _t('sessoes.03-repositorios.btn_ativar_rpm', 'Ativar RPM Fusion'));
 }
 
 async function executarFlatpak() {
-const idComando = 'flatpak-setup';
-const desktop = await detectarDesktopReal();
-let comandoExtra = '';
+    const idComando = 'flatpak-setup';
+    const desktop = await detectarDesktopReal();
+    let comandoExtra = '';
 
-switch (desktop) {
-case 'KDE': comandoExtra = 'sudo dnf install plasma-discover flatpak -y'; break;
-case 'GNOME': comandoExtra = 'sudo dnf install gnome-software flatpak -y'; break;
-default: comandoExtra = 'sudo dnf install flatpak -y'; break;
-}
+    switch (desktop) {
+        case 'KDE': comandoExtra = 'sudo dnf install plasma-discover flatpak -y'; break;
+        case 'GNOME': comandoExtra = 'sudo dnf install gnome-software flatpak -y'; break;
+        default: comandoExtra = 'sudo dnf install flatpak -y'; break;
+    }
 
-const comando = comandoExtra + ' && flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo';
-await executarComandoGenerico(idComando, comando, _t('sessoes.03-repositorios.btn_configurar_flatpak', 'Configurar Flatpak'));
-}
-
-async function executarCodecs() {
-const idComando = 'codecs-essenciais';
-
-// O `dnf swap ffmpeg-free ffmpeg --allowerasing` pressupõe que
-// ffmpeg-free está instalado. Se não estiver (instalação mínima,
-// remoção prévia), o swap falha e a cadeia `&&` inteira para —
-// os codecs gstreamer e o OpenH264 nunca são instalados.
-//
-// Solução: verificar se ffmpeg-free existe; se sim, faz swap; se
-// não, instala ffmpeg direto com --allowerasing (que já resolve
-// conflitos). Nos dois casos, o resultado final é o mesmo.
-const comando =
-'if rpm -q ffmpeg-free > /dev/null 2>&1; then ' +
-'sudo dnf swap ffmpeg-free ffmpeg --allowerasing -y; ' +
-'else ' +
-'sudo dnf install ffmpeg --allowerasing -y; ' +
-'fi && ' +
-'sudo dnf install --setopt=\'install_weak_deps=False\' gstreamer1-plugins-good gstreamer1-plugins-bad-free gstreamer1-plugin-openh264 gstreamer1-plugin-libav --exclude=PackageKit-gstreamer-plugin -y && ' +
-'sudo dnf config-manager setopt fedora-cisco-openh264.enabled=1';
-
-await executarComandoGenerico(idComando, comando, _t('sessoes.03-repositorios.btn_instalar_codecs', 'Instalar Codecs'));
-}
-
-async function executarExtrasTainted() {
-const idComando = 'extras-tainted';
-const comando = 'sudo dnf install rpmfusion-free-release-tainted -y && sudo dnf install rpmfusion-nonfree-release-tainted -y && sudo dnf install libdvdcss -y';
-await executarComandoGenerico(idComando, comando, _t('sessoes.03-repositorios.btn_instalar_extras', 'Instalar Extras'));
+    const comando = comandoExtra + ' && flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo';
+    await executarComandoGenerico(idComando, comando, _t('sessoes.03-repositorios.btn_configurar_flatpak', 'Configurar Flatpak'));
 }
 
 // ===== RESTAURAR ESTADO DA SESSÃO =====
 function restaurarEstadoSessao() {
-const comandos = ['rpm-fusion', 'flatpak-setup', 'codecs-essenciais', 'extras-tainted'];
+    const comandos = ['rpm-fusion', 'flatpak-setup'];
 
-comandos.forEach(function(id) {
-if (isExecutado(id)) {
-const btn = document.getElementById('btn-' + id);
-if (btn) {
-const textoFinal = getTextoAposExecucao(id);
-btn.textContent = textoFinal;
-btn.style.backgroundColor = '#4b5563';
-btn.style.cursor = 'default';
-btn.disabled = true;
-}
-}
-});
+    comandos.forEach(function(id) {
+        if (isExecutado(id)) {
+            const btn = document.getElementById('btn-' + id);
+            if (btn) {
+                const textoFinal = getTextoAposExecucao(id);
+                btn.textContent = textoFinal;
+                btn.style.backgroundColor = '#4b5563';
+                btn.style.cursor = 'default';
+                btn.disabled = true;
+            }
+        }
+    });
 }
 
 // ===== INICIALIZAÇÃO =====
 // FIX #1 + #2: captura antes de restaurar; IIFE em vez de DOMContentLoaded.
 (function() {
-document.querySelectorAll('.btn-executar').forEach(function(btn) {
-if (!btn.hasAttribute('data-texto-original')) {
-btn.setAttribute('data-texto-original', btn.textContent);
-}
-});
+    document.querySelectorAll('.btn-executar').forEach(function(btn) {
+        if (!btn.hasAttribute('data-texto-original')) {
+            btn.setAttribute('data-texto-original', btn.textContent);
+        }
+    });
 
-restaurarEstadoSessao();
+    restaurarEstadoSessao();
 
-console.log('📦 Componente 03-repositorios carregado!');
+    console.log('📦 Componente 03-repositorios carregado!');
 })();
 </script>
 </body>

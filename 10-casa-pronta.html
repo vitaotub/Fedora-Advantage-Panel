@@ -111,6 +111,7 @@ data-i18n="sessoes.10-casa-pronta.btn_samba">
 </div>
 
 <div class="grupo-botoes">
+<div class="btn-flatpak-wrapper" style="display: inline-block;">
 <button class="btn-executar verde"
 onclick="executarLocalSend()"
 data-comando="localsend-install"
@@ -119,6 +120,7 @@ id="btn-localsend-install"
 data-i18n="sessoes.10-casa-pronta.btn_localsend">
 📦 Instalar LocalSend
 </button>
+</div>
 </div>
 </div>
 <div class="progress-container" id="progress-localsend-install">
@@ -138,6 +140,7 @@ data-i18n="sessoes.10-casa-pronta.btn_localsend">
 </div>
 
 <div class="grupo-botoes">
+<div class="btn-flatpak-wrapper" style="display: inline-block;">
 <button class="btn-executar roxo"
 onclick="executarWarpinator()"
 data-comando="warpinator-install"
@@ -146,6 +149,7 @@ id="btn-warpinator-install"
 data-i18n="sessoes.10-casa-pronta.btn_warpinator">
 📦 Instalar Warpinator
 </button>
+</div>
 </div>
 </div>
 <div class="progress-container" id="progress-warpinator-install">
@@ -244,23 +248,33 @@ data-i18n="sessoes.10-casa-pronta.btn_okular_tesseract">
 // ============================================================
 
 function _t(chave, fallback) {
-return (typeof tOr === 'function') ? tOr(chave, fallback) : fallback;
+    return (typeof tOr === 'function') ? tOr(chave, fallback) : fallback;
 }
 
 // ------------------------------------------------------------
-// IMPRESSORA E SCANNER
+// Mapeamento de Flatpaks desta sessão
+// ------------------------------------------------------------
+//
+// Apenas dois apps desta sessão são Flatpak: LocalSend e
+// Warpinator. Os demais (CUPS, Samba, KeePassXC, Okular+Tesseract)
+// são pacotes dnf e não têm ícone de desinstalar.
+
+var APPS_FLATPAK = {
+    'localsend-install': { appId: 'org.localsend.localsend_app', fallback: '📦 LocalSend' },
+    'warpinator-install': { appId: 'org.x.Warpinator', fallback: '📦 Warpinator' }
+};
+
+// ------------------------------------------------------------
+// IMPRESSORA
 // ------------------------------------------------------------
 
 async function executarCups() {
-const idComando = 'cups-install';
-// Habilita e inicia o cups + avahi (descoberta em rede).
-// O `systemctl enable --now` já lida com o caso de já estar
-// rodando (idempotente).
-const comando =
-'sudo dnf install -y cups cups-filters avahi avahi-tools system-config-printer ghostscript && ' +
-'sudo systemctl enable --now cups && ' +
-'sudo systemctl enable --now avahi-daemon';
-await executarComandoGenerico(idComando, comando, _t('sessoes.10-casa-pronta.btn_cups', '📦 Instalar Suporte a Impressão'), mostrarBotaoDesinstalar);
+    const idComando = 'cups-install';
+    const comando =
+        'sudo dnf install -y cups cups-filters avahi avahi-tools system-config-printer ghostscript && ' +
+        'sudo systemctl enable --now cups && ' +
+        'sudo systemctl enable --now avahi-daemon';
+    await executarComandoGenerico(idComando, comando, _t('sessoes.10-casa-pronta.btn_cups', '📦 Instalar Suporte a Impressão'), mostrarBotaoDesinstalar);
 }
 
 // ------------------------------------------------------------
@@ -268,28 +282,28 @@ await executarComandoGenerico(idComando, comando, _t('sessoes.10-casa-pronta.btn
 // ------------------------------------------------------------
 
 async function executarSamba() {
-const idComando = 'samba-install';
-// smb e nmb são os dois serviços do Samba. cifs-utils é para
-// montar pastas Windows no Fedora.
-const comando =
-'sudo dnf install -y samba samba-client cifs-utils && ' +
-'sudo systemctl enable --now smb && ' +
-'sudo systemctl enable --now nmb';
-await executarComandoGenerico(idComando, comando, _t('sessoes.10-casa-pronta.btn_samba', '📦 Instalar Samba'), mostrarBotaoDesinstalar);
+    const idComando = 'samba-install';
+    const comando =
+        'sudo dnf install -y samba samba-client cifs-utils && ' +
+        'sudo systemctl enable --now smb && ' +
+        'sudo systemctl enable --now nmb';
+    await executarComandoGenerico(idComando, comando, _t('sessoes.10-casa-pronta.btn_samba', '📦 Instalar Samba'), mostrarBotaoDesinstalar);
 }
 
 async function executarLocalSend() {
-const idComando = 'localsend-install';
-// LocalSend está no Flathub como org.localsend.localsend_app.
-const comando = 'flatpak install flathub org.localsend.localsend_app -y';
-await executarComandoGenerico(idComando, comando, _t('sessoes.10-casa-pronta.btn_localsend', '📦 Instalar LocalSend'), mostrarBotaoDesinstalar);
+    const idComando = 'localsend-install';
+    const comando = 'flatpak install flathub org.localsend.localsend_app -y';
+    await executarComandoGenerico(idComando, comando, _t('sessoes.10-casa-pronta.btn_localsend', '📦 Instalar LocalSend'), function() {
+        _atualizarIconeDesinstalar(idComando);
+    });
 }
 
 async function executarWarpinator() {
-const idComando = 'warpinator-install';
-// Warpinator está no Flathub como org.x.Warpinator.
-const comando = 'flatpak install flathub org.x.Warpinator -y';
-await executarComandoGenerico(idComando, comando, _t('sessoes.10-casa-pronta.btn_warpinator', '📦 Instalar Warpinator'), mostrarBotaoDesinstalar);
+    const idComando = 'warpinator-install';
+    const comando = 'flatpak install flathub org.x.Warpinator -y';
+    await executarComandoGenerico(idComando, comando, _t('sessoes.10-casa-pronta.btn_warpinator', '📦 Instalar Warpinator'), function() {
+        _atualizarIconeDesinstalar(idComando);
+    });
 }
 
 // ------------------------------------------------------------
@@ -297,9 +311,9 @@ await executarComandoGenerico(idComando, comando, _t('sessoes.10-casa-pronta.btn
 // ------------------------------------------------------------
 
 async function executarKeePassXC() {
-const idComando = 'keepassxc-install';
-const comando = 'sudo dnf install -y keepassxc';
-await executarComandoGenerico(idComando, comando, _t('sessoes.10-casa-pronta.btn_keepassxc', '📦 Instalar KeePassXC'), mostrarBotaoDesinstalar);
+    const idComando = 'keepassxc-install';
+    const comando = 'sudo dnf install -y keepassxc';
+    await executarComandoGenerico(idComando, comando, _t('sessoes.10-casa-pronta.btn_keepassxc', '📦 Instalar KeePassXC'), mostrarBotaoDesinstalar);
 }
 
 // ------------------------------------------------------------
@@ -307,53 +321,198 @@ await executarComandoGenerico(idComando, comando, _t('sessoes.10-casa-pronta.btn
 // ------------------------------------------------------------
 
 async function executarOkularTesseract() {
-const idComando = 'okular-tesseract-install';
-// okular: leitor de PDF
-// tesseract: motor de OCR
-// tesseract-langpack-por: dicionário português
-// tesseract-langpack-eng: dicionário inglês
-// ocrmypdf: opcional, mas útil para adicionar camada OCR a PDFs
-const comando =
-'sudo dnf install -y okular tesseract tesseract-langpack-por tesseract-langpack-eng ocrmypdf';
-await executarComandoGenerico(idComando, comando, _t('sessoes.10-casa-pronta.btn_okular_tesseract', '📦 Instalar Okular + Tesseract'), mostrarBotaoDesinstalar);
+    const idComando = 'okular-tesseract-install';
+    const comando =
+        'sudo dnf install -y okular tesseract tesseract-langpack-por tesseract-langpack-eng ocrmypdf';
+    await executarComandoGenerico(idComando, comando, _t('sessoes.10-casa-pronta.btn_okular_tesseract', '📦 Instalar Okular + Tesseract'), mostrarBotaoDesinstalar);
 }
 
-// ===== RESTAURAR ESTADO DA SESSÃO =====
+// ------------------------------------------------------------
+// DESINSTALAÇÃO DE FLATPAKS (LocalSend / Warpinator)
+// ------------------------------------------------------------
+
+async function desinstalarAppFlatpak(idComando, appId, nomeExibicao) {
+    if (!isExecutado(idComando)) {
+        alert(_tVars('comum.nao_instalado', nomeExibicao + ' não está instalado.', { nome: nomeExibicao }));
+        return;
+    }
+
+    if (!confirm(_tVars('comum.confirmar_desinstalar', 'Deseja desinstalar o ' + nomeExibicao + '?', { nome: nomeExibicao }))) return;
+
+    var logBox = _getLogBox(idComando);
+    var btn = document.getElementById('btn-' + idComando);
+    var idRevert = idComando + '-revert';
+
+    if (logBox) {
+        logBox.style.display = 'block';
+        _separadorLog(logBox, '🗑️ Desinstalar ' + nomeExibicao);
+        var infoLine = document.createElement('div');
+        infoLine.className = 'log-line info';
+        infoLine.textContent = '🗑️ Desinstalando ' + nomeExibicao + '...';
+        logBox.appendChild(infoLine);
+        logBox.scrollTop = logBox.scrollHeight;
+    }
+
+    conectarSSE(idRevert, logBox);
+
+    try {
+        await fetch(API_URL + '/executar', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                comando: 'flatpak uninstall -y ' + appId,
+                idComando: idRevert
+            })
+        });
+
+        var sucesso = await aguardarConclusaoReal(idRevert, 180000);
+
+        if (!sucesso) {
+            if (logBox) {
+                var errorLine = document.createElement('div');
+                errorLine.className = 'log-line error';
+                errorLine.textContent = sucesso === null
+                    ? _t('comum.erro_timeout_desinstalar', '❌ Tempo esgotado esperando a desinstalação.')
+                    : _tVars('comum.erro_falha_desinstalar', '❌ Falha ao desinstalar ' + nomeExibicao + '.', { nome: nomeExibicao });
+                logBox.appendChild(errorLine);
+                logBox.scrollTop = logBox.scrollHeight;
+            }
+            return;
+        }
+
+        await desmarcarComoExecutado(idComando);
+
+        if (btn) {
+            btn.textContent = _textoOriginalTraduzido(btn) || nomeExibicao;
+            btn.style.backgroundColor = _corOriginalDoBotao(btn);
+            btn.style.cursor = 'pointer';
+            btn.style.opacity = '1';
+            btn.disabled = false;
+        }
+
+        _esconderIconeDesinstalar(idComando);
+
+        if (logBox) {
+            var successLine = document.createElement('div');
+            successLine.className = 'log-line success';
+            successLine.textContent = _tVars('comum.sucesso_desinstalar', '✅ ' + nomeExibicao + ' desinstalado com sucesso!', { nome: nomeExibicao });
+            logBox.appendChild(successLine);
+            logBox.scrollTop = logBox.scrollHeight;
+        }
+
+    } catch (e) {
+        if (logBox) {
+            var errorLine2 = document.createElement('div');
+            errorLine2.className = 'log-line error';
+            errorLine2.textContent = _tVars('comum.erro_desinstalar', '❌ Erro ao desinstalar: ' + e.message, { msg: e.message });
+            logBox.appendChild(errorLine2);
+            logBox.scrollTop = logBox.scrollHeight;
+        }
+    }
+}
+
+// ------------------------------------------------------------
+// ÍCONES DE DESINSTALAR
+// ------------------------------------------------------------
+
+var _svgLixeira = '<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>';
+
+function _atualizarIconeDesinstalar(idComando) {
+    var btn = document.getElementById('btn-' + idComando);
+    if (!btn) return;
+
+    var wrapper = btn.closest('.btn-flatpak-wrapper');
+    if (!wrapper) return;
+
+    var info = APPS_FLATPAK[idComando];
+    if (!info) return;
+
+    var nomeExibicao = (btn.textContent || '').replace(/^[✅\s]+/, '').trim() || info.fallback;
+
+    var icone = wrapper.querySelector('.btn-flatpak-uninstall');
+    if (!icone) {
+        icone = document.createElement('button');
+        icone.type = 'button';
+        icone.className = 'btn-flatpak-uninstall';
+        icone.setAttribute('data-comando-alvo', idComando);
+        icone.innerHTML = _svgLixeira;
+        icone.title = _tVars('comum.desinstalar_flatpak', 'Desinstalar ' + nomeExibicao, { nome: nomeExibicao });
+        icone.setAttribute('aria-label', icone.title);
+
+        icone.addEventListener('click', function(e) {
+            e.stopPropagation();
+            var alvo = this.getAttribute('data-comando-alvo');
+            var alvoInfo = APPS_FLATPAK[alvo];
+            if (!alvoInfo) return;
+            var alvoBtn = document.getElementById('btn-' + alvo);
+            var alvoNome = alvoBtn ? (alvoBtn.textContent || '').replace(/^[✅\s]+/, '').trim() : alvoInfo.fallback;
+            desinstalarAppFlatpak(alvo, alvoInfo.appId, alvoNome || alvoInfo.fallback);
+        });
+
+        wrapper.appendChild(icone);
+    }
+
+    icone.style.display = '';
+}
+
+function _esconderIconeDesinstalar(idComando) {
+    var btn = document.getElementById('btn-' + idComando);
+    if (!btn) return;
+    var wrapper = btn.closest('.btn-flatpak-wrapper');
+    if (!wrapper) return;
+    var icone = wrapper.querySelector('.btn-flatpak-uninstall');
+    if (icone) icone.style.display = 'none';
+}
+
+function _restaurarIconesFlatpak() {
+    Object.keys(APPS_FLATPAK).forEach(function(idComando) {
+        if (isExecutado(idComando)) {
+            _atualizarIconeDesinstalar(idComando);
+        }
+    });
+}
+
+// ------------------------------------------------------------
+// RESTAURAR ESTADO DA SESSÃO
+// ------------------------------------------------------------
+
 function restaurarEstadoSessao() {
-const comandos = [
-'cups-install',
-'samba-install',
-'localsend-install',
-'warpinator-install',
-'keepassxc-install',
-'okular-tesseract-install'
-];
+    const comandos = [
+        'cups-install',
+        'samba-install',
+        'localsend-install',
+        'warpinator-install',
+        'keepassxc-install',
+        'okular-tesseract-install'
+    ];
 
-comandos.forEach(function(id) {
-if (isExecutado(id)) {
-const btn = document.getElementById('btn-' + id);
-if (btn) {
-const textoFinal = getTextoAposExecucao(id);
-btn.textContent = textoFinal;
-btn.style.backgroundColor = '#4b5563';
-btn.style.cursor = 'default';
-btn.disabled = true;
-}
-}
-});
+    comandos.forEach(function(id) {
+        if (isExecutado(id)) {
+            const btn = document.getElementById('btn-' + id);
+            if (btn) {
+                const textoFinal = getTextoAposExecucao(id);
+                btn.textContent = textoFinal;
+                btn.style.backgroundColor = '#4b5563';
+                btn.style.cursor = 'default';
+                btn.disabled = true;
+            }
+        }
+    });
+
+    _restaurarIconesFlatpak();
 }
 
 // ===== INICIALIZAÇÃO =====
 (function() {
-document.querySelectorAll('.btn-executar').forEach(function(btn) {
-if (!btn.hasAttribute('data-texto-original')) {
-btn.setAttribute('data-texto-original', btn.textContent);
-}
-});
+    document.querySelectorAll('.btn-executar').forEach(function(btn) {
+        if (!btn.hasAttribute('data-texto-original')) {
+            btn.setAttribute('data-texto-original', btn.textContent);
+        }
+    });
 
-restaurarEstadoSessao();
+    restaurarEstadoSessao();
 
-console.log('📦 Componente 10-casa-pronta carregado!');
+    console.log('📦 Componente 10-casa-pronta carregado!');
 })();
 </script>
 </body>

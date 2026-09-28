@@ -58,6 +58,14 @@ const LOCALES_DIR = path.join(__dirname, 'locales');
 //   necessidade de o FOF intermediar.
 // - O tratamento especial em `executarComandoComStream` já seta
 //   XDG_RUNTIME_DIR e DBUS_SESSION_BUS_ADDRESS corretos.
+//
+// SOBRE `systemctl --user`:
+// - Mesma lógica do Flatpak: é um comando do contexto do USUÁRIO,
+//   não do sistema. Rodar via pkexec apontaria XDG_RUNTIME_DIR para
+//   /run/user/0 (do root), e o systemctl do usuário não encontraria
+//   o bus correto — o comando falharia silenciosamente.
+// - A whitelist faz ele rodar como o usuário real, com o env
+//   correto ajustado por `_precisaEnvUserContext()`.
 
 const COMANDOS_SEM_AUTENTICACAO = [
     'rpm -q',
@@ -77,8 +85,40 @@ const COMANDOS_SEM_AUTENTICACAO = [
 'flatpak install',
 'flatpak uninstall',
 'flatpak update',
-'flatpak remote-add'
+'flatpak remote-add',
+// systemctl --user roda como usuário (serviço do usuário, não do
+// sistema). Mesma lógica do Flatpak: precisa do bus do usuário.
+'systemctl --user'
 ];
+
+// ============================================================
+// COMANDOS QUE RODAM NO CONTEXTO DO USUÁRIO
+// ============================================================
+//
+// Estes comandos NÃO devem herdar o env do processo Node (que pode
+// ter sido iniciado com variáveis erradas, ou que apontam para o
+// diretório de outro usuário). `executarComandoComStream` ajusta
+// XDG_RUNTIME_DIR, DBUS_SESSION_BUS_ADDRESS e HOME para esses.
+//
+// Antes, isso era um `if (comando.includes('flatpak'))` hardcoded.
+// Agora é uma lista extensível — qualquer comando novo que precise
+// do bus do usuário entra aqui, sem precisar editar o bloco de
+// execução.
+
+const COMANDOS_USER_CONTEXT = [
+    'flatpak',
+'systemctl --user',
+'pw-metadata',
+'pw-cli',
+'pactl',
+'wpctl'
+];
+
+function _precisaEnvUserContext(comando) {
+    return COMANDOS_USER_CONTEXT.some(function(cmd) {
+        return comando.includes(cmd);
+    });
+}
 
 function _cmdSemAutenticacao(comando) {
     const trimmed = (comando || '').trim();
@@ -428,7 +468,12 @@ function executarComandoComStream(comandoFinal, idComando, isReversao, callback)
         enviarLog(idComando, `$ ${comandoFinal}\n`, 'info');
 
         const env = { ...process.env };
-        if (comandoFinal.includes('flatpak')) {
+
+        // Comandos que rodam no contexto do usuário (flatpak,
+        // systemctl --user, ferramentas do PipeWire) precisam do
+        // bus e runtime corretos. Sem isso, o comando falha
+        // silenciosamente ao tentar falar com o serviço do usuário.
+        if (_precisaEnvUserContext(comandoFinal)) {
             let uid = 1000;
             try {
                 uid = process.getuid ? process.getuid() : 1000;
@@ -440,9 +485,9 @@ function executarComandoComStream(comandoFinal, idComando, isReversao, callback)
             if (!env.HOME) {
                 env.HOME = process.env.HOME || '/home/' + (process.env.USER || 'user');
             }
-            console.log(`[FLATPAK] XDG_RUNTIME_DIR=${env.XDG_RUNTIME_DIR}`);
-            console.log(`[FLATPAK] DBUS_SESSION_BUS_ADDRESS=${env.DBUS_SESSION_BUS_ADDRESS}`);
-            console.log(`[FLATPAK] HOME=${env.HOME}`);
+            console.log(`[USER-CTX] XDG_RUNTIME_DIR=${env.XDG_RUNTIME_DIR}`);
+            console.log(`[USER-CTX] DBUS_SESSION_BUS_ADDRESS=${env.DBUS_SESSION_BUS_ADDRESS}`);
+            console.log(`[USER-CTX] HOME=${env.HOME}`);
         }
 
         exec(comandoFinal, {
@@ -589,16 +634,10 @@ function _construirScripts(timestamp, random, comandoCorrigido, descricao, outpu
     const scriptTemp = `/tmp/fof-cmd-${timestamp}-${random}.sh`;
     const homeDir = HOME_DIR_USUARIO;
 
-    // Normaliza line endings ANTES de montar o script.
     const comandoLimpo = (comandoCorrigido || '')
     .replace(/\r\n/g, '\n')
     .replace(/\r/g, '\n');
 
-    // IMPORTANTE: o template literal NÃO deve ter indentação nas
-    // linhas internas. Cada linha precisa começar na coluna 0,
-    // senão o script gerado sai com 4+ espaços de indentação em
-    // TODOS os comandos — o que quebra heredocs, `case`, e
-    // continuações com `\`.
     const scriptContent = [
         '#!/bin/bash',
         '# Fedora Only Fans - ' + descricao,
@@ -697,7 +736,9 @@ function executarComAutenticacaoSegura(comandoOriginal, idComando, isReversao, c
         'tc qdisc': 'Configurar QoS de rede',
         'ip link': 'Configurar interface de rede',
         'chown': 'Ajustar permissões de arquivo',
-        'tee': 'Escrever arquivo de configuração'
+        'tee': 'Escrever arquivo de configuração',
+        'sysctl': 'Ajustar parâmetros do kernel',
+        'modprobe': 'Carregar módulo do kernel'
     };
 
     let descricao = 'Executar comando administrativo';
@@ -737,10 +778,6 @@ function executarComAutenticacaoSegura(comandoOriginal, idComando, isReversao, c
             return callback(err, "", "");
         }
 
-        // Usa && e || { ...; exit 1; } para propagar o código de saída
-        // do kdesu. O `{ rm -f ...; exit 1; }` limpa o script temporário
-        // mesmo quando o usuário cancela a autenticação, e propaga o
-        // retorno 1 para que o FOF não marque o botão como "concluído".
         const comandoFinal = `kdesu -c "${scriptTemp}" && rm -f ${scriptTemp} || { rm -f ${scriptTemp}; exit 1; }`;
         const cleanupReader = _criarReaderOutput(idComando, outputTemp);
 
@@ -774,9 +811,6 @@ function executarComAutenticacaoSegura(comandoOriginal, idComando, isReversao, c
             return callback(err, "", "");
         }
 
-        // Usa && e || { ...; exit 1; } para propagar o código de saída
-        // do pkexec (sem a flag --disable-internal-agent, que impedia
-        // o agente PolicyKit de mostrar o popup de senha).
         const comandoFinal = `pkexec ${scriptTemp} && rm -f ${scriptTemp} || { rm -f ${scriptTemp}; exit 1; }`;
         const cleanupReader = _criarReaderOutput(idComando, outputTemp);
 
@@ -1190,8 +1224,40 @@ const server = http.createServer((req, res) => {
     }
 
     // ----------------------------------------------------------
+    // /flatpak-installed — lista de app-ids Flatpak instalados
+    // ----------------------------------------------------------
+    //
+    // Usado pelo script.js para detectar Flatpaks que foram
+    // removidos fora do FOF (via GNOME Software, linha de
+    // comando, ou outro gerenciador) e restaurar o botão
+    // original para o usuário reinstalar.
+    //
+    // `--app` filtra só aplicativos (não runtimes).
+    // `--columns=application` retorna apenas os app-ids, uma por
+    // linha, sem cabeçalho — formato ideal para comparação.
+    if (req.method === 'GET' && url === '/flatpak-installed') {
+        exec('flatpak list --app --columns=application 2>/dev/null',
+             { shell: '/bin/bash', timeout: 5000 },
+             (error, stdout) => {
+                 const apps = (stdout || '').trim().split('\n').filter(Boolean);
+                 res.writeHead(200, {
+                     'Content-Type': 'application/json',
+                     'Cache-Control': 'no-cache, no-store, must-revalidate'
+                 });
+                 res.end(JSON.stringify({ apps: apps }));
+             });
+        return;
+    }
+
+    // ----------------------------------------------------------
     // /system-info — painel de diagnóstico
     // ----------------------------------------------------------
+    //
+    // Campos de otimização (ksm_*, tcp_congestion, max_map_count,
+    // pipewire_quantum) usam fallback independente — se o sensor
+    // ou o comando não existir no sistema (KSM não compilado,
+    // PipeWire não instalado, etc.), o campo retorna um valor
+    // neutro e o painel continua funcional.
     if (req.method === 'GET' && url === '/system-info') {
         const script = `
         FEDORA=$(cat /etc/fedora-release 2>/dev/null || echo "")
@@ -1211,6 +1277,12 @@ const server = http.createServer((req, res) => {
         SELINUX_MODO=$(grep '^SELINUX=' /etc/selinux/config 2>/dev/null | cut -d= -f2 || echo "-")
         PROCESSOS=$(ps -e --no-headers 2>/dev/null | wc -l)
 
+        KSM_RUN=$(cat /sys/kernel/mm/ksm/run 2>/dev/null || echo "0")
+        KSM_PAGES_SAVED=$(cat /sys/kernel/mm/ksm/pages_sharing 2>/dev/null || echo "0")
+        TCP_CONGESTION=$(sysctl -n net.ipv4.tcp_congestion_control 2>/dev/null || echo "unknown")
+        MAX_MAP_COUNT=$(sysctl -n vm.max_map_count 2>/dev/null || echo "65530")
+        PIPEWIRE_QUANTUM=$(pw-metadata -n settings 0 clock.quantum 2>/dev/null | grep -oP 'value:\\K\\d+' | head -1 || echo "1024")
+
         echo "fedora=$FEDORA"
         echo "kernel=$KERNEL"
         echo "cpu=$CPU"
@@ -1226,6 +1298,11 @@ const server = http.createServer((req, res) => {
         echo "selinux=$SELINUX"
         echo "selinux_modo=$SELINUX_MODO"
         echo "processos=$PROCESSOS"
+        echo "ksm_run=$KSM_RUN"
+        echo "ksm_pages_saved=$KSM_PAGES_SAVED"
+        echo "tcp_congestion=$TCP_CONGESTION"
+        echo "max_map_count=$MAX_MAP_COUNT"
+        echo "pipewire_quantum=$PIPEWIRE_QUANTUM"
         `;
 
         _execReadOnly(script, 8000).then(function(stdout) {
@@ -1245,7 +1322,14 @@ const server = http.createServer((req, res) => {
                                          firewall_zona: raw.firewall_zona || '-',
                                          selinux: raw.selinux || 'desconhecido',
                                          selinux_modo: raw.selinux_modo || '-',
-                                         processos: raw.processos ? parseInt(raw.processos, 10) : null
+                                         processos: raw.processos ? parseInt(raw.processos, 10) : null,
+                                         // Campos de otimização (aditivos — não alteram os
+                                         // consumidores existentes que só leem os campos acima)
+                                         ksm_run: raw.ksm_run || '0',
+                                         ksm_pages_saved: raw.ksm_pages_saved || '0',
+                                         tcp_congestion: raw.tcp_congestion || 'unknown',
+                                         max_map_count: raw.max_map_count || '65530',
+                                         pipewire_quantum: raw.pipewire_quantum || '1024'
             };
             res.writeHead(200, {
                 'Content-Type': 'application/json',
@@ -1512,12 +1596,14 @@ server.listen(PORT, HOST, () => {
     console.log(` 📡 SSE: Ativo (logs em tempo real, com buffer de replay)`);
     console.log(` 📁 Arquivos estáticos: Ativo (HTML, CSS, JS, ícone)`);
     console.log(` 🌐 i18n: Ativo (locales em /locales/<lang>.json)`);
-    console.log(` 📄 Páginas: index.html, guiado.html, manutencao.html, 00-*.html a 13-*.html`);
-    console.log(` 🔧 Comandos SEM autenticação: rpm -q, uname -r, gtk-launch, flatpak, etc`);
+    console.log(` 📄 Páginas: index.html, guiado.html, manutencao.html, 00-*.html a 12-*.html`);
+    console.log(` 🔧 Comandos SEM autenticação: rpm -q, uname -r, gtk-launch, flatpak, systemctl --user, etc`);
+    console.log(` 🎯 Comandos USER-CONTEXT (env ajustado): ${COMANDOS_USER_CONTEXT.join(', ')}`);
     console.log(` 📊 Progresso: .progresso.json (persistente no servidor)`);
     console.log(` 📱 Waydroid status: /waydroid-status`);
+    console.log(` 📦 Flatpak instalados: /flatpak-installed`);
     console.log(` 🧠 Kernels: /kernels`);
-    console.log(` 🖥️ System info: /system-info`);
+    console.log(` 🖥️ System info: /system-info (com KSM, BBR, max_map_count, PipeWire quantum)`);
     console.log(` 📈 Top processos: /top-processes`);
     console.log(` 💾 Uso de disco: /disk-usage`);
     console.log(` 📋 Erros do journal: /journal-errors`);

@@ -1,11 +1,10 @@
 # ============================================================
 # Fedora Only Fans (FOF) - Makefile
-# Versão: 1.0.0-09232026
+# Versão lida dinamicamente do package.json (alvo: make version)
 # ============================================================
 
 PREFIX ?= /usr/local
 BINDIR = $(PREFIX)/bin
-APPDIR = $(PREFIX)/share/applications
 ICONDIR = $(PREFIX)/share/icons/hicolor/256x256/apps
 
 CC = gcc
@@ -47,7 +46,7 @@ PKG_LIBS := $(shell pkg-config --libs $(WEBKIT_PKG) gtk+-3.0)
 TARGET = fof-container
 SRC = src/fof-container.c
 
-.PHONY: all clean install uninstall run
+.PHONY: all clean install uninstall run version
 
 all: $(TARGET)
 
@@ -60,7 +59,6 @@ clean:
 install: $(TARGET)
 	install -d $(DESTDIR)$(BINDIR)
 	install -m 755 $(TARGET) $(DESTDIR)$(BINDIR)/$(TARGET)
-	install -d $(DESTDIR)$(APPDIR)
 	install -d $(DESTDIR)$(ICONDIR)
 	install -m 644 icone_app.png $(DESTDIR)$(ICONDIR)/fof-container.png
 

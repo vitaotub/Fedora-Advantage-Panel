@@ -7,17 +7,17 @@
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<div class="sessao-container" id="sessao-11-waydroid">
+<div class="sessao-container" id="sessao-08-waydroid">
 <div class="sessao-titulo">
 <span class="sessao-label">Sessão</span>
-<span data-i18n="sessoes.11-waydroid.titulo">📱 Waydroid (Android no Linux)</span>
+<span data-i18n="sessoes.08-waydroid.titulo">📱 Waydroid (Android no Linux)</span>
 </div>
 
-<div class="aviso-caixa" data-i18n="sessoes.11-waydroid.aviso_nvidia">
+<div class="aviso-caixa" data-i18n="sessoes.08-waydroid.aviso_nvidia">
 ⚠️ O Waydroid requer GPU AMD ou Intel. Usuários com GPU Nvidia não podem usar esta sessão (o driver proprietário não expõe o Mesa necessário). Há um projeto experimental (waydroid-nvidia) que tenta contornar via proxy Vulkan, mas não é suportado pelo FOF.
 </div>
 
-<div class="sessao-descricao" data-i18n="sessoes.11-waydroid.descricao">
+<div class="sessao-descricao" data-i18n="sessoes.08-waydroid.descricao">
 O Waydroid roda o Android dentro de um container no Fedora. Esta sessão instala o Waydroid, inicializa o container com a imagem do Android, e oferece os extras mais pedidos (Google Play Store, tradução ARM, Magisk, Widevine).
 </div>
 
@@ -25,20 +25,20 @@ O Waydroid roda o Android dentro de um container no Fedora. Esta sessão instala
 BASE
 ============================================================ -->
 <details class="acordeao" open>
-<summary data-i18n="sessoes.11-waydroid.base_titulo">🟢 Instalação Base</summary>
+<summary data-i18n="sessoes.08-waydroid.base_titulo">🟢 Instalação Base</summary>
 <div class="acordeao-conteudo">
 
 <div class="bloco-comando">
 <div class="comando-info">
-<h3 data-i18n="sessoes.11-waydroid.waydroid_titulo">Waydroid (via COPR yanqiyu/waydroid)</h3>
-<p data-i18n="sessoes.11-waydroid.waydroid_desc">Instala o Waydroid e o lzip (dependência do script de extras). Usamos o COPR yanqiyu/waydroid porque o pacote oficial está quebrado no Fedora 44 (Bug 2420131) e o COPR tem a versão funcional para Fedora 44/45.</p>
+<h3 data-i18n="sessoes.08-waydroid.waydroid_titulo">Waydroid (via COPR yanqiyu/waydroid)</h3>
+<p data-i18n="sessoes.08-waydroid.waydroid_desc">Instala o Waydroid e o lzip (dependência do script de extras). Usamos o COPR yanqiyu/waydroid porque o pacote oficial está quebrado no Fedora 44 (Bug 2420131) e o COPR tem a versão funcional para Fedora 44/45.</p>
 <div class="grupo-botoes">
 <button class="btn-executar"
 onclick="executarWaydroidInstall()"
 data-comando="waydroid-install"
-data-logbox="log-sessao-11-waydroid"
+data-logbox="log-sessao-08-waydroid"
 id="btn-waydroid-install"
-data-i18n="sessoes.11-waydroid.btn_waydroid">
+data-i18n="sessoes.08-waydroid.btn_waydroid">
 📦 Instalar Waydroid
 </button>
 </div>
@@ -51,15 +51,15 @@ data-i18n="sessoes.11-waydroid.btn_waydroid">
 
 <div class="bloco-comando">
 <div class="comando-info">
-<h3 data-i18n="sessoes.11-waydroid.init_titulo">Inicializar o Waydroid (uma vez só)</h3>
-<p data-i18n="sessoes.11-waydroid.init_desc">Baixa as imagens do Android (sistema ~1,2 GB + vendor ~190 MB) e inicializa o container. Usa a variante GAPPS (com Google Apps). Roda uma vez só — depois disso, use "Abrir Waydroid" para iniciar o container sempre que quiser.</p>
+<h3 data-i18n="sessoes.08-waydroid.init_titulo">Inicializar o Waydroid (uma vez só)</h3>
+<p data-i18n="sessoes.08-waydroid.init_desc">Baixa as imagens do Android (sistema ~1,2 GB + vendor ~190 MB) e inicializa o container. Usa a variante GAPPS (com Google Apps). Roda uma vez só — depois disso, use "Abrir Waydroid" para iniciar o container sempre que quiser.</p>
 <div class="grupo-botoes">
 <button class="btn-executar verde"
 onclick="executarWaydroidInit()"
 data-comando="waydroid-init"
-data-logbox="log-sessao-11-waydroid"
+data-logbox="log-sessao-08-waydroid"
 id="btn-waydroid-init"
-data-i18n="sessoes.11-waydroid.btn_init">
+data-i18n="sessoes.08-waydroid.btn_init">
 🚀 Inicializar Waydroid
 </button>
 </div>
@@ -72,15 +72,15 @@ data-i18n="sessoes.11-waydroid.btn_init">
 
 <div class="bloco-comando destaque">
 <div class="comando-info">
-<h3 data-i18n="sessoes.11-waydroid.open_titulo">Abrir Waydroid (iniciar o container)</h3>
-<p data-i18n="sessoes.11-waydroid.open_desc">Abre a interface do Android. Inicia o container se ele não estiver rodando. O container precisa estar rodando para instalar extras (GApps, Magisk, etc.). Clique aqui uma vez antes de usar os extras.</p>
+<h3 data-i18n="sessoes.08-waydroid.open_titulo">Abrir Waydroid (iniciar o container)</h3>
+<p data-i18n="sessoes.08-waydroid.open_desc">Abre a interface do Android. Inicia o container se ele não estiver rodando. O container precisa estar rodando para instalar extras (GApps, Magisk, etc.). Clique aqui uma vez antes de usar os extras.</p>
 <div class="grupo-botoes">
 <button class="btn-executar"
 onclick="abrirWaydroidUI()"
 data-comando="abrir-waydroid"
-data-logbox="log-sessao-11-waydroid"
+data-logbox="log-sessao-08-waydroid"
 id="btn-abrir-waydroid"
-data-i18n="sessoes.11-waydroid.btn_open_waydroid">
+data-i18n="sessoes.08-waydroid.btn_open_waydroid">
 🚀 Abrir Waydroid
 </button>
 </div>
@@ -89,15 +89,15 @@ data-i18n="sessoes.11-waydroid.btn_open_waydroid">
 
 <div class="bloco-comando">
 <div class="comando-info">
-<h3 data-i18n="sessoes.11-waydroid.uninstall_titulo">Desinstalar Waydroid</h3>
-<p data-i18n="sessoes.11-waydroid.uninstall_desc">Remove o Waydroid e todos os dados do container (imagens, apps Android instalados, configurações). Ação irreversível.</p>
+<h3 data-i18n="sessoes.08-waydroid.uninstall_titulo">Desinstalar Waydroid</h3>
+<p data-i18n="sessoes.08-waydroid.uninstall_desc">Remove o Waydroid e todos os dados do container (imagens, apps Android instalados, configurações). Ação irreversível.</p>
 <div class="grupo-botoes">
 <button class="btn-executar vermelho"
 onclick="executarWaydroidUninstall()"
 data-comando="waydroid-uninstall"
-data-logbox="log-sessao-11-waydroid"
+data-logbox="log-sessao-08-waydroid"
 id="btn-waydroid-uninstall"
-data-i18n="sessoes.11-waydroid.btn_uninstall_waydroid">
+data-i18n="sessoes.08-waydroid.btn_uninstall_waydroid">
 🗑️ Desinstalar Waydroid
 </button>
 </div>
@@ -115,7 +115,7 @@ data-i18n="sessoes.11-waydroid.btn_uninstall_waydroid">
 EXTRAS
 ============================================================ -->
 <details class="acordeao" id="waydroid-extras-accordion">
-<summary data-i18n="sessoes.11-waydroid.extras_titulo">🧩 Extras e Recursos</summary>
+<summary data-i18n="sessoes.08-waydroid.extras_titulo">🧩 Extras e Recursos</summary>
 <div class="acordeao-conteudo">
 
 <div class="aviso-caixa" id="waydroid-status-badge" style="display: none;">
@@ -124,18 +124,18 @@ EXTRAS
 
 <div class="bloco-comando destaque">
 <div class="comando-info">
-<h3 data-i18n="sessoes.11-waydroid.prep_titulo">Preparar Ambiente de Extras</h3>
-<p data-i18n="sessoes.11-waydroid.prep_desc">Clona o waydroid_script, cria um ambiente Python isolado (venv) e instala as dependências. Este passo é pré-requisito para todos os extras abaixo. Roda uma vez só.</p>
-<div class="aviso-caixa" data-i18n="sessoes.11-waydroid.prep_aviso">
+<h3 data-i18n="sessoes.08-waydroid.prep_titulo">Preparar Ambiente de Extras</h3>
+<p data-i18n="sessoes.08-waydroid.prep_desc">Clona o waydroid_script, cria um ambiente Python isolado (venv) e instala as dependências. Este passo é pré-requisito para todos os extras abaixo. Roda uma vez só.</p>
+<div class="aviso-caixa" data-i18n="sessoes.08-waydroid.prep_aviso">
 ⚠️ Requer que o Waydroid já esteja instalado, inicializado E com o container rodando (use "Abrir Waydroid" acima). Sem isso, os extras falham.
 </div>
 <div class="grupo-botoes">
 <button class="btn-executar laranja"
 onclick="executarWaydroidPrep()"
 data-comando="waydroid-extras-prep"
-data-logbox="log-sessao-11-waydroid"
+data-logbox="log-sessao-08-waydroid"
 id="btn-waydroid-extras-prep"
-data-i18n="sessoes.11-waydroid.btn_prep">
+data-i18n="sessoes.08-waydroid.btn_prep">
 ⚙️ Preparar Ambiente de Extras
 </button>
 </div>
@@ -148,15 +148,15 @@ data-i18n="sessoes.11-waydroid.btn_prep">
 
 <div class="bloco-comando">
 <div class="comando-info">
-<h3 data-i18n="sessoes.11-waydroid.gapps_titulo">GApps (Google Play Store)</h3>
-<p data-i18n="sessoes.11-waydroid.gapps_desc">Instala os aplicativos Google, incluindo a Google Play Store, no container Android. Requer o Ambiente de Extras preparado e o container rodando.</p>
+<h3 data-i18n="sessoes.08-waydroid.gapps_titulo">GApps (Google Play Store)</h3>
+<p data-i18n="sessoes.08-waydroid.gapps_desc">Instala os aplicativos Google, incluindo a Google Play Store, no container Android. Requer o Ambiente de Extras preparado e o container rodando.</p>
 <div class="grupo-botoes">
 <button class="btn-executar"
 onclick="executarWaydroidGapps()"
 data-comando="waydroid-gapps"
-data-logbox="log-sessao-11-waydroid"
+data-logbox="log-sessao-08-waydroid"
 id="btn-waydroid-gapps"
-data-i18n="sessoes.11-waydroid.btn_gapps">
+data-i18n="sessoes.08-waydroid.btn_gapps">
 📦 Instalar GApps
 </button>
 </div>
@@ -169,23 +169,23 @@ data-i18n="sessoes.11-waydroid.btn_gapps">
 
 <div class="bloco-comando">
 <div class="comando-info">
-<h3 data-i18n="sessoes.11-waydroid.arm_titulo">Tradução ARM (libndk / libhoudini)</h3>
-<p data-i18n="sessoes.11-waydroid.arm_desc">Permite rodar apps Android compilados para ARM em máquinas x86_64. libndk costuma ter melhor performance em CPUs AMD; libhoudini é a opção tradicional para Intel. Instale apenas uma das duas.</p>
+<h3 data-i18n="sessoes.08-waydroid.arm_titulo">Tradução ARM (libndk / libhoudini)</h3>
+<p data-i18n="sessoes.08-waydroid.arm_desc">Permite rodar apps Android compilados para ARM em máquinas x86_64. libndk costuma ter melhor performance em CPUs AMD; libhoudini é a opção tradicional para Intel. Instale apenas uma das duas.</p>
 <div class="botoes-flex">
 <button class="btn-executar"
 onclick="executarWaydroidLibndk()"
 data-comando="waydroid-libndk"
-data-logbox="log-sessao-11-waydroid"
+data-logbox="log-sessao-08-waydroid"
 id="btn-waydroid-libndk"
-data-i18n="sessoes.11-waydroid.btn_libndk">
+data-i18n="sessoes.08-waydroid.btn_libndk">
 📦 libndk (AMD)
 </button>
 <button class="btn-executar cinza"
 onclick="executarWaydroidLibhoudini()"
 data-comando="waydroid-libhoudini"
-data-logbox="log-sessao-11-waydroid"
+data-logbox="log-sessao-08-waydroid"
 id="btn-waydroid-libhoudini"
-data-i18n="sessoes.11-waydroid.btn_libhoudini">
+data-i18n="sessoes.08-waydroid.btn_libhoudini">
 📦 libhoudini (Intel)
 </button>
 </div>
@@ -202,15 +202,15 @@ data-i18n="sessoes.11-waydroid.btn_libhoudini">
 
 <div class="bloco-comando">
 <div class="comando-info">
-<h3 data-i18n="sessoes.11-waydroid.magisk_titulo">Magisk (Root Android)</h3>
-<p data-i18n="sessoes.11-waydroid.magisk_desc">Suíte avançada para usuários Android. Fornece root e gerenciamento de módulos dentro do container. Requer o Ambiente de Extras preparado.</p>
+<h3 data-i18n="sessoes.08-waydroid.magisk_titulo">Magisk (Root Android)</h3>
+<p data-i18n="sessoes.08-waydroid.magisk_desc">Suíte avançada para usuários Android. Fornece root e gerenciamento de módulos dentro do container. Requer o Ambiente de Extras preparado.</p>
 <div class="grupo-botoes">
 <button class="btn-executar"
 onclick="executarWaydroidMagisk()"
 data-comando="waydroid-magisk"
-data-logbox="log-sessao-11-waydroid"
+data-logbox="log-sessao-08-waydroid"
 id="btn-waydroid-magisk"
-data-i18n="sessoes.11-waydroid.btn_magisk">
+data-i18n="sessoes.08-waydroid.btn_magisk">
 📦 Instalar Magisk
 </button>
 </div>
@@ -223,15 +223,15 @@ data-i18n="sessoes.11-waydroid.btn_magisk">
 
 <div class="bloco-comando">
 <div class="comando-info">
-<h3 data-i18n="sessoes.11-waydroid.widevine_titulo">Widevine DRM (Streaming)</h3>
-<p data-i18n="sessoes.11-waydroid.widevine_desc">Suporte a DRM L3 para serviços como Netflix, Spotify e outros streamings dentro do container Android. Requer o Ambiente de Extras preparado.</p>
+<h3 data-i18n="sessoes.08-waydroid.widevine_titulo">Widevine DRM (Streaming)</h3>
+<p data-i18n="sessoes.08-waydroid.widevine_desc">Suporte a DRM L3 para serviços como Netflix, Spotify e outros streamings dentro do container Android. Requer o Ambiente de Extras preparado.</p>
 <div class="grupo-botoes">
 <button class="btn-executar"
 onclick="executarWaydroidWidevine()"
 data-comando="waydroid-widevine"
-data-logbox="log-sessao-11-waydroid"
+data-logbox="log-sessao-08-waydroid"
 id="btn-waydroid-widevine"
-data-i18n="sessoes.11-waydroid.btn_widevine">
+data-i18n="sessoes.08-waydroid.btn_widevine">
 📦 Instalar Widevine
 </button>
 </div>
@@ -244,15 +244,15 @@ data-i18n="sessoes.11-waydroid.btn_widevine">
 
 <div class="bloco-comando">
 <div class="comando-info">
-<h3 data-i18n="sessoes.11-waydroid.smartdock_titulo">Logitech SmartDock</h3>
-<p data-i18n="sessoes.11-waydroid.smartdock_desc">Suporte ao hardware Logitech SmartDock. Requer o Ambiente de Extras preparado.</p>
+<h3 data-i18n="sessoes.08-waydroid.smartdock_titulo">Logitech SmartDock</h3>
+<p data-i18n="sessoes.08-waydroid.smartdock_desc">Suporte ao hardware Logitech SmartDock. Requer o Ambiente de Extras preparado.</p>
 <div class="grupo-botoes">
 <button class="btn-executar"
 onclick="executarWaydroidSmartDock()"
 data-comando="waydroid-smartdock"
-data-logbox="log-sessao-11-waydroid"
+data-logbox="log-sessao-08-waydroid"
 id="btn-waydroid-smartdock"
-data-i18n="sessoes.11-waydroid.btn_smartdock">
+data-i18n="sessoes.08-waydroid.btn_smartdock">
 📦 Instalar SmartDock
 </button>
 </div>
@@ -270,29 +270,29 @@ data-i18n="sessoes.11-waydroid.btn_smartdock">
 CONFIGURAÇÕES AVANÇADAS
 ============================================================ -->
 <details class="acordeao">
-<summary data-i18n="sessoes.11-waydroid.helper_titulo">🎛️ Configurações Avançadas</summary>
+<summary data-i18n="sessoes.08-waydroid.helper_titulo">🎛️ Configurações Avançadas</summary>
 <div class="acordeao-conteudo">
 
 <div class="bloco-comando">
 <div class="comando-info">
-<h3 data-i18n="sessoes.11-waydroid.helper_titulo_inner">waydroid-helper (GUI Avançada)</h3>
-<p data-i18n="sessoes.11-waydroid.helper_desc">Interface gráfica para configurações avançadas do Waydroid. Instalação via COPR oficial cuteneko/waydroid-helper.</p>
+<h3 data-i18n="sessoes.08-waydroid.helper_titulo_inner">waydroid-helper (GUI Avançada)</h3>
+<p data-i18n="sessoes.08-waydroid.helper_desc">Interface gráfica para configurações avançadas do Waydroid. Instalação via COPR oficial cuteneko/waydroid-helper.</p>
 <div class="botoes-flex">
 <button class="btn-executar"
 onclick="executarWaydroidHelperInstall()"
 data-comando="waydroid-helper-install"
-data-logbox="log-sessao-11-waydroid"
+data-logbox="log-sessao-08-waydroid"
 id="btn-waydroid-helper-install"
-data-i18n="sessoes.11-waydroid.btn_helper_install">
+data-i18n="sessoes.08-waydroid.btn_helper_install">
 📦 Instalar waydroid-helper
 </button>
 <button class="btn-executar verde"
 style="display: none;"
 onclick="executarWaydroidHelperOpen()"
 data-comando="waydroid-helper-open"
-data-logbox="log-sessao-11-waydroid"
+data-logbox="log-sessao-08-waydroid"
 id="btn-waydroid-helper-open"
-data-i18n="sessoes.11-waydroid.btn_helper_open">
+data-i18n="sessoes.08-waydroid.btn_helper_open">
 🚀 Abrir waydroid-helper
 </button>
 </div>
@@ -305,18 +305,18 @@ data-i18n="sessoes.11-waydroid.btn_helper_open">
 
 <div class="bloco-comando">
 <div class="comando-info">
-<h3 data-i18n="sessoes.11-waydroid.prefs_titulo">Ajustes Recomendados</h3>
-<p data-i18n="sessoes.11-waydroid.prefs_desc">Aplica ajustes que melhoram a usabilidade (janelas independentes, DPI adequado, comportamento de toque em jogos).</p>
-<div class="aviso-caixa" data-i18n="sessoes.11-waydroid.prefs_aviso">
+<h3 data-i18n="sessoes.08-waydroid.prefs_titulo">Ajustes Recomendados</h3>
+<p data-i18n="sessoes.08-waydroid.prefs_desc">Aplica ajustes que melhoram a usabilidade (janelas independentes, DPI adequado, comportamento de toque em jogos).</p>
+<div class="aviso-caixa" data-i18n="sessoes.08-waydroid.prefs_aviso">
 ⚠️ O container do Waydroid precisa estar em execução para estas configurações serem aplicadas. Abra o Waydroid uma vez antes de usar este botão.
 </div>
 <div class="grupo-botoes">
 <button class="btn-executar verde"
 onclick="executarWaydroidPrefs()"
 data-comando="waydroid-prefs"
-data-logbox="log-sessao-11-waydroid"
+data-logbox="log-sessao-08-waydroid"
 id="btn-waydroid-prefs"
-data-i18n="sessoes.11-waydroid.btn_prefs">
+data-i18n="sessoes.08-waydroid.btn_prefs">
 ⚙️ Aplicar Ajustes Recomendados
 </button>
 </div>
@@ -330,7 +330,7 @@ data-i18n="sessoes.11-waydroid.btn_prefs">
 </div>
 </details>
 
-<div class="terminal-log sessao-compartilhado" id="log-sessao-11-waydroid"></div>
+<div class="terminal-log sessao-compartilhado" id="log-sessao-08-waydroid"></div>
 </div>
 
 <script>
@@ -449,15 +449,15 @@ if (badge) {
 badge.style.display = 'block';
 if (containerRodando) {
 badge.className = 'aviso-sucesso';
-badge.textContent = '✅ ' + _t('sessoes.11-waydroid.container_running',
+badge.textContent = '✅ ' + _t('sessoes.08-waydroid.container_running',
 'Container do Waydroid rodando. Você pode instalar os extras.');
 } else if (!instalado || !inicializado) {
 badge.className = 'aviso-caixa';
-badge.textContent = '⚠️ ' + _t('sessoes.11-waydroid.container_not_ready',
+badge.textContent = '⚠️ ' + _t('sessoes.08-waydroid.container_not_ready',
 'Waydroid ainda não está instalado ou inicializado. Siga os passos da seção acima primeiro.');
 } else {
 badge.className = 'aviso-caixa';
-badge.textContent = '⚠️ ' + _t('sessoes.11-waydroid.container_stopped',
+badge.textContent = '⚠️ ' + _t('sessoes.08-waydroid.container_stopped',
 'Container do Waydroid não está rodando. Clique em "Abrir Waydroid" na seção acima antes de usar os extras.');
 }
 }
@@ -481,7 +481,7 @@ var idComando = 'waydroid-install';
 // git e python3-pip são pré-requisitos do waydroid_script (extras):
 // git para o clone, python3-pip para bootstrap do venv.
 var comando = 'sudo dnf copr enable yanqiyu/waydroid -y && sudo dnf install -y waydroid lzip git python3-pip';
-await executarComandoGenerico(idComando, comando, _t('sessoes.11-waydroid.btn_waydroid', '📦 Instalar Waydroid'));
+await executarComandoGenerico(idComando, comando, _t('sessoes.08-waydroid.btn_waydroid', '📦 Instalar Waydroid'));
 }
 
 async function executarWaydroidInit() {
@@ -490,7 +490,7 @@ var idComando = 'waydroid-init';
 // o usuário pode reclicar (o botão é one-shot, então não há risco de
 // reset acidental depois que completa).
 var comando = 'sudo waydroid init -f -s GAPPS -c https://ota.waydro.id/system -v https://ota.waydro.id/vendor';
-await executarComandoGenerico(idComando, comando, _t('sessoes.11-waydroid.btn_init', '🚀 Inicializar Waydroid'));
+await executarComandoGenerico(idComando, comando, _t('sessoes.08-waydroid.btn_init', '🚀 Inicializar Waydroid'));
 }
 
 async function abrirWaydroidUI() {
@@ -516,11 +516,11 @@ logBox.scrollTop = logBox.scrollHeight;
 
 if (btn) {
 btn.disabled = true;
-btn.textContent = '⏳ ' + _t('sessoes.11-waydroid.open_waiting_short', 'Abrindo Waydroid...');
+btn.textContent = '⏳ ' + _t('sessoes.08-waydroid.open_waiting_short', 'Abrindo Waydroid...');
 btn.style.opacity = '0.6';
 }
 
-adicionarLinha('🚀 ' + _t('sessoes.11-waydroid.container_dispatching', 'Enviando comando para abrir o Waydroid...'), 'info');
+adicionarLinha('🚀 ' + _t('sessoes.08-waydroid.container_dispatching', 'Enviando comando para abrir o Waydroid...'), 'info');
 
 try {
 await fetch(API_URL + '/executar', {
@@ -532,7 +532,7 @@ idComando: idComando + '-open'
 })
 });
 } catch (e) {
-adicionarLinha('❌ ' + _tVars('sessoes.11-waydroid.container_dispatch_error',
+adicionarLinha('❌ ' + _tVars('sessoes.08-waydroid.container_dispatch_error',
 'Erro ao disparar comando: {msg}', { msg: e.message }), 'error');
 }
 
@@ -540,7 +540,7 @@ adicionarLinha('❌ ' + _tVars('sessoes.11-waydroid.container_dispatch_error',
 // boot do container (que precisa montar imagens de ~1,4 GB) pode
 // levar bem mais que um minuto. 3 minutos é uma margem confortável,
 // e o polling continua a cada 3s — se ficar pronto antes, libera.
-adicionarLinha('⏳ ' + _t('sessoes.11-waydroid.container_waiting',
+adicionarLinha('⏳ ' + _t('sessoes.08-waydroid.container_waiting',
 'Aguardando o container subir (até 3 minutos)...'), 'info');
 
 var timeoutMs = 180000;
@@ -562,10 +562,10 @@ break;
 }
 
 if (ok) {
-adicionarLinha('✅ ' + _t('sessoes.11-waydroid.container_ready',
+adicionarLinha('✅ ' + _t('sessoes.08-waydroid.container_ready',
 'Container do Waydroid está rodando!'), 'success');
 } else {
-adicionarLinha('⚠️ ' + _t('sessoes.11-waydroid.container_timeout',
+adicionarLinha('⚠️ ' + _t('sessoes.08-waydroid.container_timeout',
 'Container não respondeu em 3 minutos. Verifique /tmp/fof-waydroid-ui.log para mais detalhes.'), 'warning');
 }
 
@@ -579,14 +579,14 @@ await _atualizarBloqueioExtrasWaydroid();
 }
 
 async function executarWaydroidUninstall() {
-if (!confirm(_t('sessoes.11-waydroid.confirmar_uninstall',
+if (!confirm(_t('sessoes.08-waydroid.confirmar_uninstall',
 'Isso irá remover o Waydroid e TODOS os dados do container Android (apps instalados, configurações). Continuar?'))) return;
 var idComando = 'waydroid-uninstall';
 // Também remove ~/.local/share/fof-waydroid (repo de extras).
 // Usa $HOME em vez de ~ para que o server.js substitua pelo caminho
 // real do usuário ANTES de rodar como root (senão expandiria p/ /root).
 var comando = 'sudo waydroid container stop; sudo dnf remove -y waydroid; sudo rm -rf /var/lib/waydroid $HOME/.local/share/waydroid $HOME/.local/share/fof-waydroid';
-await executarComandoGenerico(idComando, comando, _t('sessoes.11-waydroid.btn_uninstall_waydroid', '🗑️ Desinstalar Waydroid'));
+await executarComandoGenerico(idComando, comando, _t('sessoes.08-waydroid.btn_uninstall_waydroid', '🗑️ Desinstalar Waydroid'));
 }
 
 // ============================================================
@@ -603,13 +603,13 @@ var comando = 'mkdir -p $HOME/.local/share/fof-waydroid && cd $HOME/.local/share
 '(test -d waydroid_script || git clone https://github.com/casualsnek/waydroid_script.git) && ' +
 'cd waydroid_script && python3 -m venv venv && ./venv/bin/pip install --upgrade pip && ./venv/bin/pip install -r requirements.txt && ' +
 'chown -R $USER:$USER $HOME/.local/share/fof-waydroid';
-await executarComandoGenerico(idComando, comando, _t('sessoes.11-waydroid.btn_prep', '⚙️ Preparar Ambiente de Extras'));
+await executarComandoGenerico(idComando, comando, _t('sessoes.08-waydroid.btn_prep', '⚙️ Preparar Ambiente de Extras'));
 }
 
 async function _waydroidExtra(idComando, componente, nomeBotao) {
 var status = await _verificarContainerWaydroid();
 if (!status.running) {
-alert(_t('sessoes.11-waydroid.container_guard_alert',
+alert(_t('sessoes.08-waydroid.container_guard_alert',
 'O container do Waydroid não está rodando. Clique em "Abrir Waydroid" primeiro.'));
 await _atualizarBloqueioExtrasWaydroid();
 return;
@@ -625,27 +625,27 @@ await executarComandoGenerico(idComando, comando, nomeBotao);
 }
 
 async function executarWaydroidGapps() {
-await _waydroidExtra('waydroid-gapps', 'gapps', _t('sessoes.11-waydroid.btn_gapps', '📦 Instalar GApps'));
+await _waydroidExtra('waydroid-gapps', 'gapps', _t('sessoes.08-waydroid.btn_gapps', '📦 Instalar GApps'));
 }
 
 async function executarWaydroidLibndk() {
-await _waydroidExtra('waydroid-libndk', 'libndk', _t('sessoes.11-waydroid.btn_libndk', '📦 libndk (AMD)'));
+await _waydroidExtra('waydroid-libndk', 'libndk', _t('sessoes.08-waydroid.btn_libndk', '📦 libndk (AMD)'));
 }
 
 async function executarWaydroidLibhoudini() {
-await _waydroidExtra('waydroid-libhoudini', 'libhoudini', _t('sessoes.11-waydroid.btn_libhoudini', '📦 libhoudini (Intel)'));
+await _waydroidExtra('waydroid-libhoudini', 'libhoudini', _t('sessoes.08-waydroid.btn_libhoudini', '📦 libhoudini (Intel)'));
 }
 
 async function executarWaydroidMagisk() {
-await _waydroidExtra('waydroid-magisk', 'magisk', _t('sessoes.11-waydroid.btn_magisk', '📦 Instalar Magisk'));
+await _waydroidExtra('waydroid-magisk', 'magisk', _t('sessoes.08-waydroid.btn_magisk', '📦 Instalar Magisk'));
 }
 
 async function executarWaydroidWidevine() {
-await _waydroidExtra('waydroid-widevine', 'widevine', _t('sessoes.11-waydroid.btn_widevine', '📦 Instalar Widevine'));
+await _waydroidExtra('waydroid-widevine', 'widevine', _t('sessoes.08-waydroid.btn_widevine', '📦 Instalar Widevine'));
 }
 
 async function executarWaydroidSmartDock() {
-await _waydroidExtra('waydroid-smartdock', 'smartdock', _t('sessoes.11-waydroid.btn_smartdock', '📦 Instalar SmartDock'));
+await _waydroidExtra('waydroid-smartdock', 'smartdock', _t('sessoes.08-waydroid.btn_smartdock', '📦 Instalar SmartDock'));
 }
 
 // ============================================================
@@ -675,7 +675,7 @@ async function executarWaydroidHelperInstall() {
 var idComando = 'waydroid-helper-install';
 var comando = 'sudo dnf copr enable cuteneko/waydroid-helper -y && sudo dnf install -y waydroid-helper';
 await executarComandoGenerico(idComando, comando,
-_t('sessoes.11-waydroid.btn_helper_install', '📦 Instalar waydroid-helper'),
+_t('sessoes.08-waydroid.btn_helper_install', '📦 Instalar waydroid-helper'),
 function() {
 atualizarBotaoAbrirWaydroidHelper();
 });
@@ -711,7 +711,7 @@ btn.style.display = 'none';
 async function executarWaydroidPrefs() {
 var status = await _verificarContainerWaydroid();
 if (!status.running) {
-alert(_t('sessoes.11-waydroid.container_guard_alert',
+alert(_t('sessoes.08-waydroid.container_guard_alert',
 'O container do Waydroid não está rodando. Clique em "Abrir Waydroid" primeiro.'));
 await _atualizarBloqueioExtrasWaydroid();
 return;
@@ -721,7 +721,7 @@ var idComando = 'waydroid-prefs';
 // falha num deles não impede os outros. Como o pkexec retorna o exit
 // code do ÚLTIMO comando, ainda temos o resultado correto ao final.
 var comando = 'sudo waydroid prop set persist.waydroid.multi_windows true; sudo waydroid prop set persist.waydroid.fake_touch "*"; sudo waydroid prop set persist.waydroid.fake_wifi "*"';
-await executarComandoGenerico(idComando, comando, _t('sessoes.11-waydroid.btn_prefs', '⚙️ Aplicar Ajustes Recomendados'));
+await executarComandoGenerico(idComando, comando, _t('sessoes.08-waydroid.btn_prefs', '⚙️ Aplicar Ajustes Recomendados'));
 }
 
 // ============================================================

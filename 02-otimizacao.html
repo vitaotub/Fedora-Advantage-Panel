@@ -144,6 +144,152 @@ Corrigir Relógio
 </div>
 </div>
 
+<!-- ============================================================
+AJUSTES DE DESEMPENHO (ACORDEÃO)
+============================================================ -->
+<details class="acordeao">
+<summary data-i18n="sessoes.02-otimizacao.tuning_titulo">🔧 Ajustes de Desempenho (Opcionais)</summary>
+<div class="acordeao-conteudo">
+
+<div class="sessao-descricao" data-i18n="sessoes.02-otimizacao.tuning_desc">
+Ajustes recomendados para melhorar a responsividade do sistema em jogos e no uso geral. Cada item é independente e pode ser revertido individualmente a qualquer momento. Se você não tem certeza se deve aplicar, comece pelo ajuste de memória.
+</div>
+
+<!-- vm.max_map_count -->
+<div class="bloco-comando">
+<div class="comando-info">
+<h3 data-i18n="sessoes.02-otimizacao.vm_max_map_count_titulo">Ajustes de Memória para Jogos e Aplicações Pesadas</h3>
+<p data-i18n-html="sessoes.02-otimizacao.vm_max_map_count_desc">
+Aumenta o número máximo de áreas de memória que cada processo pode mapear. O valor padrão do Fedora é <code>65530</code>, que é insuficiente para jogos modernos e aplicações pesadas — vários títulos falham ao iniciar ou travam por falta de memória mapeável (Hogwarts Legacy, Counter-Strike 2, The Finals, Star Citizen, entre outros).
+</p>
+
+<div class="info-extra" data-i18n-html="sessoes.02-otimizacao.vm_max_map_count_info">
+ℹ️ <strong>O que muda:</strong> o limite sobe de 65.530 para 2.147.483.642 (o máximo prático). É uma correção de compatibilidade, não um "tweak" — o valor antigo causa falhas reais.
+</div>
+
+<div class="botoes-flex">
+<button class="btn-executar verde"
+onclick="executarVmMaxMapCount()"
+data-comando="vm-max-map-count"
+data-logbox="log-sessao-02-otimizacao"
+id="btn-vm-max-map-count"
+data-i18n="sessoes.02-otimizacao.btn_vm_max_map_count">
+⚙️ Aplicar Ajuste
+</button>
+<button class="btn-executar cinza"
+onclick="executarVmMaxMapCountRemove()"
+data-comando="vm-max-map-count-remove"
+data-logbox="log-sessao-02-otimizacao"
+id="btn-vm-max-map-count-remove"
+data-i18n="sessoes.02-otimizacao.btn_vm_max_map_count_remove">
+↩️ Reverter
+</button>
+</div>
+</div>
+
+<div class="progress-container" id="progress-vm-max-map-count">
+<div class="progress-bar"><div class="progress-fill" id="progress-fill-vm-max-map-count"></div></div>
+<div class="progress-text"><span class="status" id="progress-status-vm-max-map-count">⏳ Iniciando...</span><span class="percentage" id="progress-percent-vm-max-map-count">0%</span></div>
+</div>
+<div class="progress-container" id="progress-vm-max-map-count-remove">
+<div class="progress-bar"><div class="progress-fill" id="progress-fill-vm-max-map-count-remove"></div></div>
+<div class="progress-text"><span class="status" id="progress-status-vm-max-map-count-remove">⏳ Iniciando...</span><span class="percentage" id="progress-percent-vm-max-map-count-remove">0%</span></div>
+</div>
+</div>
+
+<!-- vm.swappiness + vfs_cache_pressure -->
+<div class="bloco-comando">
+<div class="comando-info">
+<h3 data-i18n="sessoes.02-otimizacao.vm_swappiness_cache_titulo">Uso Inteligente de Memória e Cache</h3>
+<p data-i18n-html="sessoes.02-otimizacao.vm_swappiness_cache_desc">
+Ajusta dois parâmetros do kernel que controlam como o sistema usa swap e cache de arquivos. O Fedora vem com valores conservadores que priorizam o disco; esses ajustes fazem o sistema manter mais RAM disponível para as aplicações em primeiro plano e reter por mais tempo caches de disco, o que melhora a sensação de velocidade em tarefas do dia a dia.
+</p>
+
+<div class="info-extra" data-i18n-html="sessoes.02-otimizacao.vm_swappiness_cache_info">
+ℹ️ <strong>O que muda:</strong><br>
+• <code>vm.swappiness</code>: de 60 (padrão) para 150 — sistema usa swap de forma mais proativa.<br>
+• <code>vm.vfs_cache_pressure</code>: de 100 (padrão) para 50 — kernel retém mais tempo os caches de arquivos.<br>
+Ambos os valores são seguros para a maioria dos desktops. Se você usa um SSD e se preocupa com o desgaste, pode reverter depois.
+</div>
+
+<div class="botoes-flex">
+<button class="btn-executar verde"
+onclick="executarVmSwappinessCache()"
+data-comando="vm-swappiness-cache"
+data-logbox="log-sessao-02-otimizacao"
+id="btn-vm-swappiness-cache"
+data-i18n="sessoes.02-otimizacao.btn_vm_swappiness_cache">
+⚙️ Aplicar Ajuste
+</button>
+<button class="btn-executar cinza"
+onclick="executarVmSwappinessCacheRemove()"
+data-comando="vm-swappiness-cache-remove"
+data-logbox="log-sessao-02-otimizacao"
+id="btn-vm-swappiness-cache-remove"
+data-i18n="sessoes.02-otimizacao.btn_vm_swappiness_cache_remove">
+↩️ Reverter
+</button>
+</div>
+</div>
+
+<div class="progress-container" id="progress-vm-swappiness-cache">
+<div class="progress-bar"><div class="progress-fill" id="progress-fill-vm-swappiness-cache"></div></div>
+<div class="progress-text"><span class="status" id="progress-status-vm-swappiness-cache">⏳ Iniciando...</span><span class="percentage" id="progress-percent-vm-swappiness-cache">0%</span></div>
+</div>
+<div class="progress-container" id="progress-vm-swappiness-cache-remove">
+<div class="progress-bar"><div class="progress-fill" id="progress-fill-vm-swappiness-cache-remove"></div></div>
+<div class="progress-text"><span class="status" id="progress-status-vm-swappiness-cache-remove">⏳ Iniciando...</span><span class="percentage" id="progress-percent-vm-swappiness-cache-remove">0%</span></div>
+</div>
+</div>
+
+<!-- TCP BBR -->
+<div class="bloco-comando">
+<div class="comando-info">
+<h3 data-i18n="sessoes.02-otimizacao.tcp_bbr_titulo">Aceleração de Rede com TCP BBR</h3>
+<p data-i18n-html="sessoes.02-otimizacao.tcp_bbr_desc">
+Substitui o algoritmo de controle de congestionamento do TCP padrão (<code>cubic</code>) pelo <strong>BBR</strong>, desenvolvido pelo Google. Ele melhora a latência e a vazão em conexões com perda de pacotes, o que beneficia jogos online, streaming e downloads. É um dos poucos ajustes de rede que trazem ganho consistente sem configuração manual.
+</p>
+
+<div class="info-extra" data-i18n-html="sessoes.02-otimizacao.tcp_bbr_info">
+ℹ️ <strong>O que muda:</strong><br>
+• <code>net.core.default_qdisc</code>: de <code>fq_codel</code> para <code>fq</code> (necessário para o BBR).<br>
+• <code>net.ipv4.tcp_congestion_control</code>: de <code>cubic</code> para <code>bbr</code>.<br>
+Não requer reinicialização — o efeito é imediato após aplicar.
+</div>
+
+<div class="botoes-flex">
+<button class="btn-executar verde"
+onclick="executarTcpBbr()"
+data-comando="tcp-bbr"
+data-logbox="log-sessao-02-otimizacao"
+id="btn-tcp-bbr"
+data-i18n="sessoes.02-otimizacao.btn_tcp_bbr">
+⚙️ Aplicar Ajuste
+</button>
+<button class="btn-executar cinza"
+onclick="executarTcpBbrRemove()"
+data-comando="tcp-bbr-remove"
+data-logbox="log-sessao-02-otimizacao"
+id="btn-tcp-bbr-remove"
+data-i18n="sessoes.02-otimizacao.btn_tcp_bbr_remove">
+↩️ Reverter
+</button>
+</div>
+</div>
+
+<div class="progress-container" id="progress-tcp-bbr">
+<div class="progress-bar"><div class="progress-fill" id="progress-fill-tcp-bbr"></div></div>
+<div class="progress-text"><span class="status" id="progress-status-tcp-bbr">⏳ Iniciando...</span><span class="percentage" id="progress-percent-tcp-bbr">0%</span></div>
+</div>
+<div class="progress-container" id="progress-tcp-bbr-remove">
+<div class="progress-bar"><div class="progress-fill" id="progress-fill-tcp-bbr-remove"></div></div>
+<div class="progress-text"><span class="status" id="progress-status-tcp-bbr-remove">⏳ Iniciando...</span><span class="percentage" id="progress-percent-tcp-bbr-remove">0%</span></div>
+</div>
+</div>
+
+</div>
+</details>
+
 <!-- Log único da sessão -->
 <div class="terminal-log sessao-compartilhado" id="log-sessao-02-otimizacao"></div>
 </div>
@@ -155,162 +301,313 @@ Corrigir Relógio
 // ============================================================
 
 function _t(chave, fallback) {
-return (typeof tOr === 'function') ? tOr(chave, fallback) : fallback;
+    return (typeof tOr === 'function') ? tOr(chave, fallback) : fallback;
 }
 function _tVars(chave, fallback, vars) {
-return (typeof tOr === 'function') ? tOr(chave, fallback, vars) : fallback;
+    return (typeof tOr === 'function') ? tOr(chave, fallback, vars) : fallback;
 }
 
 async function executarAjusteDNF() {
-const conexoes = document.getElementById('select-downloads').value;
-const idComando = 'dnf-speed';
-const comando = 'sudo dnf config-manager setopt max_parallel_downloads=' + conexoes + ' && sudo dnf config-manager setopt fastestmirror=True';
-const logBox = _getLogBox(idComando);
-const btn = document.getElementById('btn-dnf-speed');
+    const conexoes = document.getElementById('select-downloads').value;
+    const idComando = 'dnf-speed';
+    const comando = 'sudo dnf config-manager setopt max_parallel_downloads=' + conexoes + ' && sudo dnf config-manager setopt fastestmirror=True';
+    const logBox = _getLogBox(idComando);
+    const btn = document.getElementById('btn-dnf-speed');
 
-if (!logBox) return;
-if (btn && btn.disabled) return;
+    if (!logBox) return;
+    if (btn && btn.disabled) return;
 
-iniciarProgresso(idComando);
+    iniciarProgresso(idComando);
 
-logBox.style.display = 'block';
+    logBox.style.display = 'block';
 
-const nomeAcao = _tVars('sessoes.02-otimizacao.log_aplicando', 'Aplicando ajuste: ' + conexoes + ' conexões simultâneas', { n: conexoes });
-_separadorLog(logBox, nomeAcao);
+    const nomeAcao = _tVars('sessoes.02-otimizacao.log_aplicando', 'Aplicando ajuste: ' + conexoes + ' conexões simultâneas', { n: conexoes });
+    _separadorLog(logBox, nomeAcao);
 
-const header = document.createElement('div');
-header.className = 'log-line info';
-header.textContent = '📦 ' + nomeAcao + '... (' + new Date().toLocaleTimeString() + ')';
-logBox.appendChild(header);
-logBox.scrollTop = logBox.scrollHeight;
+    const header = document.createElement('div');
+    header.className = 'log-line info';
+    header.textContent = '📦 ' + nomeAcao + '... (' + new Date().toLocaleTimeString() + ')';
+    logBox.appendChild(header);
+    logBox.scrollTop = logBox.scrollHeight;
 
-conectarSSE(idComando, logBox);
+    conectarSSE(idComando, logBox);
 
-if (btn) {
-btn.disabled = true;
-btn.textContent = '⏳ ' + _t('sessoes.02-otimizacao.btn_aplicar_ajuste', 'Aplicar Ajuste') + '...';
-btn.style.opacity = '0.6';
-}
+    if (btn) {
+        btn.disabled = true;
+        btn.textContent = '⏳ ' + _t('sessoes.02-otimizacao.btn_aplicar_ajuste', 'Aplicar Ajuste') + '...';
+        btn.style.opacity = '0.6';
+    }
 
-_bloquearSessao(idComando);
+    _bloquearSessao(idComando);
 
-try {
-const response = await fetch(API_URL + '/executar', {
-method: 'POST',
-headers: { 'Content-Type': 'application/json' },
-body: JSON.stringify({ comando: comando, idComando: idComando })
-});
+    try {
+        const response = await fetch(API_URL + '/executar', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ comando: comando, idComando: idComando })
+        });
 
-if (!response.ok) {
-const errorLine = document.createElement('div');
-errorLine.className = 'log-line error';
-errorLine.textContent = '❌ Erro HTTP: ' + response.status;
-logBox.appendChild(errorLine);
-logBox.scrollTop = logBox.scrollHeight;
-completarProgresso(idComando, false);
+        if (!response.ok) {
+            const errorLine = document.createElement('div');
+            errorLine.className = 'log-line error';
+            errorLine.textContent = '❌ Erro HTTP: ' + response.status;
+            logBox.appendChild(errorLine);
+            logBox.scrollTop = logBox.scrollHeight;
+            completarProgresso(idComando, false);
 
-if (btn) {
-btn.disabled = false;
-btn.textContent = _t('sessoes.02-otimizacao.btn_aplicar_ajuste', 'Aplicar Ajuste');
-btn.style.opacity = '1';
-}
-}
-} catch (e) {
-const errorLine = document.createElement('div');
-errorLine.className = 'log-line error';
-errorLine.textContent = '❌ Erro de conexão: ' + e.message;
-logBox.appendChild(errorLine);
-logBox.scrollTop = logBox.scrollHeight;
-completarProgresso(idComando, false);
+            if (btn) {
+                btn.disabled = false;
+                btn.textContent = _t('sessoes.02-otimizacao.btn_aplicar_ajuste', 'Aplicar Ajuste');
+                btn.style.opacity = '1';
+            }
+        }
+    } catch (e) {
+        const errorLine = document.createElement('div');
+        errorLine.className = 'log-line error';
+        errorLine.textContent = '❌ Erro de conexão: ' + e.message;
+        logBox.appendChild(errorLine);
+        logBox.scrollTop = logBox.scrollHeight;
+        completarProgresso(idComando, false);
 
-if (btn) {
-btn.disabled = false;
-btn.textContent = _t('sessoes.02-otimizacao.btn_aplicar_ajuste', 'Aplicar Ajuste');
-btn.style.opacity = '1';
-}
-} finally {
-setTimeout(function() {
-if (btn) {
-btn.disabled = false;
-btn.textContent = _t('sessoes.02-otimizacao.btn_aplicar_ajuste', 'Aplicar Ajuste');
-btn.style.opacity = '1';
-btn.style.backgroundColor = 'var(--accent, #3c67e3)';
-}
-}, 3000);
-}
+        if (btn) {
+            btn.disabled = false;
+            btn.textContent = _t('sessoes.02-otimizacao.btn_aplicar_ajuste', 'Aplicar Ajuste');
+            btn.style.opacity = '1';
+        }
+    } finally {
+        setTimeout(function() {
+            if (btn) {
+                btn.disabled = false;
+                btn.textContent = _t('sessoes.02-otimizacao.btn_aplicar_ajuste', 'Aplicar Ajuste');
+                btn.style.opacity = '1';
+                btn.style.backgroundColor = 'var(--accent, #3c67e3)';
+            }
+        }, 3000);
+    }
 }
 
 // ============================================================
 // DUAL-BOOT TIME — com confirmação
 // ============================================================
-// O comando `timedatectl set-local-rtc 1 --adjust-system-clock` reajusta
-// o relógio do hardware, o que pode causar um "salto" visível de algumas
-// horas na tela. Não é destrutivo, mas surpreende quem não está esperando.
-// Uma confirmação simples evita o susto.
 async function executarDualBootTime() {
-const confirmado = confirm(_t('sessoes.02-otimizacao.dual_boot_confirmar',
-'⚠️ Ajustar o relógio para horário local?\n\n' +
-'Isso fará o Fedora usar horário local (como o Windows). ' +
-'A mudança pode causar um salto temporário de algumas horas no relógio.\n\n' +
-'Continuar?'));
-if (!confirmado) return;
+    const confirmado = confirm(_t('sessoes.02-otimizacao.dual_boot_confirmar',
+        '⚠️ Ajustar o relógio para horário local?\n\n' +
+        'Isso fará o Fedora usar horário local (como o Windows). ' +
+        'A mudança pode causar um salto temporário de algumas horas no relógio.\n\n' +
+        'Continuar?'));
+    if (!confirmado) return;
 
-await executarComandoGenerico(
-'dual-boot-time',
-'sudo timedatectl set-local-rtc 1 --adjust-system-clock',
-_t('sessoes.02-otimizacao.btn_dual_boot', 'Corrigir Relógio')
-);
+    await executarComandoGenerico(
+        'dual-boot-time',
+        'sudo timedatectl set-local-rtc 1 --adjust-system-clock',
+        _t('sessoes.02-otimizacao.btn_dual_boot', 'Corrigir Relógio')
+    );
 }
 
-// ===== RESTAURAR ESTADO DA SESSÃO =====
-function restaurarEstadoSessao() {
-const comandos = ['idioma-packs', 'idioma-hunspell', 'idioma-localectl'];
+// ============================================================
+// TUNING: vm.max_map_count
+// ============================================================
 
-comandos.forEach(function(id) {
-if (isExecutado(id)) {
-const btn = document.getElementById('btn-' + id);
-if (btn) {
-const textoFinal = getTextoAposExecucao(id);
-btn.textContent = textoFinal;
-btn.style.backgroundColor = '#4b5563';
-btn.style.cursor = 'default';
-btn.disabled = true;
-}
-}
-});
-
-const btnDnf = document.getElementById('btn-dnf-speed');
-if (btnDnf) {
-btnDnf.disabled = false;
-btnDnf.textContent = _t('sessoes.02-otimizacao.btn_aplicar_ajuste', 'Aplicar Ajuste');
-btnDnf.style.backgroundColor = 'var(--accent, #3c67e3)';
-btnDnf.style.opacity = '1';
-btnDnf.style.cursor = 'pointer';
+async function executarVmMaxMapCount() {
+    const idComando = 'vm-max-map-count';
+    const comando = 'echo "vm.max_map_count=2147483642" | sudo tee /etc/sysctl.d/99-fof-vm-max-map-count.conf > /dev/null && sudo sysctl --system';
+    await executarComandoGenerico(idComando, comando,
+        _t('sessoes.02-otimizacao.btn_vm_max_map_count', '⚙️ Aplicar Ajuste'),
+        function() {
+            _resetarIrmao('vm-max-map-count-remove', _t('sessoes.02-otimizacao.btn_vm_max_map_count_remove', '↩️ Reverter'));
+        });
 }
 
-const btnDualBoot = document.getElementById('btn-dual-boot');
-if (btnDualBoot) {
-btnDualBoot.disabled = false;
-btnDualBoot.textContent = btnDualBoot.getAttribute('data-texto-original') || _t('sessoes.02-otimizacao.btn_dual_boot', 'Corrigir Relógio');
-btnDualBoot.style.backgroundColor = '';
-btnDualBoot.style.opacity = '1';
-btnDualBoot.style.cursor = 'pointer';
+async function executarVmMaxMapCountRemove() {
+    const idComando = 'vm-max-map-count-remove';
+    const comando = 'sudo rm -f /etc/sysctl.d/99-fof-vm-max-map-count.conf && sudo sysctl --system';
+    await executarComandoGenerico(idComando, comando,
+        _t('sessoes.02-otimizacao.btn_vm_max_map_count_remove', '↩️ Reverter'),
+        function() {
+            _resetarIrmao('vm-max-map-count', _t('sessoes.02-otimizacao.btn_vm_max_map_count', '⚙️ Aplicar Ajuste'));
+        });
 }
+
+// ============================================================
+// TUNING: vm.swappiness + vm.vfs_cache_pressure
+// ============================================================
+
+async function executarVmSwappinessCache() {
+    const idComando = 'vm-swappiness-cache';
+    const comando = 'printf "vm.swappiness=150\\nvm.vfs_cache_pressure=50\\n" | sudo tee /etc/sysctl.d/99-fof-vm-swappiness.conf > /dev/null && sudo sysctl --system';
+    await executarComandoGenerico(idComando, comando,
+        _t('sessoes.02-otimizacao.btn_vm_swappiness_cache', '⚙️ Aplicar Ajuste'),
+        function() {
+            _resetarIrmao('vm-swappiness-cache-remove', _t('sessoes.02-otimizacao.btn_vm_swappiness_cache_remove', '↩️ Reverter'));
+        });
+}
+
+async function executarVmSwappinessCacheRemove() {
+    const idComando = 'vm-swappiness-cache-remove';
+    const comando = 'sudo rm -f /etc/sysctl.d/99-fof-vm-swappiness.conf && sudo sysctl --system';
+    await executarComandoGenerico(idComando, comando,
+        _t('sessoes.02-otimizacao.btn_vm_swappiness_cache_remove', '↩️ Reverter'),
+        function() {
+            _resetarIrmao('vm-swappiness-cache', _t('sessoes.02-otimizacao.btn_vm_swappiness_cache', '⚙️ Aplicar Ajuste'));
+        });
+}
+
+// ============================================================
+// TUNING: TCP BBR
+// ============================================================
+
+async function executarTcpBbr() {
+    const idComando = 'tcp-bbr';
+    const comando = 'printf "net.core.default_qdisc=fq\\nnet.ipv4.tcp_congestion_control=bbr\\n" | sudo tee /etc/sysctl.d/99-fof-tcp-bbr.conf > /dev/null && sudo sysctl --system';
+    await executarComandoGenerico(idComando, comando,
+        _t('sessoes.02-otimizacao.btn_tcp_bbr', '⚙️ Aplicar Ajuste'),
+        function() {
+            _resetarIrmao('tcp-bbr-remove', _t('sessoes.02-otimizacao.btn_tcp_bbr_remove', '↩️ Reverter'));
+        });
+}
+
+async function executarTcpBbrRemove() {
+    const idComando = 'tcp-bbr-remove';
+    const comando = 'sudo rm -f /etc/sysctl.d/99-fof-tcp-bbr.conf && sudo sysctl --system';
+    await executarComandoGenerico(idComando, comando,
+        _t('sessoes.02-otimizacao.btn_tcp_bbr_remove', '↩️ Reverter'),
+        function() {
+            _resetarIrmao('tcp-bbr', _t('sessoes.02-otimizacao.btn_tcp_bbr', '⚙️ Aplicar Ajuste'));
+        });
+}
+
+// ============================================================
+// Helpers de toggle (mesma lógica do 05-hardware)
+// ============================================================
+
+function _marcarBotaoConcluido(idComando) {
+    var btn = document.getElementById('btn-' + idComando);
+    if (!btn) return;
+    _corOriginalDoBotao(btn);
+    btn.textContent = getTextoAposExecucao(idComando);
+    btn.style.backgroundColor = '#4b5563';
+    btn.style.cursor = 'default';
+    btn.disabled = true;
+    btn.style.opacity = '1';
+}
+
+function _resetarBotao(idComando, fallbackText) {
+    var btn = document.getElementById('btn-' + idComando);
+    if (!btn) return;
+    var original = btn.getAttribute('data-texto-original') || fallbackText;
+    btn.textContent = original;
+    btn.style.backgroundColor = '';
+    btn.style.cursor = 'pointer';
+    btn.disabled = false;
+    btn.style.opacity = '1';
+}
+
+async function _resetarIrmao(idIrmao, fallbackText) {
+    try {
+        await desmarcarComoExecutado(idIrmao);
+        _resetarBotao(idIrmao, fallbackText);
+    } catch (e) {
+        console.error('Erro ao limpar estado do botão irmão ' + idIrmao + ':', e);
+    }
+}
+
+// ============================================================
+// RESTAURAR ESTADO DA SESSÃO
+// ============================================================
+
+async function restaurarEstadoSessao() {
+
+    // --- Idioma: botões não-reversíveis ---
+    const comandosIdioma = ['idioma-packs', 'idioma-hunspell', 'idioma-localectl'];
+    comandosIdioma.forEach(function(id) {
+        if (isExecutado(id)) {
+            const btn = document.getElementById('btn-' + id);
+            if (btn) {
+                btn.textContent = getTextoAposExecucao(id);
+                btn.style.backgroundColor = '#4b5563';
+                btn.style.cursor = 'default';
+                btn.disabled = true;
+            }
+        }
+    });
+
+    // --- DNF speed: sempre clicável ---
+    const btnDnf = document.getElementById('btn-dnf-speed');
+    if (btnDnf) {
+        btnDnf.disabled = false;
+        btnDnf.textContent = _t('sessoes.02-otimizacao.btn_aplicar_ajuste', 'Aplicar Ajuste');
+        btnDnf.style.backgroundColor = 'var(--accent, #3c67e3)';
+        btnDnf.style.opacity = '1';
+        btnDnf.style.cursor = 'pointer';
+    }
+
+    // --- Dual-boot: sempre clicável ---
+    const btnDualBoot = document.getElementById('btn-dual-boot');
+    if (btnDualBoot) {
+        btnDualBoot.disabled = false;
+        btnDualBoot.textContent = btnDualBoot.getAttribute('data-texto-original') || _t('sessoes.02-otimizacao.btn_dual_boot', 'Corrigir Relógio');
+        btnDualBoot.style.backgroundColor = '';
+        btnDualBoot.style.opacity = '1';
+        btnDualBoot.style.cursor = 'pointer';
+    }
+
+    // --- Toggles de tuning: 3 pares independentes ---
+    await _restaurarParToggle(
+        'vm-max-map-count',
+        'vm-max-map-count-remove',
+        _t('sessoes.02-otimizacao.btn_vm_max_map_count', '⚙️ Aplicar Ajuste'),
+        _t('sessoes.02-otimizacao.btn_vm_max_map_count_remove', '↩️ Reverter')
+    );
+    await _restaurarParToggle(
+        'vm-swappiness-cache',
+        'vm-swappiness-cache-remove',
+        _t('sessoes.02-otimizacao.btn_vm_swappiness_cache', '⚙️ Aplicar Ajuste'),
+        _t('sessoes.02-otimizacao.btn_vm_swappiness_cache_remove', '↩️ Reverter')
+    );
+    await _restaurarParToggle(
+        'tcp-bbr',
+        'tcp-bbr-remove',
+        _t('sessoes.02-otimizacao.btn_tcp_bbr', '⚙️ Aplicar Ajuste'),
+        _t('sessoes.02-otimizacao.btn_tcp_bbr_remove', '↩️ Reverter')
+    );
+}
+
+async function _restaurarParToggle(idAplicar, idReverter, textoAplicar, textoReverter) {
+    const aplicarMarcado = isExecutado(idAplicar);
+    const reverterMarcado = isExecutado(idReverter);
+
+    if (aplicarMarcado && !reverterMarcado) {
+        _marcarBotaoConcluido(idAplicar);
+        _resetarBotao(idReverter, textoReverter);
+    } else if (reverterMarcado && !aplicarMarcado) {
+        _marcarBotaoConcluido(idReverter);
+        _resetarBotao(idAplicar, textoAplicar);
+    } else if (aplicarMarcado && reverterMarcado) {
+        _resetarBotao(idAplicar, textoAplicar);
+        _resetarBotao(idReverter, textoReverter);
+        try {
+            await desmarcarComoExecutado(idAplicar);
+            await desmarcarComoExecutado(idReverter);
+        } catch (e) {
+            console.error('Erro ao limpar estado ambíguo do toggle ' + idAplicar + ':', e);
+        }
+    } else {
+        _resetarBotao(idAplicar, textoAplicar);
+        _resetarBotao(idReverter, textoReverter);
+    }
 }
 
 // ===== INICIALIZAÇÃO =====
-// FIX #1 + #2: capturar textos originais ANTES de restaurar estado.
-// IIFE em vez de DOMContentLoaded (eval não dispara o evento).
 (function() {
-document.querySelectorAll('.btn-executar').forEach(function(btn) {
-if (!btn.hasAttribute('data-texto-original')) {
-btn.setAttribute('data-texto-original', btn.textContent);
-}
-});
+    document.querySelectorAll('.btn-executar').forEach(function(btn) {
+        if (!btn.hasAttribute('data-texto-original')) {
+            btn.setAttribute('data-texto-original', btn.textContent);
+        }
+    });
 
-restaurarEstadoSessao();
+    restaurarEstadoSessao();
 
-console.log('📦 Componente 02-otimizacao carregado!');
+    console.log('📦 Componente 02-otimizacao carregado!');
 })();
 </script>
 </body>

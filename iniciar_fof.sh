@@ -301,7 +301,11 @@ verificar_arquivos() {
     # A partir da reestruturação:
     # - 90-manutencao.html e 91-fof-manutencao.html foram REMOVIDOS
     #   (conteúdo consolidado em manutencao.html).
-    # - As sessões 10 a 13 foram ADICIONADAS.
+    # - 04-fontes.html foi RENOMEADO para 04-codecs-compatibilidade.html,
+    #   que agrupa codecs + tainted + fontes MS numa narrativa de
+    #   compatibilidade.
+    # - As sessões 10 e 11 (Casa Pronta, Diagnóstico) foram ADICIONADAS
+    #   em versões anteriores; a sessão 12 (Fedora) também.
     #
     # manutencao.html é verificado acima (junto com index/guiado),
     # por ser página standalone e não sessão carregada via fetch.
@@ -310,7 +314,7 @@ verificar_arquivos() {
         "01-restauracao.html"
         "02-otimizacao.html"
         "03-repositorios.html"
-        "04-fontes.html"
+        "04-codecs-compatibilidade.html"
         "05-hardware.html"
         "06-gaming.html"
         "07-loja.html"

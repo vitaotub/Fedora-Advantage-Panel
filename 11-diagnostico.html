@@ -131,6 +131,61 @@ data-i18n="sessoes.11-diagnostico.btn_refresh">
 </details>
 
 <!-- ============================================================
+AJUSTES DE OTIMIZAÇÕES
+============================================================ -->
+<details class="acordeao">
+<summary data-i18n="sessoes.11-diagnostico.otimizacoes_titulo">⚡ Ajustes de Otimizações</summary>
+<div class="acordeao-conteudo">
+
+<div class="bloco-comando">
+<div class="comando-info">
+<h3 data-i18n="sessoes.11-diagnostico.otimizacoes_h3">Status atual dos ajustes de desempenho</h3>
+<p data-i18n-html="sessoes.11-diagnostico.otimizacoes_desc">
+Mostra o estado atual dos ajustes de desempenho que podem ser aplicados nas sessões <strong>Otimização</strong> (sessão 02) e <strong>Produção Multimídia</strong> (sessão 07). Valores em verde indicam que o ajuste está ativo; valores neutros indicam o padrão do Fedora. Esta seção é apenas informativa — para aplicar ou reverter um ajuste, use os botões nas sessões correspondentes.
+</p>
+
+<div class="dashboard-grid" id="diag-otimizacoes-grid" style="margin-top: 1rem;">
+
+<!-- Compartilhamento de Memória (KSM) -->
+<div class="dashboard-card">
+<div class="dashboard-titulo">💾 <span data-i18n="sessoes.11-diagnostico.card_ksm">Compartilhamento de Memória</span></div>
+<div class="dashboard-valor" data-diag="ksm_status">—</div>
+<div class="dashboard-subtexto" data-diag="ksm_detalhe">—</div>
+</div>
+
+<!-- Ajustes para Jogos (vm.max_map_count) -->
+<div class="dashboard-card">
+<div class="dashboard-titulo">🎮 <span data-i18n="sessoes.11-diagnostico.card_max_map">Ajustes para Jogos</span></div>
+<div class="dashboard-valor" data-diag="max_map_status">—</div>
+<div class="dashboard-subtexto" data-diag="max_map_detalhe">—</div>
+</div>
+
+<!-- Aceleração de Rede (TCP BBR) -->
+<div class="dashboard-card">
+<div class="dashboard-titulo">🌐 <span data-i18n="sessoes.11-diagnostico.card_bbr">Aceleração de Rede</span></div>
+<div class="dashboard-valor" data-diag="bbr_status">—</div>
+<div class="dashboard-subtexto" data-diag="bbr_detalhe">—</div>
+</div>
+
+<!-- Latência de Áudio (PipeWire quantum) -->
+<div class="dashboard-card">
+<div class="dashboard-titulo">🔊 <span data-i18n="sessoes.11-diagnostico.card_pipewire">Latência de Áudio</span></div>
+<div class="dashboard-valor" data-diag="pw_status">—</div>
+<div class="dashboard-subtexto" data-diag="pw_detalhe">—</div>
+</div>
+
+</div>
+
+<div class="info-extra" style="margin-top: 1rem;" data-i18n-html="sessoes.11-diagnostico.otimizacoes_info">
+ℹ️ <strong>Sobre os valores:</strong> esta seção apenas mostra o que está ativo agora. Cada ajuste é reversível e pode ser aplicado ou desfeito individualmente nas sessões 02 (Otimização) e 07 (Produção Multimídia). Se um ajuste estiver em branco ou mostrar "N/D", pode ser que o recurso não esteja disponível neste kernel — não é um erro.
+</div>
+</div>
+</div>
+
+</div>
+</details>
+
+<!-- ============================================================
 ARMAZENAMENTO
 ============================================================ -->
 <details class="acordeao">
@@ -363,53 +418,53 @@ data-i18n="sessoes.11-diagnostico.btn_journal_check">
 // funcional. Nenhum erro é lançado.
 
 function _t(chave, fallback) {
-return (typeof tOr === 'function') ? tOr(chave, fallback) : fallback;
+    return (typeof tOr === 'function') ? tOr(chave, fallback) : fallback;
 }
 
 // ------------------------------------------------------------
 // Helper: gerencia visibilidade do botão "Abrir X"
 // ------------------------------------------------------------
 function _atualizarBotaoAbrir(idInstalacao, idBotaoAbrir) {
-var btn = document.getElementById(idBotaoAbrir);
-if (!btn) return;
-if (isExecutado(idInstalacao)) {
-btn.style.display = '';
-} else {
-btn.style.display = 'none';
-}
+    var btn = document.getElementById(idBotaoAbrir);
+    if (!btn) return;
+    if (isExecutado(idInstalacao)) {
+        btn.style.display = '';
+    } else {
+        btn.style.display = 'none';
+    }
 }
 
 // ------------------------------------------------------------
 // Utilitário: chamada a endpoint com fallback silencioso
 // ------------------------------------------------------------
 async function _fetchJSON(endpoint) {
-try {
-var r = await fetch(API_URL + endpoint, { cache: 'no-store' });
-if (!r.ok) return null;
-return await r.json();
-} catch (e) {
-return null;
-}
+    try {
+        var r = await fetch(API_URL + endpoint, { cache: 'no-store' });
+        if (!r.ok) return null;
+        return await r.json();
+    } catch (e) {
+        return null;
+    }
 }
 
 // ------------------------------------------------------------
 // Formatação de tamanhos
 // ------------------------------------------------------------
 function _formatarBytes(bytes) {
-if (bytes == null || isNaN(bytes)) return '—';
-var units = ['B', 'KB', 'MB', 'GB', 'TB'];
-var i = 0;
-var n = Number(bytes);
-while (n >= 1024 && i < units.length - 1) {
-n /= 1024;
-i++;
-}
-return n.toFixed(i === 0 ? 0 : 1) + ' ' + units[i];
+    if (bytes == null || isNaN(bytes)) return '—';
+    var units = ['B', 'KB', 'MB', 'GB', 'TB'];
+    var i = 0;
+    var n = Number(bytes);
+    while (n >= 1024 && i < units.length - 1) {
+        n /= 1024;
+        i++;
+    }
+    return n.toFixed(i === 0 ? 0 : 1) + ' ' + units[i];
 }
 
 function _formatarPercent(usado, total) {
-if (!total || total <= 0) return '—';
-return Math.round((usado / total) * 100) + '%';
+    if (!total || total <= 0) return '—';
+    return Math.round((usado / total) * 100) + '%';
 }
 
 // ============================================================
@@ -417,95 +472,191 @@ return Math.round((usado / total) * 100) + '%';
 // ============================================================
 
 async function atualizarPainelDiagnostico() {
-var dash = document.getElementById('diag-dashboard');
-if (!dash) return;
+    var dash = document.getElementById('diag-dashboard');
+    if (!dash) return;
 
-var sys = await _fetchJSON('/system-info');
+    var sys = await _fetchJSON('/system-info');
 
-_setDiagValor(dash, 'fedora', sys && sys.fedora ? sys.fedora : '—');
-_setDiagValor(dash, 'kernel', sys && sys.kernel ? sys.kernel : '—');
-_setDiagValor(dash, 'cpu', sys && sys.cpu ? sys.cpu : '—');
-_setDiagValor(dash, 'cpu_uso', sys && sys.cpu_uso != null ? sys.cpu_uso + '%' : '—');
+    _setDiagValor(dash, 'fedora', sys && sys.fedora ? sys.fedora : '—');
+    _setDiagValor(dash, 'kernel', sys && sys.kernel ? sys.kernel : '—');
+    _setDiagValor(dash, 'cpu', sys && sys.cpu ? sys.cpu : '—');
+    _setDiagValor(dash, 'cpu_uso', sys && sys.cpu_uso != null ? sys.cpu_uso + '%' : '—');
 
-if (sys && sys.ram_total && sys.ram_usado != null) {
-_setDiagValor(dash, 'ram', _formatarBytes(sys.ram_total));
-_setDiagValor(dash, 'ram_livre', _formatarBytes(sys.ram_total - sys.ram_usado));
-} else {
-_setDiagValor(dash, 'ram', '—');
-_setDiagValor(dash, 'ram_livre', '—');
-}
+    if (sys && sys.ram_total && sys.ram_usado != null) {
+        _setDiagValor(dash, 'ram', _formatarBytes(sys.ram_total));
+        _setDiagValor(dash, 'ram_livre', _formatarBytes(sys.ram_total - sys.ram_usado));
+    } else {
+        _setDiagValor(dash, 'ram', '—');
+        _setDiagValor(dash, 'ram_livre', '—');
+    }
 
-if (sys && sys.disco_total && sys.disco_usado != null) {
-_setDiagValor(dash, 'disco', _formatarBytes(sys.disco_total));
-_setDiagValor(dash, 'disco_usado',
-_formatarBytes(sys.disco_usado) + ' (' + _formatarPercent(sys.disco_usado, sys.disco_total) + ')');
-} else {
-_setDiagValor(dash, 'disco', '—');
-_setDiagValor(dash, 'disco_usado', '—');
-}
+    if (sys && sys.disco_total && sys.disco_usado != null) {
+        _setDiagValor(dash, 'disco', _formatarBytes(sys.disco_total));
+        _setDiagValor(dash, 'disco_usado',
+            _formatarBytes(sys.disco_usado) + ' (' + _formatarPercent(sys.disco_usado, sys.disco_total) + ')');
+    } else {
+        _setDiagValor(dash, 'disco', '—');
+        _setDiagValor(dash, 'disco_usado', '—');
+    }
 
-if (sys && sys.uptime != null) {
-_setDiagValor(dash, 'uptime', _formatarUptimeLocal(sys.uptime));
-} else {
-_setDiagValor(dash, 'uptime', '—');
-}
-if (sys && sys.boot_time) {
-_setDiagValor(dash, 'boot_time', sys.boot_time);
-} else {
-_setDiagValor(dash, 'boot_time', '—');
-}
+    if (sys && sys.uptime != null) {
+        _setDiagValor(dash, 'uptime', _formatarUptimeLocal(sys.uptime));
+    } else {
+        _setDiagValor(dash, 'uptime', '—');
+    }
+    if (sys && sys.boot_time) {
+        _setDiagValor(dash, 'boot_time', sys.boot_time);
+    } else {
+        _setDiagValor(dash, 'boot_time', '—');
+    }
 
-_setDiagValor(dash, 'firewall', sys && sys.firewall ? sys.firewall : '—');
-_setDiagValor(dash, 'firewall_zona', sys && sys.firewall_zona ? sys.firewall_zona : '');
-_setDiagValor(dash, 'selinux', sys && sys.selinux ? sys.selinux : '—');
-_setDiagValor(dash, 'selinux_modo', sys && sys.selinux_modo ? sys.selinux_modo : '');
-_setDiagValor(dash, 'processos', sys && sys.processos != null ? sys.processos : '—');
+    _setDiagValor(dash, 'firewall', sys && sys.firewall ? sys.firewall : '—');
+    _setDiagValor(dash, 'firewall_zona', sys && sys.firewall_zona ? sys.firewall_zona : '');
+    _setDiagValor(dash, 'selinux', sys && sys.selinux ? sys.selinux : '—');
+    _setDiagValor(dash, 'selinux_modo', sys && sys.selinux_modo ? sys.selinux_modo : '');
+    _setDiagValor(dash, 'processos', sys && sys.processos != null ? sys.processos : '—');
 
-await _atualizarTopProcessos();
-await _atualizarParticiones();
-_aplicarCoresCondicionais(dash, sys);
+    await _atualizarTopProcessos();
+    await _atualizarParticiones();
+    _atualizarOtimizacoes(sys);
+    _aplicarCoresCondicionais(dash, sys);
 }
 
 function _setDiagValor(root, chave, valor) {
-var el = root.querySelector('[data-diag="' + chave + '"]');
-if (el) el.textContent = valor;
+    var el = root.querySelector('[data-diag="' + chave + '"]');
+    if (el) el.textContent = valor;
 }
 
 function _aplicarCoresCondicionais(root, sys) {
-if (!sys) return;
+    if (!sys) return;
 
-var cpuEl = root.querySelector('[data-diag="cpu_uso"]');
-if (cpuEl && sys.cpu_uso != null) {
-if (sys.cpu_uso > 85) cpuEl.classList.add('erro');
-else if (sys.cpu_uso > 60) cpuEl.classList.add('alerta');
-else cpuEl.classList.add('ok');
-}
+    var cpuEl = root.querySelector('[data-diag="cpu_uso"]');
+    if (cpuEl && sys.cpu_uso != null) {
+        if (sys.cpu_uso > 85) cpuEl.classList.add('erro');
+        else if (sys.cpu_uso > 60) cpuEl.classList.add('alerta');
+        else cpuEl.classList.add('ok');
+    }
 
-var discoEl = root.querySelector('[data-diag="disco_usado"]');
-if (discoEl && sys.disco_total && sys.disco_usado != null) {
-var pct = (sys.disco_usado / sys.disco_total) * 100;
-if (pct > 90) discoEl.classList.add('erro');
-else if (pct > 75) discoEl.classList.add('alerta');
-else discoEl.classList.add('ok');
-}
+    var discoEl = root.querySelector('[data-diag="disco_usado"]');
+    if (discoEl && sys.disco_total && sys.disco_usado != null) {
+        var pct = (sys.disco_usado / sys.disco_total) * 100;
+        if (pct > 90) discoEl.classList.add('erro');
+        else if (pct > 75) discoEl.classList.add('alerta');
+        else discoEl.classList.add('ok');
+    }
 
-var ramEl = root.querySelector('[data-diag="ram_livre"]');
-if (ramEl && sys.ram_total && sys.ram_usado != null) {
-var ramPct = (sys.ram_usado / sys.ram_total) * 100;
-if (ramPct > 90) ramEl.classList.add('erro');
-else if (ramPct > 75) ramEl.classList.add('alerta');
-else ramEl.classList.add('ok');
-}
+    var ramEl = root.querySelector('[data-diag="ram_livre"]');
+    if (ramEl && sys.ram_total && sys.ram_usado != null) {
+        var ramPct = (sys.ram_usado / sys.ram_total) * 100;
+        if (ramPct > 90) ramEl.classList.add('erro');
+        else if (ramPct > 75) ramEl.classList.add('alerta');
+        else ramEl.classList.add('ok');
+    }
 }
 
 function _formatarUptimeLocal(segundos) {
-if (segundos == null) return '—';
-var d = Math.floor(segundos / 86400);
-var h = Math.floor((segundos % 86400) / 3600);
-var m = Math.floor((segundos % 3600) / 60);
-if (d > 0) return d + 'd ' + h + 'h';
-if (h > 0) return h + 'h ' + m + 'min';
-return m + 'min';
+    if (segundos == null) return '—';
+    var d = Math.floor(segundos / 86400);
+    var h = Math.floor((segundos % 86400) / 3600);
+    var m = Math.floor((segundos % 3600) / 60);
+    if (d > 0) return d + 'd ' + h + 'h';
+    if (h > 0) return h + 'h ' + m + 'min';
+    return m + 'min';
+}
+
+// ============================================================
+// AJUSTES DE OTIMIZAÇÕES
+// ============================================================
+//
+// Lê os campos novos do /system-info (ksm_run, ksm_pages_saved,
+// tcp_congestion, max_map_count, pipewire_quantum) e mostra o
+// estado de cada ajuste com cor condicional (verde = otimizado,
+// neutro = padrão).
+//
+// A conversão de KSM é feita porque `pages_sharing` é contado em
+// páginas do kernel (tipicamente 4 KB cada em x86_64). Portanto:
+// MB = pages_sharing * 4096 / (1024 * 1024) = pages_sharing / 256.
+
+function _atualizarOtimizacoes(sys) {
+    var root = document.getElementById('diag-otimizacoes-grid');
+    if (!root) return;
+
+    if (!sys) {
+        _setDiagValor(root, 'ksm_status', '—');
+        _setDiagValor(root, 'ksm_detalhe', '—');
+        _setDiagValor(root, 'max_map_status', '—');
+        _setDiagValor(root, 'max_map_detalhe', '—');
+        _setDiagValor(root, 'bbr_status', '—');
+        _setDiagValor(root, 'bbr_detalhe', '—');
+        _setDiagValor(root, 'pw_status', '—');
+        _setDiagValor(root, 'pw_detalhe', '—');
+        return;
+    }
+
+    // --------- KSM (Compartilhamento de Memória) ---------
+    var ksmRun = sys.ksm_run === '1';
+    var ksmPages = parseInt(sys.ksm_pages_saved, 10) || 0;
+    var ksmStatusEl = root.querySelector('[data-diag="ksm_status"]');
+
+    if (ksmRun) {
+        _setDiagValor(root, 'ksm_status', '✅ Ativo');
+        if (ksmPages > 0) {
+            var ksmMB = (ksmPages / 256).toFixed(1);
+            _setDiagValor(root, 'ksm_detalhe', '≈ ' + ksmMB + ' MB economizados');
+        } else {
+            _setDiagValor(root, 'ksm_detalhe', 'Ativo, ainda sem dados');
+        }
+        if (ksmStatusEl) { ksmStatusEl.classList.remove('erro', 'alerta'); ksmStatusEl.classList.add('ok'); }
+    } else {
+        _setDiagValor(root, 'ksm_status', '⚪ Inativo');
+        _setDiagValor(root, 'ksm_detalhe', 'Padrão do Fedora');
+        if (ksmStatusEl) { ksmStatusEl.classList.remove('ok', 'erro', 'alerta'); }
+    }
+
+    // --------- vm.max_map_count (Ajustes para Jogos) ---------
+    var mmc = parseInt(sys.max_map_count, 10) || 0;
+    var mmcOk = mmc >= 1000000;
+    var mmcStatusEl = root.querySelector('[data-diag="max_map_status"]');
+
+    if (mmcOk) {
+        _setDiagValor(root, 'max_map_status', '✅ Ajustado');
+        _setDiagValor(root, 'max_map_detalhe', 'Limite: ' + mmc.toLocaleString('pt-BR'));
+        if (mmcStatusEl) { mmcStatusEl.classList.remove('erro', 'alerta'); mmcStatusEl.classList.add('ok'); }
+    } else {
+        _setDiagValor(root, 'max_map_status', '⚪ Padrão');
+        _setDiagValor(root, 'max_map_detalhe', 'Limite: ' + mmc.toLocaleString('pt-BR'));
+        if (mmcStatusEl) { mmcStatusEl.classList.remove('ok', 'erro', 'alerta'); }
+    }
+
+    // --------- TCP BBR (Aceleração de Rede) ---------
+    var algo = sys.tcp_congestion || 'unknown';
+    var bbr = algo === 'bbr';
+    var bbrStatusEl = root.querySelector('[data-diag="bbr_status"]');
+
+    if (bbr) {
+        _setDiagValor(root, 'bbr_status', '✅ BBR');
+        _setDiagValor(root, 'bbr_detalhe', 'Algoritmo: ' + algo);
+        if (bbrStatusEl) { bbrStatusEl.classList.remove('erro', 'alerta'); bbrStatusEl.classList.add('ok'); }
+    } else {
+        _setDiagValor(root, 'bbr_status', '⚪ Padrão');
+        _setDiagValor(root, 'bbr_detalhe', 'Algoritmo: ' + algo);
+        if (bbrStatusEl) { bbrStatusEl.classList.remove('ok', 'erro', 'alerta'); }
+    }
+
+    // --------- PipeWire quantum (Latência de Áudio) ---------
+    var pw = parseInt(sys.pipewire_quantum, 10) || 1024;
+    var pwLow = pw <= 512 && pw > 0;
+    var pwStatusEl = root.querySelector('[data-diag="pw_status"]');
+
+    if (pwLow) {
+        _setDiagValor(root, 'pw_status', '✅ Baixa latência');
+        _setDiagValor(root, 'pw_detalhe', 'Quantum: ' + pw + ' amostras');
+        if (pwStatusEl) { pwStatusEl.classList.remove('erro', 'alerta'); pwStatusEl.classList.add('ok'); }
+    } else {
+        _setDiagValor(root, 'pw_status', '⚪ Padrão');
+        _setDiagValor(root, 'pw_detalhe', 'Quantum: ' + pw + ' amostras');
+        if (pwStatusEl) { pwStatusEl.classList.remove('ok', 'erro', 'alerta'); }
+    }
 }
 
 // ============================================================
@@ -513,45 +664,45 @@ return m + 'min';
 // ============================================================
 
 async function _atualizarTopProcessos() {
-var top = await _fetchJSON('/top-processes');
-var ulCpu = document.getElementById('diag-top-cpu');
-var ulRam = document.getElementById('diag-top-ram');
-if (!ulCpu || !ulRam) return;
+    var top = await _fetchJSON('/top-processes');
+    var ulCpu = document.getElementById('diag-top-cpu');
+    var ulRam = document.getElementById('diag-top-ram');
+    if (!ulCpu || !ulRam) return;
 
-ulCpu.innerHTML = '';
-ulRam.innerHTML = '';
+    ulCpu.innerHTML = '';
+    ulRam.innerHTML = '';
 
-var topCpu = (top && top.cpu) ? top.cpu : [];
-var topRam = (top && top.ram) ? top.ram : [];
+    var topCpu = (top && top.cpu) ? top.cpu : [];
+    var topRam = (top && top.ram) ? top.ram : [];
 
-if (topCpu.length === 0) {
-ulCpu.innerHTML = '<li><span class="label">—</span><span class="valor">—</span></li>';
-} else {
-topCpu.slice(0, 5).forEach(function(p) {
-var li = document.createElement('li');
-li.innerHTML = '<span class="label">' + _escapeHTML(p.nome || '?') + '</span>' +
-'<span class="valor">' + (p.cpu != null ? p.cpu + '%' : '—') + '</span>';
-ulCpu.appendChild(li);
-});
-}
+    if (topCpu.length === 0) {
+        ulCpu.innerHTML = '<li><span class="label">—</span><span class="valor">—</span></li>';
+    } else {
+        topCpu.slice(0, 5).forEach(function(p) {
+            var li = document.createElement('li');
+            li.innerHTML = '<span class="label">' + _escapeHTML(p.nome || '?') + '</span>' +
+                '<span class="valor">' + (p.cpu != null ? p.cpu + '%' : '—') + '</span>';
+            ulCpu.appendChild(li);
+        });
+    }
 
-if (topRam.length === 0) {
-ulRam.innerHTML = '<li><span class="label">—</span><span class="valor">—</span></li>';
-} else {
-topRam.slice(0, 5).forEach(function(p) {
-var li = document.createElement('li');
-li.innerHTML = '<span class="label">' + _escapeHTML(p.nome || '?') + '</span>' +
-'<span class="valor">' + (p.ram != null ? p.ram : '—') + '</span>';
-ulRam.appendChild(li);
-});
-}
+    if (topRam.length === 0) {
+        ulRam.innerHTML = '<li><span class="label">—</span><span class="valor">—</span></li>';
+    } else {
+        topRam.slice(0, 5).forEach(function(p) {
+            var li = document.createElement('li');
+            li.innerHTML = '<span class="label">' + _escapeHTML(p.nome || '?') + '</span>' +
+                '<span class="valor">' + (p.ram != null ? p.ram : '—') + '</span>';
+            ulRam.appendChild(li);
+        });
+    }
 }
 
 function _escapeHTML(s) {
-if (s == null) return '';
-return String(s).replace(/[&<>"']/g, function(c) {
-return {'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c];
-});
+    if (s == null) return '';
+    return String(s).replace(/[&<>"']/g, function(c) {
+        return {'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c];
+    });
 }
 
 // ============================================================
@@ -559,30 +710,30 @@ return {'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c];
 // ============================================================
 
 async function _atualizarParticiones() {
-var ul = document.getElementById('diag-particiones');
-if (!ul) return;
+    var ul = document.getElementById('diag-particiones');
+    if (!ul) return;
 
-var data = await _fetchJSON('/disk-usage');
-var parts = (data && data.particoes) ? data.particoes : [];
+    var data = await _fetchJSON('/disk-usage');
+    var parts = (data && data.particoes) ? data.particoes : [];
 
-ul.innerHTML = '';
+    ul.innerHTML = '';
 
-if (parts.length === 0) {
-ul.innerHTML = '<li><span class="label">—</span><span class="valor">—</span></li>';
-return;
-}
+    if (parts.length === 0) {
+        ul.innerHTML = '<li><span class="label">—</span><span class="valor">—</span></li>';
+        return;
+    }
 
-parts.forEach(function(p) {
-var li = document.createElement('li');
-var totalFmt = _formatarBytes(p.total);
-var usadoFmt = _formatarBytes(p.usado);
-var pct = _formatarPercent(p.usado, p.total);
+    parts.forEach(function(p) {
+        var li = document.createElement('li');
+        var totalFmt = _formatarBytes(p.total);
+        var usadoFmt = _formatarBytes(p.usado);
+        var pct = _formatarPercent(p.usado, p.total);
 
-li.innerHTML =
-'<span class="label">' + _escapeHTML(p.montagem || p.dispositivo || '?') + '</span>' +
-'<span class="valor">' + usadoFmt + ' / ' + totalFmt + ' (' + pct + ')</span>';
-ul.appendChild(li);
-});
+        li.innerHTML =
+            '<span class="label">' + _escapeHTML(p.montagem || p.dispositivo || '?') + '</span>' +
+            '<span class="valor">' + usadoFmt + ' / ' + totalFmt + ' (' + pct + ')</span>';
+        ul.appendChild(li);
+    });
 }
 
 // ============================================================
@@ -590,15 +741,15 @@ ul.appendChild(li);
 // ============================================================
 
 async function executarBaobab() {
-var idComando = 'baobab-install';
-var comando = 'sudo dnf install -y baobab';
-await executarComandoGenerico(idComando, comando, _t('sessoes.11-diagnostico.btn_baobab', '📦 Instalar Baobab'), function() {
-_atualizarBotaoAbrir('baobab-install', 'btn-abrir-baobab');
-});
+    var idComando = 'baobab-install';
+    var comando = 'sudo dnf install -y baobab';
+    await executarComandoGenerico(idComando, comando, _t('sessoes.11-diagnostico.btn_baobab', '📦 Instalar Baobab'), function() {
+        _atualizarBotaoAbrir('baobab-install', 'btn-abrir-baobab');
+    });
 }
 
 function abrirBaobab() {
-abrirFerramentaExterna('gtk-launch baobab 2>/dev/null &', 'baobab-install', 'Baobab');
+    abrirFerramentaExterna('gtk-launch baobab 2>/dev/null &', 'baobab-install', 'Baobab');
 }
 
 // ============================================================
@@ -606,15 +757,15 @@ abrirFerramentaExterna('gtk-launch baobab 2>/dev/null &', 'baobab-install', 'Bao
 // ============================================================
 
 async function executarGSmartControl() {
-var idComando = 'gsmartcontrol-install';
-var comando = 'sudo dnf install -y gsmartcontrol';
-await executarComandoGenerico(idComando, comando, _t('sessoes.11-diagnostico.btn_gsmart_install', '📦 Instalar GSmartControl'), function() {
-_atualizarBotaoAbrir('gsmartcontrol-install', 'btn-abrir-gsmartcontrol');
-});
+    var idComando = 'gsmartcontrol-install';
+    var comando = 'sudo dnf install -y gsmartcontrol';
+    await executarComandoGenerico(idComando, comando, _t('sessoes.11-diagnostico.btn_gsmart_install', '📦 Instalar GSmartControl'), function() {
+        _atualizarBotaoAbrir('gsmartcontrol-install', 'btn-abrir-gsmartcontrol');
+    });
 }
 
 function abrirGSmartControl() {
-abrirFerramentaExterna('gtk-launch gsmartcontrol 2>/dev/null &', 'gsmartcontrol-install', 'GSmartControl');
+    abrirFerramentaExterna('gtk-launch gsmartcontrol 2>/dev/null &', 'gsmartcontrol-install', 'GSmartControl');
 }
 
 // ============================================================
@@ -638,21 +789,21 @@ abrirFerramentaExterna('gtk-launch gsmartcontrol 2>/dev/null &', 'gsmartcontrol-
 // valer — o resto já funciona imediatamente.
 
 async function executarCoolerControl() {
-var idComando = 'coolercontrol-install';
-var comando =
-'sudo dnf copr enable codifryed/CoolerControl -y && ' +
-'sudo dnf install -y coolercontrol && ' +
-'sudo systemctl enable --now coolercontrold && ' +
-'sudo usermod -aG coolercontrol $USER';
-await executarComandoGenerico(idComando, comando, _t('sessoes.11-diagnostico.btn_coolercontrol_install', '📦 Instalar CoolerControl'), function() {
-_atualizarBotaoAbrir('coolercontrol-install', 'btn-abrir-coolercontrol');
-});
+    var idComando = 'coolercontrol-install';
+    var comando =
+        'sudo dnf copr enable codifryed/CoolerControl -y && ' +
+        'sudo dnf install -y coolercontrol && ' +
+        'sudo systemctl enable --now coolercontrold && ' +
+        'sudo usermod -aG coolercontrol $USER';
+    await executarComandoGenerico(idComando, comando, _t('sessoes.11-diagnostico.btn_coolercontrol_install', '📦 Instalar CoolerControl'), function() {
+        _atualizarBotaoAbrir('coolercontrol-install', 'btn-abrir-coolercontrol');
+    });
 }
 
 function abrirCoolerControl() {
-// A GUI do CoolerControl se conecta ao daemon via socket local.
-// Como o daemon foi habilitado no install, basta lançar a GUI.
-abrirFerramentaExterna('gtk-launch coolercontrol 2>/dev/null &', 'coolercontrol-install', 'CoolerControl');
+    // A GUI do CoolerControl se conecta ao daemon via socket local.
+    // Como o daemon foi habilitado no install, basta lançar a GUI.
+    abrirFerramentaExterna('gtk-launch coolercontrol 2>/dev/null &', 'coolercontrol-install', 'CoolerControl');
 }
 
 // ============================================================
@@ -660,122 +811,122 @@ abrirFerramentaExterna('gtk-launch coolercontrol 2>/dev/null &', 'coolercontrol-
 // ============================================================
 
 async function verificarJournalErrors() {
-var idComando = 'journal-errors-check';
-var logBox = _getLogBox(idComando);
-var btn = document.getElementById('btn-' + idComando);
-var resumo = document.getElementById('diag-journal-resumo');
-var conteudo = document.getElementById('diag-journal-conteudo');
+    var idComando = 'journal-errors-check';
+    var logBox = _getLogBox(idComando);
+    var btn = document.getElementById('btn-' + idComando);
+    var resumo = document.getElementById('diag-journal-resumo');
+    var conteudo = document.getElementById('diag-journal-conteudo');
 
-if (!logBox) return;
+    if (!logBox) return;
 
-if (btn) {
-btn.disabled = true;
-btn.textContent = '⏳ ' + _t('sessoes.11-diagnostico.btn_journal_check', '📋 Verificar Erros Recentes') + '...';
-btn.style.opacity = '0.6';
-}
+    if (btn) {
+        btn.disabled = true;
+        btn.textContent = '⏳ ' + _t('sessoes.11-diagnostico.btn_journal_check', '📋 Verificar Erros Recentes') + '...';
+        btn.style.opacity = '0.6';
+    }
 
-var data = await _fetchJSON('/journal-errors');
+    var data = await _fetchJSON('/journal-errors');
 
-if (conteudo && resumo) {
-resumo.style.display = 'block';
+    if (conteudo && resumo) {
+        resumo.style.display = 'block';
 
-if (!data || !data.grupos || data.grupos.length === 0) {
-conteudo.innerHTML = '<strong>✅ Nenhum erro relevante nas últimas 24 horas.</strong>';
-} else {
-var html = '<strong>Erros agrupados por origem (últimas 24h):</strong><ul style="margin-top: 0.5rem; padding-left: 1.25rem;">';
-data.grupos.forEach(function(g) {
-html += '<li style="margin-bottom: 0.35rem;">' +
-'<code>' + _escapeHTML(g.origem) + '</code> — ' +
-'<strong>' + g.contagem + ' ocorrência(s)</strong>' +
-(g.exemplo ? '<br><span style="font-size: 0.85em; color: var(--text-muted);">Exemplo: ' + _escapeHTML(g.exemplo) + '</span>' : '') +
-'</li>';
-});
-html += '</ul>';
-conteudo.innerHTML = html;
-}
-}
+        if (!data || !data.grupos || data.grupos.length === 0) {
+            conteudo.innerHTML = '<strong>✅ Nenhum erro relevante nas últimas 24 horas.</strong>';
+        } else {
+            var html = '<strong>Erros agrupados por origem (últimas 24h):</strong><ul style="margin-top: 0.5rem; padding-left: 1.25rem;">';
+            data.grupos.forEach(function(g) {
+                html += '<li style="margin-bottom: 0.35rem;">' +
+                    '<code>' + _escapeHTML(g.origem) + '</code> — ' +
+                    '<strong>' + g.contagem + ' ocorrência(s)</strong>' +
+                    (g.exemplo ? '<br><span style="font-size: 0.85em; color: var(--text-muted);">Exemplo: ' + _escapeHTML(g.exemplo) + '</span>' : '') +
+                    '</li>';
+            });
+            html += '</ul>';
+            conteudo.innerHTML = html;
+        }
+    }
 
-if (btn) {
-btn.disabled = false;
-btn.textContent = _t('sessoes.11-diagnostico.btn_journal_check', '📋 Verificar Erros Recentes');
-btn.style.opacity = '1';
-}
+    if (btn) {
+        btn.disabled = false;
+        btn.textContent = _t('sessoes.11-diagnostico.btn_journal_check', '📋 Verificar Erros Recentes');
+        btn.style.opacity = '1';
+    }
 }
 
 // ============================================================
 // RESTAURAR ESTADO DA SESSÃO
 // ============================================================
 function restaurarEstadoSessao() {
-// Botões não-reversíveis: se já foram executados, marcar como
-// concluídos e desabilitar.
-var comandosNaoReversiveis = [
-'baobab-install',
-'gsmartcontrol-install',
-'coolercontrol-install'
-];
+    // Botões não-reversíveis: se já foram executados, marcar como
+    // concluídos e desabilitar.
+    var comandosNaoReversiveis = [
+        'baobab-install',
+        'gsmartcontrol-install',
+        'coolercontrol-install'
+    ];
 
-comandosNaoReversiveis.forEach(function(id) {
-if (isExecutado(id)) {
-var btn = document.getElementById('btn-' + id);
-if (btn) {
-var textoFinal = getTextoAposExecucao(id);
-btn.textContent = textoFinal;
-btn.style.backgroundColor = '#4b5563';
-btn.style.cursor = 'default';
-btn.disabled = true;
-}
-}
-});
+    comandosNaoReversiveis.forEach(function(id) {
+        if (isExecutado(id)) {
+            var btn = document.getElementById('btn-' + id);
+            if (btn) {
+                var textoFinal = getTextoAposExecucao(id);
+                btn.textContent = textoFinal;
+                btn.style.backgroundColor = '#4b5563';
+                btn.style.cursor = 'default';
+                btn.disabled = true;
+            }
+        }
+    });
 
-// Botões de ação sempre disponíveis
-['diag-refresh', 'journal-errors-check'].forEach(function(id) {
-var btn = document.getElementById('btn-' + id);
-if (btn) {
-btn.disabled = false;
-btn.style.opacity = '1';
-btn.style.cursor = 'pointer';
-}
-});
+    // Botões de ação sempre disponíveis
+    ['diag-refresh', 'journal-errors-check'].forEach(function(id) {
+        var btn = document.getElementById('btn-' + id);
+        if (btn) {
+            btn.disabled = false;
+            btn.style.opacity = '1';
+            btn.style.cursor = 'pointer';
+        }
+    });
 
-// Botões "Abrir X"
-_atualizarBotaoAbrir('baobab-install', 'btn-abrir-baobab');
-_atualizarBotaoAbrir('gsmartcontrol-install', 'btn-abrir-gsmartcontrol');
-_atualizarBotaoAbrir('coolercontrol-install', 'btn-abrir-coolercontrol');
+    // Botões "Abrir X"
+    _atualizarBotaoAbrir('baobab-install', 'btn-abrir-baobab');
+    _atualizarBotaoAbrir('gsmartcontrol-install', 'btn-abrir-gsmartcontrol');
+    _atualizarBotaoAbrir('coolercontrol-install', 'btn-abrir-coolercontrol');
 
-// Popula o painel pela primeira vez
-setTimeout(function() {
-atualizarPainelDiagnostico();
-}, 200);
+    // Popula o painel pela primeira vez
+    setTimeout(function() {
+        atualizarPainelDiagnostico();
+    }, 200);
 }
 
 // ============================================================
 // INICIALIZAÇÃO
 // ============================================================
 (function() {
-document.querySelectorAll('.btn-executar').forEach(function(btn) {
-if (!btn.hasAttribute('data-texto-original')) {
-btn.setAttribute('data-texto-original', btn.textContent);
-}
-});
+    document.querySelectorAll('.btn-executar').forEach(function(btn) {
+        if (!btn.hasAttribute('data-texto-original')) {
+            btn.setAttribute('data-texto-original', btn.textContent);
+        }
+    });
 
-restaurarEstadoSessao();
+    restaurarEstadoSessao();
 
-// Auto-refresh a cada 30s enquanto a sessão estiver visível
-var _autoRefreshInterval = null;
-function iniciarAutoRefresh() {
-if (_autoRefreshInterval) return;
-_autoRefreshInterval = setInterval(function() {
-if (document.getElementById('sessao-11-diagnostico')) {
-var rect = document.getElementById('sessao-11-diagnostico').getBoundingClientRect();
-if (rect.height > 0 && rect.top < window.innerHeight) {
-atualizarPainelDiagnostico();
-}
-}
-}, 30000);
-}
-setTimeout(iniciarAutoRefresh, 5000);
+    // Auto-refresh a cada 30s enquanto a sessão estiver visível
+    var _autoRefreshInterval = null;
+    function iniciarAutoRefresh() {
+        if (_autoRefreshInterval) return;
+        _autoRefreshInterval = setInterval(function() {
+            if (document.getElementById('sessao-11-diagnostico')) {
+                var rect = document.getElementById('sessao-11-diagnostico').getBoundingClientRect();
+                if (rect.height > 0 && rect.top < window.innerHeight) {
+                    atualizarPainelDiagnostico();
+                }
+            }
+        }, 30000);
+    }
+    setTimeout(iniciarAutoRefresh, 5000);
 
-console.log('📦 Componente 11-diagnostico carregado!');
+    console.log('📦 Componente 11-diagnostico carregado!');
 })();
 </script>
 </body>

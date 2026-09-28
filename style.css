@@ -195,7 +195,7 @@ body {
 .grupo-botoes {
     display: inline-flex;
     gap: 0.5rem;
-    align-items: center;
+    align-items: stretch;
     margin-top: 0.5rem;
     flex-wrap: wrap;
 }
@@ -1743,7 +1743,7 @@ body {
 /* ============================================================
  * DASHBOARD
  * ============================================================
- * Grid de cards usada pela sessão 12-central-fof.html.
+ * Grid de cards usada pela sessão 11-diagnostico.html.
  * Mostra métricas de sistema, progresso, tema e idioma.
  */
 
@@ -1902,4 +1902,97 @@ body {
 
 .acordeao .acordeao[open] summary::after {
     transform: rotate(180deg);
+}
+
+/* ============================================================
+ * WRAPPER DE FLATPAK COM ÍCONE DE DESINSTALAR
+ * ============================================================
+ * Usado nas sessões 09-softwares-uteis e 10-casa-pronta.
+ *
+ * Estrutura:
+ *   <div class="btn-flatpak-wrapper">
+ *     <button class="btn-executar">...</button>
+ *     <button class="btn-flatpak-uninstall">🗑️</button>
+ *   </div>
+ *
+ * O wrapper posiciona o botão principal e o ícone lado a lado,
+ * com o ícone no canto direito. O ícone é `display: none` por
+ * padrão — o JS o exibe quando o app é instalado.
+ *
+ * IMPORTANTE: o ícone é um IRMÃO do botão, não um filho. Isso
+ * permite que ele continue clicável mesmo quando o botão
+ * principal está disabled (após a instalação).
+ */
+
+.btn-flatpak-wrapper {
+    position: relative;
+    display: inline-flex;
+    align-items: stretch;
+    gap: 0.35rem;
+}
+
+.btn-flatpak-wrapper .btn-executar {
+    min-width: 0;
+}
+
+.btn-flatpak-uninstall {
+    background-color: transparent;
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    width: 34px;
+    min-width: 34px;
+    align-self: stretch;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    padding: 0;
+    flex-shrink: 0;
+    opacity: 0.85;
+}
+
+.btn-flatpak-uninstall:hover:not(:disabled) {
+    background-color: var(--danger);
+    color: #fff;
+    border-color: var(--danger);
+    opacity: 1;
+    transform: translateY(-1px);
+}
+
+.btn-flatpak-uninstall:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.3);
+}
+
+.btn-flatpak-uninstall:active:not(:disabled) {
+    transform: translateY(0) scale(0.96);
+    transition-duration: 0.05s;
+}
+
+.btn-flatpak-uninstall svg {
+    width: 16px;
+    height: 16px;
+    display: block;
+    stroke: currentColor;
+    fill: none;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    pointer-events: none;
+}
+
+/* Quando dentro do grid-launchers, o wrapper ocupa a célula
+ * inteira (assim o botão fica com a largura que teria sozinho) */
+.grid-launchers .btn-flatpak-wrapper,
+.grid-launchers .launcher-item .btn-flatpak-wrapper {
+    width: 100%;
+}
+
+/* Em telas estreitas, empilha o ícone abaixo se necessário */
+@media (max-width: 480px) {
+    .btn-flatpak-wrapper {
+        flex-wrap: wrap;
+    }
 }

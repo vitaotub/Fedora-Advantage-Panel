@@ -63,7 +63,7 @@
         <div class="fill" id="progress-guia-fill"></div>
     </div>
     <div class="info">
-        <span class="sessao-atual" id="progress-guia-text">1 de 10</span>
+        <span class="sessao-atual" id="progress-guia-text">1 de 13</span>
     </div>
 </div>
 
@@ -78,7 +78,7 @@
 <!-- ===== NAVEGAÇÃO ===== -->
 <div class="nav-guide" id="nav-guide">
     <div class="info">
-        <span id="info-sessao"><strong>1/10</strong> - Carregando...</span>
+        <span id="info-sessao"><strong>1/13</strong> - Carregando...</span>
     </div>
     <div class="botoes">
         <button class="btn-voltar" id="btn-anterior" onclick="sessaoAnterior()" data-i18n="comum.btn_anterior">◀ Anterior</button>
@@ -103,16 +103,21 @@ var sessoesCarregadas = {};
 // A ORDEM DESTE MAPA não importa — a ordem de exibição é
 // definida pela posição em SESSOES_PRINCIPAIS (script.js).
 //
-// Se você adicionar uma sessão nova em script.js, adicione
-// também uma entrada aqui com o mesmo id, senão ela aparece
-// sem ícone no menu (não quebra — só fica sem emoji).
+// IMPORTANTE: mantenha este mapa em sincronia com
+// SESSOES_PRINCIPAIS (script.js). Se você adicionar uma sessão
+// nova no array SESSOES, adicione também uma entrada aqui com o
+// mesmo id. Se você renomear uma sessão (ex.: 04-fontes →
+// 04-codecs-compatibilidade), atualize a chave aqui também.
+//
+// Sessões sem entrada aqui NÃO quebram — só aparecem sem ícone
+// no menu (o chip fica com o número e o label, sem emoji).
 // ------------------------------------------------------------
 var ICONES_SESSOES = {
     '00-boas-vindas': '👋',
     '01-restauracao': '💾',
     '02-otimizacao': '⚙️',
     '03-repositorios': '📦',
-    '04-fontes': '🔤',
+    '04-codecs-compatibilidade': '🔤',
     '05-hardware': '🖥️',
     '06-gaming': '🎮',
     '07-loja': '🎬',
@@ -120,8 +125,7 @@ var ICONES_SESSOES = {
     '09-softwares-uteis': '📦',
     '10-casa-pronta': '🏠',
     '11-diagnostico': '📊',
-    '12-central-fof': '📋',
-    '13-fedora': '🐧'
+    '12-fedora': '🐧'
 };
 
 // ------------------------------------------------------------

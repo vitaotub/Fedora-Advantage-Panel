@@ -251,27 +251,6 @@ data-i18n="sessoes.05-hardware.btn_modeset_off">
 </div>
 </div>
 
-<div class="bloco-comando">
-<div class="comando-info">
-<h3 data-i18n="sessoes.05-hardware.coolercontrol_titulo">CoolerControl</h3>
-<p data-i18n="sessoes.05-hardware.coolercontrol_desc">Interface gráfica para controle de fans. Suporta Nvidia e AMD. Substitui o GreenWithEnvy (que está abandonado).</p>
-<div class="grupo-botoes">
-<button class="btn-executar"
-onclick="executarCoolerControl()"
-data-comando="coolercontrol-install"
-data-logbox="log-sessao-05-hardware"
-id="btn-coolercontrol-install"
-data-i18n="sessoes.05-hardware.btn_coolercontrol">
-📦 Instalar CoolerControl (Flatpak)
-</button>
-</div>
-</div>
-<div class="progress-container" id="progress-coolercontrol-install">
-<div class="progress-bar"><div class="progress-fill" id="progress-fill-coolercontrol-install"></div></div>
-<div class="progress-text"><span class="status" id="progress-status-coolercontrol-install">⏳ Iniciando...</span><span class="percentage" id="progress-percent-coolercontrol-install">0%</span></div>
-</div>
-</div>
-
 </div>
 </details>
 
@@ -318,6 +297,32 @@ data-i18n="sessoes.05-hardware.btn_input_remove">
 </div>
 </div>
 
+<div class="bloco-comando">
+<div class="comando-info">
+<h3 data-i18n="sessoes.05-hardware.steam_devices_titulo">Regras Udev para Controles (Steam Devices)</h3>
+<p data-i18n="sessoes.05-hardware.steam_devices_desc">Instala as regras udev do pacote <code>steam-devices</code>, que permitem ao sistema reconhecer corretamente controles Xbox, PlayStation e Nintendo ao usá-los com o Steam.</p>
+
+<div class="info-extra" data-i18n-html="sessoes.05-hardware.steam_devices_info">
+ℹ️ <strong>O que isso resolve:</strong> sem essas regras, alguns controles podem não ser detectados pelo Steam, mesmo conectados. É um pacote pequeno e complementar ao grupo <code>input</code> acima — o grupo dá permissão ao seu usuário, e este pacote ensina o sistema a identificar cada modelo de controle.
+</div>
+
+<div class="grupo-botoes">
+<button class="btn-executar verde"
+onclick="executarSteamDevices()"
+data-comando="steam-devices-install"
+data-logbox="log-sessao-05-hardware"
+id="btn-steam-devices-install"
+data-i18n="sessoes.05-hardware.btn_steam_devices">
+🎮 Instalar Regras para Controles
+</button>
+</div>
+</div>
+<div class="progress-container" id="progress-steam-devices-install">
+<div class="progress-bar"><div class="progress-fill" id="progress-fill-steam-devices-install"></div></div>
+<div class="progress-text"><span class="status" id="progress-status-steam-devices-install">⏳ Iniciando...</span><span class="percentage" id="progress-percent-steam-devices-install">0%</span></div>
+</div>
+</div>
+
 </div>
 </details>
 
@@ -330,7 +335,7 @@ data-i18n="sessoes.05-hardware.btn_input_remove">
 // ============================================================
 
 function _t(chave, fallback) {
-return (typeof tOr === 'function') ? tOr(chave, fallback) : fallback;
+    return (typeof tOr === 'function') ? tOr(chave, fallback) : fallback;
 }
 
 // ------------------------------------------------------------
@@ -338,43 +343,34 @@ return (typeof tOr === 'function') ? tOr(chave, fallback) : fallback;
 // ------------------------------------------------------------
 
 function _marcarBotaoConcluido(idComando) {
-var btn = document.getElementById('btn-' + idComando);
-if (!btn) return;
-// Preserva a cor original ANTES de sobrescrever para o cinza de
-// "concluído". Sem isso, `_corOriginalDoBotao` (chamada em eventual
-// desinstalação) leria o cinza como se fosse a cor original, e o
-// "desfazer" restauraria o botão na cor errada.
-_corOriginalDoBotao(btn);
-btn.textContent = getTextoAposExecucao(idComando);
-btn.style.backgroundColor = '#4b5563';
-btn.style.cursor = 'default';
-btn.disabled = true;
-btn.style.opacity = '1';
+    var btn = document.getElementById('btn-' + idComando);
+    if (!btn) return;
+    _corOriginalDoBotao(btn);
+    btn.textContent = getTextoAposExecucao(idComando);
+    btn.style.backgroundColor = '#4b5563';
+    btn.style.cursor = 'default';
+    btn.disabled = true;
+    btn.style.opacity = '1';
 }
 
 function _resetarBotao(idComando, fallbackText) {
-var btn = document.getElementById('btn-' + idComando);
-if (!btn) return;
-var original = btn.getAttribute('data-texto-original') || fallbackText;
-btn.textContent = original;
-btn.style.backgroundColor = '';
-btn.style.cursor = 'pointer';
-btn.disabled = false;
-btn.style.opacity = '1';
+    var btn = document.getElementById('btn-' + idComando);
+    if (!btn) return;
+    var original = btn.getAttribute('data-texto-original') || fallbackText;
+    btn.textContent = original;
+    btn.style.backgroundColor = '';
+    btn.style.cursor = 'pointer';
+    btn.disabled = false;
+    btn.style.opacity = '1';
 }
 
-// Reseta o botão irmão do toggle. Faz a chamada ao servidor PRIMEIRO
-// e só depois reseta o botão visualmente. Se o servidor falhar, o
-// botão NÃO é resetado — assim ele continua consistente com o estado
-// persistido (evita o cenário em que a UI diz "não executado" mas o
-// servidor ainda tem o id marcado).
 async function _resetarIrmao(idIrmao, fallbackText) {
-try {
-await desmarcarComoExecutado(idIrmao);
-_resetarBotao(idIrmao, fallbackText);
-} catch (e) {
-console.error('Erro ao limpar estado do botão irmão ' + idIrmao + ':', e);
-}
+    try {
+        await desmarcarComoExecutado(idIrmao);
+        _resetarBotao(idIrmao, fallbackText);
+    } catch (e) {
+        console.error('Erro ao limpar estado do botão irmão ' + idIrmao + ':', e);
+    }
 }
 
 // ------------------------------------------------------------
@@ -382,21 +378,21 @@ console.error('Erro ao limpar estado do botão irmão ' + idIrmao + ':', e);
 // ------------------------------------------------------------
 
 async function executarVulkan() {
-var idComando = 'vulkan-amd';
-var comando = 'sudo dnf install -y mesa-vulkan-drivers mesa-vulkan-drivers.i686 vulkan-tools vulkan-loader mesa-dri-drivers mesa-dri-drivers.i686';
-await executarComandoGenerico(idComando, comando, _t('sessoes.05-hardware.btn_vulkan', '🚀 Instalar Vulkan e Mesa 3D'));
+    var idComando = 'vulkan-amd';
+    var comando = 'sudo dnf install -y mesa-vulkan-drivers mesa-vulkan-drivers.i686 vulkan-tools vulkan-loader mesa-dri-drivers mesa-dri-drivers.i686';
+    await executarComandoGenerico(idComando, comando, _t('sessoes.05-hardware.btn_vulkan', '🚀 Instalar Vulkan e Mesa 3D'));
 }
 
 async function executarVaapi() {
-var idComando = 'vaapi-amd';
-var comando = 'sudo dnf install ffmpeg-libs libva libva-utils -y && sudo dnf install mesa-va-drivers-freeworld mesa-va-drivers-freeworld.i686 -y';
-await executarComandoGenerico(idComando, comando, _t('sessoes.05-hardware.btn_vaapi_padrao', '🚀 Instalação Padrão'));
+    var idComando = 'vaapi-amd';
+    var comando = 'sudo dnf install ffmpeg-libs libva libva-utils -y && sudo dnf install mesa-va-drivers-freeworld mesa-va-drivers-freeworld.i686 -y';
+    await executarComandoGenerico(idComando, comando, _t('sessoes.05-hardware.btn_vaapi_padrao', '🚀 Instalação Padrão'));
 }
 
 async function executarVaapiSwap() {
-var idComando = 'vaapi-swap';
-var comando = 'sudo dnf swap mesa-va-drivers mesa-va-drivers-freeworld -y && sudo dnf swap mesa-vdpau-drivers mesa-vdpau-drivers-freeworld -y';
-await executarComandoGenerico(idComando, comando, _t('sessoes.05-hardware.btn_vaapi_alt', '🔄 Alternativa'));
+    var idComando = 'vaapi-swap';
+    var comando = 'sudo dnf swap mesa-va-drivers mesa-va-drivers-freeworld -y && sudo dnf swap mesa-vdpau-drivers mesa-vdpau-drivers-freeworld -y';
+    await executarComandoGenerico(idComando, comando, _t('sessoes.05-hardware.btn_vaapi_alt', '🔄 Alternativa'));
 }
 
 // ------------------------------------------------------------
@@ -404,47 +400,47 @@ await executarComandoGenerico(idComando, comando, _t('sessoes.05-hardware.btn_va
 // ------------------------------------------------------------
 
 async function executarCoreCtrl() {
-var idComando = 'corectrl-install';
-var comando = 'sudo dnf install -y corectrl';
-await executarComandoGenerico(idComando, comando, _t('sessoes.05-hardware.btn_corectrl', '📦 Instalar CoreCtrl'), function() {
-atualizarBotaoAbrirCoreCtrl();
-});
+    var idComando = 'corectrl-install';
+    var comando = 'sudo dnf install -y corectrl';
+    await executarComandoGenerico(idComando, comando, _t('sessoes.05-hardware.btn_corectrl', '📦 Instalar CoreCtrl'), function() {
+        atualizarBotaoAbrirCoreCtrl();
+    });
 }
 
 function abrirCoreCtrl() {
-abrirFerramentaExterna('corectrl > /dev/null 2>&1 &', 'corectrl-install', 'CoreCtrl');
+    abrirFerramentaExterna('corectrl > /dev/null 2>&1 &', 'corectrl-install', 'CoreCtrl');
 }
 
 function atualizarBotaoAbrirCoreCtrl() {
-var btn = document.getElementById('btn-abrir-corectrl');
-if (!btn) return;
-if (isExecutado('corectrl-install')) {
-btn.style.display = '';
-} else {
-btn.style.display = 'none';
-}
+    var btn = document.getElementById('btn-abrir-corectrl');
+    if (!btn) return;
+    if (isExecutado('corectrl-install')) {
+        btn.style.display = '';
+    } else {
+        btn.style.display = 'none';
+    }
 }
 
 async function executarLACT() {
-var idComando = 'lact-install';
-var comando = 'sudo dnf copr enable ilyaz/LACT -y && sudo dnf install -y lact && sudo systemctl enable --now lactd';
-await executarComandoGenerico(idComando, comando, _t('sessoes.05-hardware.btn_lact', '📦 Instalar LACT'), function() {
-atualizarBotaoAbrirLACT();
-});
+    var idComando = 'lact-install';
+    var comando = 'sudo dnf copr enable ilyaz/LACT -y && sudo dnf install -y lact && sudo systemctl enable --now lactd';
+    await executarComandoGenerico(idComando, comando, _t('sessoes.05-hardware.btn_lact', '📦 Instalar LACT'), function() {
+        atualizarBotaoAbrirLACT();
+    });
 }
 
 function abrirLACT() {
-abrirFerramentaExterna('lact > /dev/null 2>&1 &', 'lact-install', 'LACT');
+    abrirFerramentaExterna('lact > /dev/null 2>&1 &', 'lact-install', 'LACT');
 }
 
 function atualizarBotaoAbrirLACT() {
-var btn = document.getElementById('btn-abrir-lact');
-if (!btn) return;
-if (isExecutado('lact-install')) {
-btn.style.display = '';
-} else {
-btn.style.display = 'none';
-}
+    var btn = document.getElementById('btn-abrir-lact');
+    if (!btn) return;
+    if (isExecutado('lact-install')) {
+        btn.style.display = '';
+    } else {
+        btn.style.display = 'none';
+    }
 }
 
 // ------------------------------------------------------------
@@ -452,84 +448,79 @@ btn.style.display = 'none';
 // ------------------------------------------------------------
 
 async function executarOverclockAMD() {
-var idComando = 'amdgpu-overclock';
-var comando = 'sudo grubby --update-kernel=ALL --args="amdgpu.ppfeaturemask=0xffffffff"';
-await executarComandoGenerico(idComando, comando, _t('sessoes.05-hardware.btn_overclock_on', '⚙️ Ativar Overclock'), function() {
-_resetarIrmao('amdgpu-overclock-remove', _t('sessoes.05-hardware.btn_overclock_off', '↩️ Desativar'));
-});
+    var idComando = 'amdgpu-overclock';
+    var comando = 'sudo grubby --update-kernel=ALL --args="amdgpu.ppfeaturemask=0xffffffff"';
+    await executarComandoGenerico(idComando, comando, _t('sessoes.05-hardware.btn_overclock_on', '⚙️ Ativar Overclock'), function() {
+        _resetarIrmao('amdgpu-overclock-remove', _t('sessoes.05-hardware.btn_overclock_off', '↩️ Desativar'));
+    });
 }
 
 async function executarOverclockRemoveAMD() {
-var idComando = 'amdgpu-overclock-remove';
-var comando = 'sudo grubby --update-kernel=ALL --remove-args="amdgpu.ppfeaturemask=0xffffffff"';
-await executarComandoGenerico(idComando, comando, _t('sessoes.05-hardware.btn_overclock_off', '↩️ Desativar'), function() {
-_resetarIrmao('amdgpu-overclock', _t('sessoes.05-hardware.btn_overclock_on', '⚙️ Ativar Overclock'));
-});
+    var idComando = 'amdgpu-overclock-remove';
+    var comando = 'sudo grubby --update-kernel=ALL --remove-args="amdgpu.ppfeaturemask=0xffffffff"';
+    await executarComandoGenerico(idComando, comando, _t('sessoes.05-hardware.btn_overclock_off', '↩️ Desativar'), function() {
+        _resetarIrmao('amdgpu-overclock', _t('sessoes.05-hardware.btn_overclock_on', '⚙️ Ativar Overclock'));
+    });
 }
 
 // ------------------------------------------------------------
 // NVIDIA
 // ------------------------------------------------------------
 
-// Registra um listener paralelo em aguardarConclusaoReal ANTES de
-// disparar o comando. Se a instalação falhar (parcial ou totalmente),
-// o usuário ainda pode ter pacotes órfãos no sistema — mostramos o
-// botão de reverter para que ele possa limpar tudo com um clique.
-// Em caso de sucesso, mostrarBotaoDesinstalar é chamado também via
-// onSucesso, o que é idempotente.
 async function executarNvidiaDriver() {
-var idComando = 'nvidia-driver-install';
-var comando = 'sudo dnf install -y akmod-nvidia xorg-x11-drv-nvidia-cuda xorg-x11-drv-nvidia-cuda-libs';
+    var idComando = 'nvidia-driver-install';
+    var comando = 'sudo dnf install -y akmod-nvidia xorg-x11-drv-nvidia-cuda xorg-x11-drv-nvidia-cuda-libs';
 
-aguardarConclusaoReal(idComando, 1800000).then(function(sucesso) {
-if (!sucesso) {
-mostrarBotaoDesinstalar(idComando);
-}
-});
+    aguardarConclusaoReal(idComando, 1800000).then(function(sucesso) {
+        if (!sucesso) {
+            mostrarBotaoDesinstalar(idComando);
+        }
+    });
 
-await executarComandoGenerico(idComando, comando, _t('sessoes.05-hardware.btn_nvidia_driver', '📦 Instalar Driver Nvidia'), mostrarBotaoDesinstalar);
+    await executarComandoGenerico(idComando, comando, _t('sessoes.05-hardware.btn_nvidia_driver', '📦 Instalar Driver Nvidia'), mostrarBotaoDesinstalar);
 }
 
 function reverterNvidiaDriver() {
-desinstalarPacote('nvidia-driver-install', 'sudo dnf remove -y akmod-nvidia xorg-x11-drv-nvidia* nvidia-settings xorg-x11-drv-nvidia-cuda && sudo dnf clean all && sudo dnf autoremove -y', 'Driver Nvidia');
+    desinstalarPacote('nvidia-driver-install', 'sudo dnf remove -y akmod-nvidia xorg-x11-drv-nvidia* nvidia-settings xorg-x11-drv-nvidia-cuda && sudo dnf clean all && sudo dnf autoremove -y', 'Driver Nvidia');
 }
 
 async function executarNvidiaModeset() {
-var idComando = 'nvidia-modeset-on';
-var comando = 'sudo grubby --update-kernel=ALL --args="nvidia-drm.modeset=1"';
-await executarComandoGenerico(idComando, comando, _t('sessoes.05-hardware.btn_modeset_on', '⚙️ Ativar modesetting'));
+    var idComando = 'nvidia-modeset-on';
+    var comando = 'sudo grubby --update-kernel=ALL --args="nvidia-drm.modeset=1"';
+    await executarComandoGenerico(idComando, comando, _t('sessoes.05-hardware.btn_modeset_on', '⚙️ Ativar modesetting'));
 }
 
 async function executarNvidiaModesetRemove() {
-var idComando = 'nvidia-modeset-off';
-var comando = 'sudo grubby --update-kernel=ALL --remove-args="nvidia-drm.modeset=1"';
-await executarComandoGenerico(idComando, comando, _t('sessoes.05-hardware.btn_modeset_off', '↩️ Desativar modesetting'));
-}
-
-async function executarCoolerControl() {
-var idComando = 'coolercontrol-install';
-var comando = 'flatpak install flathub com.github.coolercontrol.CoolerControl -y';
-await executarComandoGenerico(idComando, comando, _t('sessoes.05-hardware.btn_coolercontrol', '📦 Instalar CoolerControl (Flatpak)'));
+    var idComando = 'nvidia-modeset-off';
+    var comando = 'sudo grubby --update-kernel=ALL --remove-args="nvidia-drm.modeset=1"';
+    await executarComandoGenerico(idComando, comando, _t('sessoes.05-hardware.btn_modeset_off', '↩️ Desativar modesetting'));
 }
 
 // ------------------------------------------------------------
-// Controles — grupo input (toggle)
+// Controles — grupo input + steam-devices
 // ------------------------------------------------------------
 
 async function executarInputAdd() {
-var idComando = 'input-group-add';
-var comando = 'sudo usermod -aG input $USER';
-await executarComandoGenerico(idComando, comando, _t('sessoes.05-hardware.btn_input_add', '👤 Adicionar ao grupo input'), function() {
-_resetarIrmao('input-group-remove', _t('sessoes.05-hardware.btn_input_remove', '↩️ Remover do grupo input'));
-});
+    var idComando = 'input-group-add';
+    var comando = 'sudo usermod -aG input $USER';
+    await executarComandoGenerico(idComando, comando, _t('sessoes.05-hardware.btn_input_add', '👤 Adicionar ao grupo input'), function() {
+        _resetarIrmao('input-group-remove', _t('sessoes.05-hardware.btn_input_remove', '↩️ Remover do grupo input'));
+    });
 }
 
 async function executarInputRemove() {
-var idComando = 'input-group-remove';
-var comando = 'sudo gpasswd -d $USER input';
-await executarComandoGenerico(idComando, comando, _t('sessoes.05-hardware.btn_input_remove', '↩️ Remover do grupo input'), function() {
-_resetarIrmao('input-group-add', _t('sessoes.05-hardware.btn_input_add', '👤 Adicionar ao grupo input'));
-});
+    var idComando = 'input-group-remove';
+    var comando = 'sudo gpasswd -d $USER input';
+    await executarComandoGenerico(idComando, comando, _t('sessoes.05-hardware.btn_input_remove', '↩️ Remover do grupo input'), function() {
+        _resetarIrmao('input-group-add', _t('sessoes.05-hardware.btn_input_add', '👤 Adicionar ao grupo input'));
+    });
+}
+
+async function executarSteamDevices() {
+    var idComando = 'steam-devices-install';
+    var comando = 'sudo dnf install -y steam-devices';
+    await executarComandoGenerico(idComando, comando,
+        _t('sessoes.05-hardware.btn_steam_devices', '🎮 Instalar Regras para Controles'));
 }
 
 // ------------------------------------------------------------
@@ -538,97 +529,93 @@ _resetarIrmao('input-group-add', _t('sessoes.05-hardware.btn_input_add', '👤 A
 
 async function restaurarEstadoSessao() {
 
-if (isExecutado('vulkan-amd')) {
-_marcarBotaoConcluido('vulkan-amd');
-}
+    if (isExecutado('vulkan-amd')) {
+        _marcarBotaoConcluido('vulkan-amd');
+    }
 
-if (isExecutado('vaapi-amd')) {
-_marcarBotaoConcluido('vaapi-amd');
-}
-if (isExecutado('vaapi-swap')) {
-_marcarBotaoConcluido('vaapi-swap');
-}
+    if (isExecutado('vaapi-amd')) {
+        _marcarBotaoConcluido('vaapi-amd');
+    }
+    if (isExecutado('vaapi-swap')) {
+        _marcarBotaoConcluido('vaapi-swap');
+    }
 
-if (isExecutado('corectrl-install')) {
-_marcarBotaoConcluido('corectrl-install');
-}
+    if (isExecutado('corectrl-install')) {
+        _marcarBotaoConcluido('corectrl-install');
+    }
 
-if (isExecutado('lact-install')) {
-_marcarBotaoConcluido('lact-install');
-}
+    if (isExecutado('lact-install')) {
+        _marcarBotaoConcluido('lact-install');
+    }
 
-// Overclock — TOGGLE: só um dos dois pode estar marcado como "atual".
-// Quando ambos estiverem marcados (estado ambíguo, geralmente vindo de
-// uma interrupção ou acesso concorrente), limpamos AMBOS e mostramos
-// os dois como clicáveis (estado neutro). É a resposta honesta:
-// "não sabemos qual é o estado atual, escolha".
-var overclockOn = isExecutado('amdgpu-overclock');
-var overclockOff = isExecutado('amdgpu-overclock-remove');
-if (overclockOn && !overclockOff) {
-_marcarBotaoConcluido('amdgpu-overclock');
-_resetarBotao('amdgpu-overclock-remove', _t('sessoes.05-hardware.btn_overclock_off', '↩️ Desativar'));
-} else if (overclockOff && !overclockOn) {
-_marcarBotaoConcluido('amdgpu-overclock-remove');
-_resetarBotao('amdgpu-overclock', _t('sessoes.05-hardware.btn_overclock_on', '⚙️ Ativar Overclock'));
-} else if (overclockOn && overclockOff) {
-_resetarBotao('amdgpu-overclock-remove', _t('sessoes.05-hardware.btn_overclock_off', '↩️ Desativar'));
-_resetarBotao('amdgpu-overclock', _t('sessoes.05-hardware.btn_overclock_on', '⚙️ Ativar Overclock'));
-try {
-await desmarcarComoExecutado('amdgpu-overclock');
-await desmarcarComoExecutado('amdgpu-overclock-remove');
-} catch (e) {
-console.error('Erro ao limpar estado ambíguo do overclock:', e);
-}
-}
+    // Overclock — TOGGLE
+    var overclockOn = isExecutado('amdgpu-overclock');
+    var overclockOff = isExecutado('amdgpu-overclock-remove');
+    if (overclockOn && !overclockOff) {
+        _marcarBotaoConcluido('amdgpu-overclock');
+        _resetarBotao('amdgpu-overclock-remove', _t('sessoes.05-hardware.btn_overclock_off', '↩️ Desativar'));
+    } else if (overclockOff && !overclockOn) {
+        _marcarBotaoConcluido('amdgpu-overclock-remove');
+        _resetarBotao('amdgpu-overclock', _t('sessoes.05-hardware.btn_overclock_on', '⚙️ Ativar Overclock'));
+    } else if (overclockOn && overclockOff) {
+        _resetarBotao('amdgpu-overclock-remove', _t('sessoes.05-hardware.btn_overclock_off', '↩️ Desativar'));
+        _resetarBotao('amdgpu-overclock', _t('sessoes.05-hardware.btn_overclock_on', '⚙️ Ativar Overclock'));
+        try {
+            await desmarcarComoExecutado('amdgpu-overclock');
+            await desmarcarComoExecutado('amdgpu-overclock-remove');
+        } catch (e) {
+            console.error('Erro ao limpar estado ambíguo do overclock:', e);
+        }
+    }
 
-if (isExecutado('nvidia-driver-install')) {
-_marcarBotaoConcluido('nvidia-driver-install');
-mostrarBotaoDesinstalar('nvidia-driver-install');
-}
+    if (isExecutado('nvidia-driver-install')) {
+        _marcarBotaoConcluido('nvidia-driver-install');
+        mostrarBotaoDesinstalar('nvidia-driver-install');
+    }
 
-if (isExecutado('coolercontrol-install')) {
-_marcarBotaoConcluido('coolercontrol-install');
-}
+    // Grupo input — TOGGLE
+    var inputOn = isExecutado('input-group-add');
+    var inputOff = isExecutado('input-group-remove');
+    if (inputOn && !inputOff) {
+        _marcarBotaoConcluido('input-group-add');
+        _resetarBotao('input-group-remove', _t('sessoes.05-hardware.btn_input_remove', '↩️ Remover do grupo input'));
+    } else if (inputOff && !inputOn) {
+        _marcarBotaoConcluido('input-group-remove');
+        _resetarBotao('input-group-add', _t('sessoes.05-hardware.btn_input_add', '👤 Adicionar ao grupo input'));
+    } else if (inputOn && inputOff) {
+        _resetarBotao('input-group-remove', _t('sessoes.05-hardware.btn_input_remove', '↩️ Remover do grupo input'));
+        _resetarBotao('input-group-add', _t('sessoes.05-hardware.btn_input_add', '👤 Adicionar ao grupo input'));
+        try {
+            await desmarcarComoExecutado('input-group-add');
+            await desmarcarComoExecutado('input-group-remove');
+        } catch (e) {
+            console.error('Erro ao limpar estado ambíguo do grupo input:', e);
+        }
+    }
 
-// Grupo input — TOGGLE. Mesma lógica do overclock.
-var inputOn = isExecutado('input-group-add');
-var inputOff = isExecutado('input-group-remove');
-if (inputOn && !inputOff) {
-_marcarBotaoConcluido('input-group-add');
-_resetarBotao('input-group-remove', _t('sessoes.05-hardware.btn_input_remove', '↩️ Remover do grupo input'));
-} else if (inputOff && !inputOn) {
-_marcarBotaoConcluido('input-group-remove');
-_resetarBotao('input-group-add', _t('sessoes.05-hardware.btn_input_add', '👤 Adicionar ao grupo input'));
-} else if (inputOn && inputOff) {
-_resetarBotao('input-group-remove', _t('sessoes.05-hardware.btn_input_remove', '↩️ Remover do grupo input'));
-_resetarBotao('input-group-add', _t('sessoes.05-hardware.btn_input_add', '👤 Adicionar ao grupo input'));
-try {
-await desmarcarComoExecutado('input-group-add');
-await desmarcarComoExecutado('input-group-remove');
-} catch (e) {
-console.error('Erro ao limpar estado ambíguo do grupo input:', e);
-}
-}
+    // Steam Devices — one-shot
+    if (isExecutado('steam-devices-install')) {
+        _marcarBotaoConcluido('steam-devices-install');
+    }
 
-atualizarBotaoAbrirCoreCtrl();
-atualizarBotaoAbrirLACT();
+    atualizarBotaoAbrirCoreCtrl();
+    atualizarBotaoAbrirLACT();
 }
 
 // ------------------------------------------------------------
 // Inicialização
 // ------------------------------------------------------------
 
-// FIX #1 + #2: captura antes de restaurar; IIFE em vez de DOMContentLoaded.
 (function() {
-document.querySelectorAll('.btn-executar').forEach(function(btn) {
-if (!btn.hasAttribute('data-texto-original')) {
-btn.setAttribute('data-texto-original', btn.textContent);
-}
-});
+    document.querySelectorAll('.btn-executar').forEach(function(btn) {
+        if (!btn.hasAttribute('data-texto-original')) {
+            btn.setAttribute('data-texto-original', btn.textContent);
+        }
+    });
 
-restaurarEstadoSessao();
+    restaurarEstadoSessao();
 
-console.log('📦 Componente 05-hardware carregado!');
+    console.log('📦 Componente 05-hardware carregado!');
 })();
 </script>
 </body>

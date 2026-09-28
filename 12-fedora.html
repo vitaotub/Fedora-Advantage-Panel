@@ -7,17 +7,17 @@
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<div class="sessao-container" id="sessao-13-fedora">
+<div class="sessao-container" id="sessao-12-fedora">
 <div class="sessao-titulo">
 <span class="sessao-label">Sessão</span>
-<span data-i18n="sessoes.13-fedora.titulo">🐧 Fedora</span>
+<span data-i18n="sessoes.12-fedora.titulo">🐧 Fedora</span>
 </div>
 
-<div class="sessao-descricao" data-i18n="sessoes.13-fedora.descricao">
+<div class="sessao-descricao" data-i18n="sessoes.12-fedora.descricao">
 Informações e ferramentas específicas do Fedora: verificação da versão instalada, detecção de Fedora Atomic/Silverblue (sistemas imutáveis) e gestão do SELinux — o sistema de segurança obrigatório do Fedora, frequentemente mal compreendido por quem vem de outras distribuições.
 </div>
 
-<div class="aviso-caixa" data-i18n-html="sessoes.13-fedora.aviso_geral">
+<div class="aviso-caixa" data-i18n-html="sessoes.12-fedora.aviso_geral">
 ℹ️ <strong>Esta sessão é informativa.</strong> Os comandos aqui apenas leem o estado do sistema. Nada é alterado sem você clicar explicitamente num botão — e os que alteram deixam claro o que fazem.
 </div>
 
@@ -25,15 +25,15 @@ Informações e ferramentas específicas do Fedora: verificação da versão ins
 VERSÃO DO FEDORA
 ============================================================ -->
 <details class="acordeao" open>
-<summary data-i18n="sessoes.13-fedora.versao_titulo">📌 Versão do Fedora</summary>
+<summary data-i18n="sessoes.12-fedora.versao_titulo">📌 Versão do Fedora</summary>
 <div class="acordeao-conteudo">
 
 <div class="bloco-comando">
 <div class="comando-info">
-<h3 data-i18n="sessoes.13-fedora.versao_h3">Verificação de compatibilidade</h3>
-<p data-i18n="sessoes.13-fedora.versao_desc">O FOF é desenvolvido e testado no Fedora 44. Se você está numa versão diferente, alguns comandos podem se comportar de forma inesperada (pacotes renomeados, repositórios alterados, sintaxe nova). Esta verificação avisa quando isso acontece.</p>
+<h3 data-i18n="sessoes.12-fedora.versao_h3">Verificação de compatibilidade</h3>
+<p data-i18n="sessoes.12-fedora.versao_desc">O FOF é desenvolvido e testado no Fedora 44. Se você está numa versão diferente, alguns comandos podem se comportar de forma inesperada (pacotes renomeados, repositórios alterados, sintaxe nova). Esta verificação avisa quando isso acontece.</p>
 
-<div class="info-extra" data-i18n-html="sessoes.13-fedora.versao_info">
+<div class="info-extra" data-i18n-html="sessoes.12-fedora.versao_info">
 ℹ️ <strong>Versões suportadas:</strong> Fedora 43, 44 e 45. Versões mais antigas (42 e anteriores) ou mais novas (46+) podem exigir ajustes manuais. O FOF continua funcionando, mas você pode precisar adaptar algum comando específico.
 </div>
 
@@ -41,9 +41,9 @@ VERSÃO DO FEDORA
 <button class="btn-executar"
 onclick="verificarVersaoFedora()"
 data-comando="fedora-version-check"
-data-logbox="log-sessao-13-fedora"
+data-logbox="log-sessao-12-fedora"
 id="btn-fedora-version-check"
-data-i18n="sessoes.13-fedora.btn_verificar_versao">
+data-i18n="sessoes.12-fedora.btn_verificar_versao">
 🔍 Verificar Versão do Fedora
 </button>
 </div>
@@ -59,15 +59,15 @@ data-i18n="sessoes.13-fedora.btn_verificar_versao">
 ATOMIC / SILVERBLUE
 ============================================================ -->
 <details class="acordeao">
-<summary data-i18n="sessoes.13-fedora.atomic_titulo">🧊 Fedora Atomic / Silverblue</summary>
+<summary data-i18n="sessoes.12-fedora.atomic_titulo">🧊 Fedora Atomic / Silverblue</summary>
 <div class="acordeao-conteudo">
 
 <div class="bloco-comando">
 <div class="comando-info">
-<h3 data-i18n="sessoes.13-fedora.atomic_h3">Detecção de sistema imutável</h3>
-<p data-i18n="sessoes.13-fedora.atomic_desc">O Fedora tem duas variantes: a "tradicional" (Workstation, KDE, etc) e a "imutável" (Silverblue, Kinoite, Bazzite, Bluefin). Nas variantes imutáveis, o sistema base é protegido e não pode ser modificado por <code>dnf install</code> — só por <code>rpm-ostree</code> ou <code>bootc</code>.</p>
+<h3 data-i18n="sessoes.12-fedora.atomic_h3">Detecção de sistema imutável</h3>
+<p data-i18n="sessoes.12-fedora.atomic_desc">O Fedora tem duas variantes: a "tradicional" (Workstation, KDE, etc) e a "imutável" (Silverblue, Kinoite, Bazzite, Bluefin). Nas variantes imutáveis, o sistema base é protegido e não pode ser modificado por <code>dnf install</code> — só por <code>rpm-ostree</code> ou <code>bootc</code>.</p>
 
-<div class="info-extra" data-i18n-html="sessoes.13-fedora.atomic_info">
+<div class="info-extra" data-i18n-html="sessoes.12-fedora.atomic_info">
 ℹ️ <strong>Por que isso importa:</strong> o FOF usa <code>dnf</code> para instalar a maioria dos pacotes. Se você está num sistema imutável, esses comandos vão falhar (ou pior, exigir override). Esta detecção avisa antes de você tentar algo que não vai funcionar.
 </div>
 
@@ -75,9 +75,9 @@ ATOMIC / SILVERBLUE
 <button class="btn-executar"
 onclick="verificarAtomic()"
 data-comando="atomic-check"
-data-logbox="log-sessao-13-fedora"
+data-logbox="log-sessao-12-fedora"
 id="btn-atomic-check"
-data-i18n="sessoes.13-fedora.btn_verificar_atomic">
+data-i18n="sessoes.12-fedora.btn_verificar_atomic">
 🧊 Verificar se é Fedora Atomic
 </button>
 </div>
@@ -93,20 +93,20 @@ data-i18n="sessoes.13-fedora.btn_verificar_atomic">
 SELINUX
 ============================================================ -->
 <details class="acordeao">
-<summary data-i18n="sessoes.13-fedora.selinux_titulo">🛡️ SELinux</summary>
+<summary data-i18n="sessoes.12-fedora.selinux_titulo">🛡️ SELinux</summary>
 <div class="acordeao-conteudo">
 
-<div class="sessao-descricao" data-i18n="sessoes.13-fedora.selinux_desc">
+<div class="sessao-descricao" data-i18n="sessoes.12-fedora.selinux_desc">
 O SELinux é o sistema de controle de acesso obrigatório do Fedora. Ele impõe regras rígidas sobre o que cada processo pode fazer — mesmo processos rodando como root são limitados. É o maior mistério do Fedora para quem vem de outras distribuições, e a causa mais comum de "por que isso não funciona?".
 </div>
 
 <!-- Status -->
 <div class="bloco-comando">
 <div class="comando-info">
-<h3 data-i18n="sessoes.13-fedora.selinux_status_titulo">📊 Status Atual</h3>
-<p data-i18n="sessoes.13-fedora.selinux_status_desc">Mostra o modo atual do SELinux (enforcing, permissive ou disabled).</p>
+<h3 data-i18n="sessoes.12-fedora.selinux_status_titulo">📊 Status Atual</h3>
+<p data-i18n="sessoes.12-fedora.selinux_status_desc">Mostra o modo atual do SELinux (enforcing, permissive ou disabled).</p>
 
-<div class="info-extra" data-i18n-html="sessoes.13-fedora.selinux_status_info">
+<div class="info-extra" data-i18n-html="sessoes.12-fedora.selinux_status_info">
 ℹ️ <strong>Modos do SELinux:</strong>
 <ul style="margin: 0.5rem 0 0 1.25rem; padding: 0;">
 <li><strong>Enforcing</strong> — regras ativas e bloqueios reais. É o padrão do Fedora e o recomendado.</li>
@@ -119,9 +119,9 @@ O SELinux é o sistema de controle de acesso obrigatório do Fedora. Ele impõe 
 <button class="btn-executar"
 onclick="verificarSelinuxStatus()"
 data-comando="selinux-status-check"
-data-logbox="log-sessao-13-fedora"
+data-logbox="log-sessao-12-fedora"
 id="btn-selinux-status-check"
-data-i18n="sessoes.13-fedora.btn_selinux_status">
+data-i18n="sessoes.12-fedora.btn_selinux_status">
 🛡️ Verificar Status do SELinux
 </button>
 </div>
@@ -133,10 +133,10 @@ data-i18n="sessoes.13-fedora.btn_selinux_status">
 <!-- Avisos recentes -->
 <div class="bloco-comando">
 <div class="comando-info">
-<h3 data-i18n="sessoes.13-fedora.selinux_trouble_titulo">🔍 Avisos Recentes (AVC Denials)</h3>
-<p data-i18n="sessoes.13-fedora.selinux_trouble_desc">Lista os avisos de "AVC denial" das últimas 24 horas. Cada AVC é uma tentativa de acesso que o SELinux bloqueou. Nem todo bloqueio é problema — muitos são ruído de processos que tentam acessar coisas fora da política, mas o padrão ajuda a identificar problemas reais.</p>
+<h3 data-i18n="sessoes.12-fedora.selinux_trouble_titulo">🔍 Avisos Recentes (AVC Denials)</h3>
+<p data-i18n="sessoes.12-fedora.selinux_trouble_desc">Lista os avisos de "AVC denial" das últimas 24 horas. Cada AVC é uma tentativa de acesso que o SELinux bloqueou. Nem todo bloqueio é problema — muitos são ruído de processos que tentam acessar coisas fora da política, mas o padrão ajuda a identificar problemas reais.</p>
 
-<div class="info-extra" data-i18n-html="sessoes.13-fedora.selinux_trouble_info">
+<div class="info-extra" data-i18n-html="sessoes.12-fedora.selinux_trouble_info">
 ℹ️ <strong>Como interpretar:</strong> um AVC isolado geralmente é inofensivo. Vários AVCs repetidos do mesmo processo indicam que ele está tentando algo que o SELinux não permite — isso merece investigação.
 </div>
 
@@ -144,9 +144,9 @@ data-i18n="sessoes.13-fedora.btn_selinux_status">
 <button class="btn-executar"
 onclick="verificarSelinuxTroubleshoot()"
 data-comando="selinux-troubleshoot"
-data-logbox="log-sessao-13-fedora"
+data-logbox="log-sessao-12-fedora"
 id="btn-selinux-troubleshoot"
-data-i18n="sessoes.13-fedora.btn_selinux_troubleshoot">
+data-i18n="sessoes.12-fedora.btn_selinux_troubleshoot">
 🔍 Verificar Avisos Recentes
 </button>
 </div>
@@ -158,10 +158,10 @@ data-i18n="sessoes.13-fedora.btn_selinux_troubleshoot">
 <!-- setroubleshoot -->
 <div class="bloco-comando">
 <div class="comando-info">
-<h3 data-i18n="sessoes.13-fedora.setroubleshoot_titulo">🛠️ setroubleshoot — Assistente de Diagnóstico</h3>
-<p data-i18n="sessoes.13-fedora.setroubleshoot_desc">Instala o <strong>setroubleshoot</strong>, um pacote oficial do Fedora que analisa automaticamente cada AVC e sugere uma correção — em linguagem clara, sem jargão de SELinux. É o que transforma "usuário_u:role_r:tipo_t" em "o Apache não consegue ler arquivos em /var/www/html, você deve rodar tal comando".</p>
+<h3 data-i18n="sessoes.12-fedora.setroubleshoot_titulo">🛠️ setroubleshoot — Assistente de Diagnóstico</h3>
+<p data-i18n="sessoes.12-fedora.setroubleshoot_desc">Instala o <strong>setroubleshoot</strong>, um pacote oficial do Fedora que analisa automaticamente cada AVC e sugere uma correção — em linguagem clara, sem jargão de SELinux. É o que transforma "usuário_u:role_r:tipo_t" em "o Apache não consegue ler arquivos em /var/www/html, você deve rodar tal comando".</p>
 
-<div class="info-extra" data-i18n-html="sessoes.13-fedora.setroubleshoot_info">
+<div class="info-extra" data-i18n-html="sessoes.12-fedora.setroubleshoot_info">
 ℹ️ <strong>O que é instalado:</strong> <code>setroubleshoot-server</code> (motor de análise), <code>setools-console</code> (ferramentas CLI) e <code>policycoreutils-python-utils</code> (utilitários de política). Os avisos aparecem automaticamente no menu de notificações do desktop quando um AVC é gerado.
 </div>
 
@@ -169,9 +169,9 @@ data-i18n="sessoes.13-fedora.btn_selinux_troubleshoot">
 <button class="btn-executar verde"
 onclick="executarSetroubleshootInstall()"
 data-comando="selinux-setroubleshoot-install"
-data-logbox="log-sessao-13-fedora"
+data-logbox="log-sessao-12-fedora"
 id="btn-selinux-setroubleshoot-install"
-data-i18n="sessoes.13-fedora.btn_setroubleshoot_install">
+data-i18n="sessoes.12-fedora.btn_setroubleshoot_install">
 📦 Instalar setroubleshoot
 </button>
 </div>
@@ -185,10 +185,10 @@ data-i18n="sessoes.13-fedora.btn_setroubleshoot_install">
 <!-- Gerenciador SELinux (GUI) -->
 <div class="bloco-comando">
 <div class="comando-info">
-<h3 data-i18n="sessoes.13-fedora.selinux_gui_titulo">🖥️ Gerenciador SELinux (Interface Gráfica)</h3>
-<p data-i18n="sessoes.13-fedora.selinux_gui_desc">Instala o <strong>policycoreutils-gui</strong>, que fornece uma interface gráfica completa para gerenciar o SELinux: booleans, contextos de arquivo, mapeamento de portas, usuários, e outras configurações avançadas. É o jeito mais amigável de ver e ajustar o SELinux no Fedora.</p>
+<h3 data-i18n="sessoes.12-fedora.selinux_gui_titulo">🖥️ Gerenciador SELinux (Interface Gráfica)</h3>
+<p data-i18n="sessoes.12-fedora.selinux_gui_desc">Instala o <strong>policycoreutils-gui</strong>, que fornece uma interface gráfica completa para gerenciar o SELinux: booleans, contextos de arquivo, mapeamento de portas, usuários, e outras configurações avançadas. É o jeito mais amigável de ver e ajustar o SELinux no Fedora.</p>
 
-<div class="info-extra" data-i18n-html="sessoes.13-fedora.selinux_gui_info">
+<div class="info-extra" data-i18n-html="sessoes.12-fedora.selinux_gui_info">
 ℹ️ <strong>O que dá para fazer com ele:</strong>
 <ul style="margin: 0.5rem 0 0 1.25rem; padding: 0;">
 <li>Ver e alternar <strong>booleans</strong> (chaves liga/desliga de funcionalidades)</li>
@@ -198,7 +198,7 @@ data-i18n="sessoes.13-fedora.btn_setroubleshoot_install">
 </ul>
 </div>
 
-<div class="info-extra" data-i18n-html="sessoes.13-fedora.selinux_gui_info_root">
+<div class="info-extra" data-i18n-html="sessoes.12-fedora.selinux_gui_info_root">
 ℹ️ <strong>Sobre a senha:</strong> ao abrir o Gerenciador SELinux, ele vai pedir a senha de administrador — isso é normal. Sem root, ele só permite visualizar; para alterar, precisa de privilégio.
 </div>
 
@@ -206,18 +206,18 @@ data-i18n="sessoes.13-fedora.btn_setroubleshoot_install">
 <button class="btn-executar"
 onclick="executarSelinuxGUIInstall()"
 data-comando="selinux-gui-install"
-data-logbox="log-sessao-13-fedora"
+data-logbox="log-sessao-12-fedora"
 id="btn-selinux-gui-install"
-data-i18n="sessoes.13-fedora.btn_selinux_gui_install">
+data-i18n="sessoes.12-fedora.btn_selinux_gui_install">
 📦 Instalar Gerenciador SELinux
 </button>
 <button class="btn-executar verde"
 style="display: none;"
 onclick="abrirSelinuxGUI()"
 data-comando="abrir-selinux-gui"
-data-logbox="log-sessao-13-fedora"
+data-logbox="log-sessao-12-fedora"
 id="btn-abrir-selinux-gui"
-data-i18n="sessoes.13-fedora.btn_selinux_gui_open">
+data-i18n="sessoes.12-fedora.btn_selinux_gui_open">
 🚀 Abrir Gerenciador SELinux
 </button>
 </div>
@@ -231,8 +231,8 @@ data-i18n="sessoes.13-fedora.btn_selinux_gui_open">
 <!-- Aviso educativo sobre desabilitar SELinux -->
 <div class="bloco-comando">
 <div class="comando-info">
-<h3 data-i18n="sessoes.13-fedora.selinux_desabilitar_titulo">⚠️ Sobre desabilitar o SELinux</h3>
-<p data-i18n="sessoes.13-fedora.selinux_desabilitar_desc">Muitos tutoriais na internet recomendam desabilitar o SELinux quando algo não funciona. Isso <strong>não é uma boa prática</strong> no Fedora — o sistema é projetado para funcionar com ele ativo, e desabilitar mascara problemas em vez de resolvê-los.</p>
+<h3 data-i18n="sessoes.12-fedora.selinux_desabilitar_titulo">⚠️ Sobre desabilitar o SELinux</h3>
+<p data-i18n="sessoes.12-fedora.selinux_desabilitar_desc">Muitos tutoriais na internet recomendam desabilitar o SELinux quando algo não funciona. Isso <strong>não é uma boa prática</strong> no Fedora — o sistema é projetado para funcionar com ele ativo, e desabilitar mascara problemas em vez de resolvê-los.</p>
 
 <div class="bloco-info">
 <strong>Antes de pensar em desabilitar, tente:</strong><br>
@@ -242,7 +242,7 @@ data-i18n="sessoes.13-fedora.btn_selinux_gui_open">
 4. <strong>Só como último recurso</strong>, mudar o SELinux para modo permissive (registra mas não bloqueia) — mantém o sistema funcional e ainda permite ver o que estava sendo bloqueado.
 </div>
 
-<div class="info-extra" data-i18n-html="sessoes.13-fedora.selinux_desabilitar_info">
+<div class="info-extra" data-i18n-html="sessoes.12-fedora.selinux_desabilitar_info">
 ℹ️ <strong>Se precisar mudar o modo:</strong> a ferramenta oficial é o <code>setenforce</code>. Rodar <code>sudo setenforce 0</code> coloca em permissive até o próximo boot. Para tornar permanente, edite <code>/etc/selinux/config</code> (não fazemos isso automaticamente — é uma decisão sua).
 </div>
 </div>
@@ -252,13 +252,13 @@ data-i18n="sessoes.13-fedora.btn_selinux_gui_open">
 </details>
 
 <!-- Log único da sessão -->
-<div class="terminal-log sessao-compartilhado" id="log-sessao-13-fedora"></div>
+<div class="terminal-log sessao-compartilhado" id="log-sessao-12-fedora"></div>
 </div>
 
 <!-- ===== JAVASCRIPT ESPECÍFICO DA SESSÃO ===== -->
 <script>
 // ============================================================
-// SESSÃO 13: FEDORA
+// SESSÃO 12: FEDORA
 // ============================================================
 //
 // Sessão majoritariamente informativa. Todos os comandos de
@@ -380,7 +380,7 @@ var kernel = (sys && sys.kernel) ? sys.kernel : null;
 
 if (!fedora) {
 var comando = 'cat /etc/fedora-release 2>/dev/null || echo "Não foi possível determinar a versão"';
-await _executarLeitura(idComando, comando, _t('sessoes.13-fedora.btn_verificar_versao', '🔍 Verificar Versão do Fedora'));
+await _executarLeitura(idComando, comando, _t('sessoes.12-fedora.btn_verificar_versao', '🔍 Verificar Versão do Fedora'));
 }
 
 var versaoNumero = null;
@@ -446,7 +446,7 @@ var comando =
 '  echo "Comando de gerenciamento: dnf"; ' +
 'fi';
 
-var sucesso = await _executarLeitura(idComando, comando, _t('sessoes.13-fedora.btn_verificar_atomic', '🧊 Verificar se é Fedora Atomic'));
+var sucesso = await _executarLeitura(idComando, comando, _t('sessoes.12-fedora.btn_verificar_atomic', '🧊 Verificar se é Fedora Atomic'));
 
 setTimeout(function() {
 var logBox = _getLogBox(idComando);
@@ -509,7 +509,7 @@ var logBox = _getLogBox(idComando);
 
 if (logBox) {
 logBox.style.display = 'block';
-_separadorLog(logBox, _t('sessoes.13-fedora.btn_selinux_status', '🛡️ Verificar Status do SELinux'));
+_separadorLog(logBox, _t('sessoes.12-fedora.btn_selinux_status', '🛡️ Verificar Status do SELinux'));
 var header = document.createElement('div');
 header.className = 'log-line info';
 header.textContent = '🔍 Consultando /system-info...';
@@ -576,7 +576,7 @@ var comando =
 '  echo "ausearch não encontrado (instale audit)"; ' +
 'fi';
 
-await _executarLeitura(idComando, comando, _t('sessoes.13-fedora.btn_selinux_troubleshoot', '🔍 Verificar Avisos Recentes'));
+await _executarLeitura(idComando, comando, _t('sessoes.12-fedora.btn_selinux_troubleshoot', '🔍 Verificar Avisos Recentes'));
 
 setTimeout(function() {
 var logBox = _getLogBox(idComando);
@@ -615,7 +615,7 @@ resultadoEl.innerHTML = msg;
 async function executarSetroubleshootInstall() {
 var idComando = 'selinux-setroubleshoot-install';
 var comando = 'sudo dnf install -y setroubleshoot-server setools-console policycoreutils-python-utils';
-await executarComandoGenerico(idComando, comando, _t('sessoes.13-fedora.btn_setroubleshoot_install', '📦 Instalar setroubleshoot'), mostrarBotaoDesinstalar);
+await executarComandoGenerico(idComando, comando, _t('sessoes.12-fedora.btn_setroubleshoot_install', '📦 Instalar setroubleshoot'), mostrarBotaoDesinstalar);
 }
 
 // ============================================================
@@ -630,7 +630,7 @@ await executarComandoGenerico(idComando, comando, _t('sessoes.13-fedora.btn_setr
 async function executarSelinuxGUIInstall() {
 var idComando = 'selinux-gui-install';
 var comando = 'sudo dnf install -y policycoreutils-gui';
-await executarComandoGenerico(idComando, comando, _t('sessoes.13-fedora.btn_selinux_gui_install', '📦 Instalar Gerenciador SELinux'), function() {
+await executarComandoGenerico(idComando, comando, _t('sessoes.12-fedora.btn_selinux_gui_install', '📦 Instalar Gerenciador SELinux'), function() {
 _atualizarBotaoAbrir('selinux-gui-install', 'btn-abrir-selinux-gui');
 });
 }
@@ -693,7 +693,7 @@ btn.setAttribute('data-texto-original', btn.textContent);
 
 restaurarEstadoSessao();
 
-console.log('📦 Componente 13-fedora carregado!');
+console.log('📦 Componente 12-fedora carregado!');
 })();
 </script>
 </body>

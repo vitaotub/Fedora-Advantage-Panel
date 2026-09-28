@@ -22,13 +22,6 @@
  *
  * Eventos:
  *   'i18n-pronto' - disparado após o JSON ser carregado e aplicado
- *
- * CORREÇÕES (v1.0.0-09232026+):
- * - _chaveCache usa uma versão hardcoded como fallback em vez de 'dev'
- *   (que criava uma chave órfã permanente) ou Date.now() (que criava
- *   uma chave nova a cada boot, desperdiçando o cache).
- * - _limparCachesAntigos() remove entradas de versões anteriores do FOF
- *   do localStorage, evitando acúmulo indefinido.
  */
 
 (function() {
@@ -59,7 +52,7 @@
     // alguns segundos, até o /info responder e popular
     // window.FOF_VERSION_UI18N (aí o _chaveCache() passa a usar a
     // versão real e o cache é invalidado naturalmente).
-    var FALLBACK_VERSION = '1.0.0-09252026';
+    var FALLBACK_VERSION = '1.0.0-09272026';
 
     // ============================================================
     // ESTADO

@@ -34,6 +34,7 @@ LAUNCHERS
 
 <div class="grid-launchers">
 <div class="launcher-item">
+<div class="btn-flatpak-wrapper">
 <button class="btn-executar"
 onclick="executarSteam()"
 data-comando="steam-install"
@@ -43,7 +44,9 @@ data-i18n="sessoes.06-gaming.btn_steam">
 🎮 Steam
 </button>
 </div>
+</div>
 <div class="launcher-item">
+<div class="btn-flatpak-wrapper">
 <button class="btn-executar verde"
 onclick="executarHeroic()"
 data-comando="heroic-install"
@@ -53,7 +56,9 @@ data-i18n="sessoes.06-gaming.btn_heroic">
 ⚡ Heroic Games
 </button>
 </div>
+</div>
 <div class="launcher-item">
+<div class="btn-flatpak-wrapper">
 <button class="btn-executar roxo"
 onclick="executarLutris()"
 data-comando="lutris-install"
@@ -62,6 +67,7 @@ id="btn-lutris-install"
 data-i18n="sessoes.06-gaming.btn_lutris">
 🎯 Lutris
 </button>
+</div>
 </div>
 </div>
 </div>
@@ -118,6 +124,7 @@ data-i18n="sessoes.06-gaming.btn_winetricks">
 </button>
 </div>
 <div class="launcher-item">
+<div class="btn-flatpak-wrapper">
 <button class="btn-executar roxo"
 onclick="executarBottles()"
 data-comando="bottles-install"
@@ -126,6 +133,7 @@ id="btn-bottles-install"
 data-i18n="sessoes.06-gaming.btn_bottles">
 🍾 Bottles
 </button>
+</div>
 </div>
 <div class="launcher-item">
 <button class="btn-executar azul-claro"
@@ -146,7 +154,7 @@ data-i18n="sessoes.06-gaming.btn_ntsync">
 </div>
 
 <div class="aviso-caixa" style="margin-top: 0.75rem;" data-i18n-html="sessoes.06-gaming.ntsync_aviso">
-⚠️ <strong>O que é o NTSYNC?</strong> É um módulo do kernel Linux que implementa a sincronização de threads do Windows nativamente no kernel, reduzindo o overhead de CPU e melhorando a fluidez em jogos (menos micro-stutters e frame times mais estáveis). É seguro ativar — o Fedora 44 já o habilita por padrão para Wine/Steam. <strong>Recomendado para usuários de GE-Proton</strong>, onde o suporte ao NTSYNC já é nativo. O Wine padrão dos repositórios ainda não se beneficia do NTSYNC — nesse caso, o ganho real vem ao rodar jogos via Proton/GE-Proton. <strong>Após instalar, reinicie o computador para ativar o NTSYNC</strong> — o módulo é configurado para carregar automaticamente no boot. Se preferir ativar sem reiniciar, rode <code>sudo modprobe ntsync</code> no terminal.
+⚠️ <strong>O que é o NTSYNC?</strong> É um módulo do kernel Linux que implementa a sincronização de threads do Windows nativamente no kernel, reduzindo o overhead de CPU e melhorando a fluidez em jogos (menos micro-stutters e frame times mais estáveis). É seguro ativar — o Fedora 44 já o habilita por padrão para Wine/Steam. <strong>Recomendado para usuários de GE-Proton</strong>, onde o suporte ao NTSYNC já é nativo. O Wine padrão dos repositórios ainda não se beneficia do NTSYNC — nesse caso, o ganho real vem ao rodar jogos via Proton/GE-Proton. <strong>O módulo será carregado automaticamente</strong> e persistirá entre reinicializações. Se algum jogo ainda não reconhecer, reinicie o computador.
 </div>
 </div>
 
@@ -234,6 +242,10 @@ data-i18n="sessoes.06-gaming.btn_gamescope">
 <strong>Goverlay</strong> é uma interface gráfica para configurar o MangoHud sem editar arquivos de texto.
 <strong>Gamescope</strong> é um micro-compositor da Valve que permite escalonamento (FSR/NIS), limitação de FPS, HDR e mais.
 </div>
+
+<div class="aviso-caixa" style="margin-top: 0.75rem;" data-i18n-html="sessoes.06-gaming.gamescope_nvidia_flatpak_aviso">
+⚠️ <strong>Gamescope + NVIDIA + Flatpak — atenção:</strong> o Gamescope foi projetado pela Valve para a arquitetura Mesa (AMD/Intel). Em placas NVIDIA com driver proprietário, ele pode apresentar instabilidade — tela preta, cursor travado ou fechamento do jogo ao abrir. Além disso, o Gamescope <strong>nativo</strong> (instalado via dnf) tem dificuldade em interagir com jogos que rodam dentro do sandbox Flatpak, e vice-versa. <strong>Recomendação:</strong> mantenha tudo no mesmo formato. Se usa Steam/Heroic via Flatpak, prefira também instalar as extensões Flatpak de Gamescope; se usa Steam nativa, prefira o Gamescope nativo. Em GPUs NVIDIA, se o Gamescope não funcionar bem, considere usar <strong>MangoHud + GameMode</strong> como alternativa — eles não têm essa limitação.
+</div>
 </div>
 
 <div class="progress-container" id="progress-gamemode-install">
@@ -279,6 +291,7 @@ Ferramentas para quem quer tirar o máximo do Fedora em jogos: versões específ
 ℹ️ Depois de instalar, abra o ProtonUp-Qt, escolha a versão do Proton-GE recomendada e clique em "Download". A versão mais recente costuma funcionar bem na maioria dos jogos.
 </div>
 <div class="grupo-botoes">
+<div class="btn-flatpak-wrapper">
 <button class="btn-executar"
 onclick="executarProtonUpQt()"
 data-comando="protonup-qt-install"
@@ -287,6 +300,7 @@ id="btn-protonup-qt-install"
 data-i18n="sessoes.06-gaming.btn_protonup">
 📦 Instalar ProtonUp-Qt
 </button>
+</div>
 <button class="btn-executar verde"
 style="display: none;"
 onclick="abrirProtonUpQt()"
@@ -437,6 +451,7 @@ Emuladores de consoles clássicos e modernos para Fedora. Todos disponíveis via
 ℹ️ <strong>Como instalar cores:</strong> após abrir o RetroArch, use o menu <strong>Online Updater → Core Downloader</strong> para baixar os cores que quiser (snes9x, genesis_plus_gx, nestopia, mgba, beetle_psx, mupen64plus_next, etc).
 </div>
 <div class="grupo-botoes">
+<div class="btn-flatpak-wrapper">
 <button class="btn-executar"
 onclick="executarRetroArch()"
 data-comando="retroarch-install"
@@ -445,6 +460,7 @@ id="btn-retroarch-install"
 data-i18n="sessoes.06-gaming.btn_retroarch">
 📦 Instalar RetroArch
 </button>
+</div>
 <button class="btn-executar verde"
 style="display: none;"
 onclick="abrirRetroArch()"
@@ -468,6 +484,7 @@ data-i18n="sessoes.06-gaming.btn_abrir_retroarch">
 <h3 data-i18n="sessoes.06-gaming.dolphin_titulo">Dolphin — GameCube / Wii</h3>
 <p data-i18n="sessoes.06-gaming.dolphin_desc">Emulador maduro e muito compatível para GameCube e Wii. Roda a maioria dos jogos em resolução maior que a original, com upscaling.</p>
 <div class="grupo-botoes">
+<div class="btn-flatpak-wrapper">
 <button class="btn-executar"
 onclick="executarDolphin()"
 data-comando="dolphin-install"
@@ -476,6 +493,7 @@ id="btn-dolphin-install"
 data-i18n="sessoes.06-gaming.btn_dolphin">
 📦 Instalar Dolphin
 </button>
+</div>
 <button class="btn-executar verde"
 style="display: none;"
 onclick="abrirDolphin()"
@@ -502,6 +520,7 @@ data-i18n="sessoes.06-gaming.btn_abrir_dolphin">
 ⚠️ <strong>Requer BIOS do PlayStation 2.</strong> A BIOS precisa ser dumpada do seu próprio console. O FOF não disponibiliza esse arquivo. Após instalar, consulte a documentação do PCSX2 para saber onde colocar a BIOS.
 </div>
 <div class="grupo-botoes">
+<div class="btn-flatpak-wrapper">
 <button class="btn-executar"
 onclick="executarPCSX2()"
 data-comando="pcsx2-install"
@@ -510,6 +529,7 @@ id="btn-pcsx2-install"
 data-i18n="sessoes.06-gaming.btn_pcsx2">
 📦 Instalar PCSX2
 </button>
+</div>
 <button class="btn-executar verde"
 style="display: none;"
 onclick="abrirPCSX2()"
@@ -539,6 +559,7 @@ data-i18n="sessoes.06-gaming.btn_abrir_pcsx2">
 ℹ️ <strong>Sobre o aviso "build não oficial":</strong> o RPCS3 pode exibir uma mensagem na primeira execução indicando que foi instalado de um pacote não oficial. Isso é um aviso interno do próprio emulador — o Flatpak do Flathub é o canal oficial de distribuição do RPCS3 para Linux, e o aviso não impede o funcionamento.
 </div>
 <div class="grupo-botoes">
+<div class="btn-flatpak-wrapper">
 <button class="btn-executar"
 onclick="executarRPCS3()"
 data-comando="rpcs3-install"
@@ -547,6 +568,7 @@ id="btn-rpcs3-install"
 data-i18n="sessoes.06-gaming.btn_rpcs3">
 📦 Instalar RPCS3
 </button>
+</div>
 <button class="btn-executar verde"
 style="display: none;"
 onclick="abrirRPCS3()"
@@ -573,6 +595,7 @@ data-i18n="sessoes.06-gaming.btn_abrir_rpcs3">
 ⚠️ <strong>Pode requerer BIOS do PlayStation 1.</strong> Embora o Duckstation tenha um HLE BIOS integrado (funciona sem BIOS em muitos jogos), alguns títulos exigem a BIOS real para funcionar corretamente. A BIOS precisa ser dumpada do seu próprio console.
 </div>
 <div class="grupo-botoes">
+<div class="btn-flatpak-wrapper">
 <button class="btn-executar"
 onclick="executarDuckstation()"
 data-comando="duckstation-install"
@@ -581,6 +604,7 @@ id="btn-duckstation-install"
 data-i18n="sessoes.06-gaming.btn_duckstation">
 📦 Instalar Duckstation
 </button>
+</div>
 <button class="btn-executar verde"
 style="display: none;"
 onclick="abrirDuckstation()"
@@ -735,20 +759,30 @@ DICAS E TRUQUES
 // ============================================================
 
 function _t(chave, fallback) {
-return (typeof tOr === 'function') ? tOr(chave, fallback) : fallback;
+    return (typeof tOr === 'function') ? tOr(chave, fallback) : fallback;
 }
 
-// ------------------------------------------------------------
-// Helper: gerencia visibilidade do botão "Abrir X"
-// ------------------------------------------------------------
+var APPS_FLATPAK = {
+    'steam-install': { appId: 'com.valvesoftware.Steam', fallback: '🎮 Steam' },
+    'heroic-install': { appId: 'com.heroicgameslauncher.hgl', fallback: '⚡ Heroic Games' },
+    'lutris-install': { appId: 'net.lutris.Lutris', fallback: '🎯 Lutris' },
+    'bottles-install': { appId: 'com.usebottles.bottles', fallback: '🍾 Bottles' },
+    'protonup-qt-install': { appId: 'net.davidotek.pupgui2', fallback: '📦 Instalar ProtonUp-Qt' },
+    'retroarch-install': { appId: 'org.libretro.RetroArch', fallback: '📦 Instalar RetroArch' },
+    'dolphin-install': { appId: 'org.DolphinEmu.dolphin-emu', fallback: '📦 Instalar Dolphin' },
+    'pcsx2-install': { appId: 'net.pcsx2.PCSX2', fallback: '📦 Instalar PCSX2' },
+    'rpcs3-install': { appId: 'net.rpcs3.RPCS3', fallback: '📦 Instalar RPCS3' },
+    'duckstation-install': { appId: 'org.duckstation.DuckStation', fallback: '📦 Instalar Duckstation' }
+};
+
 function _atualizarBotaoAbrir(idInstalacao, idBotaoAbrir) {
-var btn = document.getElementById(idBotaoAbrir);
-if (!btn) return;
-if (isExecutado(idInstalacao)) {
-btn.style.display = '';
-} else {
-btn.style.display = 'none';
-}
+    var btn = document.getElementById(idBotaoAbrir);
+    if (!btn) return;
+    if (isExecutado(idInstalacao)) {
+        btn.style.display = '';
+    } else {
+        btn.style.display = 'none';
+    }
 }
 
 // ------------------------------------------------------------
@@ -756,21 +790,27 @@ btn.style.display = 'none';
 // ------------------------------------------------------------
 
 async function executarSteam() {
-const idComando = 'steam-install';
-const comando = 'flatpak install flathub com.valvesoftware.Steam -y && (rpm -q steam-devices > /dev/null 2>&1 || sudo dnf install -y steam-devices)';
-await executarComandoGenerico(idComando, comando, _t('sessoes.06-gaming.btn_steam', '🎮 Steam'), mostrarBotaoDesinstalar);
+    const idComando = 'steam-install';
+    const comando = 'flatpak install flathub com.valvesoftware.Steam -y';
+    await executarComandoGenerico(idComando, comando, _t('sessoes.06-gaming.btn_steam', '🎮 Steam'), function() {
+        _atualizarIconeDesinstalar(idComando);
+    });
 }
 
 async function executarHeroic() {
-const idComando = 'heroic-install';
-const comando = 'flatpak install flathub com.heroicgameslauncher.hgl -y';
-await executarComandoGenerico(idComando, comando, _t('sessoes.06-gaming.btn_heroic', '⚡ Heroic Games'), mostrarBotaoDesinstalar);
+    const idComando = 'heroic-install';
+    const comando = 'flatpak install flathub com.heroicgameslauncher.hgl -y';
+    await executarComandoGenerico(idComando, comando, _t('sessoes.06-gaming.btn_heroic', '⚡ Heroic Games'), function() {
+        _atualizarIconeDesinstalar(idComando);
+    });
 }
 
 async function executarLutris() {
-const idComando = 'lutris-install';
-const comando = 'flatpak install flathub net.lutris.Lutris -y';
-await executarComandoGenerico(idComando, comando, _t('sessoes.06-gaming.btn_lutris', '🎯 Lutris'), mostrarBotaoDesinstalar);
+    const idComando = 'lutris-install';
+    const comando = 'flatpak install flathub net.lutris.Lutris -y';
+    await executarComandoGenerico(idComando, comando, _t('sessoes.06-gaming.btn_lutris', '🎯 Lutris'), function() {
+        _atualizarIconeDesinstalar(idComando);
+    });
 }
 
 // ------------------------------------------------------------
@@ -778,19 +818,28 @@ await executarComandoGenerico(idComando, comando, _t('sessoes.06-gaming.btn_lutr
 // ------------------------------------------------------------
 
 async function executarWine() {
-await executarComandoGenerico('wine-install', 'sudo dnf install wine -y', _t('sessoes.06-gaming.btn_wine', '🍷 Wine'), mostrarBotaoDesinstalar);
+    await executarComandoGenerico('wine-install', 'sudo dnf install wine -y', _t('sessoes.06-gaming.btn_wine', '🍷 Wine'), mostrarBotaoDesinstalar);
 }
 
 async function executarWinetricks() {
-await executarComandoGenerico('winetricks-install', 'sudo dnf install winetricks -y', _t('sessoes.06-gaming.btn_winetricks', '🔧 Winetricks'), mostrarBotaoDesinstalar);
+    await executarComandoGenerico('winetricks-install', 'sudo dnf install winetricks -y', _t('sessoes.06-gaming.btn_winetricks', '🔧 Winetricks'), mostrarBotaoDesinstalar);
 }
 
 async function executarBottles() {
-await executarComandoGenerico('bottles-install', 'flatpak install flathub com.usebottles.bottles -y', _t('sessoes.06-gaming.btn_bottles', '🍾 Bottles'), mostrarBotaoDesinstalar);
+    const idComando = 'bottles-install';
+    const comando = 'flatpak install flathub com.usebottles.bottles -y';
+    await executarComandoGenerico(idComando, comando, _t('sessoes.06-gaming.btn_bottles', '🍾 Bottles'), function() {
+        _atualizarIconeDesinstalar(idComando);
+    });
 }
 
 async function executarNTSync() {
-await executarComandoGenerico('ntsync-install', 'sudo dnf install -y wine-ntsync', _t('sessoes.06-gaming.btn_ntsync', '⚡ NTSYNC'), mostrarBotaoDesinstalar);
+    const idComando = 'ntsync-install';
+    const comando =
+        'sudo dnf install -y wine-ntsync && ' +
+        'sudo modprobe ntsync && ' +
+        'echo "ntsync" | sudo tee /etc/modules-load.d/ntsync.conf > /dev/null';
+    await executarComandoGenerico(idComando, comando, _t('sessoes.06-gaming.btn_ntsync', '⚡ NTSYNC'), mostrarBotaoDesinstalar);
 }
 
 // ------------------------------------------------------------
@@ -798,19 +847,19 @@ await executarComandoGenerico('ntsync-install', 'sudo dnf install -y wine-ntsync
 // ------------------------------------------------------------
 
 async function executarGameMode() {
-await executarComandoGenerico('gamemode-install', 'sudo dnf install gamemode -y', _t('sessoes.06-gaming.btn_gamemode', '⚙️ GameMode'), mostrarBotaoDesinstalar);
+    await executarComandoGenerico('gamemode-install', 'sudo dnf install gamemode -y', _t('sessoes.06-gaming.btn_gamemode', '⚙️ GameMode'), mostrarBotaoDesinstalar);
 }
 
 async function executarMangoHud() {
-await executarComandoGenerico('mangohud-install', 'sudo dnf install mangohud -y', _t('sessoes.06-gaming.btn_mangohud', '📊 MangoHud'), mostrarBotaoDesinstalar);
+    await executarComandoGenerico('mangohud-install', 'sudo dnf install mangohud -y', _t('sessoes.06-gaming.btn_mangohud', '📊 MangoHud'), mostrarBotaoDesinstalar);
 }
 
 async function executarGoverlay() {
-await executarComandoGenerico('goverlay-install', 'sudo dnf install goverlay -y', _t('sessoes.06-gaming.btn_goverlay', '🎛️ Goverlay'), mostrarBotaoDesinstalar);
+    await executarComandoGenerico('goverlay-install', 'sudo dnf install goverlay -y', _t('sessoes.06-gaming.btn_goverlay', '🎛️ Goverlay'), mostrarBotaoDesinstalar);
 }
 
 async function executarGamescope() {
-await executarComandoGenerico('gamescope-install', 'sudo dnf install gamescope -y', _t('sessoes.06-gaming.btn_gamescope', '🖥️ Gamescope'), mostrarBotaoDesinstalar);
+    await executarComandoGenerico('gamescope-install', 'sudo dnf install gamescope -y', _t('sessoes.06-gaming.btn_gamescope', '🖥️ Gamescope'), mostrarBotaoDesinstalar);
 }
 
 // ------------------------------------------------------------
@@ -818,151 +867,144 @@ await executarComandoGenerico('gamescope-install', 'sudo dnf install gamescope -
 // ------------------------------------------------------------
 
 async function executarProtonUpQt() {
-const idComando = 'protonup-qt-install';
-const comando = 'flatpak install flathub net.davidotek.pupgui2 -y';
-await executarComandoGenerico(idComando, comando, _t('sessoes.06-gaming.btn_protonup', '📦 Instalar ProtonUp-Qt'), function() {
-_atualizarBotaoAbrir('protonup-qt-install', 'btn-abrir-protonup-qt');
-});
+    const idComando = 'protonup-qt-install';
+    const comando = 'flatpak install flathub net.davidotek.pupgui2 -y';
+    await executarComandoGenerico(idComando, comando, _t('sessoes.06-gaming.btn_protonup', '📦 Instalar ProtonUp-Qt'), function() {
+        _atualizarIconeDesinstalar(idComando);
+        _atualizarBotaoAbrir('protonup-qt-install', 'btn-abrir-protonup-qt');
+    });
 }
 
 function abrirProtonUpQt() {
-// ProtonUp-Qt é Flatpak — gtk-launch resolve sem senha.
-abrirFerramentaExterna('gtk-launch net.davidotek.pupgui2 2>/dev/null &', 'protonup-qt-install', 'ProtonUp-Qt');
+    abrirFerramentaExterna('gtk-launch net.davidotek.pupgui2 2>/dev/null &', 'protonup-qt-install', 'ProtonUp-Qt');
 }
 
 async function executarVkBasalt() {
-const idComando = 'vkbasalt-install';
-const comando = 'sudo dnf install -y vkBasalt';
-await executarComandoGenerico(idComando, comando, _t('sessoes.06-gaming.btn_vkbasalt', '📦 Instalar vkBasalt'), mostrarBotaoDesinstalar);
+    const idComando = 'vkbasalt-install';
+    const comando = 'sudo dnf install -y vkBasalt';
+    await executarComandoGenerico(idComando, comando, _t('sessoes.06-gaming.btn_vkbasalt', '📦 Instalar vkBasalt'), mostrarBotaoDesinstalar);
 }
 
 async function executarGameModePresets() {
-const idComando = 'gamemode-presets-apply';
-const comando =
-'mkdir -p $HOME/.config/MangoHud && ' +
-'cat > $HOME/.config/MangoHud/MangoHud.conf << \'MANGOHUDEOF\'\n' +
-'# Preset FOF - overlay limpo, canto superior esquerdo\n' +
-'position=top-left\n' +
-'font_size=24\n' +
-'background_alpha=0.5\n' +
-'gpu_stats\n' +
-'gpu_temp\n' +
-'cpu_stats\n' +
-'cpu_temp\n' +
-'ram\n' +
-'fps\n' +
-'frametime\n' +
-'frame_timing\n' +
-'fps_limit_method=early\n' +
-'toggle_key=F12\n' +
-'MANGOHUDEOF\n' +
-'mkdir -p $HOME/.config && ' +
-'cat > $HOME/.config/gamemode.ini << \'GAMEMODEEOF\'\n' +
-'[general]\n' +
-'renice=10\n' +
-'desiredgov=performance\n' +
-'softrealtime=1\n' +
-'[gpu]\n' +
-'apply_gpu_optimisations=accept-responsibility\n' +
-'gpu_device=0\n' +
-'gpu_powermode=max_performance\n' +
-'GAMEMODEEOF\n' +
-'chown -R $USER:$USER $HOME/.config/MangoHud $HOME/.config/gamemode.ini';
-await executarComandoGenerico(idComando, comando, _t('sessoes.06-gaming.btn_gamemode_presets', '⚙️ Aplicar Presets'));
+    const idComando = 'gamemode-presets-apply';
+    const comando =
+        'mkdir -p $HOME/.config/MangoHud && ' +
+        'cat > $HOME/.config/MangoHud/MangoHud.conf << \'MANGOHUDEOF\'\n' +
+        '# Preset FOF - overlay limpo, canto superior esquerdo\n' +
+        'position=top-left\n' +
+        'font_size=24\n' +
+        'background_alpha=0.5\n' +
+        'gpu_stats\n' +
+        'gpu_temp\n' +
+        'cpu_stats\n' +
+        'cpu_temp\n' +
+        'ram\n' +
+        'fps\n' +
+        'frametime\n' +
+        'frame_timing\n' +
+        'fps_limit_method=early\n' +
+        'toggle_key=F12\n' +
+        'MANGOHUDEOF\n' +
+        'mkdir -p $HOME/.config && ' +
+        'cat > $HOME/.config/gamemode.ini << \'GAMEMODEEOF\'\n' +
+        '[general]\n' +
+        'renice=10\n' +
+        'desiredgov=performance\n' +
+        'softrealtime=1\n' +
+        '[gpu]\n' +
+        'apply_gpu_optimisations=accept-responsibility\n' +
+        'gpu_device=0\n' +
+        'gpu_powermode=max_performance\n' +
+        'GAMEMODEEOF\n' +
+        'chown -R $USER:$USER $HOME/.config/MangoHud $HOME/.config/gamemode.ini';
+    await executarComandoGenerico(idComando, comando, _t('sessoes.06-gaming.btn_gamemode_presets', '⚙️ Aplicar Presets'));
 }
 
 async function executarGamescopeSession() {
-const idComando = 'gamescope-session-install';
-const comando = 'sudo dnf install -y gamescope-session-plus gamescope-session-steam';
-await executarComandoGenerico(idComando, comando, _t('sessoes.06-gaming.btn_gamescope_session', '📦 Instalar Gamescope Session'), mostrarBotaoDesinstalar);
+    const idComando = 'gamescope-session-install';
+    const comando = 'sudo dnf install -y gamescope-session-plus gamescope-session-steam';
+    await executarComandoGenerico(idComando, comando, _t('sessoes.06-gaming.btn_gamescope_session', '📦 Instalar Gamescope Session'), mostrarBotaoDesinstalar);
 }
 
 async function executarControllerTest() {
-const idComando = 'controller-test-install';
-const comando = 'sudo dnf install -y jstest-gtk';
-await executarComandoGenerico(idComando, comando, _t('sessoes.06-gaming.btn_controller_test', '📦 Instalar Teste de Controle'), function() {
-_atualizarBotaoAbrir('controller-test-install', 'btn-abrir-controller-test');
-});
+    const idComando = 'controller-test-install';
+    const comando = 'sudo dnf install -y jstest-gtk';
+    await executarComandoGenerico(idComando, comando, _t('sessoes.06-gaming.btn_controller_test', '📦 Instalar Teste de Controle'), function() {
+        _atualizarBotaoAbrir('controller-test-install', 'btn-abrir-controller-test');
+    });
 }
 
 function abrirControllerTest() {
-abrirFerramentaExterna('gtk-launch jstest-gtk 2>/dev/null &', 'controller-test-install', 'Teste de Controle');
+    abrirFerramentaExterna('gtk-launch jstest-gtk 2>/dev/null &', 'controller-test-install', 'Teste de Controle');
 }
 
 // ------------------------------------------------------------
 // EMULADORES
 // ------------------------------------------------------------
-//
-// IMPORTANTE: para ABRIR apps Flatpak, sempre usar `gtk-launch`
-// (que está na whitelist do server.js) em vez de `flatpak run`.
-//
-// Motivos:
-// 1. `flatpak run` NÃO está na whitelist → o servidor tentaria
-//    autenticar via pkexec/kdesu (pedindo senha).
-// 2. Mesmo autenticando, rodando como root o Flatpak perderia
-//    acesso ao DISPLAY do usuário — a GUI não abriria.
-//
-// `gtk-launch <app-id>` usa o D-Bus do desktop, dispara o app
-// como o usuário comum, sem senha.
 
 async function executarRetroArch() {
-const idComando = 'retroarch-install';
-const comando = 'flatpak install flathub org.libretro.RetroArch -y';
-await executarComandoGenerico(idComando, comando, _t('sessoes.06-gaming.btn_retroarch', '📦 Instalar RetroArch'), function() {
-_atualizarBotaoAbrir('retroarch-install', 'btn-abrir-retroarch');
-});
+    const idComando = 'retroarch-install';
+    const comando = 'flatpak install flathub org.libretro.RetroArch -y';
+    await executarComandoGenerico(idComando, comando, _t('sessoes.06-gaming.btn_retroarch', '📦 Instalar RetroArch'), function() {
+        _atualizarIconeDesinstalar(idComando);
+        _atualizarBotaoAbrir('retroarch-install', 'btn-abrir-retroarch');
+    });
 }
 
 function abrirRetroArch() {
-abrirFerramentaExterna('gtk-launch org.libretro.RetroArch 2>/dev/null &', 'retroarch-install', 'RetroArch');
+    abrirFerramentaExterna('gtk-launch org.libretro.RetroArch 2>/dev/null &', 'retroarch-install', 'RetroArch');
 }
 
 async function executarDolphin() {
-const idComando = 'dolphin-install';
-const comando = 'flatpak install flathub org.DolphinEmu.dolphin-emu -y';
-await executarComandoGenerico(idComando, comando, _t('sessoes.06-gaming.btn_dolphin', '📦 Instalar Dolphin'), function() {
-_atualizarBotaoAbrir('dolphin-install', 'btn-abrir-dolphin');
-});
+    const idComando = 'dolphin-install';
+    const comando = 'flatpak install flathub org.DolphinEmu.dolphin-emu -y';
+    await executarComandoGenerico(idComando, comando, _t('sessoes.06-gaming.btn_dolphin', '📦 Instalar Dolphin'), function() {
+        _atualizarIconeDesinstalar(idComando);
+        _atualizarBotaoAbrir('dolphin-install', 'btn-abrir-dolphin');
+    });
 }
 
 function abrirDolphin() {
-abrirFerramentaExterna('gtk-launch org.DolphinEmu.dolphin-emu 2>/dev/null &', 'dolphin-install', 'Dolphin');
+    abrirFerramentaExterna('gtk-launch org.DolphinEmu.dolphin-emu 2>/dev/null &', 'dolphin-install', 'Dolphin');
 }
 
 async function executarPCSX2() {
-const idComando = 'pcsx2-install';
-const comando = 'flatpak install flathub net.pcsx2.PCSX2 -y';
-await executarComandoGenerico(idComando, comando, _t('sessoes.06-gaming.btn_pcsx2', '📦 Instalar PCSX2'), function() {
-_atualizarBotaoAbrir('pcsx2-install', 'btn-abrir-pcsx2');
-});
+    const idComando = 'pcsx2-install';
+    const comando = 'flatpak install flathub net.pcsx2.PCSX2 -y';
+    await executarComandoGenerico(idComando, comando, _t('sessoes.06-gaming.btn_pcsx2', '📦 Instalar PCSX2'), function() {
+        _atualizarIconeDesinstalar(idComando);
+        _atualizarBotaoAbrir('pcsx2-install', 'btn-abrir-pcsx2');
+    });
 }
 
 function abrirPCSX2() {
-abrirFerramentaExterna('gtk-launch net.pcsx2.PCSX2 2>/dev/null &', 'pcsx2-install', 'PCSX2');
+    abrirFerramentaExterna('gtk-launch net.pcsx2.PCSX2 2>/dev/null &', 'pcsx2-install', 'PCSX2');
 }
 
 async function executarRPCS3() {
-const idComando = 'rpcs3-install';
-const comando = 'flatpak install flathub net.rpcs3.RPCS3 -y';
-await executarComandoGenerico(idComando, comando, _t('sessoes.06-gaming.btn_rpcs3', '📦 Instalar RPCS3'), function() {
-_atualizarBotaoAbrir('rpcs3-install', 'btn-abrir-rpcs3');
-});
+    const idComando = 'rpcs3-install';
+    const comando = 'flatpak install flathub net.rpcs3.RPCS3 -y';
+    await executarComandoGenerico(idComando, comando, _t('sessoes.06-gaming.btn_rpcs3', '📦 Instalar RPCS3'), function() {
+        _atualizarIconeDesinstalar(idComando);
+        _atualizarBotaoAbrir('rpcs3-install', 'btn-abrir-rpcs3');
+    });
 }
 
 function abrirRPCS3() {
-abrirFerramentaExterna('gtk-launch net.rpcs3.RPCS3 2>/dev/null &', 'rpcs3-install', 'RPCS3');
+    abrirFerramentaExterna('gtk-launch net.rpcs3.RPCS3 2>/dev/null &', 'rpcs3-install', 'RPCS3');
 }
 
 async function executarDuckstation() {
-const idComando = 'duckstation-install';
-const comando = 'flatpak install flathub org.duckstation.DuckStation -y';
-await executarComandoGenerico(idComando, comando, _t('sessoes.06-gaming.btn_duckstation', '📦 Instalar Duckstation'), function() {
-_atualizarBotaoAbrir('duckstation-install', 'btn-abrir-duckstation');
-});
+    const idComando = 'duckstation-install';
+    const comando = 'flatpak install flathub org.duckstation.DuckStation -y';
+    await executarComandoGenerico(idComando, comando, _t('sessoes.06-gaming.btn_duckstation', '📦 Instalar Duckstation'), function() {
+        _atualizarIconeDesinstalar(idComando);
+        _atualizarBotaoAbrir('duckstation-install', 'btn-abrir-duckstation');
+    });
 }
 
 function abrirDuckstation() {
-abrirFerramentaExterna('gtk-launch org.duckstation.DuckStation 2>/dev/null &', 'duckstation-install', 'Duckstation');
+    abrirFerramentaExterna('gtk-launch org.duckstation.DuckStation 2>/dev/null &', 'duckstation-install', 'Duckstation');
 }
 
 // ------------------------------------------------------------
@@ -970,90 +1012,224 @@ abrirFerramentaExterna('gtk-launch org.duckstation.DuckStation 2>/dev/null &', '
 // ------------------------------------------------------------
 
 async function executarBufferbloatTest() {
-const idComando = 'bufferbloat-test';
-const comando = 'sudo dnf install -y flent netperf iperf3';
-await executarComandoGenerico(idComando, comando, _t('sessoes.06-gaming.btn_bufferbloat', '📊 Instalar Ferramenta de Teste'), function() {
-_atualizarBotaoAbrir('bufferbloat-test', 'btn-abrir-bufferbloat');
-});
+    const idComando = 'bufferbloat-test';
+    const comando = 'sudo dnf install -y flent netperf iperf3';
+    await executarComandoGenerico(idComando, comando, _t('sessoes.06-gaming.btn_bufferbloat', '📊 Instalar Ferramenta de Teste'), function() {
+        _atualizarBotaoAbrir('bufferbloat-test', 'btn-abrir-bufferbloat');
+    });
 }
 
 function abrirBufferbloatTerminal() {
-// O flent precisa de um TTY interativo. Não temos como abrir um
-// terminal já com o comando digitado via gtk-launch sem criar
-// arquivos .desktop temporários — o que seria overkill. Em vez
-// disso, mostramos um alerta com o comando pronto para copiar.
-var msg = _t('sessoes.06-gaming.bufferbloat_abrir_msg',
-'Para testar sua conexão, abra um terminal e rode:\n\n' +
-'flent rrul -H seu-servidor-de-teste\n\n' +
-'Substitua "seu-servidor-de-teste" pelo host de teste.\n\n' +
-'Você pode usar servidores públicos como:\n' +
-'  flent rrul -H flent-public.bufferbloat.net');
-alert(msg);
+    var msg = _t('sessoes.06-gaming.bufferbloat_abrir_msg',
+        'Para testar sua conexão, abra um terminal e rode:\n\n' +
+        'flent rrul -H seu-servidor-de-teste\n\n' +
+        'Substitua "seu-servidor-de-teste" pelo host de teste.\n\n' +
+        'Você pode usar servidores públicos como:\n' +
+        '  flent rrul -H flent-public.bufferbloat.net');
+    alert(msg);
+}
+
+// ------------------------------------------------------------
+// DESINSTALAÇÃO DE FLATPAKS
+// ------------------------------------------------------------
+
+async function desinstalarAppFlatpak(idComando, appId, nomeExibicao) {
+    if (!isExecutado(idComando)) {
+        alert(_tVars('comum.nao_instalado', nomeExibicao + ' não está instalado.', { nome: nomeExibicao }));
+        return;
+    }
+
+    if (!confirm(_tVars('comum.confirmar_desinstalar', 'Deseja desinstalar o ' + nomeExibicao + '?', { nome: nomeExibicao }))) return;
+
+    var logBox = _getLogBox(idComando);
+    var btn = document.getElementById('btn-' + idComando);
+    var idRevert = idComando + '-revert';
+
+    if (logBox) {
+        logBox.style.display = 'block';
+        _separadorLog(logBox, '🗑️ Desinstalar ' + nomeExibicao);
+        var infoLine = document.createElement('div');
+        infoLine.className = 'log-line info';
+        infoLine.textContent = '🗑️ Desinstalando ' + nomeExibicao + '...';
+        logBox.appendChild(infoLine);
+        logBox.scrollTop = logBox.scrollHeight;
+    }
+
+    conectarSSE(idRevert, logBox);
+
+    try {
+        await fetch(API_URL + '/executar', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                comando: 'flatpak uninstall -y ' + appId,
+                idComando: idRevert
+            })
+        });
+
+        var sucesso = await aguardarConclusaoReal(idRevert, 180000);
+
+        if (!sucesso) {
+            if (logBox) {
+                var errorLine = document.createElement('div');
+                errorLine.className = 'log-line error';
+                errorLine.textContent = sucesso === null
+                    ? _t('comum.erro_timeout_desinstalar', '❌ Tempo esgotado esperando a desinstalação.')
+                    : _tVars('comum.erro_falha_desinstalar', '❌ Falha ao desinstalar ' + nomeExibicao + '.', { nome: nomeExibicao });
+                logBox.appendChild(errorLine);
+                logBox.scrollTop = logBox.scrollHeight;
+            }
+            return;
+        }
+
+        await desmarcarComoExecutado(idComando);
+
+        if (btn) {
+            btn.textContent = _textoOriginalTraduzido(btn) || nomeExibicao;
+            btn.style.backgroundColor = _corOriginalDoBotao(btn);
+            btn.style.cursor = 'pointer';
+            btn.style.opacity = '1';
+            btn.disabled = false;
+        }
+
+        _esconderIconeDesinstalar(idComando);
+
+        var idBotaoAbrir = 'btn-abrir-' + idComando.replace('-install', '');
+        var btnAbrir = document.getElementById(idBotaoAbrir);
+        if (btnAbrir) btnAbrir.style.display = 'none';
+
+        if (logBox) {
+            var successLine = document.createElement('div');
+            successLine.className = 'log-line success';
+            successLine.textContent = _tVars('comum.sucesso_desinstalar', '✅ ' + nomeExibicao + ' desinstalado com sucesso!', { nome: nomeExibicao });
+            logBox.appendChild(successLine);
+            logBox.scrollTop = logBox.scrollHeight;
+        }
+
+    } catch (e) {
+        if (logBox) {
+            var errorLine2 = document.createElement('div');
+            errorLine2.className = 'log-line error';
+            errorLine2.textContent = _tVars('comum.erro_desinstalar', '❌ Erro ao desinstalar: ' + e.message, { msg: e.message });
+            logBox.appendChild(errorLine2);
+            logBox.scrollTop = logBox.scrollHeight;
+        }
+    }
+}
+
+var _svgLixeira = '<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>';
+
+function _atualizarIconeDesinstalar(idComando) {
+    var btn = document.getElementById('btn-' + idComando);
+    if (!btn) return;
+
+    var wrapper = btn.closest('.btn-flatpak-wrapper');
+    if (!wrapper) return;
+
+    var info = APPS_FLATPAK[idComando];
+    if (!info) return;
+
+    var nomeExibicao = (btn.textContent || '').replace(/^[✅\s]+/, '').trim() || info.fallback;
+
+    var icone = wrapper.querySelector('.btn-flatpak-uninstall');
+    if (!icone) {
+        icone = document.createElement('button');
+        icone.type = 'button';
+        icone.className = 'btn-flatpak-uninstall';
+        icone.setAttribute('data-comando-alvo', idComando);
+        icone.innerHTML = _svgLixeira;
+        icone.title = _tVars('comum.desinstalar_flatpak', 'Desinstalar ' + nomeExibicao, { nome: nomeExibicao });
+        icone.setAttribute('aria-label', icone.title);
+
+        icone.addEventListener('click', function(e) {
+            e.stopPropagation();
+            var alvo = this.getAttribute('data-comando-alvo');
+            var alvoInfo = APPS_FLATPAK[alvo];
+            if (!alvoInfo) return;
+            var alvoBtn = document.getElementById('btn-' + alvo);
+            var alvoNome = alvoBtn ? (alvoBtn.textContent || '').replace(/^[✅\s]+/, '').trim() : alvoInfo.fallback;
+            desinstalarAppFlatpak(alvo, alvoInfo.appId, alvoNome || alvoInfo.fallback);
+        });
+
+        wrapper.appendChild(icone);
+    }
+
+    icone.style.display = '';
+}
+
+function _esconderIconeDesinstalar(idComando) {
+    var btn = document.getElementById('btn-' + idComando);
+    if (!btn) return;
+    var wrapper = btn.closest('.btn-flatpak-wrapper');
+    if (!wrapper) return;
+    var icone = wrapper.querySelector('.btn-flatpak-uninstall');
+    if (icone) icone.style.display = 'none';
+}
+
+function _restaurarIconesFlatpak() {
+    Object.keys(APPS_FLATPAK).forEach(function(idComando) {
+        if (isExecutado(idComando)) {
+            _atualizarIconeDesinstalar(idComando);
+        }
+    });
 }
 
 // ===== RESTAURAR ESTADO DA SESSÃO =====
 function restaurarEstadoSessao() {
-const comandos = [
-// Launchers
-'steam-install', 'heroic-install', 'lutris-install',
-// Compatibilidade
-'wine-install', 'winetricks-install', 'bottles-install', 'ntsync-install',
-// Performance
-'gamemode-install', 'mangohud-install', 'goverlay-install', 'gamescope-install',
-// Gaming Avançado
-'protonup-qt-install', 'vkbasalt-install', 'gamescope-session-install', 'controller-test-install',
-// Emuladores
-'retroarch-install', 'dolphin-install', 'pcsx2-install', 'rpcs3-install', 'duckstation-install',
-// Rede
-'bufferbloat-test'
-];
+    const comandos = [
+        'steam-install', 'heroic-install', 'lutris-install',
+        'wine-install', 'winetricks-install', 'bottles-install', 'ntsync-install',
+        'gamemode-install', 'mangohud-install', 'goverlay-install', 'gamescope-install',
+        'protonup-qt-install', 'vkbasalt-install', 'gamescope-session-install', 'controller-test-install',
+        'retroarch-install', 'dolphin-install', 'pcsx2-install', 'rpcs3-install', 'duckstation-install',
+        'bufferbloat-test'
+    ];
 
-comandos.forEach(function(id) {
-if (isExecutado(id)) {
-const btn = document.getElementById('btn-' + id);
-if (btn) {
-const textoFinal = getTextoAposExecucao(id);
-btn.textContent = textoFinal;
-btn.style.backgroundColor = '#4b5563';
-btn.style.cursor = 'default';
-btn.disabled = true;
-}
-}
-});
+    comandos.forEach(function(id) {
+        if (isExecutado(id)) {
+            const btn = document.getElementById('btn-' + id);
+            if (btn) {
+                const textoFinal = getTextoAposExecucao(id);
+                btn.textContent = textoFinal;
+                btn.style.backgroundColor = '#4b5563';
+                btn.style.cursor = 'default';
+                btn.disabled = true;
+            }
+        }
+    });
 
-// Botões sempre clicáveis (bufferbloat NÃO está aqui — ele é uma
-// instalação única, então deve marcar como concluído após sucesso)
-['gamemode-presets-apply'].forEach(function(id) {
-const btn = document.getElementById('btn-' + id);
-if (btn) {
-btn.disabled = false;
-btn.style.opacity = '1';
-btn.style.cursor = 'pointer';
-}
-});
+    ['gamemode-presets-apply'].forEach(function(id) {
+        const btn = document.getElementById('btn-' + id);
+        if (btn) {
+            btn.disabled = false;
+            btn.style.opacity = '1';
+            btn.style.cursor = 'pointer';
+        }
+    });
 
-// Botões "Abrir X"
-_atualizarBotaoAbrir('protonup-qt-install', 'btn-abrir-protonup-qt');
-_atualizarBotaoAbrir('controller-test-install', 'btn-abrir-controller-test');
-_atualizarBotaoAbrir('retroarch-install', 'btn-abrir-retroarch');
-_atualizarBotaoAbrir('dolphin-install', 'btn-abrir-dolphin');
-_atualizarBotaoAbrir('pcsx2-install', 'btn-abrir-pcsx2');
-_atualizarBotaoAbrir('rpcs3-install', 'btn-abrir-rpcs3');
-_atualizarBotaoAbrir('duckstation-install', 'btn-abrir-duckstation');
-_atualizarBotaoAbrir('bufferbloat-test', 'btn-abrir-bufferbloat');
+    _atualizarBotaoAbrir('protonup-qt-install', 'btn-abrir-protonup-qt');
+    _atualizarBotaoAbrir('controller-test-install', 'btn-abrir-controller-test');
+    _atualizarBotaoAbrir('retroarch-install', 'btn-abrir-retroarch');
+    _atualizarBotaoAbrir('dolphin-install', 'btn-abrir-dolphin');
+    _atualizarBotaoAbrir('pcsx2-install', 'btn-abrir-pcsx2');
+    _atualizarBotaoAbrir('rpcs3-install', 'btn-abrir-rpcs3');
+    _atualizarBotaoAbrir('duckstation-install', 'btn-abrir-duckstation');
+    _atualizarBotaoAbrir('bufferbloat-test', 'btn-abrir-bufferbloat');
+
+    _restaurarIconesFlatpak();
 }
 
 // ===== INICIALIZAÇÃO =====
 (function() {
-document.querySelectorAll('.btn-executar').forEach(function(btn) {
-if (!btn.hasAttribute('data-texto-original')) {
-btn.setAttribute('data-texto-original', btn.textContent);
-}
-});
+    document.querySelectorAll('.btn-executar').forEach(function(btn) {
+        if (!btn.hasAttribute('data-texto-original')) {
+            btn.setAttribute('data-texto-original', btn.textContent);
+        }
+    });
 
-restaurarEstadoSessao();
+    restaurarEstadoSessao();
 
-console.log('📦 Componente 06-gaming carregado!');
+    console.log('📦 Componente 06-gaming carregado!');
 })();
 </script>
 </body>
