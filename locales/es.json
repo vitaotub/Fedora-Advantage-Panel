@@ -94,7 +94,15 @@
             "flatpak_titulo": "📦 Habilitar Flatpak (Flathub)",
             "flatpak_desc": "Añade el repositorio global Flathub y garantiza la instalación del gestor de paquetes Flatpak en el sistema.",
             "btn_configurar_flatpak": "📦 Configurar Flatpak",
-            "texto_concluido_flatpak": "✅ Flatpak configurado"
+            "texto_concluido_flatpak": "✅ Flatpak configurado",
+            "remover_fedora_flatpak_titulo": "🚫 Eliminar repositorio Flatpak de Fedora",
+            "remover_fedora_flatpak_desc": "Fedora incluye su propio repositorio Flatpak, distinto de Flathub. Las apps de ese repositorio pueden estar desactualizadas respecto a las versiones oficiales mantenidas por los desarrolladores — o, en algunos casos, ni siquiera ser el empaquetado oficial. Como ya habilitaste Flathub arriba, este repositorio puede eliminarse sin problema.",
+            "remover_fedora_flatpak_oque_faz": "ℹ️ <strong>Qué hace este comando, en orden:</strong><br>1. Elimina las apps Flatpak instaladas desde el repositorio Fedora (y <code>fedora-testing</code>, si existe)<br>2. ⚠️ <strong>También borra los datos guardados de esas apps</strong> — configuraciones, perfiles, marcadores, partidas guardadas. Esto lo hace la flag <code>--delete-data</code> de <code>flatpak uninstall</code>, y es irreversible<br>3. Elimina los repositorios <code>fedora</code> y <code>fedora-testing</code><br>4. Limpia runtimes huérfanos que quedaron sin uso",
+            "remover_fedora_flatpak_aviso": "⚠️ <strong>Antes de continuar:</strong><br>• Esta operación es <strong>irreversible</strong> — los datos de las apps eliminadas se van con ellas.<br>• Cierra todas las apps Flatpak que puedan estar en ejecución (navegadores, juegos, reproductores).<br>• El repositorio Fedora Flatpak es <strong>independiente</strong> de los repositorios RPM de Fedora. Eliminarlo <strong>no afecta</strong> a <code>dnf</code>, actualizaciones de seguridad ni paquetes del sistema.",
+            "btn_remover_fedora_flatpak": "🚫 Eliminar repositorio Flatpak de Fedora",
+            "texto_concluido_remover_fedora_flatpak": "✅ Repositorio Fedora Flatpak eliminado",
+            "remover_fedora_flatpak_confirm1": "⚠️ Estás a punto de eliminar el repositorio Flatpak de Fedora.\n\nEsto hará:\n• Eliminar las apps Flatpak instaladas desde el repositorio Fedora\n• BORRAR los datos de esas apps (configuraciones, perfiles, marcadores, partidas) — irreversible\n• Eliminar los repositorios fedora y fedora-testing\n• Limpiar runtimes huérfanos\n\nCierra todas las apps Flatpak en ejecución antes de continuar.\n\n¿Continuar?",
+            "remover_fedora_flatpak_confirm2": "🔄 ¡Última confirmación!\n\nLos datos de las apps Flatpak del repositorio Fedora se perderán PERMANENTEMENTE.\n\n¿Estás absolutamente seguro?"
         },
 
         "codecs": {

@@ -94,7 +94,15 @@
             "flatpak_titulo": "📦 Enable Flatpak (Flathub)",
             "flatpak_desc": "Adds the global Flathub repository and ensures the Flatpak package manager is installed on the system.",
             "btn_configurar_flatpak": "📦 Configure Flatpak",
-            "texto_concluido_flatpak": "✅ Flatpak configured"
+            "texto_concluido_flatpak": "✅ Flatpak configured",
+            "remover_fedora_flatpak_titulo": "🚫 Remove Fedora Flatpak repository",
+            "remover_fedora_flatpak_desc": "Fedora ships with its own Flatpak repository, distinct from Flathub. Apps from it may be outdated compared to the official versions maintained by upstream developers — or, in some cases, may not even be the official packaging. Since you've already enabled Flathub above, this repository can be safely removed.",
+            "remover_fedora_flatpak_oque_faz": "ℹ️ <strong>What this command does, in order:</strong><br>1. Removes Flatpak apps installed from the Fedora repository (and <code>fedora-testing</code>, if present)<br>2. ⚠️ <strong>Also deletes the saved data of those apps</strong> — settings, profiles, bookmarks, game saves. This is done by the <code>--delete-data</code> flag of <code>flatpak uninstall</code>, and is irreversible<br>3. Removes the <code>fedora</code> and <code>fedora-testing</code> repositories<br>4. Cleans orphaned runtimes left behind",
+            "remover_fedora_flatpak_aviso": "⚠️ <strong>Before you continue:</strong><br>• This operation is <strong>irreversible</strong> — the data of removed apps goes away with them.<br>• Close all Flatpak apps that may be running (browsers, games, players).<br>• The Fedora Flatpak repository is <strong>independent</strong> from Fedora's RPM repositories. Removing it <strong>does not affect</strong> <code>dnf</code>, security updates, or system packages.",
+            "btn_remover_fedora_flatpak": "🚫 Remove Fedora Flatpak repository",
+            "texto_concluido_remover_fedora_flatpak": "✅ Fedora Flatpak repository removed",
+            "remover_fedora_flatpak_confirm1": "⚠️ You are about to remove the Fedora Flatpak repository.\n\nThis will:\n• Remove Flatpak apps installed from the Fedora repository\n• DELETE the data of those apps (settings, profiles, bookmarks, saves) — irreversible\n• Remove the fedora and fedora-testing repositories\n• Clean up orphaned runtimes\n\nClose all running Flatpak apps before continuing.\n\nContinue?",
+            "remover_fedora_flatpak_confirm2": "🔄 Final confirmation!\n\nThe data of the Fedora repository Flatpak apps will be PERMANENTLY lost.\n\nAre you absolutely sure?"
         },
 
         "codecs": {
