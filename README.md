@@ -42,7 +42,7 @@ Cada botão lembra seu próprio estado. Fechar e reabrir o FOF (ou reiniciar o c
 
 | # | Sessão | O que faz |
 |---|---|---|
-| 1 | 🚀 Primeiros Passos | Atualização completa do sistema + RPM Fusion + Flathub |
+| 1 | 🚀 Primeiros Passos | Atualização completa do sistema + RPM Fusion + Flathub + remoção opcional do repositório Fedora Flatpak |
 | 2 | 🔤 Codecs e Compatibilidade | Codecs multimídia, reprodução de DVD comercial (tainted), fontes Microsoft |
 | 3 | 🖥️ Hardware | AMD (Vulkan/Mesa/RADV, VA-API, CoreCtrl, LACT, overclock), NVIDIA (driver proprietário, modeset), controles (grupo input) |
 | 4 | 🎬 Produção Multimídia | OBS Studio, EasyEffects, streaming, qpwgraph, HandBrake, wf-recorder |
@@ -149,6 +149,7 @@ O histórico completo de mudanças está em [`CHANGELOG.md`](CHANGELOG.md). O pr
 - Removidas: sessão **Restauração** (Btrfs-Assistant) e página **Manutenção** (conteúdo redistribuído)
 - Tela inicial redesenhada: relógio ao vivo e card único com texto + botão "Iniciar"
 - Busca global (Ctrl+K) removida — apresentava problemas no WebKitGTK
+- Sessão **Primeiros Passos** ganhou opção de remover o repositório Fedora Flatpak (com aviso explícito sobre remoção de dados)
 - Changelog dinâmico via `GET /changelog`
 - Botão "Ver changelog completo" corrigido (usava `window.open`, bloqueado pelo WebKitGTK)
 - `install.sh --update` agora limpa arquivos de sessões antigas antes do `git pull`

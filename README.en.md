@@ -42,7 +42,7 @@ Each button remembers its own state. Closing and reopening FOF (or rebooting) al
 
 | # | Session | What it does |
 |---|---|---|
-| 1 | 🚀 First Steps | Full system upgrade + RPM Fusion + Flathub |
+| 1 | 🚀 First Steps | Full system upgrade + RPM Fusion + Flathub + optional removal of the Fedora Flatpak repository |
 | 2 | 🔤 Codecs and Compatibility | Multimedia codecs, commercial DVD playback (tainted), Microsoft fonts |
 | 3 | 🖥️ Hardware | AMD (Vulkan/Mesa/RADV, VA-API, CoreCtrl, LACT, overclock), NVIDIA (proprietary driver, modeset), controllers (input group) |
 | 4 | 🎬 Media Production | OBS Studio, EasyEffects, streaming, qpwgraph, HandBrake, wf-recorder |
@@ -149,6 +149,7 @@ The full change history is in [`CHANGELOG.md`](CHANGELOG.md). FOF itself display
 - Removed: **Restore** session (Btrfs-Assistant) and **Maintenance** page (content redistributed)
 - Home screen redesigned: live clock and single card with text + "Start" button
 - Global search (Ctrl+K) removed — it had issues with WebKitGTK
+- **First Steps** session gained an option to remove the Fedora Flatpak repository (with explicit warning about data deletion)
 - Dynamic changelog via `GET /changelog`
 - "View full changelog" button fixed (was using `window.open`, blocked by WebKitGTK)
 - `install.sh --update` now cleans up old session files before `git pull`

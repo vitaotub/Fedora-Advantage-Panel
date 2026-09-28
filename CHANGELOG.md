@@ -56,6 +56,26 @@ em `script.js` — nada mais precisa mudar.
 - Teste de bufferbloat (Rede para Jogos Online) — removido do **Gaming**
 - Análise Visual de Disco (Baobab) — removido do **Diagnóstico**
 
+### 🚫 Remoção opcional do repositório Fedora Flatpak
+
+A sessão **Primeiros Passos** ganhou um bloco novo que permite remover o
+repositório Flatpak próprio do Fedora (distinto do Flathub). Aplicativos
+vindos dele podem ficar desatualizados em relação às versões oficiais
+mantidas pelos desenvolvedores upstream — ou, em alguns casos, nem serem
+os empacotamentos oficiais.
+
+O bloco executa, em ordem:
+
+1. Remove os apps Flatpak instalados a partir do repositório Fedora (e do
+   `fedora-testing`, se existir) com `--delete-data` (apaga também os dados
+   salvos dos apps)
+2. Remove os repositórios `fedora` e `fedora-testing`
+3. Limpa runtimes órfãos
+
+O botão exige **duas confirmações** antes de executar, e o texto de aviso
+deixa explícito que os dados dos aplicativos removidos (configurações,
+perfis, favoritos, progresso de jogos) são perdidos permanentemente.
+
 ### 🎨 Tela inicial redesenhada
 
 - Landing page agora exibe **relógio ao vivo** no topo do card principal

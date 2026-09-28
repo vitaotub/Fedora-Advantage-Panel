@@ -360,6 +360,10 @@ var SESSOES = [
             'flatpak-setup': {
                 textoConcluido: '✅ Flatpak configurado',
                 textoConcluidoKey: 'sessoes.primeiros-passos.texto_concluido_flatpak'
+            },
+            'remover-repo-fedora-flatpak': {
+                textoConcluido: '✅ Repositório Fedora Flatpak removido',
+                textoConcluidoKey: 'sessoes.primeiros-passos.texto_concluido_remover_fedora_flatpak'
             }
         }
     },

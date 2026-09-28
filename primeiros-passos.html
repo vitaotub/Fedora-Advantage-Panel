@@ -73,6 +73,47 @@ Atualiza o índice de repositórios, sincroniza as chaves de segurança e baixa 
 </div>
 </div>
 
+<!-- Remover repositório Flatpak do Fedora -->
+<div class="bloco-comando" style="border-left: 4px solid #d97706;">
+<div class="comando-info">
+<h3 data-i18n="sessoes.primeiros-passos.remover_fedora_flatpak_titulo">🚫 Remover repositório Flatpak do Fedora</h3>
+<p data-i18n-html="sessoes.primeiros-passos.remover_fedora_flatpak_desc">
+O Fedora vem com um repositório próprio de Flatpaks, distinto do Flathub. Aplicativos vindos dele podem ficar desatualizados em relação às versões oficiais mantidas pelos desenvolvedores — ou, em alguns casos, nem serem os empacotamentos oficiais. Como você já habilitou o Flathub acima, este repositório pode ser removido sem prejuízo.
+</p>
+
+<div class="info-extra" data-i18n-html="sessoes.primeiros-passos.remover_fedora_flatpak_oque_faz">
+ℹ️ <strong>O que este comando faz, em ordem:</strong><br>
+1. Remove os aplicativos Flatpak instalados a partir do repositório Fedora (e do <code>fedora-testing</code>, se existir)<br>
+2. ⚠️ <strong>Apaga também os dados salvos desses aplicativos</strong> — configurações, perfis, favoritos, progresso de jogos. Isso é feito pela flag <code>--delete-data</code> do <code>flatpak uninstall</code>, e é irreversível<br>
+3. Remove os repositórios <code>fedora</code> e <code>fedora-testing</code><br>
+4. Limpa runtimes órfãos que ficaram sem uso
+</div>
+
+<div class="aviso-caixa" data-i18n-html="sessoes.primeiros-passos.remover_fedora_flatpak_aviso">
+⚠️ <strong>Atenção antes de continuar:</strong><br>
+• Esta operação é <strong>irreversível</strong> — os dados dos apps removidos vão embora com eles.<br>
+• Feche todos os aplicativos Flatpak que possam estar em execução (navegadores, jogos, players).<br>
+• O repositório Fedora Flatpak é <strong>independente</strong> dos repositórios RPM do Fedora. Removê-lo <strong>não afeta</strong> o <code>dnf</code>, atualizações de segurança nem pacotes do sistema.
+</div>
+
+<div class="grupo-botoes">
+<button class="btn-executar vermelho"
+onclick="executarRemoverRepoFedoraFlatpak()"
+data-comando="remover-repo-fedora-flatpak"
+data-logbox="log-sessao-primeiros-passos"
+id="btn-remover-repo-fedora-flatpak"
+data-i18n="sessoes.primeiros-passos.btn_remover_fedora_flatpak">
+🚫 Remover repositório Fedora Flatpak
+</button>
+</div>
+</div>
+
+<div class="progress-container" id="progress-remover-repo-fedora-flatpak">
+<div class="progress-bar"><div class="progress-fill" id="progress-fill-remover-repo-fedora-flatpak"></div></div>
+<div class="progress-text"><span class="status" id="progress-status-remover-repo-fedora-flatpak">⏳ Iniciando...</span><span class="percentage" id="progress-percent-remover-repo-fedora-flatpak">0%</span></div>
+</div>
+</div>
+
 <!-- Log único da sessão -->
 <div class="terminal-log sessao-compartilhado" id="log-sessao-primeiros-passos"></div>
 </div>
@@ -171,9 +212,46 @@ async function executarFlatpak() {
     await executarComandoGenerico(idComando, comando, _t('sessoes.primeiros-passos.btn_configurar_flatpak', '📦 Configurar Flatpak'));
 }
 
+async function executarRemoverRepoFedoraFlatpak() {
+    var idComando = 'remover-repo-fedora-flatpak';
+
+    if (isExecutado(idComando)) {
+        alert(_t('comum.ja_executado', 'Este comando já foi executado anteriormente.'));
+        return;
+    }
+
+    var confirm1 = confirm(_t('sessoes.primeiros-passos.remover_fedora_flatpak_confirm1',
+        '⚠️ Você está prestes a remover o repositório Flatpak do Fedora.\n\n' +
+        'Isso vai:\n' +
+        '• Remover os apps Flatpak instalados pelo repositório Fedora\n' +
+        '• APAGAR os dados desses apps (configurações, perfis, favoritos, saves) — irreversível\n' +
+        '• Remover os repositórios fedora e fedora-testing\n' +
+        '• Limpar runtimes órfãos\n\n' +
+        'Feche todos os apps Flatpak em execução antes de continuar.\n\n' +
+        'Continuar?'));
+    if (!confirm1) return;
+
+    var confirm2 = confirm(_t('sessoes.primeiros-passos.remover_fedora_flatpak_confirm2',
+        '🔄 Última confirmação!\n\n' +
+        'Os dados dos apps Flatpak do repositório Fedora serão perdidos PERMANENTEMENTE.\n\n' +
+        'Tem certeza absoluta?'));
+    if (!confirm2) return;
+
+    var comando =
+        'APPS=$(flatpak list --app --columns=application,origin | ' +
+        'awk \'$2 == "fedora" || $2 == "fedora-testing" {print $1}\'); ' +
+        '[ -n "$APPS" ] && flatpak uninstall -y --delete-data $APPS; ' +
+        'flatpak remote-delete --force fedora 2>/dev/null; ' +
+        'flatpak remote-delete --force fedora-testing 2>/dev/null; ' +
+        'flatpak uninstall --unused -y';
+
+    await executarComandoGenerico(idComando, comando,
+        _t('sessoes.primeiros-passos.btn_remover_fedora_flatpak', '🚫 Remover repositório Fedora Flatpak'));
+}
+
 function restaurarEstadoSessao() {
-    // One-shot: RPM Fusion e Flatpak
-    ['rpm-fusion', 'flatpak-setup'].forEach(function(id) {
+    // One-shot: RPM Fusion, Flatpak e remoção do repo Fedora
+    ['rpm-fusion', 'flatpak-setup', 'remover-repo-fedora-flatpak'].forEach(function(id) {
         if (isExecutado(id)) {
             var btn = document.getElementById('btn-' + id);
             if (btn) {
