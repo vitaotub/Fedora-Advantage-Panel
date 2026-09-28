@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FOF - Diagnóstico</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="sessao-container" id="sessao-diagnostico">
+<div class="sessao-titulo">
+<span class="sessao-label">Sessão</span>
+<span data-i18n="sessoes.diagnostico.titulo">📊 Diagnóstico</span>
+</div>
+
+<div class="sessao-descricao" data-i18n="sessoes.diagnostico.descricao">
+Painel visual do estado do sistema. Mostra em tempo real o que está acontecendo com CPU, memória, disco e serviços — sem precisar abrir o terminal. Útil para investigar lentidão, uso de disco, temperatura e erros recentes.
+</div>
+
+<div class="aviso-caixa" data-i18n-html="sessoes.diagnostico.aviso_geral">
+ℹ️ <strong>Este painel é somente leitura.</strong> Nenhum comando aqui altera o sistema — todos são consultas. Se quiser corrigir algo específico, as ações ficam nas outras sessões do FOF.
+</div>
+
+<!-- ============================================================
+PAINEL DO SISTEMA
+============================================================ -->
+<details class="acordeao" open>
+<summary data-i18n="sessoes.diagnostico.painel_titulo">📊 Painel do Sistema</summary>
+<div class="acordeao-conteudo">
+
+<div class="bloco-comando">
+<div class="comando-info">
+<h3 data-i18n="sessoes.diagnostico.painel_h3">Estado atual do sistema</h3>
+<p data-i18n="sessoes.diagnostico.painel_desc">Dados coletados dos endpoints locais do FOF. Alguns valores se atualizam automaticamente; outros podem ser atualizados manualmente.</p>
+
+<div class="grupo-botoes" style="margin-bottom: 1rem;">
+<button class="btn-executar"
+onclick="atualizarPainelDiagnostico()"
+data-comando="diag-refresh"
+data-logbox="log-sessao-diagnostico"
+id="btn-diag-refresh"
+data-i18n="sessoes.diagnostico.btn_refresh">
+🔄 Atualizar Painel
+</button>
+</div>
+
+<div class="dashboard-grid" id="diag-dashboard">
+<!-- Sistema -->
+<div class="dashboard-card destaque-card">
+<div class="dashboard-titulo">🐧 <span data-i18n="sessoes.diagnostico.card_sistema">Sistema</span></div>
+<div class="dashboard-valor" data-diag="fedora">—</div>
+<div class="dashboard-subtexto">kernel <span data-diag="kernel">—</span></div>
+</div>
+
+<!-- CPU -->
+<div class="dashboard-card">
+<div class="dashboard-titulo">⚙️ <span data-i18n="sessoes.diagnostico.card_cpu">CPU</span></div>
+<div class="dashboard-valor" data-diag="cpu">—</div>
+<div class="dashboard-subtexto"><span data-i18n="sessoes.diagnostico.label_uso">Uso:</span> <span data-diag="cpu_uso">—</span></div>
+</div>
+
+<!-- RAM -->
+<div class="dashboard-card">
+<div class="dashboard-titulo">🧠 <span data-i18n="sessoes.diagnostico.card_ram">Memória RAM</span></div>
+<div class="dashboard-valor" data-diag="ram">—</div>
+<div class="dashboard-subtexto"><span data-i18n="sessoes.diagnostico.label_livre">Livre:</span> <span data-diag="ram_livre">—</span></div>
+</div>
+
+<!-- Disco raiz -->
+<div class="dashboard-card">
+<div class="dashboard-titulo">💾 <span data-i18n="sessoes.diagnostico.card_disco">Disco (raiz)</span></div>
+<div class="dashboard-valor" data-diag="disco">—</div>
+<div class="dashboard-subtexto"><span data-i18n="sessoes.diagnostico.label_usado">Usado:</span> <span data-diag="disco_usado">—</span></div>
+</div>
+
+<!-- Uptime -->
+<div class="dashboard-card">
+<div class="dashboard-titulo">⏱️ <span data-i18n="sessoes.diagnostico.card_uptime">Ligado há</span></div>
+<div class="dashboard-valor" data-diag="uptime">—</div>
+<div class="dashboard-subtexto"><span data-i18n="sessoes.diagnostico.label_boot">Boot em</span> <span data-diag="boot_time">—</span></div>
+</div>
+
+<!-- Firewall -->
+<div class="dashboard-card">
+<div class="dashboard-titulo">🔥 <span data-i18n="sessoes.diagnostico.card_firewall">Firewall</span></div>
+<div class="dashboard-valor" data-diag="firewall">—</div>
+<div class="dashboard-subtexto"><span data-diag="firewall_zona">—</span></div>
+</div>
+
+<!-- SELinux -->
+<div class="dashboard-card">
+<div class="dashboard-titulo">🛡️ <span data-i18n="sessoes.diagnostico.card_selinux">SELinux</span></div>
+<div class="dashboard-valor" data-diag="selinux">—</div>
+<div class="dashboard-subtexto"><span data-diag="selinux_modo">—</span></div>
+</div>
+
+<!-- Processos -->
+<div class="dashboard-card">
+<div class="dashboard-titulo">📈 <span data-i18n="sessoes.diagnostico.card_processos">Processos</span></div>
+<div class="dashboard-valor" data-diag="processos">—</div>
+<div class="dashboard-subtexto"><span data-i18n="sessoes.diagnostico.label_ativos">ativos</span></div>
+</div>
+</div>
+</div>
+</div>
+
+<!-- Top 5 processos -->
+<div class="bloco-comando" style="margin-top: 1.5rem;">
+<div class="comando-info">
+<h3 data-i18n="sessoes.diagnostico.top5_titulo">🔥 Top 5 Processos</h3>
+<p data-i18n="sessoes.diagnostico.top5_desc">Processos que mais consomem CPU e memória no momento.</p>
+
+<div class="dashboard-grid" style="grid-template-columns: 1fr 1fr;">
+<div class="dashboard-card">
+<div class="dashboard-titulo">⚡ <span data-i18n="sessoes.diagnostico.top5_cpu">Maior uso de CPU</span></div>
+<ul class="lista-info" id="diag-top-cpu">
+<li><span class="label">—</span><span class="valor">—</span></li>
+</ul>
+</div>
+<div class="dashboard-card">
+<div class="dashboard-titulo">🧠 <span data-i18n="sessoes.diagnostico.top5_ram">Maior uso de RAM</span></div>
+<ul class="lista-info" id="diag-top-ram">
+<li><span class="label">—</span><span class="valor">—</span></li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+
+</div>
+</details>
+
+<!-- ============================================================
+AJUSTES DE OTIMIZAÇÕES
+============================================================ -->
+<details class="acordeao">
+<summary data-i18n="sessoes.diagnostico.otimizacoes_titulo">⚡ Ajustes de Otimizações</summary>
+<div class="acordeao-conteudo">
+
+<div class="bloco-comando">
+<div class="comando-info">
+<h3 data-i18n="sessoes.diagnostico.otimizacoes_h3">Status atual dos ajustes de desempenho</h3>
+<p data-i18n-html="sessoes.diagnostico.otimizacoes_desc">
+Mostra o estado atual dos ajustes de desempenho que podem ser aplicados na sessão <strong>Ajustes e Manutenção</strong>. Valores em verde indicam que o ajuste está ativo; valores neutros indicam o padrão do Fedora. Esta seção é apenas informativa — para aplicar ou reverter um ajuste, use os botões na sessão correspondente.
+</p>
+
+<div class="dashboard-grid" id="diag-otimizacoes-grid" style="margin-top: 1rem;">
+
+<!-- Compartilhamento de Memória (KSM) -->
+<div class="dashboard-card">
+<div class="dashboard-titulo">💾 <span data-i18n="sessoes.diagnostico.card_ksm">Compartilhamento de Memória</span></div>
+<div class="dashboard-valor" data-diag="ksm_status">—</div>
+<div class="dashboard-subtexto" data-diag="ksm_detalhe">—</div>
+</div>
+
+<!-- Ajustes para Jogos (vm.max_map_count) -->
+<div class="dashboard-card">
+<div class="dashboard-titulo">🎮 <span data-i18n="sessoes.diagnostico.card_max_map">Ajustes para Jogos</span></div>
+<div class="dashboard-valor" data-diag="max_map_status">—</div>
+<div class="dashboard-subtexto" data-diag="max_map_detalhe">—</div>
+</div>
+
+<!-- Aceleração de Rede (TCP BBR) -->
+<div class="dashboard-card">
+<div class="dashboard-titulo">🌐 <span data-i18n="sessoes.diagnostico.card_bbr">Aceleração de Rede</span></div>
+<div class="dashboard-valor" data-diag="bbr_status">—</div>
+<div class="dashboard-subtexto" data-diag="bbr_detalhe">—</div>
+</div>
+
+<!-- Latência de Áudio (PipeWire quantum) -->
+<div class="dashboard-card">
+<div class="dashboard-titulo">🔊 <span data-i18n="sessoes.diagnostico.card_pipewire">Latência de Áudio</span></div>
+<div class="dashboard-valor" data-diag="pw_status">—</div>
+<div class="dashboard-subtexto" data-diag="pw_detalhe">—</div>
+</div>
+
+</div>
+
+<div class="info-extra" style="margin-top: 1rem;" data-i18n-html="sessoes.diagnostico.otimizacoes_info">
+ℹ️ <strong>Sobre os valores:</strong> esta seção apenas mostra o que está ativo agora. Cada ajuste é reversível e pode ser aplicado ou desfeito individualmente na sessão <strong>Ajustes e Manutenção</strong>. Se um ajuste estiver em branco ou mostrar "N/D", pode ser que o recurso não esteja disponível neste kernel — não é um erro.
+</div>
+</div>
+</div>
+
+</div>
+</details>
+
+<!-- ============================================================
+ARMAZENAMENTO
+============================================================ -->
+<details class="acordeao">
+<summary data-i18n="sessoes.diagnostico.armazen_titulo">💾 Armazenamento</summary>
+<div class="acordeao-conteudo">
+
+<div class="sessao-descricao" data-i18n="sessoes.diagnostico.armazen_desc">
+Veja quanto espaço cada partição está usando. Útil quando o sistema avisa "disco cheio" ou quando você não sabe o que está consumindo espaço.
+</div>
+
+<!-- Partições -->
+<div class="bloco-comando">
+<div class="comando-info">
+<h3 data-i18n="sessoes.diagnostico.particoes_titulo">📋 Partições</h3>
+<p data-i18n="sessoes.diagnostico.particoes_desc">Lista as partições montadas com uso, espaço livre e ponto de montagem.</p>
+
+<ul class="lista-info" id="diag-particiones">
+<li><span class="label">—</span><span class="valor">—</span></li>
+</ul>
+</div>
+</div>
+
+</div>
+</details>
+
+<!-- ============================================================
+SAÚDE DO HARDWARE
+============================================================ -->
+<details class="acordeao">
+<summary data-i18n="sessoes.diagnostico.saude_titulo">🌡️ Saúde do Hardware</summary>
+<div class="acordeao-conteudo">
+
+<div class="sessao-descricao" data-i18n="sessoes.diagnostico.saude_desc">
+Verificação de saúde dos discos (HDs e SSDs) via SMART e monitoramento completo das temperaturas e ventoinhas dos componentes (CPU, GPU, placa-mãe). Ajuda a detectar problemas antes que virem falha grave.
+</div>
+
+<!-- GSmartControl -->
+<div class="bloco-comando">
+<div class="comando-info">
+<h3 data-i18n="sessoes.diagnostico.gsmart_titulo">💽 Saúde dos Discos (GSmartControl)</h3>
+<p data-i18n="sessoes.diagnostico.gsmart_desc">Instala o <strong>GSmartControl</strong>, uma interface gráfica para o <code>smartctl</code>. Ele mostra a saúde dos HDs e SSDs, temperatura, horas de uso, setores defeituosos e permite rodar testes rápidos e longos com um clique.</p>
+
+<div class="info-extra" data-i18n-html="sessoes.diagnostico.gsmart_info">
+ℹ️ <strong>Como interpretar:</strong> na coluna "Health", um ✅ verde indica disco saudável. Um ❌ vermelho indica falha — faça backup imediatamente. Temperaturas acima de 55°C em uso contínuo merecem atenção.
+</div>
+
+<div class="info-extra" data-i18n-html="sessoes.diagnostico.gsmart_info_root">
+ℹ️ <strong>Sobre a senha:</strong> ao abrir o GSmartControl, ele pode pedir a senha de administrador para ler os dados SMART — isso é normal (o <code>smartctl</code> precisa de acesso ao dispositivo físico). A janela de senha aparece do próprio sistema, não do FOF.
+</div>
+
+<div class="grupo-botoes">
+<button class="btn-executar"
+onclick="executarGSmartControl()"
+data-comando="gsmartcontrol-install"
+data-logbox="log-sessao-diagnostico"
+id="btn-gsmartcontrol-install"
+data-i18n="sessoes.diagnostico.btn_gsmart_install">
+📦 Instalar GSmartControl
+</button>
+<button class="btn-executar verde"
+style="display: none;"
+onclick="abrirGSmartControl()"
+data-comando="abrir-gsmartcontrol"
+data-logbox="log-sessao-diagnostico"
+id="btn-abrir-gsmartcontrol"
+data-i18n="sessoes.diagnostico.btn_abrir_gsmart">
+🚀 Abrir GSmartControl
+</button>
+</div>
+</div>
+<div class="progress-container" id="progress-gsmartcontrol-install">
+<div class="progress-bar"><div class="progress-fill" id="progress-fill-gsmartcontrol-install"></div></div>
+<div class="progress-text"><span class="status" id="progress-status-gsmartcontrol-install">⏳ Iniciando...</span><span class="percentage" id="progress-percent-gsmartcontrol-install">0%</span></div>
+</div>
+</div>
+
+<!-- CoolerControl -->
+<div class="bloco-comando">
+<div class="comando-info">
+<h3 data-i18n="sessoes.diagnostico.coolercontrol_titulo">🌡️ Monitoramento e Controle Térmico (CoolerControl)</h3>
+<p data-i18n-html="sessoes.diagnostico.coolercontrol_desc">Instala o <strong>CoolerControl</strong>, uma central completa de monitoramento e controle térmico. Além de mostrar temperaturas, velocidades de ventoinhas e outros sensores em tempo real, ele permite criar <strong>curvas de fan personalizadas</strong> (por exemplo, "quando a GPU atingir 60°C, gire a ventoinha a 50%"). É a ferramenta mais robusta e oficial para gerenciamento térmico no Fedora.</p>
+
+<div class="info-extra" data-i18n-html="sessoes.diagnostico.coolercontrol_info">
+ℹ️ <strong>O que dá para fazer com ele:</strong>
+<ul style="margin: 0.5rem 0 0 1.25rem; padding: 0;">
+<li>Ver <strong>temperaturas</strong> de CPU, GPU e placa-mãe em tempo real</li>
+<li>Ver <strong>velocidade (RPM)</strong> de todas as ventoinhas do sistema</li>
+<li>Criar <strong>curvas de fan personalizadas</strong> com base em qualquer sensor</li>
+<li>Configurar <strong>alertas</strong> para temperaturas altas ou falhas de ventoinha</li>
+<li>Montar <strong>dashboards</strong> com os dados que você mais usa</li>
+</ul>
+</div>
+
+<div class="info-extra" data-i18n-html="sessoes.diagnostico.coolercontrol_info_copr">
+ℹ️ <strong>Sobre a instalação:</strong> o CoolerControl não está nos repositórios padrão do Fedora. Usamos o <strong>COPR oficial</strong> do projeto (<code>codifryed/CoolerControl</code>), mantido pelo próprio desenvolvedor.
+</div>
+
+<div class="info-extra" data-i18n-html="sessoes.diagnostico.coolercontrol_info_group">
+ℹ️ <strong>Sobre permissões:</strong> o FOF adiciona seu usuário ao grupo <code>coolercontrol</code> para que a GUI possa controlar as ventoinhas sem precisar de senha em cada ação. Esse grupo só passa a valer depois de <strong>sair e entrar novamente na sessão</strong> (logout/login). O daemon já começa a funcionar imediatamente.
+</div>
+
+<div class="info-extra" data-i18n-html="sessoes.diagnostico.coolercontrol_info_sensors">
+ℹ️ <strong>Se algum sensor não aparecer:</strong> o CoolerControl usa os mesmos sensores do <code>lm_sensors</code>. Se algum sensor faltar, abra o terminal e rode <code>sudo sensors-detect</code>, respondendo "YES" a todas as perguntas. Depois reinicie o serviço: <code>sudo systemctl restart coolercontrold</code>.
+</div>
+
+<div class="grupo-botoes">
+<button class="btn-executar"
+onclick="executarCoolerControl()"
+data-comando="coolercontrol-install"
+data-logbox="log-sessao-diagnostico"
+id="btn-coolercontrol-install"
+data-i18n="sessoes.diagnostico.btn_coolercontrol_install">
+📦 Instalar CoolerControl
+</button>
+<button class="btn-executar verde"
+style="display: none;"
+onclick="abrirCoolerControl()"
+data-comando="abrir-coolercontrol"
+data-logbox="log-sessao-diagnostico"
+id="btn-abrir-coolercontrol"
+data-i18n="sessoes.diagnostico.btn_abrir_coolercontrol">
+🚀 Abrir CoolerControl
+</button>
+</div>
+</div>
+<div class="progress-container" id="progress-coolercontrol-install">
+<div class="progress-bar"><div class="progress-fill" id="progress-fill-coolercontrol-install"></div></div>
+<div class="progress-text"><span class="status" id="progress-status-coolercontrol-install">⏳ Iniciando...</span><span class="percentage" id="progress-percent-coolercontrol-install">0%</span></div>
+</div>
+</div>
+
+</div>
+</details>
+
+<!-- ============================================================
+LOGS E ERROS
+============================================================ -->
+<details class="acordeao">
+<summary data-i18n="sessoes.diagnostico.logs_titulo">📋 Logs e Erros Recentes</summary>
+<div class="acordeao-conteudo">
+
+<div class="bloco-comando">
+<div class="comando-info">
+<h3 data-i18n="sessoes.diagnostico.journal_titulo">Erros do Sistema (últimas 24h)</h3>
+<p data-i18n="sessoes.diagnostico.journal_desc">Filtra o journal do systemd por mensagens de erro das últimas 24 horas e agrupa por origem — assim você vê rapidamente se algo está falhando repetidamente sem precisar ler o log bruto.</p>
+
+<div class="info-extra" data-i18n-html="sessoes.diagnostico.journal_info">
+ℹ️ <strong>Importante:</strong> nem todo erro no journal é problema. Serviços que tentam iniciar antes do hardware estar pronto, ou drivers que reportam avisos durante o boot, são normais. Use este painel para detectar <strong>padrões</strong>: o mesmo erro aparecendo dezenas de vezes indica algo que precisa de atenção.
+</div>
+
+<div class="grupo-botoes" style="margin-bottom: 1rem;">
+<button class="btn-executar"
+onclick="verificarJournalErrors()"
+data-comando="journal-errors-check"
+data-logbox="log-sessao-diagnostico"
+id="btn-journal-errors-check"
+data-i18n="sessoes.diagnostico.btn_journal_check">
+📋 Verificar Erros Recentes
+</button>
+</div>
+
+<div id="diag-journal-resumo" style="display: none; margin-top: 1rem;">
+<div class="bloco-info" id="diag-journal-conteudo">
+<!-- Conteúdo preenchido via JS -->
+</div>
+</div>
+</div>
+
+<div class="progress-container" id="progress-journal-errors-check">
+<div class="progress-bar"><div class="progress-fill" id="progress-fill-journal-errors-check"></div></div>
+<div class="progress-text"><span class="status" id="progress-status-journal-errors-check">⏳ Iniciando...</span><span class="percentage" id="progress-percent-journal-errors-check">0%</span></div>
+</div>
+</div>
+
+</div>
+</details>
+
+<!-- Log único da sessão -->
+<div class="terminal-log sessao-compartilhado" id="log-sessao-diagnostico"></div>
+</div>
+
+<!-- ===== JAVASCRIPT ESPECÍFICO DA SESSÃO ===== -->
+<script>
+// ============================================================
+// SESSÃO: DIAGNÓSTICO
+// ============================================================
+//
+// Esta sessão é majoritariamente informativa: mostra dados
+// coletados via endpoints do server.js (/system-info,
+// /top-processes, /disk-usage, /journal-errors).
+
+function _t(chave, fallback) {
+    return (typeof tOr === 'function') ? tOr(chave, fallback) : fallback;
+}
+
+// ------------------------------------------------------------
+// Helper: gerencia visibilidade do botão "Abrir X"
+// ------------------------------------------------------------
+function _atualizarBotaoAbrir(idInstalacao, idBotaoAbrir) {
+    var btn = document.getElementById(idBotaoAbrir);
+    if (!btn) return;
+    if (isExecutado(idInstalacao)) {
+        btn.style.display = '';
+    } else {
+        btn.style.display = 'none';
+    }
+}
+
+// ------------------------------------------------------------
+// Utilitário: chamada a endpoint com fallback silencioso
+// ------------------------------------------------------------
+async function _fetchJSON(endpoint) {
+    try {
+        var r = await fetch(API_URL + endpoint, { cache: 'no-store' });
+        if (!r.ok) return null;
+        return await r.json();
+    } catch (e) {
+        return null;
+    }
+}
+
+// ------------------------------------------------------------
+// Formatação de tamanhos
+// ------------------------------------------------------------
+function _formatarBytes(bytes) {
+    if (bytes == null || isNaN(bytes)) return '—';
+    var units = ['B', 'KB', 'MB', 'GB', 'TB'];
+    var i = 0;
+    var n = Number(bytes);
+    while (n >= 1024 && i < units.length - 1) {
+        n /= 1024;
+        i++;
+    }
+    return n.toFixed(i === 0 ? 0 : 1) + ' ' + units[i];
+}
+
+function _formatarPercent(usado, total) {
+    if (!total || total <= 0) return '—';
+    return Math.round((usado / total) * 100) + '%';
+}
+
+// ============================================================
+// PAINEL DO SISTEMA
+// ============================================================
+
+async function atualizarPainelDiagnostico() {
+    var dash = document.getElementById('diag-dashboard');
+    if (!dash) return;
+
+    var sys = await _fetchJSON('/system-info');
+
+    _setDiagValor(dash, 'fedora', sys && sys.fedora ? sys.fedora : '—');
+    _setDiagValor(dash, 'kernel', sys && sys.kernel ? sys.kernel : '—');
+    _setDiagValor(dash, 'cpu', sys && sys.cpu ? sys.cpu : '—');
+    _setDiagValor(dash, 'cpu_uso', sys && sys.cpu_uso != null ? sys.cpu_uso + '%' : '—');
+
+    if (sys && sys.ram_total && sys.ram_usado != null) {
+        _setDiagValor(dash, 'ram', _formatarBytes(sys.ram_total));
+        _setDiagValor(dash, 'ram_livre', _formatarBytes(sys.ram_total - sys.ram_usado));
+    } else {
+        _setDiagValor(dash, 'ram', '—');
+        _setDiagValor(dash, 'ram_livre', '—');
+    }
+
+    if (sys && sys.disco_total && sys.disco_usado != null) {
+        _setDiagValor(dash, 'disco', _formatarBytes(sys.disco_total));
+        _setDiagValor(dash, 'disco_usado',
+            _formatarBytes(sys.disco_usado) + ' (' + _formatarPercent(sys.disco_usado, sys.disco_total) + ')');
+    } else {
+        _setDiagValor(dash, 'disco', '—');
+        _setDiagValor(dash, 'disco_usado', '—');
+    }
+
+    if (sys && sys.uptime != null) {
+        _setDiagValor(dash, 'uptime', _formatarUptimeLocal(sys.uptime));
+    } else {
+        _setDiagValor(dash, 'uptime', '—');
+    }
+    if (sys && sys.boot_time) {
+        _setDiagValor(dash, 'boot_time', sys.boot_time);
+    } else {
+        _setDiagValor(dash, 'boot_time', '—');
+    }
+
+    _setDiagValor(dash, 'firewall', sys && sys.firewall ? sys.firewall : '—');
+    _setDiagValor(dash, 'firewall_zona', sys && sys.firewall_zona ? sys.firewall_zona : '');
+    _setDiagValor(dash, 'selinux', sys && sys.selinux ? sys.selinux : '—');
+    _setDiagValor(dash, 'selinux_modo', sys && sys.selinux_modo ? sys.selinux_modo : '');
+    _setDiagValor(dash, 'processos', sys && sys.processos != null ? sys.processos : '—');
+
+    await _atualizarTopProcessos();
+    await _atualizarParticiones();
+    _atualizarOtimizacoes(sys);
+    _aplicarCoresCondicionais(dash, sys);
+}
+
+function _setDiagValor(root, chave, valor) {
+    var el = root.querySelector('[data-diag="' + chave + '"]');
+    if (el) el.textContent = valor;
+}
+
+function _aplicarCoresCondicionais(root, sys) {
+    if (!sys) return;
+
+    var cpuEl = root.querySelector('[data-diag="cpu_uso"]');
+    if (cpuEl && sys.cpu_uso != null) {
+        if (sys.cpu_uso > 85) cpuEl.classList.add('erro');
+        else if (sys.cpu_uso > 60) cpuEl.classList.add('alerta');
+        else cpuEl.classList.add('ok');
+    }
+
+    var discoEl = root.querySelector('[data-diag="disco_usado"]');
+    if (discoEl && sys.disco_total && sys.disco_usado != null) {
+        var pct = (sys.disco_usado / sys.disco_total) * 100;
+        if (pct > 90) discoEl.classList.add('erro');
+        else if (pct > 75) discoEl.classList.add('alerta');
+        else discoEl.classList.add('ok');
+    }
+
+    var ramEl = root.querySelector('[data-diag="ram_livre"]');
+    if (ramEl && sys.ram_total && sys.ram_usado != null) {
+        var ramPct = (sys.ram_usado / sys.ram_total) * 100;
+        if (ramPct > 90) ramEl.classList.add('erro');
+        else if (ramPct > 75) ramEl.classList.add('alerta');
+        else ramEl.classList.add('ok');
+    }
+}
+
+function _formatarUptimeLocal(segundos) {
+    if (segundos == null) return '—';
+    var d = Math.floor(segundos / 86400);
+    var h = Math.floor((segundos % 86400) / 3600);
+    var m = Math.floor((segundos % 3600) / 60);
+    if (d > 0) return d + 'd ' + h + 'h';
+    if (h > 0) return h + 'h ' + m + 'min';
+    return m + 'min';
+}
+
+// ============================================================
+// AJUSTES DE OTIMIZAÇÕES
+// ============================================================
+
+function _atualizarOtimizacoes(sys) {
+    var root = document.getElementById('diag-otimizacoes-grid');
+    if (!root) return;
+
+    if (!sys) {
+        _setDiagValor(root, 'ksm_status', '—');
+        _setDiagValor(root, 'ksm_detalhe', '—');
+        _setDiagValor(root, 'max_map_status', '—');
+        _setDiagValor(root, 'max_map_detalhe', '—');
+        _setDiagValor(root, 'bbr_status', '—');
+        _setDiagValor(root, 'bbr_detalhe', '—');
+        _setDiagValor(root, 'pw_status', '—');
+        _setDiagValor(root, 'pw_detalhe', '—');
+        return;
+    }
+
+    // --------- KSM (Compartilhamento de Memória) ---------
+    var ksmRun = sys.ksm_run === '1';
+    var ksmPages = parseInt(sys.ksm_pages_saved, 10) || 0;
+    var ksmStatusEl = root.querySelector('[data-diag="ksm_status"]');
+
+    if (ksmRun) {
+        _setDiagValor(root, 'ksm_status', '✅ Ativo');
+        if (ksmPages > 0) {
+            var ksmMB = (ksmPages / 256).toFixed(1);
+            _setDiagValor(root, 'ksm_detalhe', '≈ ' + ksmMB + ' MB economizados');
+        } else {
+            _setDiagValor(root, 'ksm_detalhe', 'Ativo, ainda sem dados');
+        }
+        if (ksmStatusEl) { ksmStatusEl.classList.remove('erro', 'alerta'); ksmStatusEl.classList.add('ok'); }
+    } else {
+        _setDiagValor(root, 'ksm_status', '⚪ Inativo');
+        _setDiagValor(root, 'ksm_detalhe', 'Padrão do Fedora');
+        if (ksmStatusEl) { ksmStatusEl.classList.remove('ok', 'erro', 'alerta'); }
+    }
+
+    // --------- vm.max_map_count ---------
+    var mmc = parseInt(sys.max_map_count, 10) || 0;
+    var mmcOk = mmc >= 1000000;
+    var mmcStatusEl = root.querySelector('[data-diag="max_map_status"]');
+
+    if (mmcOk) {
+        _setDiagValor(root, 'max_map_status', '✅ Ajustado');
+        _setDiagValor(root, 'max_map_detalhe', 'Limite: ' + mmc.toLocaleString('pt-BR'));
+        if (mmcStatusEl) { mmcStatusEl.classList.remove('erro', 'alerta'); mmcStatusEl.classList.add('ok'); }
+    } else {
+        _setDiagValor(root, 'max_map_status', '⚪ Padrão');
+        _setDiagValor(root, 'max_map_detalhe', 'Limite: ' + mmc.toLocaleString('pt-BR'));
+        if (mmcStatusEl) { mmcStatusEl.classList.remove('ok', 'erro', 'alerta'); }
+    }
+
+    // --------- TCP BBR ---------
+    var algo = sys.tcp_congestion || 'unknown';
+    var bbr = algo === 'bbr';
+    var bbrStatusEl = root.querySelector('[data-diag="bbr_status"]');
+
+    if (bbr) {
+        _setDiagValor(root, 'bbr_status', '✅ BBR');
+        _setDiagValor(root, 'bbr_detalhe', 'Algoritmo: ' + algo);
+        if (bbrStatusEl) { bbrStatusEl.classList.remove('erro', 'alerta'); bbrStatusEl.classList.add('ok'); }
+    } else {
+        _setDiagValor(root, 'bbr_status', '⚪ Padrão');
+        _setDiagValor(root, 'bbr_detalhe', 'Algoritmo: ' + algo);
+        if (bbrStatusEl) { bbrStatusEl.classList.remove('ok', 'erro', 'alerta'); }
+    }
+
+    // --------- PipeWire quantum ---------
+    var pw = parseInt(sys.pipewire_quantum, 10) || 1024;
+    var pwLow = pw <= 512 && pw > 0;
+    var pwStatusEl = root.querySelector('[data-diag="pw_status"]');
+
+    if (pwLow) {
+        _setDiagValor(root, 'pw_status', '✅ Baixa latência');
+        _setDiagValor(root, 'pw_detalhe', 'Quantum: ' + pw + ' amostras');
+        if (pwStatusEl) { pwStatusEl.classList.remove('erro', 'alerta'); pwStatusEl.classList.add('ok'); }
+    } else {
+        _setDiagValor(root, 'pw_status', '⚪ Padrão');
+        _setDiagValor(root, 'pw_detalhe', 'Quantum: ' + pw + ' amostras');
+        if (pwStatusEl) { pwStatusEl.classList.remove('ok', 'erro', 'alerta'); }
+    }
+}
+
+// ============================================================
+// TOP 5 PROCESSOS
+// ============================================================
+
+async function _atualizarTopProcessos() {
+    var top = await _fetchJSON('/top-processes');
+    var ulCpu = document.getElementById('diag-top-cpu');
+    var ulRam = document.getElementById('diag-top-ram');
+    if (!ulCpu || !ulRam) return;
+
+    ulCpu.innerHTML = '';
+    ulRam.innerHTML = '';
+
+    var topCpu = (top && top.cpu) ? top.cpu : [];
+    var topRam = (top && top.ram) ? top.ram : [];
+
+    if (topCpu.length === 0) {
+        ulCpu.innerHTML = '<li><span class="label">—</span><span class="valor">—</span></li>';
+    } else {
+        topCpu.slice(0, 5).forEach(function(p) {
+            var li = document.createElement('li');
+            li.innerHTML = '<span class="label">' + _escapeHTML(p.nome || '?') + '</span>' +
+                '<span class="valor">' + (p.cpu != null ? p.cpu + '%' : '—') + '</span>';
+            ulCpu.appendChild(li);
+        });
+    }
+
+    if (topRam.length === 0) {
+        ulRam.innerHTML = '<li><span class="label">—</span><span class="valor">—</span></li>';
+    } else {
+        topRam.slice(0, 5).forEach(function(p) {
+            var li = document.createElement('li');
+            li.innerHTML = '<span class="label">' + _escapeHTML(p.nome || '?') + '</span>' +
+                '<span class="valor">' + (p.ram != null ? p.ram : '—') + '</span>';
+            ulRam.appendChild(li);
+        });
+    }
+}
+
+function _escapeHTML(s) {
+    if (s == null) return '';
+    return String(s).replace(/[&<>"']/g, function(c) {
+        return {'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c];
+    });
+}
+
+// ============================================================
+// PARTIÇÕES
+// ============================================================
+
+async function _atualizarParticiones() {
+    var ul = document.getElementById('diag-particiones');
+    if (!ul) return;
+
+    var data = await _fetchJSON('/disk-usage');
+    var parts = (data && data.particoes) ? data.particoes : [];
+
+    ul.innerHTML = '';
+
+    if (parts.length === 0) {
+        ul.innerHTML = '<li><span class="label">—</span><span class="valor">—</span></li>';
+        return;
+    }
+
+    parts.forEach(function(p) {
+        var li = document.createElement('li');
+        var totalFmt = _formatarBytes(p.total);
+        var usadoFmt = _formatarBytes(p.usado);
+        var pct = _formatarPercent(p.usado, p.total);
+
+        li.innerHTML =
+            '<span class="label">' + _escapeHTML(p.montagem || p.dispositivo || '?') + '</span>' +
+            '<span class="valor">' + usadoFmt + ' / ' + totalFmt + ' (' + pct + ')</span>';
+        ul.appendChild(li);
+    });
+}
+
+// ============================================================
+// GSmartControl (SMART)
+// ============================================================
+
+async function executarGSmartControl() {
+    var idComando = 'gsmartcontrol-install';
+    var comando = 'sudo dnf install -y gsmartcontrol';
+    await executarComandoGenerico(idComando, comando, _t('sessoes.diagnostico.btn_gsmart_install', '📦 Instalar GSmartControl'), function() {
+        _atualizarBotaoAbrir('gsmartcontrol-install', 'btn-abrir-gsmartcontrol');
+    });
+}
+
+function abrirGSmartControl() {
+    abrirFerramentaExterna('gtk-launch gsmartcontrol 2>/dev/null &', 'gsmartcontrol-install', 'GSmartControl');
+}
+
+// ============================================================
+// CoolerControl
+// ============================================================
+
+async function executarCoolerControl() {
+    var idComando = 'coolercontrol-install';
+    var comando =
+        'sudo dnf copr enable codifryed/CoolerControl -y && ' +
+        'sudo dnf install -y coolercontrol && ' +
+        'sudo systemctl enable --now coolercontrold && ' +
+        'sudo usermod -aG coolercontrol $USER';
+    await executarComandoGenerico(idComando, comando, _t('sessoes.diagnostico.btn_coolercontrol_install', '📦 Instalar CoolerControl'), function() {
+        _atualizarBotaoAbrir('coolercontrol-install', 'btn-abrir-coolercontrol');
+    });
+}
+
+function abrirCoolerControl() {
+    abrirFerramentaExterna('gtk-launch coolercontrol 2>/dev/null &', 'coolercontrol-install', 'CoolerControl');
+}
+
+// ============================================================
+// JOURNAL ERRORS
+// ============================================================
+
+async function verificarJournalErrors() {
+    var idComando = 'journal-errors-check';
+    var logBox = _getLogBox(idComando);
+    var btn = document.getElementById('btn-' + idComando);
+    var resumo = document.getElementById('diag-journal-resumo');
+    var conteudo = document.getElementById('diag-journal-conteudo');
+
+    if (!logBox) return;
+
+    if (btn) {
+        btn.disabled = true;
+        btn.textContent = '⏳ ' + _t('sessoes.diagnostico.btn_journal_check', '📋 Verificar Erros Recentes') + '...';
+        btn.style.opacity = '0.6';
+    }
+
+    var data = await _fetchJSON('/journal-errors');
+
+    if (conteudo && resumo) {
+        resumo.style.display = 'block';
+
+        if (!data || !data.grupos || data.grupos.length === 0) {
+            conteudo.innerHTML = '<strong>✅ Nenhum erro relevante nas últimas 24 horas.</strong>';
+        } else {
+            var html = '<strong>Erros agrupados por origem (últimas 24h):</strong><ul style="margin-top: 0.5rem; padding-left: 1.25rem;">';
+            data.grupos.forEach(function(g) {
+                html += '<li style="margin-bottom: 0.35rem;">' +
+                    '<code>' + _escapeHTML(g.origem) + '</code> — ' +
+                    '<strong>' + g.contagem + ' ocorrência(s)</strong>' +
+                    (g.exemplo ? '<br><span style="font-size: 0.85em; color: var(--text-muted);">Exemplo: ' + _escapeHTML(g.exemplo) + '</span>' : '') +
+                    '</li>';
+            });
+            html += '</ul>';
+            conteudo.innerHTML = html;
+        }
+    }
+
+    if (btn) {
+        btn.disabled = false;
+        btn.textContent = _t('sessoes.diagnostico.btn_journal_check', '📋 Verificar Erros Recentes');
+        btn.style.opacity = '1';
+    }
+}
+
+// ============================================================
+// RESTAURAR ESTADO DA SESSÃO
+// ============================================================
+function restaurarEstadoSessao() {
+    // Botões não-reversíveis
+    var comandosNaoReversiveis = [
+        'gsmartcontrol-install',
+        'coolercontrol-install'
+    ];
+
+    comandosNaoReversiveis.forEach(function(id) {
+        if (isExecutado(id)) {
+            var btn = document.getElementById('btn-' + id);
+            if (btn) {
+                var textoFinal = getTextoAposExecucao(id);
+                btn.textContent = textoFinal;
+                btn.style.backgroundColor = '#4b5563';
+                btn.style.cursor = 'default';
+                btn.disabled = true;
+            }
+        }
+    });
+
+    // Botões de ação sempre disponíveis
+    ['diag-refresh', 'journal-errors-check'].forEach(function(id) {
+        var btn = document.getElementById('btn-' + id);
+        if (btn) {
+            btn.disabled = false;
+            btn.style.opacity = '1';
+            btn.style.cursor = 'pointer';
+        }
+    });
+
+    // Botões "Abrir X"
+    _atualizarBotaoAbrir('gsmartcontrol-install', 'btn-abrir-gsmartcontrol');
+    _atualizarBotaoAbrir('coolercontrol-install', 'btn-abrir-coolercontrol');
+
+    // Popula o painel pela primeira vez
+    setTimeout(function() {
+        atualizarPainelDiagnostico();
+    }, 200);
+}
+
+// ============================================================
+// INICIALIZAÇÃO
+// ============================================================
+(function() {
+    document.querySelectorAll('.btn-executar').forEach(function(btn) {
+        if (!btn.hasAttribute('data-texto-original')) {
+            btn.setAttribute('data-texto-original', btn.textContent);
+        }
+    });
+
+    restaurarEstadoSessao();
+
+    // Auto-refresh a cada 30s enquanto a sessão estiver visível
+    var _autoRefreshInterval = null;
+    function iniciarAutoRefresh() {
+        if (_autoRefreshInterval) return;
+        _autoRefreshInterval = setInterval(function() {
+            if (document.getElementById('sessao-diagnostico')) {
+                var rect = document.getElementById('sessao-diagnostico').getBoundingClientRect();
+                if (rect.height > 0 && rect.top < window.innerHeight) {
+                    atualizarPainelDiagnostico();
+                }
+            }
+        }, 30000);
+    }
+    setTimeout(iniciarAutoRefresh, 5000);
+
+    console.log('📦 Componente diagnostico carregado!');
+})();
+</script>
+</body>
+</html>

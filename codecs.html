@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FOF - Codecs e Compatibilidade</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<!-- ===== CONTEÚDO DA SESSÃO ===== -->
+<div class="sessao-container" id="sessao-codecs">
+<div class="sessao-titulo">
+<span class="sessao-label">Sessão</span>
+<span data-i18n="sessoes.codecs.titulo">🔤 Codecs e Compatibilidade</span>
+</div>
+
+<div class="sessao-descricao" data-i18n="sessoes.codecs.descricao">
+Esta sessão reúne tudo o que o Fedora precisa para lidar com conteúdo que não está nos repositórios oficiais: codecs de mídia (para tocar vídeos e áudios em qualquer formato), reprodução de DVDs comerciais e fontes do Windows (para compatibilidade com documentos e programas que dependem delas).
+</div>
+
+<!-- ============================================================
+CODECS E REPRODUÇÃO
+============================================================ -->
+<details class="acordeao" open>
+<summary data-i18n="sessoes.codecs.acordeao_codecs_titulo">🎞️ Codecs de Mídia e Reprodução</summary>
+<div class="acordeao-conteudo">
+
+<!-- Codecs -->
+<div class="bloco-comando">
+<div class="comando-info">
+<h3 data-i18n="sessoes.codecs.codecs_titulo">Codecs Multimídia Essenciais</h3>
+<p data-i18n="sessoes.codecs.codecs_desc">Substitui o ffmpeg-free pela versão completa sem restrições, instala plugins gstreamer essenciais e habilita o Cisco OpenH264.</p>
+
+<div class="info-extra" data-i18n-html="sessoes.codecs.codecs_info">
+ℹ️ <strong>O que isso resolve:</strong> vídeos em MP4, MKV, AVI, WebM e outros formatos tocam em qualquer player (VLC, MPV, Firefox, Chromium). Sem esses codecs, muitos arquivos simplesmente não abrem ou tocam sem áudio/vídeo. Também é pré-requisito para edição de vídeo em ferramentas como Kdenlive e Shotcut.
+</div>
+
+<div class="grupo-botoes">
+<button class="btn-executar"
+onclick="executarCodecs()"
+data-comando="codecs-essenciais"
+data-logbox="log-sessao-codecs"
+id="btn-codecs-essenciais"
+data-i18n="sessoes.codecs.btn_instalar_codecs">
+📦 Instalar Codecs
+</button>
+</div>
+</div>
+
+<div class="progress-container" id="progress-codecs-essenciais">
+<div class="progress-bar"><div class="progress-fill" id="progress-fill-codecs-essenciais"></div></div>
+<div class="progress-text"><span class="status" id="progress-status-codecs-essenciais">⏳ Iniciando...</span><span class="percentage" id="progress-percent-codecs-essenciais">0%</span></div>
+</div>
+</div>
+
+<!-- Extras tainted / DVD -->
+<div class="bloco-comando">
+<div class="comando-info">
+<h3 data-i18n="sessoes.codecs.extras_titulo">Reprodução de DVD Comercial e Firmware Adicional</h3>
+<p data-i18n="sessoes.codecs.extras_desc">Habilita os sub-repositórios restritos (tainted) que trazem a biblioteca libdvdcss para leitura de DVDs comerciais e firmware proprietário para alguns hardwares.</p>
+
+<div class="info-extra" data-i18n-html="sessoes.codecs.extras_info">
+ℹ️ <strong>O que isso resolve:</strong> sem a libdvdcss, o Fedora não consegue ler DVDs comerciais (com proteção CSS) — apenas DVDs caseiros ou arquivos de vídeo. Este item também habilita firmware proprietário para alguns dispositivos que não têm driver livre.
+</div>
+
+<div class="grupo-botoes">
+<button class="btn-executar"
+onclick="executarExtrasTainted()"
+data-comando="extras-tainted"
+data-logbox="log-sessao-codecs"
+id="btn-extras-tainted"
+data-i18n="sessoes.codecs.btn_instalar_extras">
+📦 Instalar Extras
+</button>
+</div>
+</div>
+
+<div class="progress-container" id="progress-extras-tainted">
+<div class="progress-bar"><div class="progress-fill" id="progress-fill-extras-tainted"></div></div>
+<div class="progress-text"><span class="status" id="progress-status-extras-tainted">⏳ Iniciando...</span><span class="percentage" id="progress-percent-extras-tainted">0%</span></div>
+</div>
+</div>
+
+</div>
+</details>
+
+<!-- ============================================================
+FONTES MICROSOFT
+============================================================ -->
+<details class="acordeao">
+<summary data-i18n="sessoes.codecs.acordeao_fontes_titulo">🖋️ Fontes Microsoft</summary>
+<div class="acordeao-conteudo">
+
+<div class="bloco-comando">
+<div class="comando-info">
+<h3 data-i18n="sessoes.codecs.fontes_titulo">Fontes Microsoft para Compatibilidade</h3>
+<p data-i18n="sessoes.codecs.fontes_desc">Instala o instalador de fontes Microsoft do SourceForge para obter Arial, Times, Calibri, etc.</p>
+
+<div class="aviso-caixa" data-i18n="sessoes.codecs.fontes_aviso">
+⚠️ Este processo baixa e instala fontes proprietárias da Microsoft. Certifique-se de estar em conformidade com os termos de licenciamento.
+</div>
+
+<div class="info-extra" data-i18n="sessoes.codecs.fontes_info">
+ℹ️ <strong>Fontes instaladas:</strong> Arial, Times New Roman, Calibri, Cambria, Candara, Consolas, Constantia, Corbel, e outras. <strong>O que isso resolve:</strong> documentos do LibreOffice, OnlyOffice e outros programas ficam com a aparência correta — sem essas fontes, o sistema substitui por alternativas que podem quebrar a formatação.
+</div>
+
+<div class="grupo-botoes">
+<button class="btn-executar azul-claro"
+onclick="executarFontesMS()"
+data-comando="fontes-ms-all"
+data-logbox="log-sessao-codecs"
+id="btn-fontes-ms-all"
+data-i18n="sessoes.codecs.btn_instalar_fontes">
+📦 Instalar Fontes MS
+</button>
+</div>
+</div>
+
+<div class="progress-container" id="progress-fontes-ms-all">
+<div class="progress-bar"><div class="progress-fill" id="progress-fill-fontes-ms-all"></div></div>
+<div class="progress-text"><span class="status" id="progress-status-fontes-ms-all">⏳ Iniciando...</span><span class="percentage" id="progress-percent-fontes-ms-all">0%</span></div>
+</div>
+</div>
+
+</div>
+</details>
+
+<!-- Log único da sessão -->
+<div class="terminal-log sessao-compartilhado" id="log-sessao-codecs"></div>
+</div>
+
+<!-- ===== JAVASCRIPT ESPECÍFICO DA SESSÃO ===== -->
+<script>
+// ============================================================
+// SESSÃO 04: CODECS E COMPATIBILIDADE
+// ============================================================
+
+function _t(chave, fallback) {
+    return (typeof tOr === 'function') ? tOr(chave, fallback) : fallback;
+}
+
+// ------------------------------------------------------------
+// CODECS MULTIMÍDIA
+// ------------------------------------------------------------
+
+async function executarCodecs() {
+    const idComando = 'codecs-essenciais';
+
+    const comando =
+        'if rpm -q ffmpeg-free > /dev/null 2>&1; then ' +
+        'sudo dnf swap ffmpeg-free ffmpeg --allowerasing -y; ' +
+        'else ' +
+        'sudo dnf install ffmpeg --allowerasing -y; ' +
+        'fi && ' +
+        'sudo dnf install --setopt=\'install_weak_deps=False\' gstreamer1-plugins-good gstreamer1-plugins-bad-free gstreamer1-plugin-openh264 gstreamer1-plugin-libav --exclude=PackageKit-gstreamer-plugin -y && ' +
+        'sudo dnf config-manager setopt fedora-cisco-openh264.enabled=1';
+
+    await executarComandoGenerico(idComando, comando,
+        _t('sessoes.codecs.btn_instalar_codecs', '📦 Instalar Codecs'));
+}
+
+// ------------------------------------------------------------
+// EXTRAS TAINTED / DVD PLAY
+// ------------------------------------------------------------
+
+async function executarExtrasTainted() {
+    const idComando = 'extras-tainted';
+    const comando = 'sudo dnf install rpmfusion-free-release-tainted -y && sudo dnf install rpmfusion-nonfree-release-tainted -y && sudo dnf install libdvdcss -y';
+    await executarComandoGenerico(idComando, comando,
+        _t('sessoes.codecs.btn_instalar_extras', '📦 Instalar Extras'));
+}
+
+// ------------------------------------------------------------
+// FONTES MICROSOFT
+// ------------------------------------------------------------
+
+async function executarFontesMS() {
+    const idComando = 'fontes-ms-all';
+    const comando = 'sudo dnf install -y curl cabextract fontconfig && curl -L https://downloads.sourceforge.net/project/mscorefonts2/rpms/msttcore-fonts-installer-2.6-1.noarch.rpm -o /tmp/msfonts.rpm && rpm2cpio /tmp/msfonts.rpm | cpio -idmv -D /tmp/ && sudo mkdir -p /usr/share/fonts/microsoft && sudo mv /tmp/usr/share/fonts/msttcore/* /usr/share/fonts/microsoft/ && sudo fc-cache -f -v && rm -rf /tmp/msfonts.rpm /tmp/usr';
+    await executarComandoGenerico(idComando, comando,
+        _t('sessoes.codecs.btn_instalar_fontes', '📦 Instalar Fontes MS'));
+}
+
+// ============================================================
+// RESTAURAR ESTADO DA SESSÃO
+// ============================================================
+
+function restaurarEstadoSessao() {
+    const comandos = ['codecs-essenciais', 'extras-tainted', 'fontes-ms-all'];
+
+    comandos.forEach(function(id) {
+        if (isExecutado(id)) {
+            const btn = document.getElementById('btn-' + id);
+            if (btn) {
+                const textoFinal = getTextoAposExecucao(id);
+                btn.textContent = textoFinal;
+                btn.style.backgroundColor = '#4b5563';
+                btn.style.cursor = 'default';
+                btn.disabled = true;
+            }
+        }
+    });
+}
+
+// ===== INICIALIZAÇÃO =====
+(function() {
+    document.querySelectorAll('.btn-executar').forEach(function(btn) {
+        if (!btn.hasAttribute('data-texto-original')) {
+            btn.setAttribute('data-texto-original', btn.textContent);
+        }
+    });
+
+    restaurarEstadoSessao();
+
+    console.log('📦 Componente codecs carregado!');
+})();
+</script>
+</body>
+</html>

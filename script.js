@@ -2,7 +2,7 @@
  * Fedora Only Fans (FOF) - Script Compartilhado
  *
  * Este arquivo contém as funções GLOBAIS compartilhadas entre todas as sessões.
- * Cada sessão (NN-*.html) tem seu próprio JS específico que usa estas funções.
+ * Cada sessão (*.html) tem seu próprio JS específico que usa estas funções.
  *
  * i18n: strings visíveis ao usuário usam tOr(chave, fallback) — em pt-BR,
  * tOr cai no fallback (texto original), mantendo o comportamento
@@ -25,6 +25,11 @@
  * tenha sido marcado como executado mas cujo Flatpak não esteja mais
  * instalado (o usuário removeu via GNOME Software, linha de comando,
  * etc.). O botão volta ao estado original para reinstalar.
+ *
+ * LIMPEZA DE IDs ÓRFÃOS: no boot e a cada sessão carregada, o FOF remove
+ * do progresso persistido qualquer idComando que não exista mais no
+ * registro SESSOES. Isso evita que renomeações/remoções de sessão
+ * deixem IDs "fantasmas" poluindo o .progresso.json para sempre.
  *
  * TEMA: claro/escuro alternável via botão na UI. Persistência em localStorage
  * sob a chave 'fof_tema'.
@@ -172,7 +177,7 @@ async function mostrarBadgeSeHouverAtualizacao() {
 
         var badge = document.createElement('a');
         badge.className = 'badge-atualizacao';
-        badge.href = 'manutencao.html';
+        badge.href = 'guiado.html?session=sobre-fof';
         badge.setAttribute('data-i18n-title', 'comum.atualizacao_disponivel_titulo');
         badge.setAttribute('data-i18n-aria-label', 'comum.atualizacao_disponivel_titulo');
         badge.title = _t('comum.atualizacao_disponivel_titulo', 'Nova versão disponível! Clique para atualizar.');
@@ -330,353 +335,503 @@ function _atualizarProgressoGlobal() {
 // - o número "Sessão N" mostrado na UI (numerarSessao)
 // - a cor do indicador no topo
 //
-// Sessões de manutenção (manutencao: true) são filtradas separadamente
-// e aparecem em manutencao.html, sem numeração.
+// Os IDs são SEMÂNTICOS (sem número). Reordenar sessões é mover
+// linhas neste array — nada mais precisa mudar.
 //
 // `flatpakId`: quando presente, indica que o comando instala um app
 // Flatpak com esse app-id. Usado por `verificarFlatpaksRemovidos()`
 // para detectar remoções externas e restaurar o botão.
 
 var SESSOES = [
+    // ============================================================
+    // SESSÃO 1 — PRIMEIROS PASSOS
+    // Fusão da antiga 00-boas-vindas (atualização) + 03-repositorios.
+    // ============================================================
     {
-        id: '00-boas-vindas',
-        nome: 'Boas-vindas',
-        nomeKey: 'sessoes.00-boas-vindas.nome',
+        id: 'primeiros-passos',
+        nome: 'Primeiros Passos',
+        nomeKey: 'sessoes.primeiros-passos.nome',
         comandos: {
-            'atualizacao-inicial': { sempreClicavel: true }
+            'atualizacao-inicial': { sempreClicavel: true },
+            'rpm-fusion': {
+                textoConcluido: '✅ RPM Fusion ativado',
+                textoConcluidoKey: 'sessoes.primeiros-passos.texto_concluido_rpm'
+            },
+            'flatpak-setup': {
+                textoConcluido: '✅ Flatpak configurado',
+                textoConcluidoKey: 'sessoes.primeiros-passos.texto_concluido_flatpak'
+            }
         }
     },
+
+// ============================================================
+// SESSÃO 2 — CODECS E COMPATIBILIDADE
+// ============================================================
 {
-    id: '01-restauracao',
-    nome: 'Restauração',
-    nomeKey: 'sessoes.01-restauracao.nome',
-    comandos: {
-        'btrfs-install': { textoConcluido: '✅ Btrfs-Assistant instalado', textoConcluidoKey: 'sessoes.01-restauracao.texto_concluido' }
-    }
-},
-{
-    id: '02-otimizacao',
-    nome: 'Otimização',
-    nomeKey: 'sessoes.02-otimizacao.nome',
-    comandos: {
-        'dnf-speed': { sempreClicavel: true },
-        'idioma-packs': { textoConcluido: '✅ Tradução instalada', textoConcluidoKey: 'sessoes.02-otimizacao.texto_concluido_packs' },
-        'idioma-hunspell': { textoConcluido: '✅ Corretor instalado', textoConcluidoKey: 'sessoes.02-otimizacao.texto_concluido_hunspell' },
-        'idioma-localectl': { textoConcluido: '✅ Localidade configurada', textoConcluidoKey: 'sessoes.02-otimizacao.texto_concluido_localectl' },
-        'dual-boot-time': { sempreClicavel: true },
-        'vm-max-map-count': { textoConcluido: '✅ Ajuste aplicado', textoConcluidoKey: 'sessoes.02-otimizacao.texto_concluido_vm_max_map_count' },
-        'vm-max-map-count-remove': { textoConcluido: '✅ Ajuste revertido', textoConcluidoKey: 'sessoes.02-otimizacao.texto_concluido_vm_max_map_count_remove' },
-        'vm-swappiness-cache': { textoConcluido: '✅ Ajuste aplicado', textoConcluidoKey: 'sessoes.02-otimizacao.texto_concluido_vm_swappiness_cache' },
-        'vm-swappiness-cache-remove': { textoConcluido: '✅ Ajuste revertido', textoConcluidoKey: 'sessoes.02-otimizacao.texto_concluido_vm_swappiness_cache_remove' },
-        'tcp-bbr': { textoConcluido: '✅ TCP BBR ativado', textoConcluidoKey: 'sessoes.02-otimizacao.texto_concluido_tcp_bbr' },
-        'tcp-bbr-remove': { textoConcluido: '✅ TCP BBR desativado', textoConcluidoKey: 'sessoes.02-otimizacao.texto_concluido_tcp_bbr_remove' }
-    }
-},
-{
-    id: '03-repositorios',
-    nome: 'Repositórios',
-    nomeKey: 'sessoes.03-repositorios.nome',
-    comandos: {
-        'rpm-fusion': { textoConcluido: '✅ RPM Fusion ativado', textoConcluidoKey: 'sessoes.03-repositorios.texto_concluido_rpm' },
-        'flatpak-setup': { textoConcluido: '✅ Flatpak configurado', textoConcluidoKey: 'sessoes.03-repositorios.texto_concluido_flatpak' }
-    }
-},
-{
-    id: '04-codecs-compatibilidade',
+    id: 'codecs',
     nome: 'Codecs e Compatibilidade',
-    nomeKey: 'sessoes.04-codecs-compatibilidade.nome',
+    nomeKey: 'sessoes.codecs.nome',
     comandos: {
-        'fontes-ms-all': { textoConcluido: '✅ Fontes MS instaladas', textoConcluidoKey: 'sessoes.04-codecs-compatibilidade.texto_concluido_fontes' },
-        'codecs-essenciais': { textoConcluido: '✅ Codecs instalados', textoConcluidoKey: 'sessoes.04-codecs-compatibilidade.texto_concluido_codecs' },
-        'extras-tainted': { textoConcluido: '✅ Extras instalados', textoConcluidoKey: 'sessoes.04-codecs-compatibilidade.texto_concluido_extras' }
+        'codecs-essenciais': {
+            textoConcluido: '✅ Codecs instalados',
+            textoConcluidoKey: 'sessoes.codecs.texto_concluido_codecs'
+        },
+        'extras-tainted': {
+            textoConcluido: '✅ Extras instalados',
+            textoConcluidoKey: 'sessoes.codecs.texto_concluido_extras'
+        },
+        'fontes-ms-all': {
+            textoConcluido: '✅ Fontes MS instaladas',
+            textoConcluidoKey: 'sessoes.codecs.texto_concluido_fontes'
+        }
     }
 },
+
+// ============================================================
+// SESSÃO 3 — HARDWARE
+// ============================================================
 {
-    id: '05-hardware',
+    id: 'hardware',
     nome: 'Hardware',
-    nomeKey: 'sessoes.05-hardware.nome',
+    nomeKey: 'sessoes.hardware.nome',
     comandos: {
-        'vulkan-amd': { textoConcluido: '✅ Vulkan instalado', textoConcluidoKey: 'sessoes.05-hardware.texto_concluido_vulkan' },
-        'vaapi-amd': { textoConcluido: '✅ VA-API instalado', textoConcluidoKey: 'sessoes.05-hardware.texto_concluido_vaapi' },
-        'vaapi-swap': { textoConcluido: '✅ VA-API instalado', textoConcluidoKey: 'sessoes.05-hardware.texto_concluido_vaapi' },
-        'corectrl-install': { textoConcluido: '✅ CoreCtrl instalado', textoConcluidoKey: 'sessoes.05-hardware.texto_concluido_corectrl' },
-        'lact-install': { textoConcluido: '✅ LACT instalado', textoConcluidoKey: 'sessoes.05-hardware.texto_concluido_lact' },
-        'amdgpu-overclock': { textoConcluido: '✅ Overclock ativado', textoConcluidoKey: 'sessoes.05-hardware.texto_concluido_overclock' },
-        'amdgpu-overclock-remove': { textoConcluido: '✅ Overclock desativado', textoConcluidoKey: 'sessoes.05-hardware.texto_concluido_overclock_remove' },
-        'nvidia-driver-install': { textoConcluido: '✅ Driver Nvidia instalado', textoConcluidoKey: 'sessoes.05-hardware.texto_concluido_nvidia_driver' },
+        'vulkan-amd': {
+            textoConcluido: '✅ Vulkan instalado',
+            textoConcluidoKey: 'sessoes.hardware.texto_concluido_vulkan'
+        },
+        'vaapi-amd': {
+            textoConcluido: '✅ VA-API instalado',
+            textoConcluidoKey: 'sessoes.hardware.texto_concluido_vaapi'
+        },
+        'vaapi-swap': {
+            textoConcluido: '✅ VA-API instalado',
+            textoConcluidoKey: 'sessoes.hardware.texto_concluido_vaapi'
+        },
+        'corectrl-install': {
+            textoConcluido: '✅ CoreCtrl instalado',
+            textoConcluidoKey: 'sessoes.hardware.texto_concluido_corectrl'
+        },
+        'lact-install': {
+            textoConcluido: '✅ LACT instalado',
+            textoConcluidoKey: 'sessoes.hardware.texto_concluido_lact'
+        },
+        'amdgpu-overclock': {
+            textoConcluido: '✅ Overclock ativado',
+            textoConcluidoKey: 'sessoes.hardware.texto_concluido_overclock'
+        },
+        'amdgpu-overclock-remove': {
+            textoConcluido: '✅ Overclock desativado',
+            textoConcluidoKey: 'sessoes.hardware.texto_concluido_overclock_remove'
+        },
+        'nvidia-driver-install': {
+            textoConcluido: '✅ Driver Nvidia instalado',
+            textoConcluidoKey: 'sessoes.hardware.texto_concluido_nvidia_driver'
+        },
         'nvidia-modeset-on': { sempreClicavel: true },
         'nvidia-modeset-off': { sempreClicavel: true },
-        'input-group-add': { textoConcluido: '✅ Adicionado ao grupo input', textoConcluidoKey: 'sessoes.05-hardware.texto_concluido_input_add' },
-        'input-group-remove': { textoConcluido: '✅ Removido do grupo input', textoConcluidoKey: 'sessoes.05-hardware.texto_concluido_input_remove' },
-        'steam-devices-install': { textoConcluido: '✅ Steam Devices instalado', textoConcluidoKey: 'sessoes.05-hardware.texto_concluido_steam_devices' }
+        'input-group-add': {
+            textoConcluido: '✅ Adicionado ao grupo input',
+            textoConcluidoKey: 'sessoes.hardware.texto_concluido_input_add'
+        },
+        'input-group-remove': {
+            textoConcluido: '✅ Removido do grupo input',
+            textoConcluidoKey: 'sessoes.hardware.texto_concluido_input_remove'
+        },
+        'steam-devices-install': {
+            textoConcluido: '✅ Steam Devices instalado',
+            textoConcluidoKey: 'sessoes.hardware.texto_concluido_steam_devices'
+        }
     }
 },
+
+// ============================================================
+// SESSÃO 4 — PRODUÇÃO MULTIMÍDIA
+// Ajustes de áudio (realtime, PipeWire) migraram para a sessão 10.
+// ============================================================
 {
-    id: '06-gaming',
+    id: 'producao-multimidia',
+    nome: 'Produção Multimídia',
+    nomeKey: 'sessoes.producao-multimidia.nome',
+    comandos: {
+        'instalar-obs-studio': {
+            textoConcluido: '✅ OBS Studio instalado',
+            textoConcluidoKey: 'sessoes.producao-multimidia.texto_concluido_obs',
+            flatpakId: 'com.obsproject.Studio'
+        },
+        'obs-cam': {
+            textoConcluido: '✅ Câmera Virtual ativada',
+            textoConcluidoKey: 'sessoes.producao-multimidia.texto_concluido_cam'
+        },
+        'instalar-easyeffects': {
+            textoConcluido: '✅ EasyEffects instalado',
+            textoConcluidoKey: 'sessoes.producao-multimidia.texto_concluido_easyeffects',
+            flatpakId: 'com.github.wwmm.easyeffects'
+        },
+        'obs-scene-templates': {
+            sempreClicavel: true,
+            textoConcluido: '✅ Templates aplicados'
+        },
+        'streamdeck-ui-install': {
+            textoConcluido: '✅ Streamdeck-ui instalado',
+            textoConcluidoKey: 'sessoes.producao-multimidia.texto_concluido_streamdeck'
+        },
+        'ndi-tools-install': {
+            textoConcluido: '✅ NDI Tools instalado',
+            textoConcluidoKey: 'sessoes.producao-multimidia.texto_concluido_ndi'
+        },
+        'qpwgraph-install': {
+            textoConcluido: '✅ qpwgraph instalado',
+            textoConcluidoKey: 'sessoes.producao-multimidia.texto_concluido_qpwgraph'
+        },
+        'handbrake-install': {
+            textoConcluido: '✅ HandBrake instalado',
+            textoConcluidoKey: 'sessoes.producao-multimidia.texto_concluido_handbrake'
+        },
+        'kdenlive-templates-install': {
+            sempreClicavel: true,
+            textoConcluido: '✅ Templates instalados'
+        },
+        'screen-recorder-install': {
+            textoConcluido: '✅ Gravador instalado',
+            textoConcluidoKey: 'sessoes.producao-multimidia.texto_concluido_screen_recorder'
+        }
+    }
+},
+
+// ============================================================
+// SESSÃO 5 — APLICATIVOS RECOMENDADOS
+// ============================================================
+{
+    id: 'aplicativos',
+    nome: 'Aplicativos Recomendados',
+    nomeKey: 'sessoes.aplicativos.nome',
+    comandos: {
+        'instalar-onlyoffice': { textoConcluido: '✅ OnlyOffice instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_onlyoffice', flatpakId: 'org.onlyoffice.desktopeditors' },
+        'instalar-libreoffice': { textoConcluido: '✅ LibreOffice instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_libreoffice', flatpakId: 'org.libreoffice.LibreOffice' },
+        'instalar-obsidian': { textoConcluido: '✅ Obsidian instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_obsidian', flatpakId: 'md.obsidian.Obsidian' },
+        'instalar-thunderbird': { textoConcluido: '✅ Thunderbird instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_thunderbird', flatpakId: 'org.mozilla.thunderbird' },
+        'instalar-okular': { textoConcluido: '✅ Okular instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_okular', flatpakId: 'org.kde.okular' },
+        'instalar-joplin': { textoConcluido: '✅ Joplin instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_joplin', flatpakId: 'net.cozic.joplin_desktop' },
+        'instalar-foliate': { textoConcluido: '✅ Foliate instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_foliate', flatpakId: 'com.github.johnfactotum.Foliate' },
+        'instalar-haruna': { textoConcluido: '✅ Haruna instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_haruna', flatpakId: 'org.kde.haruna' },
+        'instalar-vlc': { textoConcluido: '✅ VLC instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_vlc', flatpakId: 'org.videolan.VLC' },
+        'instalar-mpv': { textoConcluido: '✅ MPV instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_mpv', flatpakId: 'io.mpv.Mpv' },
+        'instalar-spotify': { textoConcluido: '✅ Spotify instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_spotify', flatpakId: 'com.spotify.Client' },
+        'instalar-plex': { textoConcluido: '✅ Plex instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_plex', flatpakId: 'tv.plex.PlexDesktop' },
+        'instalar-stremio': { textoConcluido: '✅ Stremio instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_stremio', flatpakId: 'com.stremio.Stremio' },
+        'instalar-krita': { textoConcluido: '✅ Krita instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_krita', flatpakId: 'org.kde.krita' },
+        'instalar-inkscape': { textoConcluido: '✅ Inkscape instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_inkscape', flatpakId: 'org.inkscape.Inkscape' },
+        'instalar-pinta': { textoConcluido: '✅ Pinta instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_pinta', flatpakId: 'com.github.PintaProject.Pinta' },
+        'instalar-gimp': { textoConcluido: '✅ GIMP instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_gimp', flatpakId: 'org.gimp.GIMP' },
+        'instalar-darktable': { textoConcluido: '✅ Darktable instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_darktable', flatpakId: 'org.darktable.Darktable' },
+        'instalar-freecad': { textoConcluido: '✅ FreeCAD instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_freecad', flatpakId: 'org.freecad.FreeCAD' },
+        'instalar-librecad': { textoConcluido: '✅ LibreCAD instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_librecad', flatpakId: 'org.librecad.librecad' },
+        'instalar-cura': { textoConcluido: '✅ Cura instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_cura', flatpakId: 'com.ultimaker.cura' },
+        'instalar-upscayl': { textoConcluido: '✅ Upscayl instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_upscayl', flatpakId: 'org.upscayl.Upscayl' },
+        'instalar-xnviewmp': { textoConcluido: '✅ XnView MP instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_xnviewmp', flatpakId: 'com.xnview.XnViewMP' },
+        'instalar-affinity': { sempreClicavel: true },
+        'instalar-opera': { textoConcluido: '✅ Opera instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_opera', flatpakId: 'com.opera.Opera' },
+        'instalar-brave': { textoConcluido: '✅ Brave instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_brave', flatpakId: 'com.brave.Browser' },
+        'instalar-zen': { textoConcluido: '✅ Zen Browser instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_zen', flatpakId: 'app.zen_browser.zen' },
+        'instalar-edge': { textoConcluido: '✅ Microsoft Edge instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_edge', flatpakId: 'com.microsoft.Edge' },
+        'instalar-chromium': { textoConcluido: '✅ Chromium instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_chromium', flatpakId: 'org.chromium.Chromium' },
+        'instalar-zoom': { textoConcluido: '✅ Zoom instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_zoom', flatpakId: 'us.zoom.Zoom' },
+        'instalar-vivaldi': { textoConcluido: '✅ Vivaldi instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_vivaldi', flatpakId: 'com.vivaldi.Vivaldi' },
+        'instalar-discord': { textoConcluido: '✅ Discord instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_discord', flatpakId: 'com.discordapp.Discord' },
+        'instalar-telegram': { textoConcluido: '✅ Telegram instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_telegram', flatpakId: 'org.telegram.desktop' },
+        'instalar-signal': { textoConcluido: '✅ Signal instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_signal', flatpakId: 'org.signal.Signal' },
+        'instalar-kdenlive': { textoConcluido: '✅ Kdenlive instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_kdenlive', flatpakId: 'org.kde.kdenlive' },
+        'instalar-shotcut': { textoConcluido: '✅ Shotcut instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_shotcut', flatpakId: 'org.shotcut.Shotcut' },
+        'instalar-pitivi': { textoConcluido: '✅ Pitivi instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_pitivi', flatpakId: 'org.pitivi.Pitivi' },
+        'instalar-openshot': { textoConcluido: '✅ OpenShot instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_openshot', flatpakId: 'org.openshot.OpenShot' },
+        'instalar-avidemux': { textoConcluido: '✅ Avidemux instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_avidemux', flatpakId: 'org.avidemux.Avidemux' },
+        'instalar-lightworks': { textoConcluido: '✅ Lightworks instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_lightworks' },
+        'instalar-drift': { textoConcluido: '✅ Drift instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_drift', flatpakId: 'org.cutwire.Drift' },
+        'instalar-blender': { textoConcluido: '✅ Blender instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_blender', flatpakId: 'org.blender.Blender' },
+        'instalar-ardour': { textoConcluido: '✅ Ardour instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_ardour', flatpakId: 'org.ardour.Ardour' },
+        'instalar-lmms': { textoConcluido: '✅ LMMS instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_lmms', flatpakId: 'io.lmms.LMMS' },
+        'instalar-audacity': { textoConcluido: '✅ Audacity instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_audacity', flatpakId: 'org.audacityteam.Audacity' },
+        'instalar-rclone': { textoConcluido: '✅ Rclone instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_rclone' },
+        'instalar-rclone-manager': { textoConcluido: '✅ Rclone Manager instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_rclone_manager' }
+    }
+},
+
+// ============================================================
+// SESSÃO 6 — CASA E ESCRITÓRIO
+// Conteúdo integral da antiga 10-casa-pronta.
+// ============================================================
+{
+    id: 'casa-escritorio',
+    nome: 'Casa e Escritório',
+    nomeKey: 'sessoes.casa-escritorio.nome',
+    comandos: {
+        'cups-install': {
+            textoConcluido: '✅ Impressora configurada',
+            textoConcluidoKey: 'sessoes.casa-escritorio.texto_concluido_cups'
+        },
+        'samba-install': {
+            textoConcluido: '✅ Samba instalado',
+            textoConcluidoKey: 'sessoes.casa-escritorio.texto_concluido_samba'
+        },
+        'localsend-install': {
+            textoConcluido: '✅ LocalSend instalado',
+            textoConcluidoKey: 'sessoes.casa-escritorio.texto_concluido_localsend',
+            flatpakId: 'org.localsend.localsend_app'
+        },
+        'warpinator-install': {
+            textoConcluido: '✅ Warpinator instalado',
+            textoConcluidoKey: 'sessoes.casa-escritorio.texto_concluido_warpinator',
+            flatpakId: 'org.x.Warpinator'
+        },
+        'keepassxc-install': {
+            textoConcluido: '✅ KeePassXC instalado',
+            textoConcluidoKey: 'sessoes.casa-escritorio.texto_concluido_keepassxc'
+        },
+        'okular-tesseract-install': {
+            textoConcluido: '✅ PDF+OCR instalado',
+            textoConcluidoKey: 'sessoes.casa-escritorio.texto_concluido_okular_tesseract'
+        }
+    }
+},
+
+// ============================================================
+// SESSÃO 7 — GAMING
+// Bufferbloat removido nesta versão.
+// ============================================================
+{
+    id: 'gaming',
     nome: 'Gaming',
-    nomeKey: 'sessoes.06-gaming.nome',
+    nomeKey: 'sessoes.gaming.nome',
     comandos: {
         // --- Launchers ---
         'steam-install': {
             textoConcluido: '✅ Steam instalado',
-            textoConcluidoKey: 'sessoes.06-gaming.texto_concluido_steam',
+            textoConcluidoKey: 'sessoes.gaming.texto_concluido_steam',
             flatpakId: 'com.valvesoftware.Steam'
         },
         'heroic-install': {
             textoConcluido: '✅ Heroic instalado',
-            textoConcluidoKey: 'sessoes.06-gaming.texto_concluido_heroic',
+            textoConcluidoKey: 'sessoes.gaming.texto_concluido_heroic',
             flatpakId: 'com.heroicgameslauncher.hgl'
         },
         'lutris-install': {
             textoConcluido: '✅ Lutris instalado',
-            textoConcluidoKey: 'sessoes.06-gaming.texto_concluido_lutris',
+            textoConcluidoKey: 'sessoes.gaming.texto_concluido_lutris',
             flatpakId: 'net.lutris.Lutris'
         },
         // --- Compatibilidade ---
-        'wine-install': { textoConcluido: '✅ Wine instalado', textoConcluidoKey: 'sessoes.06-gaming.texto_concluido_wine' },
-        'winetricks-install': { textoConcluido: '✅ Winetricks instalado', textoConcluidoKey: 'sessoes.06-gaming.texto_concluido_winetricks' },
+        'wine-install': { textoConcluido: '✅ Wine instalado', textoConcluidoKey: 'sessoes.gaming.texto_concluido_wine' },
+        'winetricks-install': { textoConcluido: '✅ Winetricks instalado', textoConcluidoKey: 'sessoes.gaming.texto_concluido_winetricks' },
         'bottles-install': {
             textoConcluido: '✅ Bottles instalado',
-            textoConcluidoKey: 'sessoes.06-gaming.texto_concluido_bottles',
+            textoConcluidoKey: 'sessoes.gaming.texto_concluido_bottles',
             flatpakId: 'com.usebottles.bottles'
         },
-        'ntsync-install': { textoConcluido: '✅ NTSYNC instalado', textoConcluidoKey: 'sessoes.06-gaming.texto_concluido_ntsync' },
+        'ntsync-install': { textoConcluido: '✅ NTSYNC instalado', textoConcluidoKey: 'sessoes.gaming.texto_concluido_ntsync' },
         // --- Performance ---
-        'gamemode-install': { textoConcluido: '✅ GameMode ativado', textoConcluidoKey: 'sessoes.06-gaming.texto_concluido_gamemode' },
-        'mangohud-install': { textoConcluido: '✅ MangoHud instalado', textoConcluidoKey: 'sessoes.06-gaming.texto_concluido_mangohud' },
-        'goverlay-install': { textoConcluido: '✅ Goverlay instalado', textoConcluidoKey: 'sessoes.06-gaming.texto_concluido_goverlay' },
-        'gamescope-install': { textoConcluido: '✅ Gamescope instalado', textoConcluidoKey: 'sessoes.06-gaming.texto_concluido_gamescope' },
+        'gamemode-install': { textoConcluido: '✅ GameMode ativado', textoConcluidoKey: 'sessoes.gaming.texto_concluido_gamemode' },
+        'mangohud-install': { textoConcluido: '✅ MangoHud instalado', textoConcluidoKey: 'sessoes.gaming.texto_concluido_mangohud' },
+        'goverlay-install': { textoConcluido: '✅ Goverlay instalado', textoConcluidoKey: 'sessoes.gaming.texto_concluido_goverlay' },
+        'gamescope-install': { textoConcluido: '✅ Gamescope instalado', textoConcluidoKey: 'sessoes.gaming.texto_concluido_gamescope' },
         // --- Gaming Avançado ---
         'protonup-qt-install': {
             textoConcluido: '✅ ProtonUp-Qt instalado',
-            textoConcluidoKey: 'sessoes.06-gaming.texto_concluido_protonup',
+            textoConcluidoKey: 'sessoes.gaming.texto_concluido_protonup',
             flatpakId: 'net.davidotek.pupgui2'
         },
-        'vkbasalt-install': { textoConcluido: '✅ vkBasalt instalado', textoConcluidoKey: 'sessoes.06-gaming.texto_concluido_vkbasalt' },
+        'vkbasalt-install': { textoConcluido: '✅ vkBasalt instalado', textoConcluidoKey: 'sessoes.gaming.texto_concluido_vkbasalt' },
         'gamemode-presets-apply': { sempreClicavel: true, textoConcluido: '✅ Presets aplicados' },
-        'gamescope-session-install': { textoConcluido: '✅ Gamescope session instalado', textoConcluidoKey: 'sessoes.06-gaming.texto_concluido_gamescope_session' },
-        'controller-test-install': { textoConcluido: '✅ Ferramenta instalada', textoConcluidoKey: 'sessoes.06-gaming.texto_concluido_controller_test' },
+        'gamescope-session-install': { textoConcluido: '✅ Gamescope session instalado', textoConcluidoKey: 'sessoes.gaming.texto_concluido_gamescope_session' },
+        'controller-test-install': { textoConcluido: '✅ Ferramenta instalada', textoConcluidoKey: 'sessoes.gaming.texto_concluido_controller_test' },
         // --- Emuladores ---
         'retroarch-install': {
             textoConcluido: '✅ RetroArch instalado',
-            textoConcluidoKey: 'sessoes.06-gaming.texto_concluido_retroarch',
+            textoConcluidoKey: 'sessoes.gaming.texto_concluido_retroarch',
             flatpakId: 'org.libretro.RetroArch'
         },
         'dolphin-install': {
             textoConcluido: '✅ Dolphin instalado',
-            textoConcluidoKey: 'sessoes.06-gaming.texto_concluido_dolphin',
+            textoConcluidoKey: 'sessoes.gaming.texto_concluido_dolphin',
             flatpakId: 'org.DolphinEmu.dolphin-emu'
         },
         'pcsx2-install': {
             textoConcluido: '✅ PCSX2 instalado',
-            textoConcluidoKey: 'sessoes.06-gaming.texto_concluido_pcsx2',
+            textoConcluidoKey: 'sessoes.gaming.texto_concluido_pcsx2',
             flatpakId: 'net.pcsx2.PCSX2'
         },
         'rpcs3-install': {
             textoConcluido: '✅ RPCS3 instalado',
-            textoConcluidoKey: 'sessoes.06-gaming.texto_concluido_rpcs3',
+            textoConcluidoKey: 'sessoes.gaming.texto_concluido_rpcs3',
             flatpakId: 'net.rpcs3.RPCS3'
         },
         'duckstation-install': {
             textoConcluido: '✅ Duckstation instalado',
-            textoConcluidoKey: 'sessoes.06-gaming.texto_concluido_duckstation',
+            textoConcluidoKey: 'sessoes.gaming.texto_concluido_duckstation',
             flatpakId: 'org.duckstation.DuckStation'
-        },
-        // --- Rede ---
-        'bufferbloat-test': {
-            textoConcluido: '✅ Ferramenta instalada',
-            textoConcluidoKey: 'sessoes.06-gaming.texto_concluido_bufferbloat'
-        },
+        }
     }
 },
+
+// ============================================================
+// SESSÃO 8 — WAYDROID
+// ============================================================
 {
-    id: '07-loja',
-    nome: 'Produção Multimídia',
-    nomeKey: 'sessoes.07-loja.nome',
-    comandos: {
-        'instalar-obs-studio': {
-            textoConcluido: '✅ OBS Studio instalado',
-            textoConcluidoKey: 'sessoes.07-loja.texto_concluido_obs',
-            flatpakId: 'com.obsproject.Studio'
-        },
-        'obs-cam': { textoConcluido: '✅ Câmera Virtual ativada', textoConcluidoKey: 'sessoes.07-loja.texto_concluido_cam' },
-        'instalar-easyeffects': {
-            textoConcluido: '✅ EasyEffects instalado',
-            textoConcluidoKey: 'sessoes.07-loja.texto_concluido_easyeffects',
-            flatpakId: 'com.github.wwmm.easyeffects'
-        },
-        // --- Streaming Ready ---
-        'obs-scene-templates': { sempreClicavel: true, textoConcluido: '✅ Templates aplicados' },
-        'streamdeck-ui-install': { textoConcluido: '✅ Streamdeck-ui instalado', textoConcluidoKey: 'sessoes.07-loja.texto_concluido_streamdeck' },
-        'ndi-tools-install': { textoConcluido: '✅ NDI Tools instalado', textoConcluidoKey: 'sessoes.07-loja.texto_concluido_ndi' },
-        // --- PipeWire routing ---
-        'qpwgraph-install': { textoConcluido: '✅ qpwgraph instalado', textoConcluidoKey: 'sessoes.07-loja.texto_concluido_qpwgraph' },
-        // --- Presets de vídeo ---
-        'handbrake-install': { textoConcluido: '✅ HandBrake instalado', textoConcluidoKey: 'sessoes.07-loja.texto_concluido_handbrake' },
-        'kdenlive-templates-install': { sempreClicavel: true, textoConcluido: '✅ Templates instalados' },
-        // --- Captura ---
-        'screen-recorder-install': { textoConcluido: '✅ Gravador instalado', textoConcluidoKey: 'sessoes.07-loja.texto_concluido_screen_recorder' },
-        // --- Otimizações de áudio ---
-        'realtime-setup': { textoConcluido: '✅ Grupo realtime configurado', textoConcluidoKey: 'sessoes.07-loja.texto_concluido_realtime_setup' },
-        'realtime-setup-remove': { textoConcluido: '✅ Grupo realtime removido', textoConcluidoKey: 'sessoes.07-loja.texto_concluido_realtime_setup_remove' },
-        'pipewire-quantum-low': { textoConcluido: '✅ Baixa latência ativada', textoConcluidoKey: 'sessoes.07-loja.texto_concluido_pipewire_quantum' },
-        'pipewire-quantum-low-remove': { textoConcluido: '✅ Latência padrão restaurada', textoConcluidoKey: 'sessoes.07-loja.texto_concluido_pipewire_quantum_remove' }
-    }
-},
-{
-    id: '08-waydroid',
+    id: 'waydroid',
     nome: 'Waydroid',
-    nomeKey: 'sessoes.08-waydroid.nome',
+    nomeKey: 'sessoes.waydroid.nome',
     comandos: {
-        'waydroid-install': { textoConcluido: '✅ Waydroid instalado', textoConcluidoKey: 'sessoes.08-waydroid.texto_concluido_waydroid' },
-        'waydroid-init': { textoConcluido: '✅ Waydroid inicializado', textoConcluidoKey: 'sessoes.08-waydroid.texto_concluido_init' },
+        'waydroid-install': { textoConcluido: '✅ Waydroid instalado', textoConcluidoKey: 'sessoes.waydroid.texto_concluido_waydroid' },
+        'waydroid-init': { textoConcluido: '✅ Waydroid inicializado', textoConcluidoKey: 'sessoes.waydroid.texto_concluido_init' },
         'waydroid-uninstall': { sempreClicavel: true },
-        'waydroid-extras-prep': { textoConcluido: '✅ Ambiente preparado', textoConcluidoKey: 'sessoes.08-waydroid.texto_concluido_prep' },
-        'waydroid-gapps': { textoConcluido: '✅ GApps instalado', textoConcluidoKey: 'sessoes.08-waydroid.texto_concluido_gapps' },
-        'waydroid-libndk': { textoConcluido: '✅ libndk instalado', textoConcluidoKey: 'sessoes.08-waydroid.texto_concluido_libndk' },
-        'waydroid-libhoudini': { textoConcluido: '✅ libhoudini instalado', textoConcluidoKey: 'sessoes.08-waydroid.texto_concluido_libhoudini' },
-        'waydroid-magisk': { textoConcluido: '✅ Magisk instalado', textoConcluidoKey: 'sessoes.08-waydroid.texto_concluido_magisk' },
-        'waydroid-widevine': { textoConcluido: '✅ Widevine instalado', textoConcluidoKey: 'sessoes.08-waydroid.texto_concluido_widevine' },
-        'waydroid-smartdock': { textoConcluido: '✅ SmartDock instalado', textoConcluidoKey: 'sessoes.08-waydroid.texto_concluido_smartdock' },
-        'waydroid-helper-install': { textoConcluido: '✅ waydroid-helper instalado', textoConcluidoKey: 'sessoes.08-waydroid.texto_concluido_helper_install' },
+        'waydroid-extras-prep': { textoConcluido: '✅ Ambiente preparado', textoConcluidoKey: 'sessoes.waydroid.texto_concluido_prep' },
+        'waydroid-gapps': { textoConcluido: '✅ GApps instalado', textoConcluidoKey: 'sessoes.waydroid.texto_concluido_gapps' },
+        'waydroid-libndk': { textoConcluido: '✅ libndk instalado', textoConcluidoKey: 'sessoes.waydroid.texto_concluido_libndk' },
+        'waydroid-libhoudini': { textoConcluido: '✅ libhoudini instalado', textoConcluidoKey: 'sessoes.waydroid.texto_concluido_libhoudini' },
+        'waydroid-magisk': { textoConcluido: '✅ Magisk instalado', textoConcluidoKey: 'sessoes.waydroid.texto_concluido_magisk' },
+        'waydroid-widevine': { textoConcluido: '✅ Widevine instalado', textoConcluidoKey: 'sessoes.waydroid.texto_concluido_widevine' },
+        'waydroid-smartdock': { textoConcluido: '✅ SmartDock instalado', textoConcluidoKey: 'sessoes.waydroid.texto_concluido_smartdock' },
+        'waydroid-helper-install': { textoConcluido: '✅ waydroid-helper instalado', textoConcluidoKey: 'sessoes.waydroid.texto_concluido_helper_install' },
         'waydroid-helper-open': { sempreClicavel: true },
-        'waydroid-prefs': { textoConcluido: '✅ Preferências aplicadas', textoConcluidoKey: 'sessoes.08-waydroid.texto_concluido_prefs' }
+        'waydroid-prefs': { textoConcluido: '✅ Preferências aplicadas', textoConcluidoKey: 'sessoes.waydroid.texto_concluido_prefs' }
     }
 },
+
+// ============================================================
+// SESSÃO 9 — DIAGNÓSTICO
+// Baobab removido nesta versão.
+// ============================================================
 {
-    id: '09-softwares-uteis',
-    nome: 'Aplicativos Recomendados',
-    nomeKey: 'sessoes.09-softwares-uteis.nome',
-    comandos: {
-        'instalar-onlyoffice': { textoConcluido: '✅ OnlyOffice instalado', textoConcluidoKey: 'sessoes.09-softwares-uteis.texto_concluido_onlyoffice', flatpakId: 'org.onlyoffice.desktopeditors' },
-        'instalar-libreoffice': { textoConcluido: '✅ LibreOffice instalado', textoConcluidoKey: 'sessoes.09-softwares-uteis.texto_concluido_libreoffice', flatpakId: 'org.libreoffice.LibreOffice' },
-        'instalar-obsidian': { textoConcluido: '✅ Obsidian instalado', textoConcluidoKey: 'sessoes.09-softwares-uteis.texto_concluido_obsidian', flatpakId: 'md.obsidian.Obsidian' },
-        'instalar-thunderbird': { textoConcluido: '✅ Thunderbird instalado', textoConcluidoKey: 'sessoes.09-softwares-uteis.texto_concluido_thunderbird', flatpakId: 'org.mozilla.thunderbird' },
-        'instalar-okular': { textoConcluido: '✅ Okular instalado', textoConcluidoKey: 'sessoes.09-softwares-uteis.texto_concluido_okular', flatpakId: 'org.kde.okular' },
-        'instalar-joplin': { textoConcluido: '✅ Joplin instalado', textoConcluidoKey: 'sessoes.09-softwares-uteis.texto_concluido_joplin', flatpakId: 'net.cozic.joplin_desktop' },
-        'instalar-foliate': { textoConcluido: '✅ Foliate instalado', textoConcluidoKey: 'sessoes.09-softwares-uteis.texto_concluido_foliate', flatpakId: 'com.github.johnfactotum.Foliate' },
-        'instalar-haruna': { textoConcluido: '✅ Haruna instalado', textoConcluidoKey: 'sessoes.09-softwares-uteis.texto_concluido_haruna', flatpakId: 'org.kde.haruna' },
-        'instalar-vlc': { textoConcluido: '✅ VLC instalado', textoConcluidoKey: 'sessoes.09-softwares-uteis.texto_concluido_vlc', flatpakId: 'org.videolan.VLC' },
-        'instalar-mpv': { textoConcluido: '✅ MPV instalado', textoConcluidoKey: 'sessoes.09-softwares-uteis.texto_concluido_mpv', flatpakId: 'io.mpv.Mpv' },
-        'instalar-spotify': { textoConcluido: '✅ Spotify instalado', textoConcluidoKey: 'sessoes.09-softwares-uteis.texto_concluido_spotify', flatpakId: 'com.spotify.Client' },
-        'instalar-plex': { textoConcluido: '✅ Plex instalado', textoConcluidoKey: 'sessoes.09-softwares-uteis.texto_concluido_plex', flatpakId: 'tv.plex.PlexDesktop' },
-        'instalar-stremio': { textoConcluido: '✅ Stremio instalado', textoConcluidoKey: 'sessoes.09-softwares-uteis.texto_concluido_stremio', flatpakId: 'com.stremio.Stremio' },
-        'instalar-krita': { textoConcluido: '✅ Krita instalado', textoConcluidoKey: 'sessoes.09-softwares-uteis.texto_concluido_krita', flatpakId: 'org.kde.krita' },
-        'instalar-inkscape': { textoConcluido: '✅ Inkscape instalado', textoConcluidoKey: 'sessoes.09-softwares-uteis.texto_concluido_inkscape', flatpakId: 'org.inkscape.Inkscape' },
-        'instalar-pinta': { textoConcluido: '✅ Pinta instalado', textoConcluidoKey: 'sessoes.09-softwares-uteis.texto_concluido_pinta', flatpakId: 'com.github.PintaProject.Pinta' },
-        'instalar-gimp': { textoConcluido: '✅ GIMP instalado', textoConcluidoKey: 'sessoes.09-softwares-uteis.texto_concluido_gimp', flatpakId: 'org.gimp.GIMP' },
-        'instalar-darktable': { textoConcluido: '✅ Darktable instalado', textoConcluidoKey: 'sessoes.09-softwares-uteis.texto_concluido_darktable', flatpakId: 'org.darktable.Darktable' },
-        'instalar-freecad': { textoConcluido: '✅ FreeCAD instalado', textoConcluidoKey: 'sessoes.09-softwares-uteis.texto_concluido_freecad', flatpakId: 'org.freecad.FreeCAD' },
-        'instalar-librecad': { textoConcluido: '✅ LibreCAD instalado', textoConcluidoKey: 'sessoes.09-softwares-uteis.texto_concluido_librecad', flatpakId: 'org.librecad.librecad' },
-        'instalar-cura': { textoConcluido: '✅ Cura instalado', textoConcluidoKey: 'sessoes.09-softwares-uteis.texto_concluido_cura', flatpakId: 'com.ultimaker.cura' },
-        'instalar-upscayl': { textoConcluido: '✅ Upscayl instalado', textoConcluidoKey: 'sessoes.09-softwares-uteis.texto_concluido_upscayl', flatpakId: 'org.upscayl.Upscayl' },
-        'instalar-xnviewmp': { textoConcluido: '✅ XnView MP instalado', textoConcluidoKey: 'sessoes.09-softwares-uteis.texto_concluido_xnviewmp', flatpakId: 'com.xnview.XnViewMP' },
-        'instalar-affinity': { sempreClicavel: true },
-        'instalar-opera': { textoConcluido: '✅ Opera instalado', textoConcluidoKey: 'sessoes.09-softwares-uteis.texto_concluido_opera', flatpakId: 'com.opera.Opera' },
-        'instalar-brave': { textoConcluido: '✅ Brave instalado', textoConcluidoKey: 'sessoes.09-softwares-uteis.texto_concluido_brave', flatpakId: 'com.brave.Browser' },
-        'instalar-zen': { textoConcluido: '✅ Zen Browser instalado', textoConcluidoKey: 'sessoes.09-softwares-uteis.texto_concluido_zen', flatpakId: 'app.zen_browser.zen' },
-        'instalar-edge': { textoConcluido: '✅ Microsoft Edge instalado', textoConcluidoKey: 'sessoes.09-softwares-uteis.texto_concluido_edge', flatpakId: 'com.microsoft.Edge' },
-        'instalar-chromium': { textoConcluido: '✅ Chromium instalado', textoConcluidoKey: 'sessoes.09-softwares-uteis.texto_concluido_chromium', flatpakId: 'org.chromium.Chromium' },
-        'instalar-zoom': { textoConcluido: '✅ Zoom instalado', textoConcluidoKey: 'sessoes.09-softwares-uteis.texto_concluido_zoom', flatpakId: 'us.zoom.Zoom' },
-        'instalar-vivaldi': { textoConcluido: '✅ Vivaldi instalado', textoConcluidoKey: 'sessoes.09-softwares-uteis.texto_concluido_vivaldi', flatpakId: 'com.vivaldi.Vivaldi' },
-        'instalar-discord': { textoConcluido: '✅ Discord instalado', textoConcluidoKey: 'sessoes.09-softwares-uteis.texto_concluido_discord', flatpakId: 'com.discordapp.Discord' },
-        'instalar-telegram': { textoConcluido: '✅ Telegram instalado', textoConcluidoKey: 'sessoes.09-softwares-uteis.texto_concluido_telegram', flatpakId: 'org.telegram.desktop' },
-        'instalar-signal': { textoConcluido: '✅ Signal instalado', textoConcluidoKey: 'sessoes.09-softwares-uteis.texto_concluido_signal', flatpakId: 'org.signal.Signal' },
-        'instalar-kdenlive': { textoConcluido: '✅ Kdenlive instalado', textoConcluidoKey: 'sessoes.09-softwares-uteis.texto_concluido_kdenlive', flatpakId: 'org.kde.kdenlive' },
-        'instalar-shotcut': { textoConcluido: '✅ Shotcut instalado', textoConcluidoKey: 'sessoes.09-softwares-uteis.texto_concluido_shotcut', flatpakId: 'org.shotcut.Shotcut' },
-        'instalar-pitivi': { textoConcluido: '✅ Pitivi instalado', textoConcluidoKey: 'sessoes.09-softwares-uteis.texto_concluido_pitivi', flatpakId: 'org.pitivi.Pitivi' },
-        'instalar-openshot': { textoConcluido: '✅ OpenShot instalado', textoConcluidoKey: 'sessoes.09-softwares-uteis.texto_concluido_openshot', flatpakId: 'org.openshot.OpenShot' },
-        'instalar-avidemux': { textoConcluido: '✅ Avidemux instalado', textoConcluidoKey: 'sessoes.09-softwares-uteis.texto_concluido_avidemux', flatpakId: 'org.avidemux.Avidemux' },
-        'instalar-lightworks': { textoConcluido: '✅ Lightworks instalado', textoConcluidoKey: 'sessoes.09-softwares-uteis.texto_concluido_lightworks' },
-        'instalar-drift': { textoConcluido: '✅ Drift instalado', textoConcluidoKey: 'sessoes.09-softwares-uteis.texto_concluido_drift', flatpakId: 'org.cutwire.Drift' },
-        'instalar-blender': { textoConcluido: '✅ Blender instalado', textoConcluidoKey: 'sessoes.09-softwares-uteis.texto_concluido_blender', flatpakId: 'org.blender.Blender' },
-        'instalar-ardour': { textoConcluido: '✅ Ardour instalado', textoConcluidoKey: 'sessoes.09-softwares-uteis.texto_concluido_ardour', flatpakId: 'org.ardour.Ardour' },
-        'instalar-lmms': { textoConcluido: '✅ LMMS instalado', textoConcluidoKey: 'sessoes.09-softwares-uteis.texto_concluido_lmms', flatpakId: 'io.lmms.LMMS' },
-        'instalar-audacity': { textoConcluido: '✅ Audacity instalado', textoConcluidoKey: 'sessoes.09-softwares-uteis.texto_concluido_audacity', flatpakId: 'org.audacityteam.Audacity' },
-        'instalar-rclone': { textoConcluido: '✅ Rclone instalado', textoConcluidoKey: 'sessoes.09-softwares-uteis.texto_concluido_rclone' },
-        'instalar-rclone-manager': { textoConcluido: '✅ Rclone Manager instalado', textoConcluidoKey: 'sessoes.09-softwares-uteis.texto_concluido_rclone_manager' }
-    }
-},
-{
-    id: '10-casa-pronta',
-    nome: 'Casa Pronta',
-    nomeKey: 'sessoes.10-casa-pronta.nome',
-    comandos: {
-        'cups-install': { textoConcluido: '✅ Impressora configurada', textoConcluidoKey: 'sessoes.10-casa-pronta.texto_concluido_cups' },
-        'samba-install': { textoConcluido: '✅ Samba instalado', textoConcluidoKey: 'sessoes.10-casa-pronta.texto_concluido_samba' },
-        'localsend-install': { textoConcluido: '✅ LocalSend instalado', textoConcluidoKey: 'sessoes.10-casa-pronta.texto_concluido_localsend', flatpakId: 'org.localsend.localsend_app' },
-        'warpinator-install': { textoConcluido: '✅ Warpinator instalado', textoConcluidoKey: 'sessoes.10-casa-pronta.texto_concluido_warpinator', flatpakId: 'org.x.Warpinator' },
-        'keepassxc-install': { textoConcluido: '✅ KeePassXC instalado', textoConcluidoKey: 'sessoes.10-casa-pronta.texto_concluido_keepassxc' },
-        'okular-tesseract-install': { textoConcluido: '✅ PDF+OCR instalado', textoConcluidoKey: 'sessoes.10-casa-pronta.texto_concluido_okular_tesseract' }
-    }
-},
-{
-    id: '11-diagnostico',
+    id: 'diagnostico',
     nome: 'Diagnóstico',
-    nomeKey: 'sessoes.11-diagnostico.nome',
+    nomeKey: 'sessoes.diagnostico.nome',
     comandos: {
         'diag-refresh': { sempreClicavel: true },
-        'baobab-install': { textoConcluido: '✅ Baobab instalado', textoConcluidoKey: 'sessoes.11-diagnostico.texto_concluido_baobab' },
-        'gsmartcontrol-install': { textoConcluido: '✅ GSmartControl instalado', textoConcluidoKey: 'sessoes.11-diagnostico.texto_concluido_gsmartcontrol' },
-        'coolercontrol-install': { textoConcluido: '✅ CoolerControl instalado', textoConcluidoKey: 'sessoes.11-diagnostico.texto_concluido_coolercontrol' },
+        'gsmartcontrol-install': {
+            textoConcluido: '✅ GSmartControl instalado',
+            textoConcluidoKey: 'sessoes.diagnostico.texto_concluido_gsmartcontrol'
+        },
+        'coolercontrol-install': {
+            textoConcluido: '✅ CoolerControl instalado',
+            textoConcluidoKey: 'sessoes.diagnostico.texto_concluido_coolercontrol'
+        },
         'journal-errors-check': { sempreClicavel: true }
     }
 },
-{
-    id: '12-fedora',
-    nome: 'Fedora',
-    nomeKey: 'sessoes.12-fedora.nome',
-    comandos: {
-        'fedora-version-check': { sempreClicavel: true },
-        'atomic-check': { sempreClicavel: true },
-        'selinux-status-check': { sempreClicavel: true },
-        'selinux-troubleshoot': { sempreClicavel: true },
-        'selinux-setroubleshoot-install': { textoConcluido: '✅ setroubleshoot instalado', textoConcluidoKey: 'sessoes.12-fedora.texto_concluido_setroubleshoot' },
-        'selinux-gui-install': { textoConcluido: '✅ Gerenciador SELinux instalado', textoConcluidoKey: 'sessoes.12-fedora.texto_concluido_selinux_gui' }
-    }
-},
+
 // ============================================================
-// MANUTENÇÃO (não é sessão sequencial — é a página manutencao.html)
+// SESSÃO 10 — AJUSTES E MANUTENÇÃO
+// Fusão da antiga 02-otimizacao + ajustes de áudio da 07-loja
+// + acórdeão "Manutenção do Fedora" da antiga manutencao.html.
 // ============================================================
 {
-    id: 'manutencao',
-    nome: 'Manutenção',
-    nomeKey: 'sessoes.manutencao.nome',
-    manutencao: true,
+    id: 'ajustes-manutencao',
+    nome: 'Ajustes e Manutenção',
+    nomeKey: 'sessoes.ajustes-manutencao.nome',
     comandos: {
+        // --- Ajustes de desempenho ---
+        'vm-max-map-count': { textoConcluido: '✅ Ajuste aplicado', textoConcluidoKey: 'sessoes.ajustes-manutencao.texto_concluido_vm_max_map_count' },
+        'vm-max-map-count-remove': { textoConcluido: '✅ Ajuste revertido', textoConcluidoKey: 'sessoes.ajustes-manutencao.texto_concluido_vm_max_map_count_remove' },
+        'vm-swappiness-cache': { textoConcluido: '✅ Ajuste aplicado', textoConcluidoKey: 'sessoes.ajustes-manutencao.texto_concluido_vm_swappiness_cache' },
+        'vm-swappiness-cache-remove': { textoConcluido: '✅ Ajuste revertido', textoConcluidoKey: 'sessoes.ajustes-manutencao.texto_concluido_vm_swappiness_cache_remove' },
+        'tcp-bbr': { textoConcluido: '✅ TCP BBR ativado', textoConcluidoKey: 'sessoes.ajustes-manutencao.texto_concluido_tcp_bbr' },
+        'tcp-bbr-remove': { textoConcluido: '✅ TCP BBR desativado', textoConcluidoKey: 'sessoes.ajustes-manutencao.texto_concluido_tcp_bbr_remove' },
+        // --- Ajustes de áudio ---
+        'realtime-setup': { textoConcluido: '✅ Grupo realtime configurado', textoConcluidoKey: 'sessoes.ajustes-manutencao.texto_concluido_realtime_setup' },
+        'realtime-setup-remove': { textoConcluido: '✅ Grupo realtime removido', textoConcluidoKey: 'sessoes.ajustes-manutencao.texto_concluido_realtime_setup_remove' },
+        'pipewire-quantum-low': { textoConcluido: '✅ Baixa latência ativada', textoConcluidoKey: 'sessoes.ajustes-manutencao.texto_concluido_pipewire_quantum' },
+        'pipewire-quantum-low-remove': { textoConcluido: '✅ Latência padrão restaurada', textoConcluidoKey: 'sessoes.ajustes-manutencao.texto_concluido_pipewire_quantum_remove' },
+        // --- DNF / Idioma / Dual-boot ---
+        'dnf-speed': { sempreClicavel: true },
+        'idioma-packs': { textoConcluido: '✅ Tradução instalada', textoConcluidoKey: 'sessoes.ajustes-manutencao.texto_concluido_packs' },
+        'idioma-hunspell': { textoConcluido: '✅ Corretor instalado', textoConcluidoKey: 'sessoes.ajustes-manutencao.texto_concluido_hunspell' },
+        'idioma-localectl': { textoConcluido: '✅ Localidade configurada', textoConcluidoKey: 'sessoes.ajustes-manutencao.texto_concluido_localectl' },
+        'dual-boot-time': { sempreClicavel: true },
+        // --- Manutenção do Fedora ---
         'limpeza-sistema': {
             sempreClicavel: true,
             textoConcluido: '✅ Limpeza concluída',
-            textoConcluidoKey: 'sessoes.manutencao.texto_concluido_limpeza'
+            textoConcluidoKey: 'sessoes.ajustes-manutencao.texto_concluido_limpeza'
         },
         'listar-kernels': { sempreClicavel: true },
         'remover-kernel': { sempreClicavel: true },
         'grub-aplicar-recomendado': {
             sempreClicavel: true,
             textoConcluido: '✅ Configuração aplicada',
-            textoConcluidoKey: 'sessoes.manutencao.texto_concluido_grub_aplicar'
+            textoConcluidoKey: 'sessoes.ajustes-manutencao.texto_concluido_grub_aplicar'
         },
         'grub-restaurar-padrao': {
             sempreClicavel: true,
             textoConcluido: '✅ Padrão restaurado',
-            textoConcluidoKey: 'sessoes.manutencao.texto_concluido_grub_restaurar'
+            textoConcluidoKey: 'sessoes.ajustes-manutencao.texto_concluido_grub_restaurar'
+        }
+    }
+},
+
+// ============================================================
+// SESSÃO 11 — ESTADO DO FEDORA
+// ============================================================
+{
+    id: 'estado-fedora',
+    nome: 'Estado do Fedora',
+    nomeKey: 'sessoes.estado-fedora.nome',
+    comandos: {
+        'fedora-version-check': { sempreClicavel: true },
+        'atomic-check': { sempreClicavel: true },
+        'selinux-status-check': { sempreClicavel: true },
+        'selinux-troubleshoot': { sempreClicavel: true },
+        'selinux-setroubleshoot-install': {
+            textoConcluido: '✅ setroubleshoot instalado',
+            textoConcluidoKey: 'sessoes.estado-fedora.texto_concluido_setroubleshoot'
         },
+        'selinux-gui-install': {
+            textoConcluido: '✅ Gerenciador SELinux instalado',
+            textoConcluidoKey: 'sessoes.estado-fedora.texto_concluido_selinux_gui'
+        }
+    }
+},
+
+// ============================================================
+// SESSÃO 12 — SOBRE O FOF
+// Sobre do FOF + Manutenção do FOF (atualizar, desinstalar, changelog).
+// ============================================================
+{
+    id: 'sobre-fof',
+    nome: 'Sobre o FOF',
+    nomeKey: 'sessoes.sobre-fof.nome',
+    comandos: {
         'atualizar-fof': {
             sempreClicavel: true,
             textoConcluido: '✅ FOF atualizado',
-            textoConcluidoKey: 'sessoes.manutencao.texto_concluido_fof_atualizar'
+            textoConcluidoKey: 'sessoes.sobre-fof.texto_concluido_fof_atualizar'
         },
         'desinstalar-fof': {
             textoConcluido: '✅ FOF desinstalado',
-            textoConcluidoKey: 'sessoes.manutencao.texto_concluido_fof_desinstalar'
+            textoConcluidoKey: 'sessoes.sobre-fof.texto_concluido_fof_desinstalar'
         }
     }
 }
 ];
 
 var SESSOES_ORDEM = SESSOES.map(function(s) { return s.id; });
-var SESSOES_PRINCIPAIS = SESSOES.filter(function(s) { return !s.manutencao; }).map(function(s) { return s.id; });
-var SESSOES_MANUTENCAO = SESSOES.filter(function(s) { return s.manutencao; }).map(function(s) { return s.id; });
+var SESSOES_PRINCIPAIS = SESSOES.map(function(s) { return s.id; });
+
+// ============================================================
+// CONJUNTO DE IDs VÁLIDOS (para limpeza de órfãos)
+// ============================================================
+//
+// Constrói um Set com todos os idComando atualmente registrados em
+// SESSOES. Usado por `_limparIdsOrfaos()` para remover do progresso
+// qualquer entrada que não exista mais (sessões renomeadas,
+// comandos removidos, etc.).
+
+function _construirIdsValidos() {
+    var set = new Set();
+    for (var i = 0; i < SESSOES.length; i++) {
+        var comandos = SESSOES[i].comandos || {};
+        Object.keys(comandos).forEach(function(id) { set.add(id); });
+    }
+    return set;
+}
 
 function _infoComando(idComando) {
     for (var i = 0; i < SESSOES.length; i++) {
@@ -747,11 +902,8 @@ function _bloquearSessao(idComando) {
     var sessaoContainer = btn.closest('.sessao-container');
     if (!sessaoContainer) return;
 
-    // Inclui .btn-flatpak-uninstall: os ícones de lixeira das
-    // sessões 06, 07, 09 e 10 também precisam ser bloqueados
-    // durante uma execução em andamento, senão o usuário pode
-    // disparar um `flatpak uninstall` em paralelo com uma
-    // instalação (ou vice-versa).
+    // Inclui .btn-flatpak-uninstall: os ícones de lixeira também
+    // precisam ser bloqueados durante uma execução em andamento.
     var botoes = sessaoContainer.querySelectorAll('.btn-executar, .btn-reverter, .btn-flatpak-uninstall');
     botoes.forEach(function(b) {
         if (b.id === 'btn-' + idComando) return;
@@ -873,7 +1025,47 @@ function getProgressSync() {
 async function carregarProgressoInicial() {
     const progress = await getProgress();
     console.log('📊 Progresso carregado:', progress.executados.length + ' itens');
+    await _limparIdsOrfaos();
     _atualizarProgressoGlobal();
+}
+
+// ============================================================
+// LIMPEZA DE IDs ÓRFÃOS
+// ============================================================
+//
+// Remove do progresso persistido qualquer idComando que não esteja
+// mais registrado em SESSOES. Acontece quando:
+// - uma sessão é renomeada (ids antigos como '04-fontes' viram órfãos)
+// - um comando é removido (ex.: 'btrfs-install', 'bufferbloat-test')
+// - uma sessão é excluída por completo
+//
+// Sem isso, o .progresso.json acumula IDs fantasmas para sempre, e
+// o contador global de sessões concluídas passa a mentir.
+//
+// Chamada em carregarProgressoInicial(), que roda no boot e a cada
+// sessão carregada. Se nada foi limpo, é no-op.
+
+async function _limparIdsOrfaos() {
+    var validos = _construirIdsValidos();
+    var progress = await getProgress();
+
+    var execAntes = progress.executados.length;
+    var pulAntes = progress.pulados.length;
+
+    var execNovos = progress.executados.filter(function(id) { return validos.has(id); });
+    var pulNovos = progress.pulados.filter(function(id) { return validos.has(id); });
+
+    if (execNovos.length === execAntes && pulNovos.length === pulAntes) {
+        return; // nada a fazer
+    }
+
+    progress.executados = execNovos;
+    progress.pulados = pulNovos;
+    await saveProgress(progress);
+
+    console.log('🧹 IDs órfãos removidos: ' +
+    (execAntes - execNovos.length) + ' executados, ' +
+    (pulAntes - pulNovos.length) + ' pulados');
 }
 
 function isExecutado(idComando) {
@@ -887,7 +1079,6 @@ function isPulado(idComando) {
 }
 
 var SESSAO_COMANDOS = SESSOES.reduce(function(mapa, sessao) {
-    if (sessao.manutencao) return mapa;
     mapa[sessao.id] = Object.keys(sessao.comandos || {}).filter(function(id) {
         return !sessao.comandos[id].sempreClicavel;
     });
@@ -973,9 +1164,6 @@ async function verificarFlatpaksRemovidos() {
         var progress = await getProgress();
         var executados = progress.executados || [];
 
-        // Varre o registro central. Para cada comando executado
-        // que tenha flatpakId, verifica se o app ainda está
-        // instalado. Se não estiver, desmarca e restaura.
         var removidos = [];
         for (var i = 0; i < SESSOES.length; i++) {
             var sessao = SESSOES[i];
@@ -992,9 +1180,6 @@ async function verificarFlatpaksRemovidos() {
 
         if (removidos.length === 0) return;
 
-        // Aplica as restaurações. `restaurarBotaoAposExecucao(id, false)`
-        // devolve o botão ao estado original clicável. E
-        // `desmarcarComoExecutado` remove do progresso persistido.
         for (var j = 0; j < removidos.length; j++) {
             var item = removidos[j];
             console.log('[Flatpak] Removido externamente:', item.id, '→', item.appId);
@@ -1722,158 +1907,6 @@ function initCustomSelects() {
 }
 
 // ============================================================
-// BUSCA GLOBAL (Ctrl+K)
-// ============================================================
-//
-// Overlay de busca que procura em:
-// - nomes de sessão
-// - texto de botões (.btn-executar)
-// - descrições de acordeões (summary)
-//
-// Funciona em qualquer página (index, guiado, manutencao).
-// Ao selecionar um resultado, navega para a sessão correspondente
-// e faz scroll até o botão.
-
-var _buscaOverlay = null;
-
-function _garantirOverlayBusca() {
-    if (_buscaOverlay) return _buscaOverlay;
-
-    var overlay = document.createElement('div');
-    overlay.className = 'busca-overlay';
-    overlay.id = 'busca-overlay';
-    overlay.setAttribute('aria-hidden', 'true');
-    overlay.innerHTML =
-    '<div class="busca-modal">' +
-    '<input type="text" class="busca-input" id="busca-input" ' +
-    'placeholder="' + _t('comum.busca_placeholder', '🔍 Buscar sessão, botão ou termo...') + '" ' +
-    'autocomplete="off" spellcheck="false">' +
-    '<div class="busca-resultados" id="busca-resultados">' +
-    '<div class="busca-vazio">' + _t('comum.busca_dica', 'Digite para buscar...') + '</div>' +
-    '</div>' +
-    '</div>';
-
-    overlay.addEventListener('click', function(e) {
-        if (e.target === overlay) fecharBusca();
-    });
-
-        document.body.appendChild(overlay);
-
-        var input = overlay.querySelector('#busca-input');
-        input.addEventListener('input', function() {
-            _renderResultadosBusca(this.value);
-        });
-        input.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape') {
-                e.preventDefault();
-                fecharBusca();
-            }
-        });
-
-        _buscaOverlay = overlay;
-        return overlay;
-}
-
-function abrirBusca() {
-    var overlay = _garantirOverlayBusca();
-    overlay.classList.add('aberto');
-    overlay.setAttribute('aria-hidden', 'false');
-    var input = overlay.querySelector('#busca-input');
-    if (input) {
-        input.value = '';
-        input.focus();
-        _renderResultadosBusca('');
-    }
-}
-
-function fecharBusca() {
-    if (!_buscaOverlay) return;
-    _buscaOverlay.classList.remove('aberto');
-    _buscaOverlay.setAttribute('aria-hidden', 'true');
-}
-
-function _coletarItensBuscaveis() {
-    var itens = [];
-    document.querySelectorAll('.btn-executar[data-comando]').forEach(function(btn) {
-        var texto = (btn.textContent || '').trim();
-        var idComando = btn.getAttribute('data-comando');
-        var sessao = btn.closest('.sessao-container');
-        var sessaoId = sessao ? (sessao.id || '').replace(/^sessao-/, '') : '';
-        itens.push({
-            tipo: 'botao',
-            texto: texto,
-            idComando: idComando,
-            sessaoId: sessaoId,
-            elemento: btn
-        });
-    });
-    document.querySelectorAll('.sessao-titulo').forEach(function(el) {
-        var container = el.closest('.sessao-container');
-        if (!container) return;
-        var sessaoId = (container.id || '').replace(/^sessao-/, '');
-        itens.push({
-            tipo: 'sessao',
-            texto: el.textContent.trim(),
-                   sessaoId: sessaoId,
-                   elemento: container
-        });
-    });
-    return itens;
-}
-
-function _renderResultadosBusca(termo) {
-    var container = document.getElementById('busca-resultados');
-    if (!container) return;
-
-    var t = (termo || '').toLowerCase().trim();
-    if (!t) {
-        container.innerHTML = '<div class="busca-vazio">' +
-        _t('comum.busca_dica', 'Digite para buscar...') + '</div>';
-        return;
-    }
-
-    var itens = _coletarItensBuscaveis();
-    var matches = itens.filter(function(it) {
-        return it.texto.toLowerCase().indexOf(t) !== -1;
-    }).slice(0, 20);
-
-    if (matches.length === 0) {
-        container.innerHTML = '<div class="busca-vazio">' +
-        _t('comum.busca_sem_resultados', 'Nenhum resultado encontrado.') + '</div>';
-        return;
-    }
-
-    container.innerHTML = '';
-    matches.forEach(function(it) {
-        var item = document.createElement('div');
-        item.className = 'busca-item';
-        var badge = it.tipo === 'sessao'
-        ? '<span class="busca-badge sessao">' + _t('comum.busca_badge_sessao', 'Sessão') + '</span>'
-        : '<span class="busca-badge botao">' + _t('comum.busca_badge_botao', 'Botão') + '</span>';
-        item.innerHTML = badge + '<span class="busca-texto">' + it.texto + '</span>';
-        item.addEventListener('click', function() {
-            _navegarParaResultadoBusca(it);
-        });
-        container.appendChild(item);
-    });
-}
-
-function _navegarParaResultadoBusca(item) {
-    fecharBusca();
-    if (item.elemento && document.body.contains(item.elemento)) {
-        item.elemento.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        if (item.tipo === 'botao') {
-            item.elemento.focus({ preventScroll: true });
-        }
-        return;
-    }
-    if (item.sessaoId) {
-        var url = 'guiado.html?session=' + encodeURIComponent(item.sessaoId);
-        window.location.href = url;
-    }
-}
-
-// ============================================================
 // ATALHOS DE TECLADO
 // ============================================================
 
@@ -1895,17 +1928,6 @@ document.addEventListener('keydown', function(e) {
                 return;
             }
         }
-    }
-});
-
-// Ctrl+K: abre a busca global
-document.addEventListener('keydown', function(e) {
-    if ((e.ctrlKey || e.metaKey) && (e.key === 'k' || e.key === 'K')) {
-        e.preventDefault();
-        abrirBusca();
-    }
-    if (e.key === 'Escape' && _buscaOverlay && _buscaOverlay.classList.contains('aberto')) {
-        fecharBusca();
     }
 });
 

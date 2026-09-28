@@ -2,7 +2,7 @@
 
 **🌐 Language:** [Português (BR)](README.md) | English | [Español](README.es.md)
 
-![Version](https://img.shields.io/badge/Version-v1.0.0--09272026-orange?style=flat-square)
+![Version](https://img.shields.io/badge/Version-v1.0.0--09282026-orange?style=flat-square)
 ![Fedora](https://img.shields.io/badge/Fedora-44+-294172?style=flat-square&logo=fedora)
 ![License](https://img.shields.io/badge/License-GPL--3.0-green?style=flat-square)
 ![Languages](https://img.shields.io/badge/Languages-PT--BR%20%7C%20EN%20%7C%20ES-3c67e3?style=flat-square)
@@ -32,10 +32,7 @@ fof-compat                          # Launch (compatibility mode — older GPUs)
 
 **Fedora Only Fans (FOF)** is a visual automation panel for Fedora Linux. It turns a clean installation into a complete system — codecs, drivers, repositories, tools — through clicks, without opening the terminal.
 
-FOF has **two entry points**:
-
-- **🧭 Start Setup** — step by step, one session at a time, with Previous/Next navigation and a fixed menu at the top. The order matters for the end result.
-- **🛠️ Maintenance** — standalone tasks that don't depend on order: cleanup, kernels, GRUB, update and uninstall FOF.
+FOF has a **single entry point**: the **"Start"** button, which takes you through the 12 sessions step by step, in logical order. Each session groups related tasks, and progress is saved automatically.
 
 Each button remembers its own state. Closing and reopening FOF (or rebooting) always shows exactly where you stopped.
 
@@ -45,23 +42,18 @@ Each button remembers its own state. Closing and reopening FOF (or rebooting) al
 
 | # | Session | What it does |
 |---|---|---|
-| 1 | 👋 Welcome | Introduction + full `dnf upgrade --refresh` |
-| 2 | ⚙️ Optimization | Parallel DNF, PT-BR locale, dual-boot, **performance tunings** (`vm.max_map_count`, `swappiness`/`vfs_cache_pressure`, TCP BBR) |
-| 3 | 📦 Repositories | RPM Fusion (free + nonfree), Flathub |
-| 4 | 🔤 Codecs and Compatibility | Multimedia codecs, commercial DVD playback (tainted), Microsoft fonts |
-| 5 | 🖥️ Hardware | AMD (Vulkan/Mesa/RADV, VA-API, CoreCtrl, LACT, overclock), NVIDIA (proprietary driver, modeset), controllers (input group) |
-| 6 | 🎮 Gaming | Launchers, Wine/Proton/NTSYNC, GameMode/MangoHud/Gamescope, ProtonUp-Qt, vkBasalt, emulators, bufferbloat, anti-cheat awareness, Flatpak updates |
-| 7 | 🎬 Media Production | OBS Studio, EasyEffects, **realtime-setup**, **PipeWire low latency**, streaming, qpwgraph, HandBrake, wf-recorder |
-| 8 | 📱 Waydroid | Android on Linux via COPR, GApps, libndk/libhoudini, Magisk, Widevine, SmartDock, waydroid-helper |
-| 9 | 📦 Recommended Apps | ~45 apps via Flatpak (productivity, media, graphics, internet, video/audio editing, cloud) |
-| 10 | 🏠 Home Ready | CUPS, Samba/LocalSend/Warpinator, KeePassXC, Okular+Tesseract (PDF+OCR) |
-| 11 | 📊 Diagnostics | System panel, top processes, partitions, Baobab, GSmartControl, CoolerControl, journal, **tunings status** |
-| 12 | 🐧 Fedora | Version, Atomic/Silverblue detection, SELinux (status, AVCs, setroubleshoot, GUI) |
-
-## 🛠️ Maintenance
-
-- **Fedora** — cache cleanup, kernel management, GRUB configuration
-- **FOF** — update, uninstall, changelog
+| 1 | 🚀 First Steps | Full system upgrade + RPM Fusion + Flathub |
+| 2 | 🔤 Codecs and Compatibility | Multimedia codecs, commercial DVD playback (tainted), Microsoft fonts |
+| 3 | 🖥️ Hardware | AMD (Vulkan/Mesa/RADV, VA-API, CoreCtrl, LACT, overclock), NVIDIA (proprietary driver, modeset), controllers (input group) |
+| 4 | 🎬 Media Production | OBS Studio, EasyEffects, streaming, qpwgraph, HandBrake, wf-recorder |
+| 5 | 📦 Recommended Apps | ~45 apps via Flatpak (productivity, media, graphics, internet, video/audio editing, cloud) |
+| 6 | 🏠 Home and Office | CUPS, Samba/LocalSend/Warpinator, KeePassXC, Okular+Tesseract (PDF+OCR) |
+| 7 | 🎮 Gaming | Launchers, Wine/Proton/NTSYNC, GameMode/MangoHud/Gamescope, ProtonUp-Qt, vkBasalt, emulators, anti-cheat awareness |
+| 8 | 📱 Waydroid | Android on Linux via COPR, GApps, libndk/libhoudini, Magisk, Widevine, SmartDock |
+| 9 | 📊 Diagnostics | System panel, top processes, partitions, GSmartControl, CoolerControl, journal, **tunings status** |
+| 10 | 🛠️ Tunings and Maintenance | Performance tunings, audio adjustments, DNF, locale, dual-boot, cleanup, kernels, GRUB |
+| 11 | 🐧 Fedora Status | Version, Atomic/Silverblue detection, SELinux (status, AVCs, setroubleshoot, GUI) |
+| 12 | 📖 About FOF | About the project + update/uninstall FOF + dynamic changelog |
 
 ---
 
@@ -70,14 +62,15 @@ Each button remembers its own state. Closing and reopening FOF (or rebooting) al
 - **Dark/light theme** — real-time toggle, saved preference
 - **Multilingual** — PT-BR, EN, ES with real-time switching
 - **Real-time logs** via SSE, expanded by default
-- **Global search (Ctrl+K)** on any page
 - **Uninstall icon** next to each installed Flatpak app
 - **External Flatpak removal detection** — if the user deletes the app outside FOF, the button reverts to its initial state
 - **Global progress bar** in the header (N/M sessions completed)
 - **Toasts + native notifications** on long tasks (>30s)
 - **Secure authentication** via pkexec/kdesu with a read-only command whitelist
 - **Dual persistence** — local server + localStorage
+- **Automatic orphan ID cleanup** — renamed sessions don't leave leftovers in progress
 - **Native WebKitGTK container** (no external browser)
+- **Dynamic changelog** — read from `CHANGELOG.md` at runtime
 - **Centralized version** in `package.json`
 
 ---
@@ -86,34 +79,33 @@ Each button remembers its own state. Closing and reopening FOF (or rebooting) al
 
 ```
 Fedora-Only-Fans/
-├── index.html                       # Landing page (mode selection)
+├── index.html                       # Landing page (single entry)
 ├── guiado.html                      # Step-by-step setup
-├── manutencao.html                  # Maintenance (Fedora + FOF)
 ├── style.css                        # Shared CSS
-├── script.js                        # Shared JS (sessions, progress, search)
+├── script.js                        # Shared JS (sessions, progress)
 ├── i18n.js                          # i18n module (PT-BR / EN / ES)
 ├── locales/
-│   ├── pt-BR.json                   # Translations (default)
 │   ├── en.json                      # EN translations
 │   └── es.json                      # ES translations
-├── 00-boas-vindas.html              # Session 1
-├── 01-restauracao.html              # Session 2
-├── 02-otimizacao.html               # Session 3
-├── 03-repositorios.html             # Session 4
-├── 04-codecs-compatibilidade.html   # Session 5
-├── 05-hardware.html                 # Session 6
-├── 06-gaming.html                   # Session 7
-├── 07-loja.html                     # Session 8
-├── 08-waydroid.html                 # Session 9
-├── 09-softwares-uteis.html          # Session 10
-├── 10-casa-pronta.html              # Session 11
-├── 11-diagnostico.html              # Session 12
-├── 12-fedora.html                   # Session 13
+│   # PT-BR has no file of its own — the HTML is the source
+├── primeiros-passos.html            # Session 1
+├── codecs.html                      # Session 2
+├── hardware.html                    # Session 3
+├── producao-multimidia.html         # Session 4
+├── aplicativos.html                 # Session 5
+├── casa-escritorio.html             # Session 6
+├── gaming.html                      # Session 7
+├── waydroid.html                    # Session 8
+├── diagnostico.html                 # Session 9
+├── ajustes-manutencao.html          # Session 10
+├── estado-fedora.html               # Session 11
+├── sobre-fof.html                   # Session 12
 ├── template-sessao.html             # Template for new sessions
-├── server.js                        # Node.js server + SSE
+├── CHANGELOG.md                     # Change history (read by FOF)
+├── server.js                        # Node.js server + SSE + endpoints
 ├── iniciar_fof.sh                   # Startup script
 ├── iniciar_fof_compat.sh            # Compatibility mode
-├── install.sh                       # Installer / uninstaller
+├── install.sh                       # Installer / uninstaller / updater
 ├── build-container.sh / Makefile    # Native container build
 ├── src/fof-container.c              # WebKitGTK container (C + GTK3)
 ├── package.json                     # Node deps + FOF version
@@ -126,7 +118,7 @@ Fedora-Only-Fans/
 ## 🛠️ Technologies
 
 - **HTML5 / CSS3** — responsive UI, light/dark theme
-- **Vanilla JavaScript** — local API requests, i18n, global search, dashboard
+- **Vanilla JavaScript** — local API requests, i18n, dashboard
 - **Node.js** — local backend server, secure process execution
 - **Server-Sent Events (SSE)** — real-time logs
 - **Bash** — startup, installation
@@ -147,72 +139,65 @@ Fedora-Only-Fans/
 
 ## 🎯 Changelog
 
-### v1.0.0-09272026 (Current) 🚧
+The full change history is in [`CHANGELOG.md`](CHANGELOG.md). FOF itself displays the current version's changelog inside the **About FOF** session — loaded dynamically from the file.
 
-**Session restructuring**
-- ✅ Session **04-codecs-compatibilidade** replaces `04-fontes.html` — groups codecs + tainted + MS fonts into a compatibility narrative
-- ✅ Session **03-repositorios** streamlined (only RPM Fusion + Flathub)
+### v1.0.0-09282026 (Current) 🚧
 
-**New performance tunings (all with apply/revert pairs)**
-- ✅ Session 02: `vm.max_map_count`, `vm.swappiness` + `vfs_cache_pressure`, TCP BBR
-- ✅ Session 07: `realtime-setup` (realtime group) and PipeWire low latency
-
-**Gaming**
-- ✅ NTSYNC now loads the module immediately + persists via `modules-load.d`
-- ✅ New "Update Flatpak Apps" button (sessions 06 and 09)
-- ✅ Educational warning about Gamescope + NVIDIA + Flatpak
-
-**Flatpak apps**
-- ✅ Uninstall (trash) icon next to each installed Flatpak app (sessions 06, 07, 09, 10)
-- ✅ **External Flatpak removal detection** — button reverts to initial state automatically
-
-**Diagnostics**
-- ✅ New "Performance Tunings" panel (KSM, max_map_count, TCP BBR, PipeWire quantum)
-
-**Backend**
-- ✅ `systemctl --user` on the whitelist + generalized env context
-- ✅ New `/flatpak-installed` endpoint
-- ✅ `/system-info` extended with 5 new fields
+- Complete session restructuring (13 → 12), with semantic IDs (no numbers)
+- New **Tunings and Maintenance** session groups performance tunings, audio adjustments, DNF, locale, dual-boot, cleanup, kernels and GRUB
+- New **About FOF** session groups the institutional text, update and uninstall FOF
+- Removed: **Restore** session (Btrfs-Assistant) and **Maintenance** page (content redistributed)
+- Home screen redesigned: live clock and single card with text + "Start" button
+- Global search (Ctrl+K) removed — it had issues with WebKitGTK
+- Dynamic changelog via `GET /changelog`
+- "View full changelog" button fixed (was using `window.open`, blocked by WebKitGTK)
+- `install.sh --update` now cleans up old session files before `git pull`
+- Progress automatically cleans orphan IDs at boot
+- Update badge points to `guiado.html?session=sobre-fof`
 
 ### v1.0.0-09232026 ✅
 
-- ✅ Automatic update check via GitHub Releases (⬆️ badge in the header)
-- ✅ Post-update popup (warns to restart FOF)
-- ✅ Session 00 reworked into 2 accordions
-- ✅ Gaming session with detailed NTSYNC warning
-- ✅ Session logs expanded by default; uniform height (120–200px)
-- ✅ Header with inline controls next to title
+- Automatic update check via GitHub Releases
+- Post-update popup
+- Uninstall icon on each Flatpak app
+- External Flatpak removal detection
+- "Performance Tunings" panel in Diagnostics
 
-### v1.0.0 (Future) 🔮
+### v1.0.0 ✅
 
-- □ ?
+- Initial public release
 
 ---
 
 ## ➕ How to add a session
 
-1. Copy `template-sessao.html` to `NN-name.html`
+1. Copy `template-sessao.html` to `<name>.html` (no number)
 2. Fill in the placeholders
-3. Add an entry to the `SESSOES` array in `script.js`
-4. (Optional) Add the icon to `ICONES_SESSOES` in `guiado.html`
-5. (Optional) Add translations to the 3 locale JSONs
+3. Add an entry to the `SESSOES` array in `script.js` (with `id: '<name>'`)
+4. Add the emoji to `ICONES_SESSOES` in `guiado.html`
+5. Add the i18n keys to `locales/en.json` and `locales/es.json` (and to the HTML as PT-BR fallback)
+
+Display order comes from the position of the entry in the `SESSOES` array, not the file name.
 
 ---
 
 ## 🌐 How to add a language
 
-1. Copy `locales/pt-BR.json` to `locales/XX.json`
+1. Copy `locales/en.json` to `locales/XX.json`
 2. Translate the values (keep the keys)
 3. Add `XX` to `LANGS_DISPONIVEIS` (`i18n.js`) and `LANGS_SUPORTADOS` (`server.js`)
 4. Add the option to the `opcoes` array in `criarSeletorIdioma()`
+
+**Note:** the default language (pt-BR) **has no JSON file** on purpose. Each session's HTML contains the Portuguese text as fallback, and `i18n.js` short-circuits when the language is the default — it never fires a `fetch` to `/locales/pt-BR.json`. This avoids maintaining duplicate strings.
 
 ---
 
 ## 🏷️ How to release a version
 
 1. Edit `package.json` → `"version": "1.0.0-<NEW>"`
-2. Edit `i18n.js` → `FALLBACK_VERSION = '1.0.0-<NEW>'` (the only exception to the single-source rule)
-3. Create the tag/release on GitHub with the same name
+2. Edit `i18n.js` → `FALLBACK_VERSION = '1.0.0-<NEW>'` (the only exception to the single-source rule — used as a cache-buster before `/info` responds)
+3. Add a new section at the top of `CHANGELOG.md`, with a header exactly `## v1.0.0-<NEW>` (matching `package.json`)
+4. Create the tag/release on GitHub with the same name
 
 Everything else (`install.sh` banner, FOF badge, container `--help`) is automatic.
 

@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FOF - Produção Multimídia</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<!-- ===== CONTEÚDO DA SESSÃO ===== -->
+<div class="sessao-container" id="sessao-producao-multimidia">
+<div class="sessao-titulo">
+<span class="sessao-label">Sessão</span>
+<span data-i18n="sessoes.producao-multimidia.titulo">🎬 Produção Multimídia</span>
+</div>
+
+<!-- OBS Studio -->
+<div class="bloco-comando destaque">
+<div class="comando-info">
+<h3 data-i18n="sessoes.producao-multimidia.obs_titulo">🎬 OBS Studio - Instalação e Câmera Virtual</h3>
+<p data-i18n="sessoes.producao-multimidia.obs_desc">Instale o OBS Studio para gravação/streaming e ative a câmera virtual para chamadas de vídeo.</p>
+
+<div class="botoes-flex">
+<div class="btn-flatpak-wrapper" style="display: inline-block;">
+<button class="btn-executar verde-escuro"
+onclick="executarOBSStudio()"
+data-comando="instalar-obs-studio"
+data-logbox="log-sessao-producao-multimidia"
+id="btn-instalar-obs-studio"
+data-i18n="sessoes.producao-multimidia.btn_instalar_obs">
+📹 Instalar OBS Studio
+</button>
+</div>
+
+<button class="btn-executar"
+onclick="executarOBSCam()"
+data-comando="obs-cam"
+data-logbox="log-sessao-producao-multimidia"
+id="btn-obs-cam"
+data-i18n="sessoes.producao-multimidia.btn_ativar_cam">
+🎥 Ativar Câmera Virtual
+</button>
+</div>
+
+<div class="aviso-caixa" style="margin-top: 0.5rem; font-size: 0.85rem;" data-i18n="sessoes.producao-multimidia.obs_aviso">
+⚠️ A câmera virtual exige que o Secure Boot esteja configurado corretamente ou desativado.
+</div>
+</div>
+
+<div class="progress-container" id="progress-instalar-obs-studio">
+<div class="progress-bar"><div class="progress-fill" id="progress-fill-instalar-obs-studio"></div></div>
+<div class="progress-text"><span class="status" id="progress-status-instalar-obs-studio">⏳ Iniciando...</span><span class="percentage" id="progress-percent-instalar-obs-studio">0%</span></div>
+</div>
+
+<div class="progress-container" id="progress-obs-cam">
+<div class="progress-bar"><div class="progress-fill" id="progress-fill-obs-cam"></div></div>
+<div class="progress-text"><span class="status" id="progress-status-obs-cam">⏳ Iniciando...</span><span class="percentage" id="progress-percent-obs-cam">0%</span></div>
+</div>
+</div>
+
+<!-- EasyEffects -->
+<div class="bloco-comando">
+<div class="comando-info">
+<h3 data-i18n="sessoes.producao-multimidia.easyeffects_titulo">🎵 Melhoria de Áudio com EasyEffects</h3>
+<p data-i18n="sessoes.producao-multimidia.easyeffects_desc">Processador de efeitos de som para PipeWire para aplicar redução de ruídos e equalizações.</p>
+<div class="grupo-botoes">
+<div class="btn-flatpak-wrapper" style="display: inline-block;">
+<button class="btn-executar"
+onclick="executarEasyEffects()"
+data-comando="instalar-easyeffects"
+data-logbox="log-sessao-producao-multimidia"
+id="btn-instalar-easyeffects"
+data-i18n="sessoes.producao-multimidia.btn_instalar_easyeffects">
+Instalar EasyEffects (Flatpak)
+</button>
+</div>
+</div>
+</div>
+
+<div class="progress-container" id="progress-instalar-easyeffects">
+<div class="progress-bar"><div class="progress-fill" id="progress-fill-instalar-easyeffects"></div></div>
+<div class="progress-text"><span class="status" id="progress-status-instalar-easyeffects">⏳ Iniciando...</span><span class="percentage" id="progress-percent-instalar-easyeffects">0%</span></div>
+</div>
+</div>
+
+<!-- Log único da sessão -->
+<div class="terminal-log sessao-compartilhado" id="log-sessao-producao-multimidia"></div>
+</div>
+
+<!-- ===== JAVASCRIPT ESPECÍFICO DA SESSÃO ===== -->
+<script>
+// ============================================================
+// SESSÃO: PRODUÇÃO MULTIMÍDIA
+// ============================================================
+
+function _t(chave, fallback) {
+    return (typeof tOr === 'function') ? tOr(chave, fallback) : fallback;
+}
+
+var APPS_FLATPAK = {
+    'instalar-obs-studio': { appId: 'com.obsproject.Studio', fallback: '📹 Instalar OBS Studio' },
+    'instalar-easyeffects': { appId: 'com.github.wwmm.easyeffects', fallback: 'Instalar EasyEffects (Flatpak)' }
+};
+
+async function executarOBSStudio() {
+    const idComando = 'instalar-obs-studio';
+    const comando = 'flatpak install flathub com.obsproject.Studio -y';
+    await executarComandoGenerico(idComando, comando, _t('sessoes.producao-multimidia.btn_instalar_obs', '📹 Instalar OBS Studio'), function() {
+        _atualizarIconeDesinstalar(idComando);
+    });
+}
+
+async function executarEasyEffects() {
+    const idComando = 'instalar-easyeffects';
+    const comando = 'flatpak install flathub com.github.wwmm.easyeffects -y';
+    await executarComandoGenerico(idComando, comando, _t('sessoes.producao-multimidia.btn_instalar_easyeffects', 'Instalar EasyEffects (Flatpak)'), function() {
+        _atualizarIconeDesinstalar(idComando);
+    });
+}
+
+async function executarOBSCam() {
+    const idComando = 'obs-cam';
+    const comando = 'sudo dnf install akmod-v4l2loopback v4l-utils -y 2>/dev/null || sudo dnf install v4l2loopback v4l-utils -y';
+    await executarComandoGenerico(idComando, comando, _t('sessoes.producao-multimidia.btn_ativar_cam', '🎥 Ativar Câmera Virtual'), mostrarBotaoDesinstalar);
+}
+
+// ------------------------------------------------------------
+// DESINSTALAÇÃO DE FLATPAKS
+// ------------------------------------------------------------
+
+async function desinstalarAppFlatpak(idComando, appId, nomeExibicao) {
+    if (!isExecutado(idComando)) {
+        alert(_tVars('comum.nao_instalado', nomeExibicao + ' não está instalado.', { nome: nomeExibicao }));
+        return;
+    }
+
+    if (!confirm(_tVars('comum.confirmar_desinstalar', 'Deseja desinstalar o ' + nomeExibicao + '?', { nome: nomeExibicao }))) return;
+
+    var logBox = _getLogBox(idComando);
+    var btn = document.getElementById('btn-' + idComando);
+    var idRevert = idComando + '-revert';
+
+    if (logBox) {
+        logBox.style.display = 'block';
+        _separadorLog(logBox, '🗑️ Desinstalar ' + nomeExibicao);
+        var infoLine = document.createElement('div');
+        infoLine.className = 'log-line info';
+        infoLine.textContent = '🗑️ Desinstalando ' + nomeExibicao + '...';
+        logBox.appendChild(infoLine);
+        logBox.scrollTop = logBox.scrollHeight;
+    }
+
+    conectarSSE(idRevert, logBox);
+
+    try {
+        await fetch(API_URL + '/executar', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                comando: 'flatpak uninstall -y ' + appId,
+                idComando: idRevert
+            })
+        });
+
+        var sucesso = await aguardarConclusaoReal(idRevert, 180000);
+
+        if (!sucesso) {
+            if (logBox) {
+                var errorLine = document.createElement('div');
+                errorLine.className = 'log-line error';
+                errorLine.textContent = sucesso === null
+                    ? _t('comum.erro_timeout_desinstalar', '❌ Tempo esgotado esperando a desinstalação.')
+                    : _tVars('comum.erro_falha_desinstalar', '❌ Falha ao desinstalar ' + nomeExibicao + '.', { nome: nomeExibicao });
+                logBox.appendChild(errorLine);
+                logBox.scrollTop = logBox.scrollHeight;
+            }
+            return;
+        }
+
+        await desmarcarComoExecutado(idComando);
+
+        if (btn) {
+            btn.textContent = _textoOriginalTraduzido(btn) || nomeExibicao;
+            btn.style.backgroundColor = _corOriginalDoBotao(btn);
+            btn.style.cursor = 'pointer';
+            btn.style.opacity = '1';
+            btn.disabled = false;
+        }
+
+        _esconderIconeDesinstalar(idComando);
+
+        if (logBox) {
+            var successLine = document.createElement('div');
+            successLine.className = 'log-line success';
+            successLine.textContent = _tVars('comum.sucesso_desinstalar', '✅ ' + nomeExibicao + ' desinstalado com sucesso!', { nome: nomeExibicao });
+            logBox.appendChild(successLine);
+            logBox.scrollTop = logBox.scrollHeight;
+        }
+
+    } catch (e) {
+        if (logBox) {
+            var errorLine2 = document.createElement('div');
+            errorLine2.className = 'log-line error';
+            errorLine2.textContent = _tVars('comum.erro_desinstalar', '❌ Erro ao desinstalar: ' + e.message, { msg: e.message });
+            logBox.appendChild(errorLine2);
+            logBox.scrollTop = logBox.scrollHeight;
+        }
+    }
+}
+
+var _svgLixeira = '<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>';
+
+function _atualizarIconeDesinstalar(idComando) {
+    var btn = document.getElementById('btn-' + idComando);
+    if (!btn) return;
+
+    var wrapper = btn.closest('.btn-flatpak-wrapper');
+    if (!wrapper) return;
+
+    var info = APPS_FLATPAK[idComando];
+    if (!info) return;
+
+    var nomeExibicao = (btn.textContent || '').replace(/^[✅\s]+/, '').trim() || info.fallback;
+
+    var icone = wrapper.querySelector('.btn-flatpak-uninstall');
+    if (!icone) {
+        icone = document.createElement('button');
+        icone.type = 'button';
+        icone.className = 'btn-flatpak-uninstall';
+        icone.setAttribute('data-comando-alvo', idComando);
+        icone.innerHTML = _svgLixeira;
+        icone.title = _tVars('comum.desinstalar_flatpak', 'Desinstalar ' + nomeExibicao, { nome: nomeExibicao });
+        icone.setAttribute('aria-label', icone.title);
+
+        icone.addEventListener('click', function(e) {
+            e.stopPropagation();
+            var alvo = this.getAttribute('data-comando-alvo');
+            var alvoInfo = APPS_FLATPAK[alvo];
+            if (!alvoInfo) return;
+            var alvoBtn = document.getElementById('btn-' + alvo);
+            var alvoNome = alvoBtn ? (alvoBtn.textContent || '').replace(/^[✅\s]+/, '').trim() : alvoInfo.fallback;
+            desinstalarAppFlatpak(alvo, alvoInfo.appId, alvoNome || alvoInfo.fallback);
+        });
+
+        wrapper.appendChild(icone);
+    }
+
+    icone.style.display = '';
+}
+
+function _esconderIconeDesinstalar(idComando) {
+    var btn = document.getElementById('btn-' + idComando);
+    if (!btn) return;
+    var wrapper = btn.closest('.btn-flatpak-wrapper');
+    if (!wrapper) return;
+    var icone = wrapper.querySelector('.btn-flatpak-uninstall');
+    if (icone) icone.style.display = 'none';
+}
+
+function _restaurarIconesFlatpak() {
+    Object.keys(APPS_FLATPAK).forEach(function(idComando) {
+        if (isExecutado(idComando)) {
+            _atualizarIconeDesinstalar(idComando);
+        }
+    });
+}
+
+// ===== RESTAURAR ESTADO DA SESSÃO =====
+function restaurarEstadoSessao() {
+    const comandos = ['instalar-obs-studio', 'obs-cam', 'instalar-easyeffects'];
+
+    comandos.forEach(function(id) {
+        if (isExecutado(id)) {
+            const btn = document.getElementById('btn-' + id);
+            if (btn) {
+                const textoFinal = getTextoAposExecucao(id);
+                btn.textContent = textoFinal;
+                btn.style.backgroundColor = '#4b5563';
+                btn.style.cursor = 'default';
+                btn.disabled = true;
+            }
+        }
+    });
+
+    _restaurarIconesFlatpak();
+}
+
+// ===== INICIALIZAÇÃO =====
+(function() {
+    document.querySelectorAll('.btn-executar').forEach(function(btn) {
+        if (!btn.hasAttribute('data-texto-original')) {
+            btn.setAttribute('data-texto-original', btn.textContent);
+        }
+    });
+
+    restaurarEstadoSessao();
+
+    console.log('📦 Componente producao-multimidia carregado!');
+})();
+</script>
+</body>
+</html>

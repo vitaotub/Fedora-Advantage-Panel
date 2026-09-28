@@ -72,39 +72,32 @@ LOG_FILE="/tmp/fof-install-$(date +%Y%m%d-%H%M%S).log"
 # ARQUIVOS DE SESSÃO
 # ============================================================
 #
-# A partir da reestruturação:
-# - 90-manutencao.html e 91-fof-manutencao.html foram REMOVIDOS
-#   (conteúdo consolidado em manutencao.html).
-# - 04-fontes.html foi RENOMEADO para 04-codecs-compatibilidade.html,
-#   que agrupa codecs + tainted + fontes MS numa narrativa de
-#   compatibilidade.
-# - As sessões 10 e 11 (Casa Pronta, Diagnóstico) foram ADICIONADAS
-#   em versões anteriores; a sessão 12 (Fedora) também.
+# Os IDs de sessão são semânticos (sem número) — reordenar sessões
+# é só mover linhas no array SESSOES em script.js.
 #
-# manutencao.html está em ARQUIVOS_PRINCIPAIS (é página standalone,
-# não uma sessão carregada dinamicamente).
+# manutencao.html foi removida — conteúdo absorvido pelas sessões
+# ajustes-manutencao e sobre-fof. CHANGELOG.md é lido em runtime
+# pelo endpoint /changelog do server.js.
 
 SESSAO_ARQUIVOS=(
-"00-boas-vindas.html"
-"01-restauracao.html"
-"02-otimizacao.html"
-"03-repositorios.html"
-"04-codecs-compatibilidade.html"
-"05-hardware.html"
-"06-gaming.html"
-"07-loja.html"
-"08-waydroid.html"
-"09-softwares-uteis.html"
-"10-casa-pronta.html"
-"11-diagnostico.html"
-"12-fedora.html"
+"primeiros-passos.html"
+"codecs.html"
+"hardware.html"
+"producao-multimidia.html"
+"aplicativos.html"
+"casa-escritorio.html"
+"gaming.html"
+"waydroid.html"
+"diagnostico.html"
+"ajustes-manutencao.html"
+"estado-fedora.html"
+"sobre-fof.html"
 )
 
 ARQUIVOS_PRINCIPAIS=(
 "server.js"
 "index.html"
 "guiado.html"
-"manutencao.html"
 "style.css"
 "script.js"
 "i18n.js"
@@ -114,6 +107,7 @@ ARQUIVOS_PRINCIPAIS=(
 "build-container.sh"
 "Makefile"
 "template-sessao.html"
+"CHANGELOG.md"
 )
 
 print_header() {
@@ -159,6 +153,60 @@ fi
 done
 
 print_success "Permissões reaplicadas com sucesso!"
+}
+
+# ============================================================
+# LIMPEZA DE ARQUIVOS DE VERSÕES ANTIGAS
+# ============================================================
+#
+# Removida pelo git pull nas renomeações, mas o git nem sempre
+# detecta renomeações. Roda em --update, DEPOIS do git pull:
+# - Se o git já tiver removido, o `rm -f` é no-op.
+# - Se o git não detectou a renomeação, limpamos o resquício.
+#
+# Definida como função top-level (fora de reaplicar_permissoes)
+# porque é chamada por atualizar() antes de qualquer chamada a
+# reaplicar_permissoes. Se estivesse aninhada, o parser do bash
+# só a registraria na primeira invocação de reaplicar_permissoes
+# — e atualizar() falharia com "command not found".
+
+limpar_arquivos_antigos() {
+print_step "Removendo arquivos de versões anteriores..."
+
+local antigos=(
+"00-boas-vindas.html"
+"01-restauracao.html"
+"02-otimizacao.html"
+"03-repositorios.html"
+"04-codecs-compatibilidade.html"
+"04-fontes.html"
+"05-hardware.html"
+"06-gaming.html"
+"07-loja.html"
+"08-waydroid.html"
+"09-softwares-uteis.html"
+"10-casa-pronta.html"
+"11-diagnostico.html"
+"12-fedora.html"
+"manutencao.html"
+"90-manutencao.html"
+"91-fof-manutencao.html"
+)
+
+local removidos=0
+for arquivo in "${antigos[@]}"; do
+if [ -f "$INSTALL_DIR/$arquivo" ]; then
+rm -f "$INSTALL_DIR/$arquivo"
+print_info "Removido: $arquivo"
+removidos=$((removidos + 1))
+fi
+done
+
+if [ $removidos -gt 0 ]; then
+print_success "$removidos arquivo(s) antigo(s) removido(s)"
+else
+print_info "Nenhum arquivo antigo encontrado"
+fi
 }
 
 verificar_arquivos_instalados() {
@@ -674,13 +722,19 @@ fi
 
 git stash pop 2>/dev/null || true
 
+# Remove arquivos de sessões antigas que possam ter sobrado.
+# Roda DEPOIS do git pull, porque:
+# - Se o git já tiver removido, o `rm -f` é no-op.
+# - Se o git não detectou a renomeação, limpamos o resquício.
+limpar_arquivos_antigos
+
 print_step "Atualizando dependências do Node.js..."
 if ! npm install --no-audit --no-fund --silent; then
 print_warning "Falha ao atualizar dependências, continuando..."
 fi
 
 # Recompila o container nativo. O install.sh --update é chamado pelo
-# botão "Atualizar FOF" na sessão manutencao, então essa recompilação
+# botão "Atualizar FOF" na sessão sobre-fof, então essa recompilação
 # roda automaticamente em cada atualização.
 compilar_container_install || true
 

@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FOF - Hardware</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="sessao-container" id="sessao-hardware">
+<div class="sessao-titulo">
+<span class="sessao-label">Sessão</span>
+<span data-i18n="sessoes.hardware.titulo">🖥️ Hardware</span>
+</div>
+<div class="sessao-descricao" data-i18n="sessoes.hardware.descricao">
+Configurações específicas do seu hardware: escolha abaixo o tipo de GPU (AMD ou NVIDIA) para ver os drivers e ferramentas correspondentes. O bloco de controles é útil para qualquer placa.
+</div>
+
+<!-- ============================================================
+AMD
+============================================================ -->
+<details class="acordeao" open>
+<summary data-i18n="sessoes.hardware.amd_titulo">🟥 Hardware AMD</summary>
+<div class="acordeao-conteudo">
+
+<div class="bloco-comando">
+<div class="comando-info">
+<h3 data-i18n="sessoes.hardware.vulkan_titulo">Vulkan, Mesa 3D e RADV</h3>
+<p data-i18n="sessoes.hardware.vulkan_desc">Instala as bibliotecas Vulkan (versões de 32 e 64 bits), o Mesa 3D com o driver RADV (drivers Vulkan open-source da AMD), ferramentas de diagnóstico e drivers de compatibilidade. Essencial para Steam, Proton e jogos nativos.</p>
+<div class="grupo-botoes">
+<button class="btn-executar"
+onclick="executarVulkan()"
+data-comando="vulkan-amd"
+data-logbox="log-sessao-hardware"
+id="btn-vulkan-amd"
+data-i18n="sessoes.hardware.btn_vulkan">
+🚀 Instalar Vulkan e Mesa 3D
+</button>
+</div>
+</div>
+<div class="progress-container" id="progress-vulkan-amd">
+<div class="progress-bar"><div class="progress-fill" id="progress-fill-vulkan-amd"></div></div>
+<div class="progress-text"><span class="status" id="progress-status-vulkan-amd">⏳ Iniciando...</span><span class="percentage" id="progress-percent-vulkan-amd">0%</span></div>
+</div>
+</div>
+
+<div class="bloco-comando">
+<div class="comando-info">
+<h3 data-i18n="sessoes.hardware.vaapi_titulo">VA-API e VDPAU (Aceleração de Vídeo)</h3>
+<p data-i18n="sessoes.hardware.vaapi_desc">Drivers de aceleração de vídeo por hardware para reprodução fluida e encoding. O RPM Fusion (Sessão 4) é pré-requisito para a versão freeworld.</p>
+<div class="aviso-caixa" data-i18n="sessoes.hardware.vaapi_aviso">
+💡 Os dois botões instalam drivers VA-API. O primeiro usa o driver padrão do Fedora; o segundo aplica mesa-va-drivers-freeworld, uma alternativa para GPUs AMD que não funcionam com o padrão. Se você não tem certeza, use o primeiro.
+</div>
+<div class="botoes-flex">
+<button class="btn-executar"
+onclick="executarVaapi()"
+data-comando="vaapi-amd"
+data-logbox="log-sessao-hardware"
+id="btn-vaapi-amd"
+data-i18n="sessoes.hardware.btn_vaapi_padrao">
+🚀 Instalação Padrão
+</button>
+<button class="btn-executar cinza"
+onclick="executarVaapiSwap()"
+data-comando="vaapi-swap"
+data-logbox="log-sessao-hardware"
+id="btn-vaapi-swap"
+data-i18n="sessoes.hardware.btn_vaapi_alt">
+🔄 Alternativa
+</button>
+</div>
+</div>
+<div class="progress-container" id="progress-vaapi-amd">
+<div class="progress-bar"><div class="progress-fill" id="progress-fill-vaapi-amd"></div></div>
+<div class="progress-text"><span class="status" id="progress-status-vaapi-amd">⏳ Iniciando...</span><span class="percentage" id="progress-percent-vaapi-amd">0%</span></div>
+</div>
+<div class="progress-container" id="progress-vaapi-swap">
+<div class="progress-bar"><div class="progress-fill" id="progress-fill-vaapi-swap"></div></div>
+<div class="progress-text"><span class="status" id="progress-status-vaapi-swap">⏳ Iniciando...</span><span class="percentage" id="progress-percent-vaapi-swap">0%</span></div>
+</div>
+</div>
+
+<div class="bloco-comando">
+<div class="comando-info">
+<h3 data-i18n="sessoes.hardware.corectrl_titulo">CoreCtrl</h3>
+<p data-i18n="sessoes.hardware.corectrl_desc">Interface gráfica para controle de fans, clock e voltagem de GPUs AMD.</p>
+<div class="grupo-botoes">
+<button class="btn-executar"
+onclick="executarCoreCtrl()"
+data-comando="corectrl-install"
+data-logbox="log-sessao-hardware"
+id="btn-corectrl-install"
+data-i18n="sessoes.hardware.btn_corectrl">
+📦 Instalar CoreCtrl
+</button>
+<button class="btn-executar verde"
+style="display: none;"
+onclick="abrirCoreCtrl()"
+data-comando="abrir-corectrl"
+data-logbox="log-sessao-hardware"
+id="btn-abrir-corectrl"
+data-i18n="sessoes.hardware.btn_abrir_corectrl">
+🚀 Abrir CoreCtrl
+</button>
+</div>
+</div>
+<div class="progress-container" id="progress-corectrl-install">
+<div class="progress-bar"><div class="progress-fill" id="progress-fill-corectrl-install"></div></div>
+<div class="progress-text"><span class="status" id="progress-status-corectrl-install">⏳ Iniciando...</span><span class="percentage" id="progress-percent-corectrl-install">0%</span></div>
+</div>
+</div>
+
+<div class="bloco-comando">
+<div class="comando-info">
+<h3 data-i18n="sessoes.hardware.lact_titulo">LACT (Linux AMDGPU Controller)</h3>
+<p data-i18n="sessoes.hardware.lact_desc">Alternativa moderna ao CoreCtrl para controle de fans, clock e voltagem de GPUs AMD.</p>
+<div class="grupo-botoes">
+<button class="btn-executar"
+onclick="executarLACT()"
+data-comando="lact-install"
+data-logbox="log-sessao-hardware"
+id="btn-lact-install"
+data-i18n="sessoes.hardware.btn_lact">
+📦 Instalar LACT
+</button>
+<button class="btn-executar verde"
+style="display: none;"
+onclick="abrirLACT()"
+data-comando="abrir-lact"
+data-logbox="log-sessao-hardware"
+id="btn-abrir-lact"
+data-i18n="sessoes.hardware.btn_abrir_lact">
+🚀 Abrir LACT
+</button>
+</div>
+</div>
+<div class="progress-container" id="progress-lact-install">
+<div class="progress-bar"><div class="progress-fill" id="progress-fill-lact-install"></div></div>
+<div class="progress-text"><span class="status" id="progress-status-lact-install">⏳ Iniciando...</span><span class="percentage" id="progress-percent-lact-install">0%</span></div>
+</div>
+</div>
+
+<div class="bloco-comando">
+<div class="comando-info">
+<h3 data-i18n="sessoes.hardware.overclock_titulo">Desbloquear Overclock/Undervolt (AMD)</h3>
+<p data-i18n="sessoes.hardware.overclock_desc">Habilita o parâmetro amdgpu.ppfeaturemask no kernel, liberando ajustes avançados de clock e voltagem no CoreCtrl e no LACT.</p>
+<div class="aviso-caixa" data-i18n="sessoes.hardware.overclock_aviso">
+⚠️ Requer reinicialização. Só ative se você sabe o que está fazendo — overclock mal configurado pode causar instabilidade.
+</div>
+<div class="botoes-flex">
+<button class="btn-executar laranja"
+onclick="executarOverclockAMD()"
+data-comando="amdgpu-overclock"
+data-logbox="log-sessao-hardware"
+id="btn-amdgpu-overclock"
+data-i18n="sessoes.hardware.btn_overclock_on">
+⚙️ Ativar Overclock
+</button>
+<button class="btn-executar cinza"
+onclick="executarOverclockRemoveAMD()"
+data-comando="amdgpu-overclock-remove"
+data-logbox="log-sessao-hardware"
+id="btn-amdgpu-overclock-remove"
+data-i18n="sessoes.hardware.btn_overclock_off">
+↩️ Desativar
+</button>
+</div>
+</div>
+<div class="progress-container" id="progress-amdgpu-overclock">
+<div class="progress-bar"><div class="progress-fill" id="progress-fill-amdgpu-overclock"></div></div>
+<div class="progress-text"><span class="status" id="progress-status-amdgpu-overclock">⏳ Iniciando...</span><span class="percentage" id="progress-percent-amdgpu-overclock">0%</span></div>
+</div>
+<div class="progress-container" id="progress-amdgpu-overclock-remove">
+<div class="progress-bar"><div class="progress-fill" id="progress-fill-amdgpu-overclock-remove"></div></div>
+<div class="progress-text"><span class="status" id="progress-status-amdgpu-overclock-remove">⏳ Iniciando...</span><span class="percentage" id="progress-percent-amdgpu-overclock-remove">0%</span></div>
+</div>
+</div>
+
+</div>
+</details>
+
+<!-- ============================================================
+NVIDIA
+============================================================ -->
+<details class="acordeao">
+<summary data-i18n="sessoes.hardware.nvidia_titulo">🟩 Hardware NVIDIA</summary>
+<div class="acordeao-conteudo">
+
+<div class="aviso-caixa" data-i18n="sessoes.hardware.nvidia_aviso">
+⚠️ Sem o nvidia-drm.modeset=1, o Wayland fica instável com placas Nvidia. O RPM Fusion (Sessão 4) é pré-requisito para os drivers proprietários. Após instalar qualquer coisa aqui, reinicie o computador.
+</div>
+
+<div class="bloco-comando">
+<div class="comando-info">
+<h3 data-i18n="sessoes.hardware.nvidia_driver_titulo">Driver Proprietário Completo (CUDA + NVENC/NVDEC)</h3>
+<p data-i18n="sessoes.hardware.nvidia_driver_desc">Instala o akmod-nvidia (módulo recompilável a cada kernel novo) e os suplementos CUDA + bibliotecas NVENC/NVDEC para OBS, Kdenlive e encoding por hardware.</p>
+<div class="grupo-botoes">
+<button class="btn-executar verde"
+onclick="executarNvidiaDriver()"
+data-comando="nvidia-driver-install"
+data-logbox="log-sessao-hardware"
+id="btn-nvidia-driver-install"
+data-i18n="sessoes.hardware.btn_nvidia_driver">
+📦 Instalar Driver Nvidia
+</button>
+<button class="btn-reverter"
+onclick="reverterNvidiaDriver()"
+id="btn-reverter-nvidia-driver-install"
+style="display:none;"
+data-i18n="sessoes.hardware.btn_nvidia_reverter">
+↩️ Reverter pro nouveau
+</button>
+</div>
+</div>
+<div class="progress-container" id="progress-nvidia-driver-install">
+<div class="progress-bar"><div class="progress-fill" id="progress-fill-nvidia-driver-install"></div></div>
+<div class="progress-text"><span class="status" id="progress-status-nvidia-driver-install">⏳ Iniciando...</span><span class="percentage" id="progress-percent-nvidia-driver-install">0%</span></div>
+</div>
+</div>
+
+<div class="bloco-comando">
+<div class="comando-info">
+<h3 data-i18n="sessoes.hardware.nvidia_modeset_titulo">Nvidia Modesetting (Wayland)</h3>
+<p data-i18n="sessoes.hardware.nvidia_modeset_desc">Ativa o parâmetro nvidia-drm.modeset=1 no kernel, necessário para Wayland funcionar corretamente com placas Nvidia.</p>
+<div class="botoes-flex">
+<button class="btn-executar"
+onclick="executarNvidiaModeset()"
+data-comando="nvidia-modeset-on"
+data-logbox="log-sessao-hardware"
+id="btn-nvidia-modeset-on"
+data-i18n="sessoes.hardware.btn_modeset_on">
+⚙️ Ativar modesetting
+</button>
+<button class="btn-executar cinza"
+onclick="executarNvidiaModesetRemove()"
+data-comando="nvidia-modeset-off"
+data-logbox="log-sessao-hardware"
+id="btn-nvidia-modeset-off"
+data-i18n="sessoes.hardware.btn_modeset_off">
+↩️ Desativar modesetting
+</button>
+</div>
+</div>
+<div class="progress-container" id="progress-nvidia-modeset-on">
+<div class="progress-bar"><div class="progress-fill" id="progress-fill-nvidia-modeset-on"></div></div>
+<div class="progress-text"><span class="status" id="progress-status-nvidia-modeset-on">⏳ Iniciando...</span><span class="percentage" id="progress-percent-nvidia-modeset-on">0%</span></div>
+</div>
+<div class="progress-container" id="progress-nvidia-modeset-off">
+<div class="progress-bar"><div class="progress-fill" id="progress-fill-nvidia-modeset-off"></div></div>
+<div class="progress-text"><span class="status" id="progress-status-nvidia-modeset-off">⏳ Iniciando...</span><span class="percentage" id="progress-percent-nvidia-modeset-off">0%</span></div>
+</div>
+</div>
+
+</div>
+</details>
+
+<!-- ============================================================
+CONTROLES
+============================================================ -->
+<details class="acordeao">
+<summary data-i18n="sessoes.hardware.controles_titulo">🎮 Suporte a Controles</summary>
+<div class="acordeao-conteudo">
+
+<div class="bloco-comando">
+<div class="comando-info">
+<h3 data-i18n="sessoes.hardware.input_add_titulo">Adicionar usuário ao grupo input</h3>
+<p data-i18n="sessoes.hardware.input_add_desc">Necessário para Steam Input, xpadneo e drivers de controle reconhecerem o usuário. Funciona para controles Xbox, PlayStation e Nintendo que usam os drivers do kernel.</p>
+<div class="aviso-caixa" data-i18n="sessoes.hardware.input_add_aviso">
+ℹ️ Requer logout/login para ter efeito.
+</div>
+<div class="botoes-flex">
+<button class="btn-executar verde"
+onclick="executarInputAdd()"
+data-comando="input-group-add"
+data-logbox="log-sessao-hardware"
+id="btn-input-group-add"
+data-i18n="sessoes.hardware.btn_input_add">
+👤 Adicionar ao grupo input
+</button>
+<button class="btn-executar cinza"
+onclick="executarInputRemove()"
+data-comando="input-group-remove"
+data-logbox="log-sessao-hardware"
+id="btn-input-group-remove"
+data-i18n="sessoes.hardware.btn_input_remove">
+↩️ Remover do grupo input
+</button>
+</div>
+</div>
+<div class="progress-container" id="progress-input-group-add">
+<div class="progress-bar"><div class="progress-fill" id="progress-fill-input-group-add"></div></div>
+<div class="progress-text"><span class="status" id="progress-status-input-group-add">⏳ Iniciando...</span><span class="percentage" id="progress-percent-input-group-add">0%</span></div>
+</div>
+<div class="progress-container" id="progress-input-group-remove">
+<div class="progress-bar"><div class="progress-fill" id="progress-fill-input-group-remove"></div></div>
+<div class="progress-text"><span class="status" id="progress-status-input-group-remove">⏳ Iniciando...</span><span class="percentage" id="progress-percent-input-group-remove">0%</span></div>
+</div>
+</div>
+
+<div class="bloco-comando">
+<div class="comando-info">
+<h3 data-i18n="sessoes.hardware.steam_devices_titulo">Regras Udev para Controles (Steam Devices)</h3>
+<p data-i18n="sessoes.hardware.steam_devices_desc">Instala as regras udev do pacote <code>steam-devices</code>, que permitem ao sistema reconhecer corretamente controles Xbox, PlayStation e Nintendo ao usá-los com o Steam.</p>
+
+<div class="info-extra" data-i18n-html="sessoes.hardware.steam_devices_info">
+ℹ️ <strong>O que isso resolve:</strong> sem essas regras, alguns controles podem não ser detectados pelo Steam, mesmo conectados. É um pacote pequeno e complementar ao grupo <code>input</code> acima — o grupo dá permissão ao seu usuário, e este pacote ensina o sistema a identificar cada modelo de controle.
+</div>
+
+<div class="grupo-botoes">
+<button class="btn-executar verde"
+onclick="executarSteamDevices()"
+data-comando="steam-devices-install"
+data-logbox="log-sessao-hardware"
+id="btn-steam-devices-install"
+data-i18n="sessoes.hardware.btn_steam_devices">
+🎮 Instalar Regras para Controles
+</button>
+</div>
+</div>
+<div class="progress-container" id="progress-steam-devices-install">
+<div class="progress-bar"><div class="progress-fill" id="progress-fill-steam-devices-install"></div></div>
+<div class="progress-text"><span class="status" id="progress-status-steam-devices-install">⏳ Iniciando...</span><span class="percentage" id="progress-percent-steam-devices-install">0%</span></div>
+</div>
+</div>
+
+</div>
+</details>
+
+<div class="terminal-log sessao-compartilhado" id="log-sessao-hardware"></div>
+</div>
+
+<script>
+// ============================================================
+// SESSÃO 05: HARDWARE
+// ============================================================
+
+function _t(chave, fallback) {
+    return (typeof tOr === 'function') ? tOr(chave, fallback) : fallback;
+}
+
+// ------------------------------------------------------------
+// Helpers de UI para os toggles
+// ------------------------------------------------------------
+
+function _marcarBotaoConcluido(idComando) {
+    var btn = document.getElementById('btn-' + idComando);
+    if (!btn) return;
+    _corOriginalDoBotao(btn);
+    btn.textContent = getTextoAposExecucao(idComando);
+    btn.style.backgroundColor = '#4b5563';
+    btn.style.cursor = 'default';
+    btn.disabled = true;
+    btn.style.opacity = '1';
+}
+
+function _resetarBotao(idComando, fallbackText) {
+    var btn = document.getElementById('btn-' + idComando);
+    if (!btn) return;
+    var original = btn.getAttribute('data-texto-original') || fallbackText;
+    btn.textContent = original;
+    btn.style.backgroundColor = '';
+    btn.style.cursor = 'pointer';
+    btn.disabled = false;
+    btn.style.opacity = '1';
+}
+
+async function _resetarIrmao(idIrmao, fallbackText) {
+    try {
+        await desmarcarComoExecutado(idIrmao);
+        _resetarBotao(idIrmao, fallbackText);
+    } catch (e) {
+        console.error('Erro ao limpar estado do botão irmão ' + idIrmao + ':', e);
+    }
+}
+
+// ------------------------------------------------------------
+// AMD — Vulkan / VA-API
+// ------------------------------------------------------------
+
+async function executarVulkan() {
+    var idComando = 'vulkan-amd';
+    var comando = 'sudo dnf install -y mesa-vulkan-drivers mesa-vulkan-drivers.i686 vulkan-tools vulkan-loader mesa-dri-drivers mesa-dri-drivers.i686';
+    await executarComandoGenerico(idComando, comando, _t('sessoes.hardware.btn_vulkan', '🚀 Instalar Vulkan e Mesa 3D'));
+}
+
+async function executarVaapi() {
+    var idComando = 'vaapi-amd';
+    var comando = 'sudo dnf install ffmpeg-libs libva libva-utils -y && sudo dnf install mesa-va-drivers-freeworld mesa-va-drivers-freeworld.i686 -y';
+    await executarComandoGenerico(idComando, comando, _t('sessoes.hardware.btn_vaapi_padrao', '🚀 Instalação Padrão'));
+}
+
+async function executarVaapiSwap() {
+    var idComando = 'vaapi-swap';
+    var comando = 'sudo dnf swap mesa-va-drivers mesa-va-drivers-freeworld -y && sudo dnf swap mesa-vdpau-drivers mesa-vdpau-drivers-freeworld -y';
+    await executarComandoGenerico(idComando, comando, _t('sessoes.hardware.btn_vaapi_alt', '🔄 Alternativa'));
+}
+
+// ------------------------------------------------------------
+// AMD — CoreCtrl / LACT
+// ------------------------------------------------------------
+
+async function executarCoreCtrl() {
+    var idComando = 'corectrl-install';
+    var comando = 'sudo dnf install -y corectrl';
+    await executarComandoGenerico(idComando, comando, _t('sessoes.hardware.btn_corectrl', '📦 Instalar CoreCtrl'), function() {
+        atualizarBotaoAbrirCoreCtrl();
+    });
+}
+
+function abrirCoreCtrl() {
+    abrirFerramentaExterna('corectrl > /dev/null 2>&1 &', 'corectrl-install', 'CoreCtrl');
+}
+
+function atualizarBotaoAbrirCoreCtrl() {
+    var btn = document.getElementById('btn-abrir-corectrl');
+    if (!btn) return;
+    if (isExecutado('corectrl-install')) {
+        btn.style.display = '';
+    } else {
+        btn.style.display = 'none';
+    }
+}
+
+async function executarLACT() {
+    var idComando = 'lact-install';
+    var comando = 'sudo dnf copr enable ilyaz/LACT -y && sudo dnf install -y lact && sudo systemctl enable --now lactd';
+    await executarComandoGenerico(idComando, comando, _t('sessoes.hardware.btn_lact', '📦 Instalar LACT'), function() {
+        atualizarBotaoAbrirLACT();
+    });
+}
+
+function abrirLACT() {
+    abrirFerramentaExterna('lact > /dev/null 2>&1 &', 'lact-install', 'LACT');
+}
+
+function atualizarBotaoAbrirLACT() {
+    var btn = document.getElementById('btn-abrir-lact');
+    if (!btn) return;
+    if (isExecutado('lact-install')) {
+        btn.style.display = '';
+    } else {
+        btn.style.display = 'none';
+    }
+}
+
+// ------------------------------------------------------------
+// AMD — Overclock (toggle)
+// ------------------------------------------------------------
+
+async function executarOverclockAMD() {
+    var idComando = 'amdgpu-overclock';
+    var comando = 'sudo grubby --update-kernel=ALL --args="amdgpu.ppfeaturemask=0xffffffff"';
+    await executarComandoGenerico(idComando, comando, _t('sessoes.hardware.btn_overclock_on', '⚙️ Ativar Overclock'), function() {
+        _resetarIrmao('amdgpu-overclock-remove', _t('sessoes.hardware.btn_overclock_off', '↩️ Desativar'));
+    });
+}
+
+async function executarOverclockRemoveAMD() {
+    var idComando = 'amdgpu-overclock-remove';
+    var comando = 'sudo grubby --update-kernel=ALL --remove-args="amdgpu.ppfeaturemask=0xffffffff"';
+    await executarComandoGenerico(idComando, comando, _t('sessoes.hardware.btn_overclock_off', '↩️ Desativar'), function() {
+        _resetarIrmao('amdgpu-overclock', _t('sessoes.hardware.btn_overclock_on', '⚙️ Ativar Overclock'));
+    });
+}
+
+// ------------------------------------------------------------
+// NVIDIA
+// ------------------------------------------------------------
+
+async function executarNvidiaDriver() {
+    var idComando = 'nvidia-driver-install';
+    var comando = 'sudo dnf install -y akmod-nvidia xorg-x11-drv-nvidia-cuda xorg-x11-drv-nvidia-cuda-libs';
+
+    aguardarConclusaoReal(idComando, 1800000).then(function(sucesso) {
+        if (!sucesso) {
+            mostrarBotaoDesinstalar(idComando);
+        }
+    });
+
+    await executarComandoGenerico(idComando, comando, _t('sessoes.hardware.btn_nvidia_driver', '📦 Instalar Driver Nvidia'), mostrarBotaoDesinstalar);
+}
+
+function reverterNvidiaDriver() {
+    desinstalarPacote('nvidia-driver-install', 'sudo dnf remove -y akmod-nvidia xorg-x11-drv-nvidia* nvidia-settings xorg-x11-drv-nvidia-cuda && sudo dnf clean all && sudo dnf autoremove -y', 'Driver Nvidia');
+}
+
+async function executarNvidiaModeset() {
+    var idComando = 'nvidia-modeset-on';
+    var comando = 'sudo grubby --update-kernel=ALL --args="nvidia-drm.modeset=1"';
+    await executarComandoGenerico(idComando, comando, _t('sessoes.hardware.btn_modeset_on', '⚙️ Ativar modesetting'));
+}
+
+async function executarNvidiaModesetRemove() {
+    var idComando = 'nvidia-modeset-off';
+    var comando = 'sudo grubby --update-kernel=ALL --remove-args="nvidia-drm.modeset=1"';
+    await executarComandoGenerico(idComando, comando, _t('sessoes.hardware.btn_modeset_off', '↩️ Desativar modesetting'));
+}
+
+// ------------------------------------------------------------
+// Controles — grupo input + steam-devices
+// ------------------------------------------------------------
+
+async function executarInputAdd() {
+    var idComando = 'input-group-add';
+    var comando = 'sudo usermod -aG input $USER';
+    await executarComandoGenerico(idComando, comando, _t('sessoes.hardware.btn_input_add', '👤 Adicionar ao grupo input'), function() {
+        _resetarIrmao('input-group-remove', _t('sessoes.hardware.btn_input_remove', '↩️ Remover do grupo input'));
+    });
+}
+
+async function executarInputRemove() {
+    var idComando = 'input-group-remove';
+    var comando = 'sudo gpasswd -d $USER input';
+    await executarComandoGenerico(idComando, comando, _t('sessoes.hardware.btn_input_remove', '↩️ Remover do grupo input'), function() {
+        _resetarIrmao('input-group-add', _t('sessoes.hardware.btn_input_add', '👤 Adicionar ao grupo input'));
+    });
+}
+
+async function executarSteamDevices() {
+    var idComando = 'steam-devices-install';
+    var comando = 'sudo dnf install -y steam-devices';
+    await executarComandoGenerico(idComando, comando,
+        _t('sessoes.hardware.btn_steam_devices', '🎮 Instalar Regras para Controles'));
+}
+
+// ------------------------------------------------------------
+// Restauração de estado ao carregar a sessão
+// ------------------------------------------------------------
+
+async function restaurarEstadoSessao() {
+
+    if (isExecutado('vulkan-amd')) {
+        _marcarBotaoConcluido('vulkan-amd');
+    }
+
+    if (isExecutado('vaapi-amd')) {
+        _marcarBotaoConcluido('vaapi-amd');
+    }
+    if (isExecutado('vaapi-swap')) {
+        _marcarBotaoConcluido('vaapi-swap');
+    }
+
+    if (isExecutado('corectrl-install')) {
+        _marcarBotaoConcluido('corectrl-install');
+    }
+
+    if (isExecutado('lact-install')) {
+        _marcarBotaoConcluido('lact-install');
+    }
+
+    // Overclock — TOGGLE
+    var overclockOn = isExecutado('amdgpu-overclock');
+    var overclockOff = isExecutado('amdgpu-overclock-remove');
+    if (overclockOn && !overclockOff) {
+        _marcarBotaoConcluido('amdgpu-overclock');
+        _resetarBotao('amdgpu-overclock-remove', _t('sessoes.hardware.btn_overclock_off', '↩️ Desativar'));
+    } else if (overclockOff && !overclockOn) {
+        _marcarBotaoConcluido('amdgpu-overclock-remove');
+        _resetarBotao('amdgpu-overclock', _t('sessoes.hardware.btn_overclock_on', '⚙️ Ativar Overclock'));
+    } else if (overclockOn && overclockOff) {
+        _resetarBotao('amdgpu-overclock-remove', _t('sessoes.hardware.btn_overclock_off', '↩️ Desativar'));
+        _resetarBotao('amdgpu-overclock', _t('sessoes.hardware.btn_overclock_on', '⚙️ Ativar Overclock'));
+        try {
+            await desmarcarComoExecutado('amdgpu-overclock');
+            await desmarcarComoExecutado('amdgpu-overclock-remove');
+        } catch (e) {
+            console.error('Erro ao limpar estado ambíguo do overclock:', e);
+        }
+    }
+
+    if (isExecutado('nvidia-driver-install')) {
+        _marcarBotaoConcluido('nvidia-driver-install');
+        mostrarBotaoDesinstalar('nvidia-driver-install');
+    }
+
+    // Grupo input — TOGGLE
+    var inputOn = isExecutado('input-group-add');
+    var inputOff = isExecutado('input-group-remove');
+    if (inputOn && !inputOff) {
+        _marcarBotaoConcluido('input-group-add');
+        _resetarBotao('input-group-remove', _t('sessoes.hardware.btn_input_remove', '↩️ Remover do grupo input'));
+    } else if (inputOff && !inputOn) {
+        _marcarBotaoConcluido('input-group-remove');
+        _resetarBotao('input-group-add', _t('sessoes.hardware.btn_input_add', '👤 Adicionar ao grupo input'));
+    } else if (inputOn && inputOff) {
+        _resetarBotao('input-group-remove', _t('sessoes.hardware.btn_input_remove', '↩️ Remover do grupo input'));
+        _resetarBotao('input-group-add', _t('sessoes.hardware.btn_input_add', '👤 Adicionar ao grupo input'));
+        try {
+            await desmarcarComoExecutado('input-group-add');
+            await desmarcarComoExecutado('input-group-remove');
+        } catch (e) {
+            console.error('Erro ao limpar estado ambíguo do grupo input:', e);
+        }
+    }
+
+    // Steam Devices — one-shot
+    if (isExecutado('steam-devices-install')) {
+        _marcarBotaoConcluido('steam-devices-install');
+    }
+
+    atualizarBotaoAbrirCoreCtrl();
+    atualizarBotaoAbrirLACT();
+}
+
+// ------------------------------------------------------------
+// Inicialização
+// ------------------------------------------------------------
+
+(function() {
+    document.querySelectorAll('.btn-executar').forEach(function(btn) {
+        if (!btn.hasAttribute('data-texto-original')) {
+            btn.setAttribute('data-texto-original', btn.textContent);
+        }
+    });
+
+    restaurarEstadoSessao();
+
+    console.log('📦 Componente hardware carregado!');
+})();
+</script>
+</body>
+</html>

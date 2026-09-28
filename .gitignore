@@ -22,8 +22,6 @@ fof-container
 # Estado do FOF (runtime — específico da máquina do usuário)
 # ------------------------------------------------------------
 .progresso.json
-.estado.json
-.historico.json
 .fof.pid
 
 # ------------------------------------------------------------
@@ -31,13 +29,11 @@ fof-container
 # ------------------------------------------------------------
 .perfil_firefox/
 .perfil_app/
-.perfil_chromium/
 
 # ------------------------------------------------------------
 # Logs
 # ------------------------------------------------------------
 *.log
-/tmp/fof-*.log
 
 # ------------------------------------------------------------
 # SO / IDE
@@ -49,3 +45,11 @@ Thumbs.db
 *.swp
 *.swo
 *~
+
+# ------------------------------------------------------------
+# NÃO IGNORAR (documentação de manutenção)
+# ------------------------------------------------------------
+# CHANGELOG.md precisa ser rastreado — o endpoint /changelog
+# do server.js o lê em runtime.
+# locales/en.json e locales/es.json precisam ser rastreados —
+# o i18n.js os carrega em runtime.

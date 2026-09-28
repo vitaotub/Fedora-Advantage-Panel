@@ -1,0 +1,1183 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FOF - Ajustes e Manutenção</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="sessao-container" id="sessao-ajustes-manutencao">
+<div class="sessao-titulo">
+<span class="sessao-label">Sessão</span>
+<span data-i18n="sessoes.ajustes-manutencao.titulo">🛠️ Ajustes e Manutenção</span>
+</div>
+
+<div class="sessao-descricao" data-i18n="sessoes.ajustes-manutencao.descricao">
+Ajustes opcionais de desempenho e áudio, configurações básicas do sistema (idioma, DNF, dual-boot) e ferramentas de manutenção periódica do Fedora.
+</div>
+
+<!-- ============================================================
+ACORDEÃO 1: AJUSTES DE DESEMPENHO
+============================================================ -->
+<details class="acordeao" open>
+<summary data-i18n="sessoes.ajustes-manutencao.tuning_titulo">🔧 Ajustes de Desempenho (Opcionais)</summary>
+<div class="acordeao-conteudo">
+
+<div class="sessao-descricao" data-i18n="sessoes.ajustes-manutencao.tuning_desc">
+Ajustes recomendados para melhorar a responsividade em jogos e uso geral. Cada item é independente e pode ser revertido a qualquer momento.
+</div>
+
+<!-- vm.max_map_count -->
+<div class="bloco-comando">
+<div class="comando-info">
+<h3 data-i18n="sessoes.ajustes-manutencao.vm_max_map_count_titulo">Ajustes de Memória para Jogos e Aplicações Pesadas</h3>
+<p data-i18n-html="sessoes.ajustes-manutencao.vm_max_map_count_desc">
+Aumenta o número máximo de áreas de memória que cada processo pode mapear. O valor padrão do Fedora é <code>65530</code>, insuficiente para jogos modernos — vários títulos falham ao iniciar ou travam por falta de memória mapeável (Hogwarts Legacy, Counter-Strike 2, The Finals, Star Citizen, entre outros).
+</p>
+<div class="info-extra" data-i18n-html="sessoes.ajustes-manutencao.vm_max_map_count_info">
+ℹ️ <strong>O que muda:</strong> o limite sobe de 65.530 para 2.147.483.642 (o máximo prático). É uma correção de compatibilidade, não um "tweak".
+</div>
+<div class="botoes-flex">
+<button class="btn-executar verde" onclick="executarVmMaxMapCount()" data-comando="vm-max-map-count" data-logbox="log-sessao-ajustes-manutencao" id="btn-vm-max-map-count" data-i18n="sessoes.ajustes-manutencao.btn_vm_max_map_count">⚙️ Aplicar Ajuste</button>
+<button class="btn-executar cinza" onclick="executarVmMaxMapCountRemove()" data-comando="vm-max-map-count-remove" data-logbox="log-sessao-ajustes-manutencao" id="btn-vm-max-map-count-remove" data-i18n="sessoes.ajustes-manutencao.btn_vm_max_map_count_remove">↩️ Reverter</button>
+</div>
+</div>
+<div class="progress-container" id="progress-vm-max-map-count"><div class="progress-bar"><div class="progress-fill" id="progress-fill-vm-max-map-count"></div></div><div class="progress-text"><span class="status" id="progress-status-vm-max-map-count">⏳ Iniciando...</span><span class="percentage" id="progress-percent-vm-max-map-count">0%</span></div></div>
+<div class="progress-container" id="progress-vm-max-map-count-remove"><div class="progress-bar"><div class="progress-fill" id="progress-fill-vm-max-map-count-remove"></div></div><div class="progress-text"><span class="status" id="progress-status-vm-max-map-count-remove">⏳ Iniciando...</span><span class="percentage" id="progress-percent-vm-max-map-count-remove">0%</span></div></div>
+</div>
+
+<!-- vm.swappiness + vfs_cache_pressure -->
+<div class="bloco-comando">
+<div class="comando-info">
+<h3 data-i18n="sessoes.ajustes-manutencao.vm_swappiness_cache_titulo">Uso Inteligente de Memória e Cache</h3>
+<p data-i18n-html="sessoes.ajustes-manutencao.vm_swappiness_cache_desc">
+Ajusta dois parâmetros do kernel que controlam swap e cache de arquivos. O Fedora vem com valores conservadores; esses ajustes fazem o sistema manter mais RAM disponível para o primeiro plano e reter caches por mais tempo.
+</p>
+<div class="info-extra" data-i18n-html="sessoes.ajustes-manutencao.vm_swappiness_cache_info">
+ℹ️ <strong>O que muda:</strong><br>
+• <code>vm.swappiness</code>: 60 → 150<br>
+• <code>vm.vfs_cache_pressure</code>: 100 → 50
+</div>
+<div class="botoes-flex">
+<button class="btn-executar verde" onclick="executarVmSwappinessCache()" data-comando="vm-swappiness-cache" data-logbox="log-sessao-ajustes-manutencao" id="btn-vm-swappiness-cache" data-i18n="sessoes.ajustes-manutencao.btn_vm_swappiness_cache">⚙️ Aplicar Ajuste</button>
+<button class="btn-executar cinza" onclick="executarVmSwappinessCacheRemove()" data-comando="vm-swappiness-cache-remove" data-logbox="log-sessao-ajustes-manutencao" id="btn-vm-swappiness-cache-remove" data-i18n="sessoes.ajustes-manutencao.btn_vm_swappiness_cache_remove">↩️ Reverter</button>
+</div>
+</div>
+<div class="progress-container" id="progress-vm-swappiness-cache"><div class="progress-bar"><div class="progress-fill" id="progress-fill-vm-swappiness-cache"></div></div><div class="progress-text"><span class="status" id="progress-status-vm-swappiness-cache">⏳ Iniciando...</span><span class="percentage" id="progress-percent-vm-swappiness-cache">0%</span></div></div>
+<div class="progress-container" id="progress-vm-swappiness-cache-remove"><div class="progress-bar"><div class="progress-fill" id="progress-fill-vm-swappiness-cache-remove"></div></div><div class="progress-text"><span class="status" id="progress-status-vm-swappiness-cache-remove">⏳ Iniciando...</span><span class="percentage" id="progress-percent-vm-swappiness-cache-remove">0%</span></div></div>
+</div>
+
+<!-- TCP BBR -->
+<div class="bloco-comando">
+<div class="comando-info">
+<h3 data-i18n="sessoes.ajustes-manutencao.tcp_bbr_titulo">Aceleração de Rede com TCP BBR</h3>
+<p data-i18n-html="sessoes.ajustes-manutencao.tcp_bbr_desc">
+Substitui o controle de congestionamento padrão (<code>cubic</code>) pelo <strong>BBR</strong>, do Google. Melhora latência e vazão em conexões com perda de pacotes — beneficia jogos online, streaming e downloads.
+</p>
+<div class="info-extra" data-i18n-html="sessoes.ajustes-manutencao.tcp_bbr_info">
+ℹ️ <strong>O que muda:</strong><br>
+• <code>net.core.default_qdisc</code>: <code>fq_codel</code> → <code>fq</code><br>
+• <code>net.ipv4.tcp_congestion_control</code>: <code>cubic</code> → <code>bbr</code><br>
+Efeito imediato, sem reboot.
+</div>
+<div class="botoes-flex">
+<button class="btn-executar verde" onclick="executarTcpBbr()" data-comando="tcp-bbr" data-logbox="log-sessao-ajustes-manutencao" id="btn-tcp-bbr" data-i18n="sessoes.ajustes-manutencao.btn_tcp_bbr">⚙️ Aplicar Ajuste</button>
+<button class="btn-executar cinza" onclick="executarTcpBbrRemove()" data-comando="tcp-bbr-remove" data-logbox="log-sessao-ajustes-manutencao" id="btn-tcp-bbr-remove" data-i18n="sessoes.ajustes-manutencao.btn_tcp_bbr_remove">↩️ Reverter</button>
+</div>
+</div>
+<div class="progress-container" id="progress-tcp-bbr"><div class="progress-bar"><div class="progress-fill" id="progress-fill-tcp-bbr"></div></div><div class="progress-text"><span class="status" id="progress-status-tcp-bbr">⏳ Iniciando...</span><span class="percentage" id="progress-percent-tcp-bbr">0%</span></div></div>
+<div class="progress-container" id="progress-tcp-bbr-remove"><div class="progress-bar"><div class="progress-fill" id="progress-fill-tcp-bbr-remove"></div></div><div class="progress-text"><span class="status" id="progress-status-tcp-bbr-remove">⏳ Iniciando...</span><span class="percentage" id="progress-percent-tcp-bbr-remove">0%</span></div></div>
+</div>
+
+</div>
+</details>
+
+<!-- ============================================================
+ACORDEÃO 2: AJUSTES DE ÁUDIO
+============================================================ -->
+<details class="acordeao">
+<summary data-i18n="sessoes.ajustes-manutencao.audio_tuning_titulo">🔊 Ajustes de Áudio (Opcionais)</summary>
+<div class="acordeao-conteudo">
+
+<div class="sessao-descricao" data-i18n="sessoes.ajustes-manutencao.audio_tuning_desc">
+Ajustes que melhoram a experiência de quem grava, produz ou joga com áudio em tempo real. Recomendado para usuários de Ardour, LMMS, Reaper ou streaming com monitoramento ao vivo.
+</div>
+
+<!-- realtime-setup -->
+<div class="bloco-comando">
+<div class="comando-info">
+<h3 data-i18n="sessoes.ajustes-manutencao.realtime_setup_titulo">Prioridade de Tempo Real para Áudio Profissional</h3>
+<p data-i18n-html="sessoes.ajustes-manutencao.realtime_setup_desc">
+Configura o sistema para permitir que aplicativos de áudio tenham prioridade de tempo real. Sem isso, o áudio pode apresentar falhas (<em>crackling</em> ou <em>xruns</em>) sob carga.
+</p>
+<div class="info-extra" data-i18n-html="sessoes.ajustes-manutencao.realtime_setup_info">
+ℹ️ <strong>O que muda:</strong><br>
+• Grupo <code>realtime</code> criado com limites de memória adequados.<br>
+• Seu usuário adicionado a esse grupo — <strong>requer logout/login</strong>.<br>
+• Configurações instaladas pelo pacote oficial <code>realtime-setup</code>.
+</div>
+<div class="aviso-caixa" data-i18n="sessoes.ajustes-manutencao.realtime_setup_aviso">
+⚠️ <strong>Requer logout/login:</strong> o grupo <code>realtime</code> só entra em vigor depois que você sair e entrar novamente.
+</div>
+<div class="botoes-flex">
+<button class="btn-executar verde" onclick="executarRealtimeSetup()" data-comando="realtime-setup" data-logbox="log-sessao-ajustes-manutencao" id="btn-realtime-setup" data-i18n="sessoes.ajustes-manutencao.btn_realtime_setup">⚙️ Ativar Prioridade de Tempo Real</button>
+<button class="btn-executar cinza" onclick="executarRealtimeSetupRemove()" data-comando="realtime-setup-remove" data-logbox="log-sessao-ajustes-manutencao" id="btn-realtime-setup-remove" data-i18n="sessoes.ajustes-manutencao.btn_realtime_setup_remove">↩️ Reverter</button>
+</div>
+</div>
+<div class="progress-container" id="progress-realtime-setup"><div class="progress-bar"><div class="progress-fill" id="progress-fill-realtime-setup"></div></div><div class="progress-text"><span class="status" id="progress-status-realtime-setup">⏳ Iniciando...</span><span class="percentage" id="progress-percent-realtime-setup">0%</span></div></div>
+<div class="progress-container" id="progress-realtime-setup-remove"><div class="progress-bar"><div class="progress-fill" id="progress-fill-realtime-setup-remove"></div></div><div class="progress-text"><span class="status" id="progress-status-realtime-setup-remove">⏳ Iniciando...</span><span class="percentage" id="progress-percent-realtime-setup-remove">0%</span></div></div>
+</div>
+
+<!-- PipeWire low latency -->
+<div class="bloco-comando">
+<div class="comando-info">
+<h3 data-i18n="sessoes.ajustes-manutencao.pipewire_quantum_titulo">Baixa Latência no PipeWire</h3>
+<p data-i18n-html="sessoes.ajustes-manutencao.pipewire_quantum_desc">
+Reduz o <em>quantum</em> (tamanho do buffer de áudio) do PipeWire de 1024 para 256 amostras. Reduz a latência de ~21ms para ~5ms — essencial para gravação e jogos com áudio posicional.
+</p>
+<div class="info-extra" data-i18n-html="sessoes.ajustes-manutencao.pipewire_quantum_info">
+ℹ️ <strong>O que muda:</strong><br>
+• Cria <code>~/.config/pipewire/pipewire.conf.d/99-fof-quantum.conf</code>.<br>
+• Reinicia <code>pipewire</code>, <code>pipewire-pulse</code> e <code>wireplumber</code>.<br>
+• Aplica imediatamente — sem reboot.<br>
+• <strong>Trade-off:</strong> menor latência usa mais CPU. Em máquinas modestas, pode causar crackling.
+</div>
+<div class="botoes-flex">
+<button class="btn-executar verde" onclick="executarPipewireQuantumLow()" data-comando="pipewire-quantum-low" data-logbox="log-sessao-ajustes-manutencao" id="btn-pipewire-quantum-low" data-i18n="sessoes.ajustes-manutencao.btn_pipewire_quantum">⚙️ Ativar Baixa Latência</button>
+<button class="btn-executar cinza" onclick="executarPipewireQuantumLowRemove()" data-comando="pipewire-quantum-low-remove" data-logbox="log-sessao-ajustes-manutencao" id="btn-pipewire-quantum-low-remove" data-i18n="sessoes.ajustes-manutencao.btn_pipewire_quantum_remove">↩️ Reverter</button>
+</div>
+</div>
+<div class="progress-container" id="progress-pipewire-quantum-low"><div class="progress-bar"><div class="progress-fill" id="progress-fill-pipewire-quantum-low"></div></div><div class="progress-text"><span class="status" id="progress-status-pipewire-quantum-low">⏳ Iniciando...</span><span class="percentage" id="progress-percent-pipewire-quantum-low">0%</span></div></div>
+<div class="progress-container" id="progress-pipewire-quantum-low-remove"><div class="progress-bar"><div class="progress-fill" id="progress-fill-pipewire-quantum-low-remove"></div></div><div class="progress-text"><span class="status" id="progress-status-pipewire-quantum-low-remove">⏳ Iniciando...</span><span class="percentage" id="progress-percent-pipewire-quantum-low-remove">0%</span></div></div>
+</div>
+
+</div>
+</details>
+
+<!-- ============================================================
+ACORDEÃO 3: DNF
+============================================================ -->
+<details class="acordeao">
+<summary data-i18n="sessoes.ajustes-manutencao.dnf_titulo">⚡ Melhorar velocidade de download do DNF</summary>
+<div class="acordeao-conteudo">
+
+<div class="bloco-comando">
+<div class="comando-info">
+<p data-i18n="sessoes.ajustes-manutencao.dnf_desc">Configura os downloads paralelos simultâneos e ativa a busca automática pelo espelho de servidor mais rápido.</p>
+
+<div style="margin-bottom: 1.25rem; display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+<label for="select-downloads" style="font-size: 0.9rem; color: var(--text-muted);" data-i18n="sessoes.ajustes-manutencao.dnf_label_conexoes">Conexões simultâneas:</label>
+<div class="custom-select" id="custom-select-container">
+<div class="custom-select-trigger" id="custom-select-trigger">
+<span id="custom-select-value" data-i18n="sessoes.ajustes-manutencao.dnf_recomendado">5 (Recomendado)</span>
+<span class="custom-select-arrow">▼</span>
+</div>
+<ul class="custom-select-options" id="custom-select-options">
+<li data-value="2">2</li>
+<li data-value="3">3</li>
+<li data-value="4">4</li>
+<li data-value="5" class="selected" data-i18n="sessoes.ajustes-manutencao.dnf_recomendado">5 (Recomendado)</li>
+<li data-value="6">6</li>
+<li data-value="7">7</li>
+<li data-value="8">8</li>
+<li data-value="9">9</li>
+<li data-value="10">10</li>
+</ul>
+<input type="hidden" id="select-downloads" value="5">
+</div>
+</div>
+
+<div class="grupo-botoes">
+<button class="btn-executar" onclick="executarAjusteDNF()" data-comando="dnf-speed" data-logbox="log-sessao-ajustes-manutencao" id="btn-dnf-speed" data-i18n="sessoes.ajustes-manutencao.btn_aplicar_ajuste">Aplicar Ajuste</button>
+</div>
+
+<div class="info-extra" data-i18n="sessoes.ajustes-manutencao.dnf_info_extra">
+ℹ️ O ajuste será aplicado com o valor selecionado. Você pode reaplicar com valores diferentes a qualquer momento.
+</div>
+</div>
+<div class="progress-container" id="progress-dnf-speed"><div class="progress-bar"><div class="progress-fill" id="progress-fill-dnf-speed"></div></div><div class="progress-text"><span class="status" id="progress-status-dnf-speed">⏳ Iniciando...</span><span class="percentage" id="progress-percent-dnf-speed">0%</span></div></div>
+</div>
+
+</div>
+</details>
+
+<!-- ============================================================
+ACORDEÃO 4: IDIOMA
+============================================================ -->
+<details class="acordeao">
+<summary data-i18n="sessoes.ajustes-manutencao.idioma_titulo">🌐 Configuração de Idioma e Localidade (PT-BR)</summary>
+<div class="acordeao-conteudo">
+
+<div class="bloco-comando">
+<div class="comando-info">
+<p data-i18n="sessoes.ajustes-manutencao.idioma_desc">Instale os pacotes de tradução, o corretor ortográfico e altere a localidade padrão do sistema.</p>
+<div class="aviso-caixa" data-i18n="sessoes.ajustes-manutencao.idioma_aviso">⚠️ Aviso: Reinicie o computador após concluir o passo 3 para aplicar as alterações de idioma!</div>
+<div class="botoes-flex">
+<button class="btn-executar" onclick="executarComandoGenerico('idioma-packs', 'sudo dnf -y install langpacks-pt_BR', 'Instalando pacotes de tradução')" data-comando="idioma-packs" data-logbox="log-sessao-ajustes-manutencao" id="btn-idioma-packs" data-i18n="sessoes.ajustes-manutencao.btn_idioma_packs">1. Instalar Tradução</button>
+<button class="btn-executar cinza" onclick="executarComandoGenerico('idioma-hunspell', 'sudo dnf install hunspell-br -y', 'Instalando corretor ortográfico')" data-comando="idioma-hunspell" data-logbox="log-sessao-ajustes-manutencao" id="btn-idioma-hunspell" data-i18n="sessoes.ajustes-manutencao.btn_idioma_hunspell">2. Corretor Ortográfico</button>
+<button class="btn-executar verde" onclick="executarComandoGenerico('idioma-localectl', 'sudo localectl set-locale LANG=pt_BR.UTF-8', 'Configurando localidade PT-BR')" data-comando="idioma-localectl" data-logbox="log-sessao-ajustes-manutencao" id="btn-idioma-localectl" data-i18n="sessoes.ajustes-manutencao.btn_idioma_localectl">3. Localidade PT-BR</button>
+</div>
+</div>
+<div class="progress-container" id="progress-idioma-packs"><div class="progress-bar"><div class="progress-fill" id="progress-fill-idioma-packs"></div></div><div class="progress-text"><span class="status" id="progress-status-idioma-packs">⏳ Iniciando...</span><span class="percentage" id="progress-percent-idioma-packs">0%</span></div></div>
+<div class="progress-container" id="progress-idioma-hunspell"><div class="progress-bar"><div class="progress-fill" id="progress-fill-idioma-hunspell"></div></div><div class="progress-text"><span class="status" id="progress-status-idioma-hunspell">⏳ Iniciando...</span><span class="percentage" id="progress-percent-idioma-hunspell">0%</span></div></div>
+<div class="progress-container" id="progress-idioma-localectl"><div class="progress-bar"><div class="progress-fill" id="progress-fill-idioma-localectl"></div></div><div class="progress-text"><span class="status" id="progress-status-idioma-localectl">⏳ Iniciando...</span><span class="percentage" id="progress-percent-idioma-localectl">0%</span></div></div>
+</div>
+
+</div>
+</details>
+
+<!-- ============================================================
+ACORDEÃO 5: DUAL-BOOT
+============================================================ -->
+<details class="acordeao">
+<summary data-i18n="sessoes.ajustes-manutencao.dual_boot_titulo">🕒 Corrigir data/hora em Dual-Boot (Windows/Linux)</summary>
+<div class="acordeao-conteudo">
+
+<div class="bloco-comando">
+<div class="comando-info">
+<p data-i18n="sessoes.ajustes-manutencao.dual_boot_desc">Faz o Fedora usar o relógio em horário local (igual o Windows), resolvendo o problema de horário errado ao alternar entre os sistemas.</p>
+<div class="aviso-caixa" data-i18n-html="sessoes.ajustes-manutencao.dual_boot_aviso">
+💡 Por padrão, o Windows grava o relógio em <strong>horário local</strong>, enquanto o Linux grava em <strong>UTC</strong>. Este botão alinha o Fedora com o comportamento do Windows — você não precisa mexer em nada no Windows.
+</div>
+<div class="grupo-botoes">
+<button class="btn-executar laranja" onclick="executarDualBootTime()" data-comando="dual-boot-time" data-logbox="log-sessao-ajustes-manutencao" id="btn-dual-boot-time" data-i18n="sessoes.ajustes-manutencao.btn_dual_boot">Corrigir Relógio</button>
+</div>
+</div>
+<div class="progress-container" id="progress-dual-boot-time"><div class="progress-bar"><div class="progress-fill" id="progress-fill-dual-boot-time"></div></div><div class="progress-text"><span class="status" id="progress-status-dual-boot-time">⏳ Iniciando...</span><span class="percentage" id="progress-percent-dual-boot-time">0%</span></div></div>
+</div>
+
+</div>
+</details>
+
+<!-- ============================================================
+ACORDEÃO 6: MANUTENÇÃO DO FEDORA (aninhado)
+============================================================ -->
+<details class="acordeao">
+<summary data-i18n="sessoes.ajustes-manutencao.manutencao_fedora_titulo">🧰 Manutenção do Fedora</summary>
+<div class="acordeao-conteudo">
+
+<div class="sessao-descricao" data-i18n="sessoes.ajustes-manutencao.manutencao_fedora_desc">
+Tarefas periódicas que mantêm o sistema limpo e controlável: limpeza de cache, gerenciamento de kernels e ajustes do GRUB.
+</div>
+
+<!-- Limpeza -->
+<div class="bloco-comando">
+<div class="comando-info">
+<h3 data-i18n="sessoes.ajustes-manutencao.limpeza_titulo">🧹 Limpar Arquivos Temporários e Resíduos</h3>
+<p data-i18n="sessoes.ajustes-manutencao.limpeza_desc">Limpa o cache do DNF, dependências órfãs e runtimes de Flatpak não utilizados.</p>
+<div class="grupo-botoes">
+<button class="btn-executar" onclick="executarLimpeza()" data-comando="limpeza-sistema" data-logbox="log-sessao-ajustes-manutencao" id="btn-limpeza-sistema" data-i18n="sessoes.ajustes-manutencao.btn_limpeza">Executar Limpeza</button>
+</div>
+</div>
+<div class="progress-container" id="progress-limpeza-sistema"><div class="progress-bar"><div class="progress-fill" id="progress-fill-limpeza-sistema"></div></div><div class="progress-text"><span class="status" id="progress-status-limpeza-sistema">⏳ Iniciando...</span><span class="percentage" id="progress-percent-limpeza-sistema">0%</span></div></div>
+</div>
+
+<!-- Kernels -->
+<div class="bloco-comando">
+<div class="comando-info">
+<h3 data-i18n="sessoes.ajustes-manutencao.kernel_titulo">🐧 Gerenciamento de Kernels</h3>
+<p data-i18n="sessoes.ajustes-manutencao.kernel_desc">Gerencie os kernels instalados no seu sistema.</p>
+<div class="aviso-caixa" data-i18n="sessoes.ajustes-manutencao.kernel_aviso">⚠️ IMPORTANTE: Não é recomendado remover nenhuma versão anterior do kernel — o Fedora mantém apenas os 3 últimos.</div>
+
+<div style="margin-top: 1rem; display: flex; flex-wrap: wrap; gap: 1rem; align-items: center;">
+<button class="btn-executar" onclick="listarKernels()" data-comando="listar-kernels" data-logbox="log-sessao-ajustes-manutencao" id="btn-listar-kernels" data-i18n="sessoes.ajustes-manutencao.btn_verificar_kernels">📋 Verificar Kernels</button>
+<div style="display: flex; align-items: center; gap: 0.75rem;">
+<label for="kernel-select" style="font-size: 0.9rem; color: var(--text-muted);" data-i18n="sessoes.ajustes-manutencao.kernel_label_selecionar">Selecionar:</label>
+<select id="kernel-select" class="kernel-dropdown" disabled>
+<option value="" data-i18n="sessoes.ajustes-manutencao.kernel_option_nenhum">Nenhum kernel detectado</option>
+</select>
+</div>
+<button class="btn-executar" style="background-color: #ef4444;" onclick="removerKernel()" data-comando="remover-kernel" data-logbox="log-sessao-ajustes-manutencao" id="btn-remover-kernel" disabled data-i18n="sessoes.ajustes-manutencao.btn_remover_kernel">🗑️ Remover</button>
+</div>
+</div>
+<div class="progress-container" id="progress-listar-kernels"><div class="progress-bar"><div class="progress-fill" id="progress-fill-listar-kernels"></div></div><div class="progress-text"><span class="status" id="progress-status-listar-kernels">⏳ Iniciando...</span><span class="percentage" id="progress-percent-listar-kernels">0%</span></div></div>
+</div>
+
+<!-- GRUB -->
+<div class="bloco-comando">
+<div class="comando-info">
+<h3 data-i18n="sessoes.ajustes-manutencao.grub_titulo">🖥️ Configuração do GRUB</h3>
+<p data-i18n="sessoes.ajustes-manutencao.grub_desc">Configure o GRUB para sempre aparecer ao ligar o computador e defina o tempo de exibição para 10 segundos.</p>
+<div class="aviso-caixa" data-i18n="sessoes.ajustes-manutencao.grub_aviso">⚠️ Esta alteração afeta o boot do sistema. Certifique-se de que o GRUB está instalado corretamente.</div>
+
+<div style="display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 0.5rem; align-items: center;">
+<button class="btn-executar laranja" onclick="executarConfigGrubRecomendado()" data-comando="grub-aplicar-recomendado" data-logbox="log-sessao-ajustes-manutencao" id="btn-grub-aplicar-recomendado" data-i18n="sessoes.ajustes-manutencao.btn_grub_recomendado">⚙️ Aplicar Configuração Recomendada</button>
+<button class="btn-executar" style="background-color: #6b7280;" onclick="executarConfigGrubPadrao()" data-comando="grub-restaurar-padrao" data-logbox="log-sessao-ajustes-manutencao" id="btn-grub-restaurar-padrao" data-i18n="sessoes.ajustes-manutencao.btn_grub_padrao">↩️ Restaurar Padrão do Sistema</button>
+</div>
+
+<div id="grub-status" style="margin-top: 0.75rem; padding: 0.75rem; border-radius: 6px; display: none;"></div>
+</div>
+<div class="progress-container" id="progress-grub-aplicar-recomendado"><div class="progress-bar"><div class="progress-fill" id="progress-fill-grub-aplicar-recomendado"></div></div><div class="progress-text"><span class="status" id="progress-status-grub-aplicar-recomendado">⏳ Iniciando...</span><span class="percentage" id="progress-percent-grub-aplicar-recomendado">0%</span></div></div>
+<div class="progress-container" id="progress-grub-restaurar-padrao"><div class="progress-bar"><div class="progress-fill" id="progress-fill-grub-restaurar-padrao"></div></div><div class="progress-text"><span class="status" id="progress-status-grub-restaurar-padrao">⏳ Iniciando...</span><span class="percentage" id="progress-percent-grub-restaurar-padrao">0%</span></div></div>
+</div>
+
+</div>
+</details>
+
+<!-- Log único da sessão -->
+<div class="terminal-log sessao-compartilhado" id="log-sessao-ajustes-manutencao"></div>
+</div>
+
+<script>
+// ============================================================
+// SESSÃO: AJUSTES E MANUTENÇÃO
+// ============================================================
+
+function _t(chave, fallback) {
+    return (typeof tOr === 'function') ? tOr(chave, fallback) : fallback;
+}
+function _tVars(chave, fallback, vars) {
+    return (typeof tOr === 'function') ? tOr(chave, fallback, vars) : fallback;
+}
+
+// ------------------------------------------------------------
+// HELPERS DE TOGGLE
+// ------------------------------------------------------------
+
+function _marcarBotaoConcluido(idComando) {
+    var btn = document.getElementById('btn-' + idComando);
+    if (!btn) return;
+    _corOriginalDoBotao(btn);
+    btn.textContent = getTextoAposExecucao(idComando);
+    btn.style.backgroundColor = '#4b5563';
+    btn.style.cursor = 'default';
+    btn.disabled = true;
+    btn.style.opacity = '1';
+}
+
+function _resetarBotao(idComando, fallbackText) {
+    var btn = document.getElementById('btn-' + idComando);
+    if (!btn) return;
+    var original = btn.getAttribute('data-texto-original') || fallbackText;
+    btn.textContent = original;
+    btn.style.backgroundColor = '';
+    btn.style.cursor = 'pointer';
+    btn.disabled = false;
+    btn.style.opacity = '1';
+}
+
+async function _resetarIrmao(idIrmao, fallbackText) {
+    try {
+        await desmarcarComoExecutado(idIrmao);
+        _resetarBotao(idIrmao, fallbackText);
+    } catch (e) {
+        console.error('Erro ao limpar estado do botão irmão ' + idIrmao + ':', e);
+    }
+}
+
+async function _restaurarParToggle(idAplicar, idReverter, textoAplicar, textoReverter) {
+    var aplicarMarcado = isExecutado(idAplicar);
+    var reverterMarcado = isExecutado(idReverter);
+
+    if (aplicarMarcado && !reverterMarcado) {
+        _marcarBotaoConcluido(idAplicar);
+        _resetarBotao(idReverter, textoReverter);
+    } else if (reverterMarcado && !aplicarMarcado) {
+        _marcarBotaoConcluido(idReverter);
+        _resetarBotao(idAplicar, textoAplicar);
+    } else if (aplicarMarcado && reverterMarcado) {
+        _resetarBotao(idAplicar, textoAplicar);
+        _resetarBotao(idReverter, textoReverter);
+        try {
+            await desmarcarComoExecutado(idAplicar);
+            await desmarcarComoExecutado(idReverter);
+        } catch (e) {
+            console.error('Erro ao limpar estado ambíguo do toggle ' + idAplicar + ':', e);
+        }
+    } else {
+        _resetarBotao(idAplicar, textoAplicar);
+        _resetarBotao(idReverter, textoReverter);
+    }
+}
+
+// ------------------------------------------------------------
+// TUNING: vm.max_map_count
+// ------------------------------------------------------------
+
+async function executarVmMaxMapCount() {
+    var idComando = 'vm-max-map-count';
+    var comando = 'echo "vm.max_map_count=2147483642" | sudo tee /etc/sysctl.d/99-fof-vm-max-map-count.conf > /dev/null && sudo sysctl --system';
+    await executarComandoGenerico(idComando, comando,
+        _t('sessoes.ajustes-manutencao.btn_vm_max_map_count', '⚙️ Aplicar Ajuste'),
+        function() {
+            _resetarIrmao('vm-max-map-count-remove', _t('sessoes.ajustes-manutencao.btn_vm_max_map_count_remove', '↩️ Reverter'));
+        });
+}
+
+async function executarVmMaxMapCountRemove() {
+    var idComando = 'vm-max-map-count-remove';
+    var comando = 'sudo rm -f /etc/sysctl.d/99-fof-vm-max-map-count.conf && sudo sysctl --system';
+    await executarComandoGenerico(idComando, comando,
+        _t('sessoes.ajustes-manutencao.btn_vm_max_map_count_remove', '↩️ Reverter'),
+        function() {
+            _resetarIrmao('vm-max-map-count', _t('sessoes.ajustes-manutencao.btn_vm_max_map_count', '⚙️ Aplicar Ajuste'));
+        });
+}
+
+// ------------------------------------------------------------
+// TUNING: vm.swappiness + vfs_cache_pressure
+// ------------------------------------------------------------
+
+async function executarVmSwappinessCache() {
+    var idComando = 'vm-swappiness-cache';
+    var comando = 'printf "vm.swappiness=150\\nvm.vfs_cache_pressure=50\\n" | sudo tee /etc/sysctl.d/99-fof-vm-swappiness.conf > /dev/null && sudo sysctl --system';
+    await executarComandoGenerico(idComando, comando,
+        _t('sessoes.ajustes-manutencao.btn_vm_swappiness_cache', '⚙️ Aplicar Ajuste'),
+        function() {
+            _resetarIrmao('vm-swappiness-cache-remove', _t('sessoes.ajustes-manutencao.btn_vm_swappiness_cache_remove', '↩️ Reverter'));
+        });
+}
+
+async function executarVmSwappinessCacheRemove() {
+    var idComando = 'vm-swappiness-cache-remove';
+    var comando = 'sudo rm -f /etc/sysctl.d/99-fof-vm-swappiness.conf && sudo sysctl --system';
+    await executarComandoGenerico(idComando, comando,
+        _t('sessoes.ajustes-manutencao.btn_vm_swappiness_cache_remove', '↩️ Reverter'),
+        function() {
+            _resetarIrmao('vm-swappiness-cache', _t('sessoes.ajustes-manutencao.btn_vm_swappiness_cache', '⚙️ Aplicar Ajuste'));
+        });
+}
+
+// ------------------------------------------------------------
+// TUNING: TCP BBR
+// ------------------------------------------------------------
+
+async function executarTcpBbr() {
+    var idComando = 'tcp-bbr';
+    var comando = 'printf "net.core.default_qdisc=fq\\nnet.ipv4.tcp_congestion_control=bbr\\n" | sudo tee /etc/sysctl.d/99-fof-tcp-bbr.conf > /dev/null && sudo sysctl --system';
+    await executarComandoGenerico(idComando, comando,
+        _t('sessoes.ajustes-manutencao.btn_tcp_bbr', '⚙️ Aplicar Ajuste'),
+        function() {
+            _resetarIrmao('tcp-bbr-remove', _t('sessoes.ajustes-manutencao.btn_tcp_bbr_remove', '↩️ Reverter'));
+        });
+}
+
+async function executarTcpBbrRemove() {
+    var idComando = 'tcp-bbr-remove';
+    var comando = 'sudo rm -f /etc/sysctl.d/99-fof-tcp-bbr.conf && sudo sysctl --system';
+    await executarComandoGenerico(idComando, comando,
+        _t('sessoes.ajustes-manutencao.btn_tcp_bbr_remove', '↩️ Reverter'),
+        function() {
+            _resetarIrmao('tcp-bbr', _t('sessoes.ajustes-manutencao.btn_tcp_bbr', '⚙️ Aplicar Ajuste'));
+        });
+}
+
+// ------------------------------------------------------------
+// ÁUDIO: realtime-setup
+// ------------------------------------------------------------
+
+async function executarRealtimeSetup() {
+    var idComando = 'realtime-setup';
+    var comando = 'sudo dnf install -y realtime-setup && sudo usermod -aG realtime $USER';
+    await executarComandoGenerico(idComando, comando,
+        _t('sessoes.ajustes-manutencao.btn_realtime_setup', '⚙️ Ativar Prioridade de Tempo Real'),
+        function() {
+            _resetarIrmao('realtime-setup-remove', _t('sessoes.ajustes-manutencao.btn_realtime_setup_remove', '↩️ Reverter'));
+        });
+}
+
+async function executarRealtimeSetupRemove() {
+    var idComando = 'realtime-setup-remove';
+    var comando = 'sudo gpasswd -d $USER realtime; sudo dnf remove -y realtime-setup';
+    await executarComandoGenerico(idComando, comando,
+        _t('sessoes.ajustes-manutencao.btn_realtime_setup_remove', '↩️ Reverter'),
+        function() {
+            _resetarIrmao('realtime-setup', _t('sessoes.ajustes-manutencao.btn_realtime_setup', '⚙️ Ativar Prioridade de Tempo Real'));
+        });
+}
+
+// ------------------------------------------------------------
+// ÁUDIO: PipeWire low latency
+// ------------------------------------------------------------
+
+async function executarPipewireQuantumLow() {
+    var idComando = 'pipewire-quantum-low';
+    var comando =
+        'systemctl --user is-system-running >/dev/null 2>&1; ' +
+        'mkdir -p "$HOME/.config/pipewire/pipewire.conf.d" && ' +
+        'echo \'context.properties = {\n    default.clock.quantum = 256\n    default.clock.min-quantum = 32\n    default.clock.max-quantum = 2048\n}\' > "$HOME/.config/pipewire/pipewire.conf.d/99-fof-quantum.conf" && ' +
+        'systemctl --user restart pipewire pipewire-pulse wireplumber';
+    await executarComandoGenerico(idComando, comando,
+        _t('sessoes.ajustes-manutencao.btn_pipewire_quantum', '⚙️ Ativar Baixa Latência'),
+        function() {
+            _resetarIrmao('pipewire-quantum-low-remove', _t('sessoes.ajustes-manutencao.btn_pipewire_quantum_remove', '↩️ Reverter'));
+        });
+}
+
+async function executarPipewireQuantumLowRemove() {
+    var idComando = 'pipewire-quantum-low-remove';
+    var comando =
+        'systemctl --user is-system-running >/dev/null 2>&1; ' +
+        'rm -f "$HOME/.config/pipewire/pipewire.conf.d/99-fof-quantum.conf" && ' +
+        'systemctl --user restart pipewire pipewire-pulse wireplumber';
+    await executarComandoGenerico(idComando, comando,
+        _t('sessoes.ajustes-manutencao.btn_pipewire_quantum_remove', '↩️ Reverter'),
+        function() {
+            _resetarIrmao('pipewire-quantum-low', _t('sessoes.ajustes-manutencao.btn_pipewire_quantum', '⚙️ Ativar Baixa Latência'));
+        });
+}
+
+// ------------------------------------------------------------
+// DNF
+// ------------------------------------------------------------
+
+async function executarAjusteDNF() {
+    var conexoes = document.getElementById('select-downloads').value;
+    var idComando = 'dnf-speed';
+    var comando = 'sudo dnf config-manager setopt max_parallel_downloads=' + conexoes + ' && sudo dnf config-manager setopt fastestmirror=True';
+    var logBox = _getLogBox(idComando);
+    var btn = document.getElementById('btn-' + idComando);
+
+    if (!logBox) return;
+    if (btn && btn.disabled) return;
+
+    iniciarProgresso(idComando);
+    logBox.style.display = 'block';
+
+    var nomeAcao = _tVars('sessoes.ajustes-manutencao.log_aplicando', 'Aplicando ajuste: ' + conexoes + ' conexões simultâneas', { n: conexoes });
+    _separadorLog(logBox, nomeAcao);
+
+    var header = document.createElement('div');
+    header.className = 'log-line info';
+    header.textContent = '📦 ' + nomeAcao + '... (' + new Date().toLocaleTimeString() + ')';
+    logBox.appendChild(header);
+    logBox.scrollTop = logBox.scrollHeight;
+
+    conectarSSE(idComando, logBox);
+
+    if (btn) {
+        btn.disabled = true;
+        btn.textContent = '⏳ ' + _t('sessoes.ajustes-manutencao.btn_aplicar_ajuste', 'Aplicar Ajuste') + '...';
+        btn.style.opacity = '0.6';
+    }
+
+    _bloquearSessao(idComando);
+
+    try {
+        var response = await fetch(API_URL + '/executar', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ comando: comando, idComando: idComando })
+        });
+        if (!response.ok) {
+            var errorLine = document.createElement('div');
+            errorLine.className = 'log-line error';
+            errorLine.textContent = '❌ Erro HTTP: ' + response.status;
+            logBox.appendChild(errorLine);
+            logBox.scrollTop = logBox.scrollHeight;
+            completarProgresso(idComando, false);
+        }
+    } catch (e) {
+        var errorLine2 = document.createElement('div');
+        errorLine2.className = 'log-line error';
+        errorLine2.textContent = '❌ Erro de conexão: ' + e.message;
+        logBox.appendChild(errorLine2);
+        logBox.scrollTop = logBox.scrollHeight;
+        completarProgresso(idComando, false);
+    } finally {
+        setTimeout(function() {
+            if (btn) {
+                btn.disabled = false;
+                btn.textContent = _t('sessoes.ajustes-manutencao.btn_aplicar_ajuste', 'Aplicar Ajuste');
+                btn.style.opacity = '1';
+                btn.style.backgroundColor = 'var(--accent, #3c67e3)';
+            }
+        }, 3000);
+    }
+}
+
+// ------------------------------------------------------------
+// DUAL-BOOT
+// ------------------------------------------------------------
+
+async function executarDualBootTime() {
+    var confirmado = confirm(_t('sessoes.ajustes-manutencao.dual_boot_confirmar',
+        '⚠️ Ajustar o relógio para horário local?\n\n' +
+        'Isso fará o Fedora usar horário local (como o Windows). ' +
+        'A mudança pode causar um salto temporário de algumas horas no relógio.\n\n' +
+        'Continuar?'));
+    if (!confirmado) return;
+
+    await executarComandoGenerico(
+        'dual-boot-time',
+        'sudo timedatectl set-local-rtc 1 --adjust-system-clock',
+        _t('sessoes.ajustes-manutencao.btn_dual_boot', '🕒 Corrigir Relógio')
+    );
+}
+
+// ------------------------------------------------------------
+// MANUTENÇÃO: LIMPEZA
+// ------------------------------------------------------------
+
+async function executarLimpeza() {
+    var idComando = 'limpeza-sistema';
+    var comando = 'sudo dnf clean all && sudo dnf autoremove -y';
+    var logBox = _getLogBox(idComando);
+    var btn = document.getElementById('btn-' + idComando);
+
+    if (!logBox) return;
+    if (btn && btn.disabled) return;
+
+    iniciarProgresso(idComando);
+    logBox.style.display = 'block';
+
+    var nomeAcao = _t('sessoes.ajustes-manutencao.btn_limpeza', 'Executar Limpeza');
+    _separadorLog(logBox, nomeAcao);
+
+    var header = document.createElement('div');
+    header.className = 'log-line info';
+    header.textContent = '🧹 Executando limpeza do sistema...';
+    logBox.appendChild(header);
+    logBox.scrollTop = logBox.scrollHeight;
+
+    conectarSSE(idComando, logBox);
+
+    if (btn) {
+        btn.disabled = true;
+        btn.textContent = '⏳ ' + nomeAcao + '...';
+        btn.style.opacity = '0.6';
+    }
+
+    _bloquearSessao(idComando);
+
+    try {
+        var response = await fetch(API_URL + '/executar', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ comando: comando, idComando: idComando })
+        });
+        if (!response.ok) {
+            var errorLine = document.createElement('div');
+            errorLine.className = 'log-line error';
+            errorLine.textContent = '❌ Erro HTTP: ' + response.status;
+            logBox.appendChild(errorLine);
+            logBox.scrollTop = logBox.scrollHeight;
+            completarProgresso(idComando, false);
+        }
+    } catch (e) {
+        var errorLine2 = document.createElement('div');
+        errorLine2.className = 'log-line error';
+        errorLine2.textContent = '❌ Erro de conexão: ' + e.message;
+        logBox.appendChild(errorLine2);
+        logBox.scrollTop = logBox.scrollHeight;
+        completarProgresso(idComando, false);
+    } finally {
+        setTimeout(function() {
+            if (btn) {
+                btn.disabled = false;
+                btn.textContent = nomeAcao;
+                btn.style.opacity = '1';
+            }
+        }, 3000);
+    }
+}
+
+// ------------------------------------------------------------
+// MANUTENÇÃO: KERNELS
+// ------------------------------------------------------------
+
+var kernelsList = [];
+
+async function listarKernels() {
+    var idComando = 'listar-kernels';
+    var logBox = _getLogBox(idComando);
+    var btn = document.getElementById('btn-' + idComando);
+
+    if (!logBox) return;
+
+    iniciarProgresso(idComando);
+    logBox.style.display = 'block';
+
+    var nomeAcao = _t('sessoes.ajustes-manutencao.btn_verificar_kernels', '📋 Verificar Kernels');
+    _separadorLog(logBox, nomeAcao);
+
+    var header = document.createElement('div');
+    header.className = 'log-line info';
+    header.textContent = '📋 Verificando kernels instalados...';
+    logBox.appendChild(header);
+    logBox.scrollTop = logBox.scrollHeight;
+
+    if (btn) {
+        btn.disabled = true;
+        btn.textContent = '⏳ ' + nomeAcao.replace(/^[^\s]+\s/, '') + '...';
+        btn.style.opacity = '0.6';
+    }
+
+    try {
+        var r = await fetch(API_URL + '/kernels', { cache: 'no-store' });
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        var data = await r.json();
+        var kernels = Array.isArray(data.kernels) ? data.kernels : [];
+        var atual = data.atual || '';
+
+        var select = document.getElementById('kernel-select');
+        var btnRemover = document.getElementById('btn-remover-kernel');
+        select.innerHTML = '';
+
+        if (kernels.length > 0) {
+            kernelsList = kernels;
+            kernels.forEach(function(kernel) {
+                var option = document.createElement('option');
+                option.value = kernel;
+                option.textContent = 'kernel-' + kernel + (kernel === atual ? ' (atual)' : '');
+                select.appendChild(option);
+            });
+            select.disabled = false;
+            btnRemover.disabled = false;
+
+            var successLine = document.createElement('div');
+            successLine.className = 'log-line success';
+            successLine.textContent = kernels.length === 1
+                ? '✅ ' + kernels.length + ' kernel encontrado'
+                : '✅ ' + kernels.length + ' kernels encontrados';
+            logBox.appendChild(successLine);
+            logBox.scrollTop = logBox.scrollHeight;
+        } else {
+            var optNenhum = document.createElement('option');
+            optNenhum.value = '';
+            optNenhum.textContent = _t('sessoes.ajustes-manutencao.kernel_option_nenhum_short', 'Nenhum kernel encontrado');
+            select.appendChild(optNenhum);
+            select.disabled = true;
+            btnRemover.disabled = true;
+        }
+
+        completarProgresso(idComando, true);
+    } catch (e) {
+        console.error('Erro ao listar kernels:', e);
+        var errorLine = document.createElement('div');
+        errorLine.className = 'log-line error';
+        errorLine.textContent = '❌ Erro ao listar kernels: ' + e.message;
+        logBox.appendChild(errorLine);
+        logBox.scrollTop = logBox.scrollHeight;
+        completarProgresso(idComando, false);
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.textContent = nomeAcao;
+            btn.style.opacity = '1';
+        }
+    }
+}
+
+async function removerKernel() {
+    var select = document.getElementById('kernel-select');
+    var kernel = select.value;
+
+    if (!kernel) {
+        alert(_t('sessoes.ajustes-manutencao.kernel_msg_selecione', 'Selecione um kernel para remover.'));
+        return;
+    }
+
+    var logBox = _getLogBox('remover-kernel');
+    var btnRemover = document.getElementById('btn-remover-kernel');
+    var selectKernel = document.getElementById('kernel-select');
+
+    var textoOriginalBotao = btnRemover.getAttribute('data-texto-original') || btnRemover.textContent;
+
+    try {
+        if (logBox) conectarSSE('check-current-kernel', logBox);
+        var linhasAntes = logBox ? logBox.querySelectorAll('.log-line.output').length : 0;
+
+        var response = await fetch(API_URL + '/executar', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ comando: 'uname -r', idComando: 'check-current-kernel' })
+        });
+
+        if (response.ok) {
+            await aguardarConclusaoReal('check-current-kernel', 5000);
+
+            if (logBox) {
+                var todasLinhas = logBox.querySelectorAll('.log-line.output');
+                var logLines = Array.from(todasLinhas).slice(linhasAntes);
+                var currentKernel = '';
+                logLines.forEach(function(line) {
+                    var text = line.textContent.trim();
+                    if (text && !text.includes('Comando aceito') && !text.includes('uname -r')) {
+                        currentKernel = text;
+                    }
+                });
+
+                if (currentKernel && kernel.includes(currentKernel)) {
+                    alert(_tVars('sessoes.ajustes-manutencao.kernel_msg_atual_nao_removivel',
+                        '❌ Não é possível remover o kernel que você está usando atualmente (' + currentKernel + ').\n\nReinicie o computador com outro kernel antes de remover este.',
+                        { kernel: currentKernel }));
+                    return;
+                }
+            }
+        }
+    } catch (e) {
+        console.error('Erro ao verificar kernel atual:', e);
+    }
+
+    var confirmacao = confirm(_tVars('sessoes.ajustes-manutencao.kernel_confirmar_remocao',
+        '⚠️ ATENÇÃO!\n\nVocê está prestes a remover o kernel:\n' + kernel + '\n\nTem certeza que deseja continuar?',
+        { kernel: kernel }));
+
+    if (!confirmacao) return;
+
+    iniciarProgresso('remover-kernel');
+
+    if (logBox) {
+        logBox.style.display = 'block';
+        _separadorLog(logBox, '🗑️ Remover kernel ' + kernel);
+
+        var infoLine = document.createElement('div');
+        infoLine.className = 'log-line info';
+        infoLine.textContent = '🗑️ Removendo kernel: ' + kernel + '...';
+        logBox.appendChild(infoLine);
+        logBox.scrollTop = logBox.scrollHeight;
+    }
+
+    if (btnRemover) {
+        btnRemover.disabled = true;
+        btnRemover.textContent = '⏳ Removendo...';
+        btnRemover.style.opacity = '0.6';
+    }
+    if (selectKernel) {
+        selectKernel.disabled = true;
+    }
+
+    _bloquearSessao('remover-kernel');
+
+    try {
+        var comando = 'sudo dnf remove kernel-core-' + kernel + ' -y';
+        var idComando = 'remover-kernel';
+
+        if (logBox) conectarSSE(idComando, logBox);
+
+        var response2 = await fetch(API_URL + '/executar', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ comando: comando, idComando: idComando })
+        });
+
+        if (response2.ok) {
+            var sucesso = await aguardarConclusaoReal(idComando, 180000);
+
+            if (sucesso) {
+                if (logBox) {
+                    var successLine = document.createElement('div');
+                    successLine.className = 'log-line success';
+                    successLine.textContent = '✅ Kernel ' + kernel + ' removido com sucesso!';
+                    logBox.appendChild(successLine);
+                    logBox.scrollTop = logBox.scrollHeight;
+                }
+                setTimeout(function() { listarKernels(); }, 1000);
+            } else {
+                if (logBox) {
+                    var errorLine = document.createElement('div');
+                    errorLine.className = 'log-line error';
+                    errorLine.textContent = sucesso === null
+                        ? '❌ Tempo esgotado esperando a remoção.'
+                        : '❌ Falha ao remover kernel.';
+                    logBox.appendChild(errorLine);
+                    logBox.scrollTop = logBox.scrollHeight;
+                }
+            }
+        }
+    } catch (e) {
+        console.error('Erro ao remover kernel:', e);
+        if (logBox) {
+            var errorLine2 = document.createElement('div');
+            errorLine2.className = 'log-line error';
+            errorLine2.textContent = '❌ Erro ao remover kernel: ' + e.message;
+            logBox.appendChild(errorLine2);
+            logBox.scrollTop = logBox.scrollHeight;
+        }
+    } finally {
+        if (btnRemover) {
+            btnRemover.disabled = false;
+            btnRemover.textContent = textoOriginalBotao;
+            btnRemover.style.opacity = '1';
+            btnRemover.style.backgroundColor = '#ef4444';
+            btnRemover.style.cursor = 'pointer';
+        }
+        if (selectKernel) {
+            selectKernel.disabled = false;
+        }
+        completarProgresso('remover-kernel', true);
+    }
+}
+
+// ------------------------------------------------------------
+// MANUTENÇÃO: GRUB
+// ------------------------------------------------------------
+
+async function executarConfigGrubRecomendado() {
+    var idComando = 'grub-aplicar-recomendado';
+    var logBox = _getLogBox(idComando);
+    var btn = document.getElementById('btn-' + idComando);
+    var statusDiv = document.getElementById('grub-status');
+
+    if (!logBox) return;
+
+    if (!confirm(_t('sessoes.ajustes-manutencao.grub_confirmar_recomendado',
+        '⚠️ Deseja aplicar a configuração recomendada do GRUB?\n\n• GRUB sempre aparecerá ao ligar\n• Tempo de exibição: 10 segundos'))) return;
+
+    var nomeAcao = _t('sessoes.ajustes-manutencao.btn_grub_recomendado', '⚙️ Aplicar Configuração Recomendada');
+
+    if (btn) {
+        btn.disabled = true;
+        btn.textContent = '⏳ ' + nomeAcao.replace(/^[^\s]+\s/, '') + '...';
+        btn.style.opacity = '0.6';
+    }
+
+    iniciarProgresso(idComando);
+    logBox.style.display = 'block';
+    _separadorLog(logBox, nomeAcao);
+
+    var header = document.createElement('div');
+    header.className = 'log-line info';
+    header.textContent = '⚙️ Aplicando configuração recomendada do GRUB...';
+    logBox.appendChild(header);
+    logBox.scrollTop = logBox.scrollHeight;
+
+    conectarSSE(idComando, logBox);
+
+    if (statusDiv) {
+        statusDiv.style.display = 'block';
+        statusDiv.style.backgroundColor = 'rgba(52, 211, 153, 0.1)';
+        statusDiv.style.border = '1px solid #34d399';
+        statusDiv.style.color = '#34d399';
+        statusDiv.innerHTML = '⏳ Aplicando configuração...';
+    }
+
+    _bloquearSessao(idComando);
+
+    try {
+        var comando = 'sudo sed -i "s/^GRUB_TIMEOUT=.*/GRUB_TIMEOUT=10/" /etc/default/grub && sudo sed -i "/^GRUB_HIDDEN_TIMEOUT=/d" /etc/default/grub && sudo grub2-mkconfig -o /boot/grub2/grub.cfg';
+        var response = await fetch(API_URL + '/executar', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ comando: comando, idComando: idComando })
+        });
+
+        if (!response.ok) throw new Error('Erro HTTP: ' + response.status);
+
+        var sucesso = await aguardarConclusaoReal(idComando, 30000);
+
+        if (!sucesso) {
+            if (statusDiv) {
+                statusDiv.style.backgroundColor = 'rgba(239, 68, 68, 0.1)';
+                statusDiv.style.border = '1px solid #ef4444';
+                statusDiv.style.color = '#ef4444';
+                statusDiv.innerHTML = sucesso === null
+                    ? '❌ Tempo esgotado aplicando a configuração.'
+                    : '❌ Falha ao aplicar a configuração do GRUB.';
+            }
+            return;
+        }
+
+        if (statusDiv) {
+            statusDiv.style.backgroundColor = 'rgba(52, 211, 153, 0.1)';
+            statusDiv.style.border = '1px solid #34d399';
+            statusDiv.style.color = '#34d399';
+            statusDiv.innerHTML = '✅ <strong>Configuração aplicada!</strong><br>GRUB_TIMEOUT=10 (10 segundos)<br>GRUB_HIDDEN_TIMEOUT removido (GRUB sempre aparece)';
+        }
+    } catch (e) {
+        console.error('Erro:', e);
+        if (statusDiv) {
+            statusDiv.style.backgroundColor = 'rgba(239, 68, 68, 0.1)';
+            statusDiv.style.border = '1px solid #ef4444';
+            statusDiv.style.color = '#ef4444';
+            statusDiv.innerHTML = '❌ Erro: ' + e.message;
+        }
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.textContent = nomeAcao;
+            btn.style.opacity = '1';
+        }
+    }
+}
+
+async function executarConfigGrubPadrao() {
+    var idComando = 'grub-restaurar-padrao';
+    var logBox = _getLogBox(idComando);
+    var btn = document.getElementById('btn-' + idComando);
+    var statusDiv = document.getElementById('grub-status');
+
+    if (!logBox) return;
+
+    if (!confirm(_t('sessoes.ajustes-manutencao.grub_confirmar_padrao',
+        'Deseja restaurar a configuração padrão do GRUB (timeout=5 segundos, oculto)?'))) return;
+
+    var nomeAcao = _t('sessoes.ajustes-manutencao.btn_grub_padrao', '↩️ Restaurar Padrão do Sistema');
+
+    if (btn) {
+        btn.disabled = true;
+        btn.textContent = '⏳ ' + nomeAcao.replace(/^[^\s]+\s/, '') + '...';
+        btn.style.opacity = '0.6';
+    }
+
+    iniciarProgresso(idComando);
+    logBox.style.display = 'block';
+    _separadorLog(logBox, nomeAcao);
+
+    var header = document.createElement('div');
+    header.className = 'log-line info';
+    header.textContent = '↩️ Restaurando configuração padrão do GRUB...';
+    logBox.appendChild(header);
+    logBox.scrollTop = logBox.scrollHeight;
+
+    conectarSSE(idComando, logBox);
+
+    if (statusDiv) {
+        statusDiv.style.display = 'block';
+        statusDiv.style.backgroundColor = 'rgba(245, 158, 11, 0.1)';
+        statusDiv.style.border = '1px solid #f59e0b';
+        statusDiv.style.color = '#f59e0b';
+        statusDiv.innerHTML = '⏳ Restaurando configuração...';
+    }
+
+    _bloquearSessao(idComando);
+
+    try {
+        var comando = 'sudo sed -i "s/^GRUB_TIMEOUT=.*/GRUB_TIMEOUT=5/" /etc/default/grub && sudo sed -i "/^GRUB_HIDDEN_TIMEOUT=/d" /etc/default/grub && echo "GRUB_HIDDEN_TIMEOUT=0" | sudo tee -a /etc/default/grub > /dev/null && sudo grub2-mkconfig -o /boot/grub2/grub.cfg';
+        var response = await fetch(API_URL + '/executar', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ comando: comando, idComando: idComando })
+        });
+
+        if (!response.ok) throw new Error('Erro HTTP: ' + response.status);
+
+        var sucesso = await aguardarConclusaoReal(idComando, 30000);
+
+        if (!sucesso) {
+            if (statusDiv) {
+                statusDiv.style.backgroundColor = 'rgba(239, 68, 68, 0.1)';
+                statusDiv.style.border = '1px solid #ef4444';
+                statusDiv.style.color = '#ef4444';
+                statusDiv.innerHTML = sucesso === null
+                    ? '❌ Tempo esgotado restaurando a configuração.'
+                    : '❌ Falha ao restaurar a configuração do GRUB.';
+            }
+            return;
+        }
+
+        if (statusDiv) {
+            statusDiv.style.backgroundColor = 'rgba(52, 211, 153, 0.1)';
+            statusDiv.style.border = '1px solid #34d399';
+            statusDiv.style.color = '#34d399';
+            statusDiv.innerHTML = '✅ <strong>Configuração restaurada!</strong><br>GRUB_TIMEOUT=5 (5 segundos)<br>GRUB_HIDDEN_TIMEOUT=0 (GRUB oculto)';
+        }
+    } catch (e) {
+        console.error('Erro:', e);
+        if (statusDiv) {
+            statusDiv.style.backgroundColor = 'rgba(239, 68, 68, 0.1)';
+            statusDiv.style.border = '1px solid #ef4444';
+            statusDiv.style.color = '#ef4444';
+            statusDiv.innerHTML = '❌ Erro: ' + e.message;
+        }
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.textContent = nomeAcao;
+            btn.style.opacity = '1';
+        }
+    }
+}
+
+// ------------------------------------------------------------
+// RESTAURAR ESTADO
+// ------------------------------------------------------------
+
+async function restaurarEstadoSessao() {
+    // --- Idioma: one-shot ---
+    ['idioma-packs', 'idioma-hunspell', 'idioma-localectl'].forEach(function(id) {
+        if (isExecutado(id)) {
+            var btn = document.getElementById('btn-' + id);
+            if (btn) {
+                btn.textContent = getTextoAposExecucao(id);
+                btn.style.backgroundColor = '#4b5563';
+                btn.style.cursor = 'default';
+                btn.disabled = true;
+            }
+        }
+    });
+
+    // --- DNF: sempre clicável ---
+    var btnDnf = document.getElementById('btn-dnf-speed');
+    if (btnDnf) {
+        btnDnf.disabled = false;
+        btnDnf.textContent = _t('sessoes.ajustes-manutencao.btn_aplicar_ajuste', 'Aplicar Ajuste');
+        btnDnf.style.backgroundColor = 'var(--accent, #3c67e3)';
+        btnDnf.style.opacity = '1';
+        btnDnf.style.cursor = 'pointer';
+    }
+
+    // --- Dual-boot: sempre clicável ---
+    var btnDualBoot = document.getElementById('btn-dual-boot-time');
+    if (btnDualBoot) {
+        btnDualBoot.disabled = false;
+        btnDualBoot.textContent = btnDualBoot.getAttribute('data-texto-original') || _t('sessoes.ajustes-manutencao.btn_dual_boot', '🕒 Corrigir Relógio');
+        btnDualBoot.style.backgroundColor = '';
+        btnDualBoot.style.opacity = '1';
+        btnDualBoot.style.cursor = 'pointer';
+    }
+
+    // --- Toggles de tuning ---
+    await _restaurarParToggle('vm-max-map-count', 'vm-max-map-count-remove',
+        _t('sessoes.ajustes-manutencao.btn_vm_max_map_count', '⚙️ Aplicar Ajuste'),
+        _t('sessoes.ajustes-manutencao.btn_vm_max_map_count_remove', '↩️ Reverter'));
+    await _restaurarParToggle('vm-swappiness-cache', 'vm-swappiness-cache-remove',
+        _t('sessoes.ajustes-manutencao.btn_vm_swappiness_cache', '⚙️ Aplicar Ajuste'),
+        _t('sessoes.ajustes-manutencao.btn_vm_swappiness_cache_remove', '↩️ Reverter'));
+    await _restaurarParToggle('tcp-bbr', 'tcp-bbr-remove',
+        _t('sessoes.ajustes-manutencao.btn_tcp_bbr', '⚙️ Aplicar Ajuste'),
+        _t('sessoes.ajustes-manutencao.btn_tcp_bbr_remove', '↩️ Reverter'));
+    await _restaurarParToggle('realtime-setup', 'realtime-setup-remove',
+        _t('sessoes.ajustes-manutencao.btn_realtime_setup', '⚙️ Ativar Prioridade de Tempo Real'),
+        _t('sessoes.ajustes-manutencao.btn_realtime_setup_remove', '↩️ Reverter'));
+    await _restaurarParToggle('pipewire-quantum-low', 'pipewire-quantum-low-remove',
+        _t('sessoes.ajustes-manutencao.btn_pipewire_quantum', '⚙️ Ativar Baixa Latência'),
+        _t('sessoes.ajustes-manutencao.btn_pipewire_quantum_remove', '↩️ Reverter'));
+
+    // --- Limpeza, kernels, GRUB: sempre clicáveis ---
+    ['limpeza-sistema', 'listar-kernels', 'remover-kernel', 'grub-aplicar-recomendado', 'grub-restaurar-padrao'].forEach(function(id) {
+        var btn = document.getElementById('btn-' + id);
+        if (btn) {
+            btn.disabled = false;
+            btn.style.opacity = '1';
+            btn.style.cursor = 'pointer';
+        }
+    });
+
+    var btnRemoverKernel = document.getElementById('btn-remover-kernel');
+    if (btnRemoverKernel) {
+        var textoOriginal = btnRemoverKernel.getAttribute('data-texto-original') || btnRemoverKernel.textContent;
+        btnRemoverKernel.textContent = textoOriginal;
+        btnRemoverKernel.style.opacity = '1';
+        btnRemoverKernel.style.backgroundColor = '#ef4444';
+        btnRemoverKernel.style.cursor = 'pointer';
+    }
+
+    var btnLimpeza = document.getElementById('btn-limpeza-sistema');
+    if (btnLimpeza) {
+        btnLimpeza.textContent = _t('sessoes.ajustes-manutencao.btn_limpeza', 'Executar Limpeza');
+        btnLimpeza.style.backgroundColor = 'var(--accent, #3c67e3)';
+    }
+}
+
+// ------------------------------------------------------------
+// INICIALIZAÇÃO
+// ------------------------------------------------------------
+
+(function() {
+    document.querySelectorAll('.btn-executar').forEach(function(btn) {
+        if (!btn.hasAttribute('data-texto-original')) {
+            btn.setAttribute('data-texto-original', btn.textContent);
+        }
+    });
+
+    restaurarEstadoSessao();
+    setTimeout(initCustomSelects, 200);
+
+    console.log('📦 Componente ajustes-manutencao carregado!');
+})();
+</script>
+</body>
+</html>

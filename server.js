@@ -5,6 +5,7 @@ const path = require('path');
 
 const PORT = parseInt(process.env.PORT, 10) || 3000;
 const ARQUIVO_PROGRESSO = path.join(__dirname, '.progresso.json');
+const ARQUIVO_CHANGELOG = path.join(__dirname, 'CHANGELOG.md');
 
 // ============================================================
 // VERSÃO DO FOF — fonte única: package.json
@@ -234,6 +235,126 @@ function _parseChaveValor(texto) {
         if (chave) obj[chave] = valor;
     });
         return obj;
+}
+
+// ============================================================
+// CHANGELOG DINÂMICO (lê CHANGELOG.md)
+// ============================================================
+//
+// O arquivo CHANGELOG.md na raiz do repo tem seções por versão:
+//
+//   # Changelog
+//
+//   ## v1.0.0-09272026
+//   - Item A
+//   - Item B
+//
+//   ## v1.0.0-09232026
+//   - Item C
+//
+// O endpoint /changelog recebe a versão atual (FOF_VERSION) e
+// devolve {versao, corpo}, onde `corpo` já vem em HTML pronto.
+// Cache em memória por 12h — o CHANGELOG.md não muda entre
+// releases.
+
+const CHANGELOG_CACHE_TTL_MS = 12 * 60 * 60 * 1000;
+let _changelogCache = { versao: null, corpo: null, ts: 0 };
+
+function _inlineMd(s) {
+    return s
+    .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+    .replace(/`([^`]+)`/g, '<code>$1</code>')
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank">$1</a>');
+}
+
+function _markdownParaHTML(md) {
+    if (!md) return '';
+    var linhas = md.split('\n');
+    var html = '';
+    var emLista = false;
+
+    for (var i = 0; i < linhas.length; i++) {
+        var l = linhas[i];
+        var t = l.trim();
+
+        if (/^[-*]\s+/.test(t)) {
+            if (!emLista) { html += '<ul>'; emLista = true; }
+            var item = t.replace(/^[-*]\s+/, '');
+            html += '<li>' + _inlineMd(item) + '</li>';
+            continue;
+        }
+
+        if (/^###\s+/.test(t)) {
+            if (emLista) { html += '</ul>'; emLista = false; }
+            html += '<h4>' + _inlineMd(t.replace(/^###\s+/, '')) + '</h4>';
+            continue;
+        }
+
+        if (/^##\s+/.test(t)) {
+            if (emLista) { html += '</ul>'; emLista = false; }
+            html += '<h4>' + _inlineMd(t.replace(/^##\s+/, '')) + '</h4>';
+            continue;
+        }
+
+        if (t === '') {
+            if (emLista) { html += '</ul>'; emLista = false; }
+            continue;
+        }
+
+        if (emLista) { html += '</ul>'; emLista = false; }
+        html += '<p>' + _inlineMd(t) + '</p>';
+    }
+
+    if (emLista) html += '</ul>';
+    return html;
+}
+
+function _lerChangelogVersao(versao) {
+    var versaoLimpa = (versao || '').replace(/^v/, '').trim();
+
+    if (_changelogCache.versao === versaoLimpa &&
+        (Date.now() - _changelogCache.ts) < CHANGELOG_CACHE_TTL_MS) {
+        return { versao: versaoLimpa, corpo: _changelogCache.corpo };
+        }
+
+        if (!fs.existsSync(ARQUIVO_CHANGELOG)) {
+            return { versao: versaoLimpa, corpo: '' };
+        }
+
+        var conteudo;
+    try {
+        conteudo = fs.readFileSync(ARQUIVO_CHANGELOG, 'utf8');
+    } catch (e) {
+        console.error('[Changelog] Erro ao ler CHANGELOG.md:', e.message);
+        return { versao: versaoLimpa, corpo: '' };
+    }
+
+    var linhas = conteudo.split('\n');
+    var capturando = false;
+    var buffer = [];
+
+    for (var i = 0; i < linhas.length; i++) {
+        var linha = linhas[i];
+        var match = linha.match(/^##\s+v?(\S+)/);
+
+        if (match) {
+            if (capturando) break;
+            var versaoHeading = match[1].trim();
+            if (versaoHeading === versaoLimpa) {
+                capturando = true;
+                continue;
+            }
+        }
+
+        if (capturando) {
+            buffer.push(linha);
+        }
+    }
+
+    var corpo = _markdownParaHTML(buffer.join('\n').trim());
+
+    _changelogCache = { versao: versaoLimpa, corpo: corpo, ts: Date.now() };
+    return { versao: versaoLimpa, corpo: corpo };
 }
 
 // ============================================================
@@ -1128,13 +1249,18 @@ const server = http.createServer((req, res) => {
         return;
     }
 
-    if (req.method === 'GET' && url === '/manutencao.html') {
-        servirArquivoEstatico(req, res, 'manutencao.html');
-        return;
-    }
-
-    if (req.method === 'GET' && url.match(/^\/(\d{2}-[a-z-]+\.html)$/)) {
-        const match = url.match(/^\/(\d{2}-[a-z-]+\.html)$/);
+    // ----------------------------------------------------------
+    // SESSÕES — IDs semânticos (sem número)
+    // ----------------------------------------------------------
+    //
+    // O FOF usa IDs semânticos desde a v1.0.0-09282026: os arquivos
+    // são 'codecs.html', 'gaming.html', 'sobre-fof.html' etc, sem
+    // prefixo numérico. Este regex casa qualquer arquivo .html cujo
+    // nome comece com letra minúscula e contenha apenas letras,
+    // dígitos e hífen. Também impede path traversal (não aceita
+    // '/', '.', nem maiúsculas).
+    if (req.method === 'GET' && url.match(/^\/([a-z][a-z0-9-]*\.html)$/)) {
+        const match = url.match(/^\/([a-z][a-z0-9-]*\.html)$/);
         if (match) {
             servirArquivoEstatico(req, res, match[1]);
             return;
@@ -1460,6 +1586,19 @@ const server = http.createServer((req, res) => {
     }
 
     // ----------------------------------------------------------
+    // /changelog — changelog da versão atual (parseado do CHANGELOG.md)
+    // ----------------------------------------------------------
+    if (req.method === 'GET' && url === '/changelog') {
+        var resultado = _lerChangelogVersao(FOF_VERSION);
+        res.writeHead(200, {
+            'Content-Type': 'application/json; charset=utf-8',
+            'Cache-Control': 'no-cache, no-store, must-revalidate'
+        });
+        res.end(JSON.stringify(resultado));
+        return;
+    }
+
+    // ----------------------------------------------------------
     // /waydroid-status — status do container Android
     // ----------------------------------------------------------
     if (req.method === 'GET' && url === '/waydroid-status') {
@@ -1596,7 +1735,8 @@ server.listen(PORT, HOST, () => {
     console.log(` 📡 SSE: Ativo (logs em tempo real, com buffer de replay)`);
     console.log(` 📁 Arquivos estáticos: Ativo (HTML, CSS, JS, ícone)`);
     console.log(` 🌐 i18n: Ativo (locales em /locales/<lang>.json)`);
-    console.log(` 📄 Páginas: index.html, guiado.html, manutencao.html, 00-*.html a 12-*.html`);
+    console.log(` 📄 Páginas: index.html, guiado.html + 12 sessões dinâmicas`);
+    console.log(` 📝 Changelog: /changelog (lê CHANGELOG.md)`);
     console.log(` 🔧 Comandos SEM autenticação: rpm -q, uname -r, gtk-launch, flatpak, systemctl --user, etc`);
     console.log(` 🎯 Comandos USER-CONTEXT (env ajustado): ${COMANDOS_USER_CONTEXT.join(', ')}`);
     console.log(` 📊 Progresso: .progresso.json (persistente no servidor)`);

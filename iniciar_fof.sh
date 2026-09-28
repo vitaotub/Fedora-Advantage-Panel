@@ -37,6 +37,17 @@ fi
 cd "$DIR"
 
 # ============================================================
+# AUTOCORREÇÃO DE PERMISSÕES
+# ============================================================
+# Caso o projeto tenha sido copiado sem +x (zip, USB, scp sem -p),
+# garante que os scripts e o binário sejam executáveis antes de
+# qualquer verificação. Idempotente: se já estiver certo, não
+# faz nada. O `|| true` mantém compatibilidade com `set -e`.
+for f in iniciar_fof.sh iniciar_fof_compat.sh build-container.sh install.sh fof-container; do
+    [ -f "$f" ] && [ ! -x "$f" ] && chmod +x "$f" 2>/dev/null || true
+done
+
+# ============================================================
 # VERSÃO DO FOF — fonte única: package.json
 # ============================================================
 #
@@ -278,10 +289,6 @@ verificar_arquivos() {
         log_warning "Arquivo guiado.html não encontrado!"
     fi
 
-    if [ ! -f "$DIR/manutencao.html" ]; then
-        log_warning "Arquivo manutencao.html não encontrado!"
-    fi
-
     if [ ! -f "$DIR/style.css" ]; then
         log_warning "Arquivo style.css não encontrado!"
     fi
@@ -294,35 +301,31 @@ verificar_arquivos() {
         log_warning "Arquivo i18n.js não encontrado!"
     fi
 
-    # ============================================================
+        # ============================================================
     # ARQUIVOS DE SESSÃO
     # ============================================================
     #
-    # A partir da reestruturação:
-    # - 90-manutencao.html e 91-fof-manutencao.html foram REMOVIDOS
-    #   (conteúdo consolidado em manutencao.html).
-    # - 04-fontes.html foi RENOMEADO para 04-codecs-compatibilidade.html,
-    #   que agrupa codecs + tainted + fontes MS numa narrativa de
-    #   compatibilidade.
-    # - As sessões 10 e 11 (Casa Pronta, Diagnóstico) foram ADICIONADAS
-    #   em versões anteriores; a sessão 12 (Fedora) também.
+    # Os IDs de sessão são semânticos (sem número) — reordenar
+    # sessões é só mover linhas no array SESSOES em script.js.
+    # A ordem de exibição vem da posição no array, não do nome
+    # do arquivo.
     #
-    # manutencao.html é verificado acima (junto com index/guiado),
-    # por ser página standalone e não sessão carregada via fetch.
+    # Páginas standalone (index, guiado) são verificadas acima.
+    # manutencao.html foi removida — conteúdo absorvido pelas
+    # sessões ajustes-manutencao e sobre-fof.
     local sessoes=(
-        "00-boas-vindas.html"
-        "01-restauracao.html"
-        "02-otimizacao.html"
-        "03-repositorios.html"
-        "04-codecs-compatibilidade.html"
-        "05-hardware.html"
-        "06-gaming.html"
-        "07-loja.html"
-        "08-waydroid.html"
-        "09-softwares-uteis.html"
-        "10-casa-pronta.html"
-        "11-diagnostico.html"
-        "12-fedora.html"
+        "primeiros-passos.html"
+        "codecs.html"
+        "hardware.html"
+        "producao-multimidia.html"
+        "aplicativos.html"
+        "casa-escritorio.html"
+        "gaming.html"
+        "waydroid.html"
+        "diagnostico.html"
+        "ajustes-manutencao.html"
+        "estado-fedora.html"
+        "sobre-fof.html"
     )
 
     local missing=0
@@ -696,9 +699,9 @@ Descrição:
 
 Arquivos:
   server.js         Servidor Node.js
-  index.html        Landing page (escolha entre configuração/manutenção)
-  guiado.html       Configuração passo a passo
-  manutencao.html   Manutenção (kernels, limpeza, GRUB, atualizar/desinstalar o FOF)
+  index.html        Landing page (botão único "Iniciar Configurações")
+  guiado.html       Configuração passo a passo (12 sessões)
+  CHANGELOG.md      Histórico de mudanças (lido em runtime)
   icone_app.png     Ícone do aplicativo
 
 Logs:

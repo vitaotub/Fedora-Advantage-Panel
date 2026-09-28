@@ -11,6 +11,24 @@ CC = gcc
 CFLAGS = -Wall -O2
 LDFLAGS = -lm
 
+# ============================================================
+# VERSÃO DO FOF — fonte única: package.json
+# ============================================================
+#
+# Definida ANTES de ser usada em CPPFLAGS. Isto é obrigatório:
+# se CPPFLAGS += for processado antes desta definição, o Make
+# adia a expansão para o momento do build e funciona por
+# acidente — mas quebra silenciosamente se alguém trocar o
+# operador (:=, =) ou a ordem. Manter esta ordem.
+#
+# Mesmo `grep -oP` dos outros scripts (install.sh, iniciar_fof.sh,
+# build-container.sh). Fallback "unknown" garante que o build
+# continua mesmo sem o package.json.
+FOF_VERSION := $(shell grep -oP '"version"\s*:\s*"\K[^"]+' package.json 2>/dev/null | head -1)
+ifeq ($(FOF_VERSION),)
+FOF_VERSION := unknown
+endif
+
 # Macro com a versão — passada ao gcc como string literal.
 # A sintaxe '"..."' (single quote fora, double dentro) é
 # necessária para o Make passar as aspas literais ao gcc.
@@ -24,18 +42,6 @@ CPPFLAGS += -DFOF_VERSION='"$(FOF_VERSION)"'
 # consistentes.
 WEBKIT_PKG := $(shell pkg-config --exists webkit2gtk-4.1 && echo webkit2gtk-4.1)
 
-# ============================================================
-# VERSÃO DO FOF — fonte única: package.json
-# ============================================================
-#
-# Mesmo `grep -oP` dos outros arquivos. `$(shell ...)` executa o
-# comando no parse do Makefile. Fallback "unknown" garante que o
-# build continua mesmo sem o package.json.
-FOF_VERSION := $(shell grep -oP '"version"\s*:\s*"\K[^"]+' package.json 2>/dev/null | head -1)
-ifeq ($(FOF_VERSION),)
-FOF_VERSION := unknown
-endif
-
 ifeq ($(WEBKIT_PKG),)
 $(error WebKitGTK 4.1 não encontrado. Instale: sudo dnf install webkit2gtk4.1-devel gtk3-devel)
 endif
@@ -46,7 +52,7 @@ PKG_LIBS := $(shell pkg-config --libs $(WEBKIT_PKG) gtk+-3.0)
 TARGET = fof-container
 SRC = src/fof-container.c
 
-.PHONY: all clean install uninstall run version
+.PHONY: all clean install uninstall run version check
 
 all: $(TARGET)
 
@@ -71,3 +77,30 @@ run: $(TARGET)
 
 version:
 	@echo "FOF version: $(FOF_VERSION)"
+
+# Alvo de sanidade — roda os mesmos checks que o install.sh
+# e o build-container.sh poderiam rodar. Útil antes de commitar.
+check:
+	@echo "==> Checando sintaxe JavaScript..."
+	@for f in script.js i18n.js server.js; do \
+		node --check "$$f" && echo "  OK: $$f" || exit 1; \
+	done
+	@echo "==> Checando sintaxe Bash..."
+	@for f in iniciar_fof.sh iniciar_fof_compat.sh install.sh build-container.sh; do \
+		bash -n "$$f" && echo "  OK: $$f" || exit 1; \
+	done
+	@echo "==> Checando JSON dos locales..."
+	@for f in locales/*.json; do \
+		node -e "JSON.parse(require('fs').readFileSync('$$f','utf8'))" && echo "  OK: $$f" || exit 1; \
+	done
+	@echo "==> Checando CHANGELOG.md vs package.json..."
+	@node -e " \
+		const fs = require('fs'); \
+		const v = require('./package.json').version; \
+		const c = fs.readFileSync('CHANGELOG.md', 'utf8'); \
+		const re = new RegExp('^##\\\\s+v?' + v.replace(/[.*+?^\$${}()|[\\]\\\\]/g, '\\\\\$$&') + '\\\\s*\$$', 'm'); \
+		if (!re.test(c)) { console.error('  ERRO: seção ## v' + v + ' não encontrada no CHANGELOG.md'); process.exit(1); } \
+		console.log('  OK: seção v' + v + ' encontrada no CHANGELOG.md'); \
+	"
+	@echo ""
+	@echo "✅ Todos os checks passaram."

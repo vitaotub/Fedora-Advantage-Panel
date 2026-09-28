@@ -63,7 +63,7 @@
         <div class="fill" id="progress-guia-fill"></div>
     </div>
     <div class="info">
-        <span class="sessao-atual" id="progress-guia-text">1 de 13</span>
+        <span class="sessao-atual" id="progress-guia-text">1 de 12</span>
     </div>
 </div>
 
@@ -78,7 +78,7 @@
 <!-- ===== NAVEGAÇÃO ===== -->
 <div class="nav-guide" id="nav-guide">
     <div class="info">
-        <span id="info-sessao"><strong>1/13</strong> - Carregando...</span>
+        <span id="info-sessao"><strong>1/12</strong> - Carregando...</span>
     </div>
     <div class="botoes">
         <button class="btn-voltar" id="btn-anterior" onclick="sessaoAnterior()" data-i18n="comum.btn_anterior">◀ Anterior</button>
@@ -106,26 +106,25 @@ var sessoesCarregadas = {};
 // IMPORTANTE: mantenha este mapa em sincronia com
 // SESSOES_PRINCIPAIS (script.js). Se você adicionar uma sessão
 // nova no array SESSOES, adicione também uma entrada aqui com o
-// mesmo id. Se você renomear uma sessão (ex.: 04-fontes →
-// 04-codecs-compatibilidade), atualize a chave aqui também.
+// mesmo id. Se você renomear uma sessão, atualize a chave aqui
+// também.
 //
 // Sessões sem entrada aqui NÃO quebram — só aparecem sem ícone
 // no menu (o chip fica com o número e o label, sem emoji).
 // ------------------------------------------------------------
 var ICONES_SESSOES = {
-    '00-boas-vindas': '👋',
-    '01-restauracao': '💾',
-    '02-otimizacao': '⚙️',
-    '03-repositorios': '📦',
-    '04-codecs-compatibilidade': '🔤',
-    '05-hardware': '🖥️',
-    '06-gaming': '🎮',
-    '07-loja': '🎬',
-    '08-waydroid': '📱',
-    '09-softwares-uteis': '📦',
-    '10-casa-pronta': '🏠',
-    '11-diagnostico': '📊',
-    '12-fedora': '🐧'
+    'primeiros-passos': '🚀',
+    'codecs': '🔤',
+    'hardware': '🖥️',
+    'producao-multimidia': '🎬',
+    'aplicativos': '📦',
+    'casa-escritorio': '🏠',
+    'gaming': '🎮',
+    'waydroid': '📱',
+    'diagnostico': '📊',
+    'ajustes-manutencao': '🛠️',
+    'estado-fedora': '🐧',
+    'sobre-fof': '📖'
 };
 
 // ------------------------------------------------------------

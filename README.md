@@ -2,7 +2,7 @@
 
 **🌐 Idioma:** Português (BR) | [English](README.en.md) | [Español](README.es.md)
 
-![Versão](https://img.shields.io/badge/Vers%C3%A3o-v1.0.0--09272026-orange?style=flat-square)
+![Versão](https://img.shields.io/badge/Vers%C3%A3o-v1.0.0--09282026-orange?style=flat-square)
 ![Fedora](https://img.shields.io/badge/Fedora-44+-294172?style=flat-square&logo=fedora)
 ![Licença](https://img.shields.io/badge/Licen%C3%A7a-GPL--3.0-green?style=flat-square)
 ![Idiomas](https://img.shields.io/badge/Idiomas-PT--BR%20%7C%20EN%20%7C%20ES-3c67e3?style=flat-square)
@@ -32,10 +32,7 @@ fof-compat                          # Iniciar (modo compatibilidade — GPUs ant
 
 O **Fedora Only Fans (FOF)** é um painel de automação visual para o Fedora Linux. Transforma uma instalação limpa em um sistema completo — codecs, drivers, repositórios, ferramentas — através de cliques, sem abrir o terminal.
 
-O FOF tem **dois pontos de entrada**:
-
-- **🧭 Iniciar Configuração** — passo a passo, uma sessão por vez, com navegação Anterior/Próximo e menu fixo no topo. A ordem importa pro resultado final.
-- **🛠️ Manutenção** — tarefas avulsas que não dependem de ordem: limpeza, kernels, GRUB, atualizar e desinstalar o FOF.
+O FOF tem **um único ponto de entrada**: o botão **"Iniciar"**, que leva você pelas 12 sessões passo a passo, na ordem lógica. Cada sessão agrupa tarefas relacionadas, e o progresso é salvo automaticamente.
 
 Cada botão lembra seu próprio estado. Fechar e reabrir o FOF (ou reiniciar o computador) sempre mostra exatamente onde você parou.
 
@@ -45,23 +42,18 @@ Cada botão lembra seu próprio estado. Fechar e reabrir o FOF (ou reiniciar o c
 
 | # | Sessão | O que faz |
 |---|---|---|
-| 1 | 👋 Boas-vindas | Apresentação + `dnf upgrade --refresh` completo |
-| 2 | ⚙️ Otimização | DNF paralelo, locale PT-BR, dual-boot, **ajustes de desempenho** (`vm.max_map_count`, `swappiness`/`vfs_cache_pressure`, TCP BBR) |
-| 3 | 📦 Repositórios | RPM Fusion (free + nonfree), Flathub |
-| 4 | 🔤 Codecs e Compatibilidade | Codecs multimídia, reprodução de DVD comercial (tainted), fontes Microsoft |
-| 5 | 🖥️ Hardware | AMD (Vulkan/Mesa/RADV, VA-API, CoreCtrl, LACT, overclock), NVIDIA (driver proprietário, modeset), controles (grupo input) |
-| 6 | 🎮 Gaming | Launchers, Wine/Proton/NTSYNC, GameMode/MangoHud/Gamescope, ProtonUp-Qt, vkBasalt, emuladores, bufferbloat, anti-cheat awareness, atualização de Flatpaks |
-| 7 | 🎬 Produção Multimídia | OBS Studio, EasyEffects, **realtime-setup**, **PipeWire baixa latência**, streaming, qpwgraph, HandBrake, wf-recorder |
-| 8 | 📱 Waydroid | Android no Linux via COPR, GApps, libndk/libhoudini, Magisk, Widevine, SmartDock, waydroid-helper |
-| 9 | 📦 Aplicativos Recomendados | ~45 apps via Flatpak (produtividade, mídia, gráficos, internet, edição de vídeo/áudio, nuvem) |
-| 10 | 🏠 Casa Pronta | CUPS, Samba/LocalSend/Warpinator, KeePassXC, Okular+Tesseract (PDF+OCR) |
-| 11 | 📊 Diagnóstico | Painel do sistema, top processos, partições, Baobab, GSmartControl, CoolerControl, journal, **status de otimizações** |
-| 12 | 🐧 Fedora | Versão, detecção de Atomic/Silverblue, SELinux (status, AVCs, setroubleshoot, GUI) |
-
-## 🛠️ Manutenção
-
-- **Fedora** — limpeza de cache, gerenciamento de kernels, configuração do GRUB
-- **FOF** — atualizar, desinstalar, changelog
+| 1 | 🚀 Primeiros Passos | Atualização completa do sistema + RPM Fusion + Flathub |
+| 2 | 🔤 Codecs e Compatibilidade | Codecs multimídia, reprodução de DVD comercial (tainted), fontes Microsoft |
+| 3 | 🖥️ Hardware | AMD (Vulkan/Mesa/RADV, VA-API, CoreCtrl, LACT, overclock), NVIDIA (driver proprietário, modeset), controles (grupo input) |
+| 4 | 🎬 Produção Multimídia | OBS Studio, EasyEffects, streaming, qpwgraph, HandBrake, wf-recorder |
+| 5 | 📦 Aplicativos Recomendados | ~45 apps via Flatpak (produtividade, mídia, gráficos, internet, edição de vídeo/áudio, nuvem) |
+| 6 | 🏠 Casa e Escritório | CUPS, Samba/LocalSend/Warpinator, KeePassXC, Okular+Tesseract (PDF+OCR) |
+| 7 | 🎮 Gaming | Launchers, Wine/Proton/NTSYNC, GameMode/MangoHud/Gamescope, ProtonUp-Qt, vkBasalt, emuladores, anti-cheat awareness |
+| 8 | 📱 Waydroid | Android no Linux via COPR, GApps, libndk/libhoudini, Magisk, Widevine, SmartDock |
+| 9 | 📊 Diagnóstico | Painel do sistema, top processos, partições, GSmartControl, CoolerControl, journal, **status de otimizações** |
+| 10 | 🛠️ Ajustes e Manutenção | Tunings de desempenho, ajustes de áudio, DNF, idioma, dual-boot, limpeza, kernels, GRUB |
+| 11 | 🐧 Estado do Fedora | Versão, detecção de Atomic/Silverblue, SELinux (status, AVCs, setroubleshoot, GUI) |
+| 12 | 📖 Sobre o FOF | Sobre o projeto + atualizar/desinstalar FOF + changelog dinâmico |
 
 ---
 
@@ -70,14 +62,15 @@ Cada botão lembra seu próprio estado. Fechar e reabrir o FOF (ou reiniciar o c
 - **Interface escura/clara** — troca em tempo real, preferência salva
 - **Multilíngue** — PT-BR, EN, ES com troca em tempo real
 - **Logs em tempo real** via SSE, expandidos por padrão
-- **Busca global (Ctrl+K)** em qualquer página
 - **Ícone de desinstalar** ao lado de cada app Flatpak instalado
 - **Detecção de Flatpak removido externamente** — se o usuário apagar o app por fora, o botão do FOF volta ao estado inicial
 - **Barra de progresso global** no header (N/M sessões concluídas)
 - **Toasts + notificações nativas** ao concluir tarefas longas (>30s)
 - **Autenticação segura** via pkexec/kdesu com whitelist de comandos read-only
 - **Persistência dupla** — servidor local + localStorage
+- **Limpeza automática de IDs órfãos** — sessões renomeadas não deixam lixo no progresso
 - **Container nativo WebKitGTK** (sem navegador externo)
+- **Changelog dinâmico** — lido do `CHANGELOG.md` em runtime
 - **Versão centralizada** em `package.json`
 
 ---
@@ -86,34 +79,33 @@ Cada botão lembra seu próprio estado. Fechar e reabrir o FOF (ou reiniciar o c
 
 ```
 Fedora-Only-Fans/
-├── index.html                       # Landing page (escolha do modo)
+├── index.html                       # Landing page (entrada única)
 ├── guiado.html                      # Configuração passo a passo
-├── manutencao.html                  # Manutenção (Fedora + FOF)
 ├── style.css                        # CSS compartilhado
-├── script.js                        # JS compartilhado (sessões, progresso, busca)
+├── script.js                        # JS compartilhado (sessões, progresso)
 ├── i18n.js                          # Módulo de i18n (PT-BR / EN / ES)
 ├── locales/
-│   ├── pt-BR.json                   # Traduções (padrão)
 │   ├── en.json                      # Traduções EN
 │   └── es.json                      # Traduções ES
-├── 00-boas-vindas.html              # Sessão 1
-├── 01-restauracao.html              # Sessão 2
-├── 02-otimizacao.html               # Sessão 3
-├── 03-repositorios.html             # Sessão 4
-├── 04-codecs-compatibilidade.html   # Sessão 5
-├── 05-hardware.html                 # Sessão 6
-├── 06-gaming.html                   # Sessão 7
-├── 07-loja.html                     # Sessão 8
-├── 08-waydroid.html                 # Sessão 9
-├── 09-softwares-uteis.html          # Sessão 10
-├── 10-casa-pronta.html              # Sessão 11
-├── 11-diagnostico.html              # Sessão 12
-├── 12-fedora.html                   # Sessão 13
+│   # PT-BR não tem arquivo próprio — o HTML é a fonte
+├── primeiros-passos.html            # Sessão 1
+├── codecs.html                      # Sessão 2
+├── hardware.html                    # Sessão 3
+├── producao-multimidia.html         # Sessão 4
+├── aplicativos.html                 # Sessão 5
+├── casa-escritorio.html             # Sessão 6
+├── gaming.html                      # Sessão 7
+├── waydroid.html                    # Sessão 8
+├── diagnostico.html                 # Sessão 9
+├── ajustes-manutencao.html          # Sessão 10
+├── estado-fedora.html               # Sessão 11
+├── sobre-fof.html                   # Sessão 12
 ├── template-sessao.html             # Molde para criar novas sessões
-├── server.js                        # Servidor Node.js + SSE
+├── CHANGELOG.md                     # Histórico de mudanças (lido pelo FOF)
+├── server.js                        # Servidor Node.js + SSE + endpoints
 ├── iniciar_fof.sh                   # Inicializador
 ├── iniciar_fof_compat.sh            # Modo compatibilidade
-├── install.sh                       # Instalador / desinstalador
+├── install.sh                       # Instalador / desinstalador / updater
 ├── build-container.sh / Makefile    # Build do container nativo
 ├── src/fof-container.c              # Container WebKitGTK (C + GTK3)
 ├── package.json                     # Deps Node + versão do FOF
@@ -126,7 +118,7 @@ Fedora-Only-Fans/
 ## 🛠️ Tecnologias
 
 - **HTML5 / CSS3** — interface responsiva, tema claro/escuro
-- **JavaScript puro** — requisições à API local, i18n, busca global, dashboard
+- **JavaScript puro** — requisições à API local, i18n, dashboard
 - **Node.js** — servidor backend local, execução segura de processos
 - **Server-Sent Events (SSE)** — logs em tempo real
 - **Bash** — inicialização, instalação
@@ -147,72 +139,65 @@ Fedora-Only-Fans/
 
 ## 🎯 Changelog
 
-### v1.0.0-09272026 (Atual) 🚧
+O histórico completo de mudanças está em [`CHANGELOG.md`](CHANGELOG.md). O próprio FOF exibe o changelog da versão atual, dentro da sessão **Sobre o FOF** — carregado dinamicamente do arquivo.
 
-**Reestruturação de sessões**
-- ✅ Sessão **04-codecs-compatibilidade** substitui `04-fontes.html` — agrupa codecs + tainted + fontes MS numa narrativa de compatibilidade
-- ✅ Sessão **03-repositorios** enxugada (só RPM Fusion + Flathub)
+### v1.0.0-09282026 (Atual) 🚧
 
-**Novos ajustes de desempenho (todos com par aplicar/reverter)**
-- ✅ Sessão 02: `vm.max_map_count`, `vm.swappiness` + `vfs_cache_pressure`, TCP BBR
-- ✅ Sessão 07: `realtime-setup` (grupo realtime) e PipeWire em baixa latência
-
-**Gaming**
-- ✅ NTSYNC agora carrega módulo imediatamente + persiste via `modules-load.d`
-- ✅ Novo botão "Atualizar Apps Flatpak" (sessões 06 e 09)
-- ✅ Aviso educativo sobre Gamescope + NVIDIA + Flatpak
-
-**Aplicativos Flatpak**
-- ✅ Ícone de lixeira ao lado de cada app Flatpak instalado (sessões 06, 07, 09, 10)
-- ✅ **Detecção de Flatpak removido externamente** — botão volta ao estado inicial automaticamente
-
-**Diagnóstico**
-- ✅ Novo painel "Ajustes de Otimizações" (KSM, max_map_count, TCP BBR, PipeWire quantum)
-
-**Backend**
-- ✅ `systemctl --user` na whitelist + contexto de env generalizado
-- ✅ Novo endpoint `/flatpak-installed`
-- ✅ `/system-info` estendido com 5 campos novos
+- Reestruturação completa das sessões (13 → 12), com IDs semânticos (sem número)
+- Sessão **Ajustes e Manutenção** agrupa tunings de desempenho, ajustes de áudio, DNF, idioma, dual-boot, limpeza, kernels e GRUB
+- Sessão **Sobre o FOF** agrupa o texto institucional, atualização e desinstalação do FOF
+- Removidas: sessão **Restauração** (Btrfs-Assistant) e página **Manutenção** (conteúdo redistribuído)
+- Tela inicial redesenhada: relógio ao vivo e card único com texto + botão "Iniciar"
+- Busca global (Ctrl+K) removida — apresentava problemas no WebKitGTK
+- Changelog dinâmico via `GET /changelog`
+- Botão "Ver changelog completo" corrigido (usava `window.open`, bloqueado pelo WebKitGTK)
+- `install.sh --update` agora limpa arquivos de sessões antigas antes do `git pull`
+- Progresso limpa automaticamente IDs órfãos no boot
+- Badge de atualização aponta para `guiado.html?session=sobre-fof`
 
 ### v1.0.0-09232026 ✅
 
-- ✅ Verificação automática de atualizações via GitHub Releases (badge ⬆️ no header)
-- ✅ Popup pós-atualização (avisa para reiniciar o FOF)
-- ✅ Sessão 00 reformulada em 2 acordeões
-- ✅ Sessão Gaming com aviso detalhado sobre NTSYNC
-- ✅ Logs de sessão expandidos por padrão; altura uniforme (120–200px)
-- ✅ Header com controles inline ao título
+- Verificação automática de atualizações via GitHub Releases
+- Popup pós-atualização
+- Ícone de desinstalar em cada app Flatpak
+- Detecção de Flatpak removido externamente
+- Painel "Ajustes de Otimizações" no Diagnóstico
 
-### v1.0.0 (Futuro) 🔮
+### v1.0.0 ✅
 
-- □ ?
+- Versão inicial pública
 
 ---
 
 ## ➕ Como adicionar uma sessão
 
-1. Copie `template-sessao.html` para `NN-nome.html`
+1. Copie `template-sessao.html` para `<nome>.html` (sem número)
 2. Preencha os placeholders
-3. Adicione uma entrada no array `SESSOES` em `script.js`
-4. (Opcional) Adicione o ícone em `ICONES_SESSOES` em `guiado.html`
-5. (Opcional) Adicione as traduções nos 3 JSONs de locale
+3. Adicione uma entrada no array `SESSOES` em `script.js` (com `id: '<nome>'`)
+4. Adicione o ícone (emoji) em `ICONES_SESSOES` em `guiado.html`
+5. Adicione as chaves i18n em `locales/en.json` e `locales/es.json` (e também no HTML, como fallback PT-BR)
+
+A ordem de exibição vem da posição da entrada no array `SESSOES`, não do nome do arquivo.
 
 ---
 
 ## 🌐 Como adicionar um idioma
 
-1. Copie `locales/pt-BR.json` para `locales/XX.json`
+1. Copie `locales/en.json` para `locales/XX.json`
 2. Traduza os valores (mantenha as chaves)
 3. Adicione `XX` em `LANGS_DISPONIVEIS` (`i18n.js`) e `LANGS_SUPORTADOS` (`server.js`)
 4. Adicione a opção no array `opcoes` de `criarSeletorIdioma()`
+
+**Nota:** o idioma padrão (pt-BR) **não tem arquivo JSON** de propósito. O HTML de cada sessão contém o texto em português como fallback, e o `i18n.js` faz curto-circuito quando o idioma é o padrão — nunca dispara `fetch` para `/locales/pt-BR.json`. Isso evita manter strings duplicadas.
 
 ---
 
 ## 🏷️ Como lançar uma versão
 
 1. Edite `package.json` → `"version": "1.0.0-<NOVA>"`
-2. Edite `i18n.js` → `FALLBACK_VERSION = '1.0.0-<NOVA>'` (única exceção à regra de fonte única)
-3. Crie a tag/release no GitHub com o mesmo nome
+2. Edite `i18n.js` → `FALLBACK_VERSION = '1.0.0-<NOVA>'` (única exceção à regra de fonte única — usado como cache-buster antes do `/info` responder)
+3. Adicione uma seção nova no topo do `CHANGELOG.md`, com cabeçalho exatamente `## v1.0.0-<NOVA>` (casando com o `package.json`)
+4. Crie a tag/release no GitHub com o mesmo nome
 
 Todo o resto (banner do `install.sh`, badge do FOF, `--help` do container) é automático.
 

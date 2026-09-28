@@ -3,10 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Fedora Only Fans (FOF) - Escolha o Modo</title>
+<title>Fedora Only Fans (FOF)</title>
 <script>
 // Aplica o tema antes do CSS pintar (evita flash do tema errado).
-// Roda antes do link do CSS e do script.js serem processados.
 (function() {
 try {
 var t = localStorage.getItem('fof_tema') || 'escuro';
@@ -146,220 +145,165 @@ background-color: var(--accent);
 color: #fff;
 }
 
-.modos-grid {
-display: grid;
-grid-template-columns: 1fr 1fr;
-gap: 2rem;
-margin: 2rem 0 3rem;
-width: 100%;
-}
+/* ============================================================
+ * CARD PRINCIPAL
+ * ============================================================
+ * Layout: relógio no topo; abaixo, uma grid de 2 colunas onde
+ * a esquerda tem título + texto e a direita tem o botão. O botão
+ * fica verticalmente centralizado em relação ao bloco de textos.
+ */
 
-@media (max-width: 700px) {
-.modos-grid {
-grid-template-columns: 1fr;
-}
-}
-
-.modo-card {
+.iniciar-card {
+display: block;
 background-color: var(--bg-card);
 border: 2px solid var(--border);
 border-radius: 16px;
-padding: 2.5rem 2rem 2rem;
-text-align: center;
-cursor: pointer;
-transition: all 0.3s ease;
+padding: 2.5rem 2.5rem 2rem;
 text-decoration: none;
 color: inherit;
-display: flex;
-flex-direction: column;
+transition: all 0.3s ease;
 position: relative;
 overflow: hidden;
-min-height: 420px;
+margin: 2.5rem 0 2rem;
+cursor: pointer;
 }
 
-.modo-card::before {
+.iniciar-card::before {
 content: '';
 position: absolute;
 top: 0;
 left: 0;
 right: 0;
 bottom: 0;
-background: radial-gradient(circle at 50% 0%, rgba(60, 103, 227, 0.05), transparent 70%);
+background: radial-gradient(circle at 50% 0%, rgba(60, 103, 227, 0.08), transparent 70%);
 opacity: 0;
 transition: opacity 0.3s ease;
+pointer-events: none;
 }
 
-.modo-card:hover::before {
+.iniciar-card:hover::before {
 opacity: 1;
 }
 
-.modo-card:hover {
+.iniciar-card:hover {
 border-color: var(--accent);
 transform: translateY(-6px);
-box-shadow: 0 12px 40px rgba(60, 103, 227, 0.15);
+box-shadow: 0 12px 40px rgba(60, 103, 227, 0.18);
 }
 
-.modo-card .icon {
-font-size: 4rem;
-margin-bottom: 1rem;
-display: block;
-}
+/* ============================================================
+ * RELÓGIO (topo do card)
+ * ============================================================ */
 
-.modo-card h2 {
-font-size: 1.8rem;
-color: var(--text-main);
-margin-bottom: 0.5rem;
-position: relative;
-}
-
-.modo-card p {
-color: var(--text-muted);
-font-size: 1rem;
-line-height: 1.6;
-position: relative;
-flex: 1;
-}
-
-.modo-card .features {
-list-style: none;
-padding: 0;
-margin: 1rem 0 1.5rem;
-text-align: left;
-position: relative;
-}
-
-.modo-card .features li {
-padding: 0.4rem 0;
-color: var(--text-muted);
-font-size: 0.95rem;
+.relogio-container {
 display: flex;
+flex-direction: column;
 align-items: center;
-gap: 0.5rem;
-}
-
-.modo-card .features li::before {
-content: "✓";
-color: var(--success);
-font-weight: bold;
-font-size: 1.1rem;
-}
-
-.modo-card .badge-modo {
-display: inline-block;
-padding: 0.6rem 2rem;
-border-radius: 30px;
-font-size: 1.1rem;
-font-weight: 600;
+gap: 0.25rem;
+padding-bottom: 1.5rem;
+margin-bottom: 1.5rem;
+border-bottom: 1px solid var(--border);
 position: relative;
-margin-top: auto;
-transition: all 0.3s ease;
-text-align: center;
-width: 100%;
-max-width: 250px;
-margin-left: auto;
-margin-right: auto;
-white-space: nowrap;
-overflow: hidden;
-text-overflow: ellipsis;
 }
 
-.modo-card:hover .badge-modo {
-transform: scale(1.02);
-}
-
-.badge-guided {
-background-color: rgba(60, 103, 227, 0.2);
-color: var(--accent);
-border: 2px solid var(--accent);
-}
-
-.badge-guided:hover {
-background-color: var(--accent);
-color: #fff;
-}
-
-.badge-advanced {
-background-color: rgba(245, 158, 11, 0.2);
-color: #f59e0b;
-border: 2px solid #f59e0b;
-}
-
-.badge-advanced:hover {
-background-color: #f59e0b;
-color: #0b111e;
-}
-
-.modo-card .recomendado {
-display: inline-block;
-background-color: var(--accent);
-color: #fff;
-font-size: 0.7rem;
+.relogio-hora {
+font-size: 2.4rem;
 font-weight: 700;
-padding: 0.3rem 1rem;
-border-radius: 12px;
-text-transform: uppercase;
-letter-spacing: 0.5px;
-margin-bottom: 0.75rem;
-position: absolute;
-top: 12px;
-right: 12px;
+font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+color: var(--accent);
+letter-spacing: 0.05em;
+line-height: 1;
+text-shadow: 0 0 20px rgba(60, 103, 227, 0.3);
+transition: color 0.3s ease;
 }
 
-.info-extra {
-background-color: rgba(0, 0, 0, 0.2);
-border: 1px solid var(--border);
-border-radius: 12px;
-padding: 1.5rem 2rem;
-margin-bottom: 2rem;
-width: 100%;
+.relogio-data {
+font-size: 0.9rem;
+color: var(--text-muted);
+text-transform: capitalize;
+letter-spacing: 0.02em;
 }
 
-[data-tema="claro"] .info-extra {
-background-color: rgba(0, 0, 0, 0.03);
+/* ============================================================
+ * CONTEÚDO DO CARD (grid 2 colunas)
+ * ============================================================ */
+
+.iniciar-conteudo {
+display: grid;
+grid-template-columns: 1fr auto;
+gap: 2rem;
+align-items: center;
+position: relative;
 }
 
-.info-extra h3 {
+.iniciar-texto h2 {
+font-size: 1.6rem;
 color: var(--text-main);
-margin-bottom: 0.5rem;
-font-size: 1.1rem;
+margin: 0 0 1rem 0;
+line-height: 1.3;
+}
+
+.iniciar-texto p {
+color: var(--text-muted);
+font-size: 0.95rem;
+line-height: 1.65;
+margin: 0 0 0.9rem 0;
+}
+
+.iniciar-texto p:last-child {
+margin-bottom: 0;
+}
+
+.iniciar-texto strong {
+color: var(--text-main);
+font-weight: 600;
+}
+
+.iniciar-acao {
+display: flex;
+align-items: center;
+justify-content: center;
+}
+
+.btn-grande {
+display: inline-flex;
+align-items: center;
+justify-content: center;
+gap: 0.5rem;
+padding: 1rem 2.5rem;
+border-radius: 30px;
+font-size: 1.15rem;
+font-weight: 600;
+background-color: var(--accent);
+color: #fff;
+border: none;
+transition: all 0.3s ease;
+white-space: nowrap;
+box-shadow: 0 4px 20px rgba(60, 103, 227, 0.25);
+}
+
+.iniciar-card:hover .btn-grande {
+background-color: var(--accent-hover);
+transform: scale(1.04);
+box-shadow: 0 6px 28px rgba(60, 103, 227, 0.4);
+}
+
+/* Responsividade: em telas estreitas, colunas empilham */
+@media (max-width: 700px) {
+.iniciar-conteudo {
+grid-template-columns: 1fr;
+gap: 1.5rem;
 text-align: center;
 }
 
-.info-extra p {
-color: var(--text-muted);
-font-size: 1rem;
-line-height: 1.6;
-margin: 0.5rem 0 0 0;
-text-align: left;
-max-width: 700px;
-margin-left: auto;
-margin-right: auto;
+.iniciar-acao {
+justify-content: center;
 }
 
-.info-extra .dicas {
-display: grid;
-grid-template-columns: 1fr 1fr;
-gap: 1rem;
-margin-top: 0.75rem;
-text-align: left;
+.btn-grande {
+width: 100%;
+max-width: 320px;
 }
-
-@media (max-width: 600px) {
-.info-extra .dicas {
-grid-template-columns: 1fr;
-}
-}
-
-.info-extra .dica {
-display: flex;
-align-items: center;
-gap: 0.5rem;
-color: var(--text-muted);
-font-size: 0.95rem;
-}
-
-.info-extra .dica .emoji {
-font-size: 1.3rem;
 }
 
 footer {
@@ -389,15 +333,21 @@ footer a:hover {
 text-decoration: underline;
 }
 
-/* ============================================================
-* i18n: ESTILO DO SELETOR DE IDIOMA
-* ============================================================ */
+/* i18n + tema */
+.header-controles {
+display: flex;
+align-items: center;
+justify-content: center;
+gap: 0.75rem;
+margin: 1rem 0;
+flex-wrap: wrap;
+}
+
 .i18n-seletor-container {
 display: flex;
 align-items: center;
 justify-content: center;
 gap: 0.5rem;
-margin: 1rem 0;
 font-size: 0.9rem;
 color: var(--text-muted);
 }
@@ -433,18 +383,6 @@ box-shadow: 0 0 0 2px rgba(60, 103, 227, 0.3);
 .i18n-seletor-container select.i18n-seletor option {
 background-color: var(--bg-primary);
 color: var(--text-main);
-}
-
-/* ============================================================
-* TEMA: BOTÃO DE ALTERNÂNCIA (index)
-* ============================================================ */
-.header-controles {
-display: flex;
-align-items: center;
-justify-content: center;
-gap: 0.75rem;
-margin: 1rem 0;
-flex-wrap: wrap;
 }
 
 .tema-toggle-container {
@@ -494,19 +432,21 @@ font-size: 2rem;
 font-size: 1rem;
 }
 
-.modo-card {
-min-height: 380px;
-padding: 1.5rem;
+.iniciar-card {
+padding: 1.75rem 1.25rem 1.5rem;
 }
 
-.modo-card h2 {
-font-size: 1.4rem;
+.iniciar-texto h2 {
+font-size: 1.35rem;
 }
 
-.modo-card .badge-modo {
+.relogio-hora {
+font-size: 2rem;
+}
+
+.btn-grande {
 font-size: 1rem;
-padding: 0.5rem 1.5rem;
-max-width: 200px;
+padding: 0.85rem 2rem;
 }
 
 .hero-buttons .badge {
@@ -550,70 +490,35 @@ Painel de automação para configurar, otimizar e personalizar seu Fedora Linux 
 </div>
 </div>
 
-<div class="modos-grid">
-<a href="guiado.html" class="modo-card" id="modo-guiado">
-<span class="recomendado" data-i18n="index.badge_recomendado">⭐ Comece por aqui</span>
-<span class="icon">🧭</span>
-<h2 data-i18n="index.card_guiado_titulo">Iniciar Configuração</h2>
-<p data-i18n="index.card_guiado_desc">
-Siga passo a passo pelas sessões de configuração do Fedora, na ordem certa — a ordem importa pro resultado final, então esta é a única forma de percorrê-las.
-</p>
-<ul class="features">
-<li data-i18n="index.card_guiado_feat1">Sessões organizadas em ordem lógica</li>
-<li data-i18n="index.card_guiado_feat2">Navegação com botões Anterior/Próximo</li>
-<li data-i18n="index.card_guiado_feat3">Busca global com Ctrl+K</li>
-</ul>
-<span class="badge-modo badge-guided" data-i18n="index.card_guiado_badge">🧭 Passo a passo</span>
-</a>
+<!-- ============================================================
+CARD PRINCIPAL — relógio + textos + botão Iniciar
+============================================================ -->
+<a href="guiado.html" class="iniciar-card" id="card-iniciar">
 
-<a href="manutencao.html" class="modo-card" id="modo-manutencao">
-<span class="icon">🛠️</span>
-<h2 data-i18n="index.card_manut_titulo">Manutenção</h2>
-<p data-i18n="index.card_manut_desc">
-Tarefas do dia a dia que não dependem de ordem: gerenciar kernels, limpar arquivos temporários, ajustar o GRUB, atualizar ou desinstalar o FOF.
-</p>
-<ul class="features">
-<li data-i18n="index.card_manut_feat1">Gerenciamento de kernels instalados</li>
-<li data-i18n="index.card_manut_feat2">Limpeza de arquivos temporários</li>
-<li data-i18n="index.card_manut_feat3">Configuração do GRUB</li>
-<li data-i18n="index.card_manut_feat4">Atualizar, desinstalar e ver changelog do FOF</li>
-</ul>
-<span class="badge-modo badge-advanced" data-i18n="index.card_manut_badge">🛠️ Manutenção</span>
-</a>
+<!-- Relógio -->
+<div class="relogio-container">
+<time class="relogio-hora" id="relogio-hora" aria-live="polite">--:--:--</time>
+<span class="relogio-data" id="relogio-data">—</span>
 </div>
 
-<div class="info-extra">
-<h3 data-i18n="index.sobre_titulo">📋 Sobre o Fedora Only Fans</h3>
-<p data-i18n="index.sobre_texto">
-O FOF é uma ferramenta open-source que automatiza as principais tarefas de configuração do Fedora Linux, desde a instalação de codecs e repositórios até a otimização do sistema e gerenciamento de kernels.
+<!-- Conteúdo: textos à esquerda, botão à direita -->
+<div class="iniciar-conteudo">
+<div class="iniciar-texto">
+<h2 data-i18n="index.card_guiado_titulo">Iniciar Configurações do Fedora</h2>
+<p data-i18n-html="index.card_guiado_desc_1">
+Clicando em <strong>Iniciar</strong>, você acessa sessões que otimizam, configuram e deixam sua instalação do Fedora mais prática no dia a dia.
 </p>
-<div class="dicas">
-<div class="dica">
-<span class="emoji">💾</span>
-<span data-i18n="index.dica1">Progresso de cada ação salvo automaticamente no servidor local</span>
+<p data-i18n-html="index.card_guiado_desc_2">
+O FOF é intuitivo e explica cada passo com clareza — mas, por escolha de projeto, <strong>não faz backup dos seus arquivos</strong>. Apesar de cada comando ser testado, imprevistos podem acontecer. Por isso: leia as dicas com atenção antes de aplicar qualquer alteração e, sempre que possível, <strong>faça backup antes de seguir adiante</strong>.
+</p>
 </div>
-<div class="dica">
-<span class="emoji">🔄</span>
-<span data-i18n="index.dica2">Estado de cada ação salvo automaticamente, sem depender de relatórios</span>
-</div>
-<div class="dica">
-<span class="emoji">📡</span>
-<span data-i18n="index.dica3">Logs em tempo real via Server-Sent Events</span>
-</div>
-<div class="dica">
-<span class="emoji">📊</span>
-<span data-i18n="index.dica4">Barras de progresso para acompanhar a execução</span>
-</div>
-<div class="dica">
-<span class="emoji">🔍</span>
-<span data-i18n="index.dica5">Busca global (Ctrl+K) para encontrar qualquer sessão ou botão</span>
-</div>
-<div class="dica">
-<span class="emoji">🐧</span>
-<span data-i18n="index.dica6">Suporte para GNOME, KDE, XFCE e outros</span>
+
+<div class="iniciar-acao">
+<span class="btn-grande" data-i18n="index.card_guiado_botao">🚀 Iniciar</span>
 </div>
 </div>
-</div>
+
+</a>
 
 <!-- i18n + tema -->
 <div class="header-controles">
@@ -637,17 +542,47 @@ Fedora é uma marca registrada da Red Hat, Inc. Este projeto não é afiliado à
 </footer>
 </div>
 
+<!-- ============================================================
+RELÓGIO — atualiza a cada segundo, com locale do i18n.js
+============================================================ -->
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-document.querySelectorAll('.modo-card').forEach(function(card) {
-card.addEventListener('mouseenter', function() {
-this.style.borderColor = 'var(--accent)';
+(function() {
+function atualizarRelogio() {
+var horaEl = document.getElementById('relogio-hora');
+var dataEl = document.getElementById('relogio-data');
+if (!horaEl || !dataEl) return;
+
+var agora = new Date();
+
+// Usa o locale definido pelo i18n.js (cai em pt-BR se indisponível)
+var locale = document.documentElement.getAttribute('lang') || 'pt-BR';
+
+try {
+var hora = agora.toLocaleTimeString(locale, {
+hour: '2-digit',
+minute: '2-digit',
+second: '2-digit',
+hour12: false
 });
-card.addEventListener('mouseleave', function() {
-this.style.borderColor = 'var(--border)';
+horaEl.textContent = hora;
+horaEl.setAttribute('datetime', agora.toISOString());
+
+var data = agora.toLocaleDateString(locale, {
+weekday: 'long',
+day: 'numeric',
+month: 'long',
+year: 'numeric'
 });
-});
-});
+// Capitaliza a primeira letra (pt-BR retorna "segunda-feira, ...")
+dataEl.textContent = data.charAt(0).toUpperCase() + data.slice(1);
+} catch (e) {
+// Fallback silencioso: mantém os placeholders "--:--:--" / "—"
+}
+}
+
+atualizarRelogio();
+setInterval(atualizarRelogio, 1000);
+})();
 </script>
 </body>
 </html>

@@ -48,6 +48,17 @@ fi
 cd "$DIR"
 
 # ============================================================
+# AUTOCORREÇÃO DE PERMISSÕES
+# ============================================================
+# Caso o projeto tenha sido copiado sem +x (zip, USB, scp sem -p),
+# garante que os scripts e o binário sejam executáveis antes de
+# invocar o iniciar_fof.sh. Idempotente: se já estiver certo, não
+# faz nada. O `|| true` mantém compatibilidade com `set -e`.
+for f in iniciar_fof.sh iniciar_fof_compat.sh build-container.sh install.sh fof-container; do
+    [ -f "$f" ] && [ ! -x "$f" ] && chmod +x "$f" 2>/dev/null || true
+done
+
+# ============================================================
 # VERIFICAÇÕES
 # ============================================================
 
