@@ -53,48 +53,5 @@
         }
     },
 
-    "usb_devices": {
-        "0bda:c811": {
-            "name": "Realtek RTL8811CU (Wi-Fi USB)",
-            "category": "wifi",
-            "copr": "morrownr/8821cu",
-            "package": "rtl8821cu-morrownr-dkms",
-            "notes": "Driver DKMS mantido pela comunidade no COPR morrownr/8821cu. Requer RPM Fusion para as dependências de build (kernel-devel, akmods)."
-        },
-        "0bda:1a2b": {
-            "name": "Realtek RTL8821CU (Wi-Fi USB)",
-            "category": "wifi",
-            "copr": "morrownr/8821cu",
-            "package": "rtl8821cu-morrownr-dkms",
-            "notes": "Mesmo driver do RTL8811CU."
-        },
-        "7392:c611": {
-            "name": "Edimax EW-7611ULB (Realtek RTL8821CU)",
-            "category": "wifi",
-            "copr": "morrownr/8821cu",
-            "package": "rtl8821cu-morrownr-dkms",
-            "notes": "Adaptador USB Wi-Fi + Bluetooth vendido pela Edimax. Usa o mesmo chip do RTL8811CU."
-        },
-        "0bda:b812": {
-            "name": "Realtek RTL8812BU (Wi-Fi USB)",
-            "category": "wifi",
-            "copr": "morrownr/8822bu",
-            "package": "rtl8822bu-morrownr-dkms",
-            "notes": "Driver DKMS no COPR morrownr/8822bu. Cobre modelos como COMFAST CF-926AC v2."
-        },
-        "0bda:8812": {
-            "name": "Realtek RTL8812AU (Wi-Fi USB)",
-            "category": "wifi",
-            "copr": "morrownr/8812au",
-            "package": "rtl8812au-kmod",
-            "notes": "Driver DKMS no COPR morrownr/8812au. Chip comum em adaptadores Wi-Fi USB dual-band mais antigos."
-        },
-        "0bda:8811": {
-            "name": "Realtek RTL8811AU (Wi-Fi USB)",
-            "category": "wifi",
-            "copr": "morrownr/8811au",
-            "package": "rtl8811au-morrownr-dkms",
-            "notes": "Driver DKMS no COPR morrownr/8811au. Chip comum em adaptadores Wi-Fi USB compactos."
-        }
-    }
+    "usb_devices": {}
 }

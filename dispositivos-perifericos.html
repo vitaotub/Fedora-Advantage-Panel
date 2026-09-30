@@ -103,168 +103,48 @@ ACORDEÃO 3: DRIVERS DA COMUNIDADE (COPR)
 • Estes repositórios são <strong>mantidos por terceiros</strong> (indivíduos ou pequenos grupos da comunidade), não pela Red Hat nem pelo RPM Fusion.<br>
 • O FOF <strong>não controla</strong> o conteúdo, a frequência de atualização nem a segurança dos pacotes.<br>
 • Um COPR pode ser descontinuado a qualquer momento — se isso acontecer, o driver deixa de receber atualizações até alguém publicar uma alternativa.<br>
-• Estes drivers são para <strong>adaptadores Wi-Fi USB Realtek específicos</strong>. Só instale se você tiver um dos dispositivos listados.<br>
-• Se você não sabe se precisa, use primeiro a <strong>detecção automática</strong> no acórdeão acima — ela identifica o modelo exato.
+• Só instale se você tiver um dos dispositivos listados.<br>
+• Se você não sabe se precisa, use primeiro a <strong>detecção automática</strong> no acórdão acima — ela identifica o modelo exato.
 </div>
 
-<!-- COPR morrownr/8821cu -->
+<!-- Razer (OpenRazer) -->
 <div class="bloco-comando">
 <div class="comando-info">
-<h3 data-i18n="sessoes.dispositivos-perifericos.copr_8821cu_titulo">RTL8811CU / RTL8821CU — Wi-Fi USB</h3>
-<p data-i18n-html="sessoes.dispositivos-perifericos.copr_8821cu_desc">
-Adaptadores Wi-Fi USB com os chips Realtek RTL8811CU e RTL8821CU (muito comuns em modelos compactos dual-band). Driver DKMS mantido por <code>morrownr</code> — comunidade ativa, com histórico de atualizações rápidas para novos kernels. Requer RPM Fusion para as dependências de build.
+<h3 data-i18n="sessoes.dispositivos-perifericos.copr_openrazer_titulo">Razer (OpenRazer / Polychromatic)</h3>
+<p data-i18n-html="sessoes.dispositivos-perifericos.copr_openrazer_desc">
+RGB e macros para mouses, teclados e laptops Razer. Usa o sistema <code>akmods</code>, que recompila o módulo a cada atualização de kernel e assina para Secure Boot.
 </p>
 <div class="grupo-botoes">
-<button class="btn-executar"
-onclick="executarCoprEnable('copr-rtl8821cu-enable')"
-data-comando="copr-rtl8821cu-enable"
-data-logbox="log-sessao-dispositivos-perifericos"
-id="btn-copr-rtl8821cu-enable"
-data-i18n="sessoes.dispositivos-perifericos.btn_copr_habilitar">🌐 Habilitar repositório</button>
-<button class="btn-executar cinza"
-onclick="executarCoprDisable('copr-rtl8821cu-disable')"
-data-comando="copr-rtl8821cu-disable"
-data-logbox="log-sessao-dispositivos-perifericos"
-id="btn-copr-rtl8821cu-disable"
-data-i18n="sessoes.dispositivos-perifericos.btn_copr_desabilitar">↩️ Desabilitar repositório</button>
-<button class="btn-executar verde"
-onclick="executarDriverCopr('driver-rtl8821cu-install')"
-data-comando="driver-rtl8821cu-install"
-data-logbox="log-sessao-dispositivos-perifericos"
-id="btn-driver-rtl8821cu-install"
-data-i18n="sessoes.dispositivos-perifericos.btn_driver_instalar">📦 Instalar driver</button>
-<button class="btn-executar cinza"
-onclick="executarDriverCopr('driver-rtl8821cu-remove')"
-data-comando="driver-rtl8821cu-remove"
-data-logbox="log-sessao-dispositivos-perifericos"
-id="btn-driver-rtl8821cu-remove"
-data-i18n="sessoes.dispositivos-perifericos.btn_driver_reverter">↩️ Reverter driver</button>
+<button class="btn-executar" onclick="executarCoprEnable('copr-openrazer-enable')" data-comando="copr-openrazer-enable" data-logbox="log-sessao-dispositivos-perifericos" id="btn-copr-openrazer-enable" data-i18n="sessoes.dispositivos-perifericos.btn_copr_habilitar">🌐 Habilitar repositório</button>
+<button class="btn-executar cinza" onclick="executarCoprDisable('copr-openrazer-disable')" data-comando="copr-openrazer-disable" data-logbox="log-sessao-dispositivos-perifericos" id="btn-copr-openrazer-disable" data-i18n="sessoes.dispositivos-perifericos.btn_copr_desabilitar">↩️ Desabilitar repositório</button>
+<button class="btn-executar verde" onclick="executarDriverCopr('driver-openrazer-install')" data-comando="driver-openrazer-install" data-logbox="log-sessao-dispositivos-perifericos" id="btn-driver-openrazer-install" data-i18n="sessoes.dispositivos-perifericos.btn_driver_instalar">📦 Instalar driver</button>
+<button class="btn-executar cinza" onclick="executarDriverCopr('driver-openrazer-remove')" data-comando="driver-openrazer-remove" data-logbox="log-sessao-dispositivos-perifericos" id="btn-driver-openrazer-remove" data-i18n="sessoes.dispositivos-perifericos.btn_driver_reverter">↩️ Reverter driver</button>
 </div>
 </div>
-<div class="progress-container" id="progress-copr-rtl8821cu-enable"><div class="progress-bar"><div class="progress-fill" id="progress-fill-copr-rtl8821cu-enable"></div></div><div class="progress-text"><span class="status" id="progress-status-copr-rtl8821cu-enable">⏳ Iniciando...</span><span class="percentage" id="progress-percent-copr-rtl8821cu-enable">0%</span></div></div>
-<div class="progress-container" id="progress-copr-rtl8821cu-disable"><div class="progress-bar"><div class="progress-fill" id="progress-fill-copr-rtl8821cu-disable"></div></div><div class="progress-text"><span class="status" id="progress-status-copr-rtl8821cu-disable">⏳ Iniciando...</span><span class="percentage" id="progress-percent-copr-rtl8821cu-disable">0%</span></div></div>
-<div class="progress-container" id="progress-driver-rtl8821cu-install"><div class="progress-bar"><div class="progress-fill" id="progress-fill-driver-rtl8821cu-install"></div></div><div class="progress-text"><span class="status" id="progress-status-driver-rtl8821cu-install">⏳ Iniciando...</span><span class="percentage" id="progress-percent-driver-rtl8821cu-install">0%</span></div></div>
-<div class="progress-container" id="progress-driver-rtl8821cu-remove"><div class="progress-bar"><div class="progress-fill" id="progress-fill-driver-rtl8821cu-remove"></div></div><div class="progress-text"><span class="status" id="progress-status-driver-rtl8821cu-remove">⏳ Iniciando...</span><span class="percentage" id="progress-percent-driver-rtl8821cu-remove">0%</span></div></div>
+<div class="progress-container" id="progress-copr-openrazer-enable"><div class="progress-bar"><div class="progress-fill" id="progress-fill-copr-openrazer-enable"></div></div><div class="progress-text"><span class="status" id="progress-status-copr-openrazer-enable">⏳ Iniciando...</span><span class="percentage" id="progress-percent-copr-openrazer-enable">0%</span></div></div>
+<div class="progress-container" id="progress-copr-openrazer-disable"><div class="progress-bar"><div class="progress-fill" id="progress-fill-copr-openrazer-disable"></div></div><div class="progress-text"><span class="status" id="progress-status-copr-openrazer-disable">⏳ Iniciando...</span><span class="percentage" id="progress-percent-copr-openrazer-disable">0%</span></div></div>
+<div class="progress-container" id="progress-driver-openrazer-install"><div class="progress-bar"><div class="progress-fill" id="progress-fill-driver-openrazer-install"></div></div><div class="progress-text"><span class="status" id="progress-status-driver-openrazer-install">⏳ Iniciando...</span><span class="percentage" id="progress-percent-driver-openrazer-install">0%</span></div></div>
+<div class="progress-container" id="progress-driver-openrazer-remove"><div class="progress-bar"><div class="progress-fill" id="progress-fill-driver-openrazer-remove"></div></div><div class="progress-text"><span class="status" id="progress-status-driver-openrazer-remove">⏳ Iniciando...</span><span class="percentage" id="progress-percent-driver-openrazer-remove">0%</span></div></div>
 </div>
 
-<!-- COPR morrownr/8822bu -->
+<!-- Xbox Wireless Adapter (xone) -->
 <div class="bloco-comando">
 <div class="comando-info">
-<h3 data-i18n="sessoes.dispositivos-perifericos.copr_8822bu_titulo">RTL8812BU / RTL8822BU — Wi-Fi USB dual-band</h3>
-<p data-i18n-html="sessoes.dispositivos-perifericos.copr_8822bu_desc">
-Adaptadores Wi-Fi USB com os chips Realtek RTL8812BU e RTL8822BU (dual-band AC1200, comuns em modelos COMFAST e similares). Mesmo mantenedor do COPR anterior. Requer RPM Fusion para as dependências de build.
+<h3 data-i18n="sessoes.dispositivos-perifericos.copr_xone_titulo">Xbox Wireless Adapter (dongle USB)</h3>
+<p data-i18n-html="sessoes.dispositivos-perifericos.copr_xone_desc">
+Driver <code>xone</code> para o adaptador sem fio oficial do Xbox One/Series. Habilita áudio no controle, force feedback e integração com UPower. Para Bluetooth, o driver é outro (<code>xpadneo</code>).
 </p>
 <div class="grupo-botoes">
-<button class="btn-executar"
-onclick="executarCoprEnable('copr-rtl8822bu-enable')"
-data-comando="copr-rtl8822bu-enable"
-data-logbox="log-sessao-dispositivos-perifericos"
-id="btn-copr-rtl8822bu-enable"
-data-i18n="sessoes.dispositivos-perifericos.btn_copr_habilitar">🌐 Habilitar repositório</button>
-<button class="btn-executar cinza"
-onclick="executarCoprDisable('copr-rtl8822bu-disable')"
-data-comando="copr-rtl8822bu-disable"
-data-logbox="log-sessao-dispositivos-perifericos"
-id="btn-copr-rtl8822bu-disable"
-data-i18n="sessoes.dispositivos-perifericos.btn_copr_desabilitar">↩️ Desabilitar repositório</button>
-<button class="btn-executar verde"
-onclick="executarDriverCopr('driver-rtl8822bu-install')"
-data-comando="driver-rtl8822bu-install"
-data-logbox="log-sessao-dispositivos-perifericos"
-id="btn-driver-rtl8822bu-install"
-data-i18n="sessoes.dispositivos-perifericos.btn_driver_instalar">📦 Instalar driver</button>
-<button class="btn-executar cinza"
-onclick="executarDriverCopr('driver-rtl8822bu-remove')"
-data-comando="driver-rtl8822bu-remove"
-data-logbox="log-sessao-dispositivos-perifericos"
-id="btn-driver-rtl8822bu-remove"
-data-i18n="sessoes.dispositivos-perifericos.btn_driver_reverter">↩️ Reverter driver</button>
+<button class="btn-executar" onclick="executarCoprEnable('copr-xone-enable')" data-comando="copr-xone-enable" data-logbox="log-sessao-dispositivos-perifericos" id="btn-copr-xone-enable" data-i18n="sessoes.dispositivos-perifericos.btn_copr_habilitar">🌐 Habilitar repositório</button>
+<button class="btn-executar cinza" onclick="executarCoprDisable('copr-xone-disable')" data-comando="copr-xone-disable" data-logbox="log-sessao-dispositivos-perifericos" id="btn-copr-xone-disable" data-i18n="sessoes.dispositivos-perifericos.btn_copr_desabilitar">↩️ Desabilitar repositório</button>
+<button class="btn-executar verde" onclick="executarDriverCopr('driver-xone-install')" data-comando="driver-xone-install" data-logbox="log-sessao-dispositivos-perifericos" id="btn-driver-xone-install" data-i18n="sessoes.dispositivos-perifericos.btn_driver_instalar">📦 Instalar driver</button>
+<button class="btn-executar cinza" onclick="executarDriverCopr('driver-xone-remove')" data-comando="driver-xone-remove" data-logbox="log-sessao-dispositivos-perifericos" id="btn-driver-xone-remove" data-i18n="sessoes.dispositivos-perifericos.btn_driver_reverter">↩️ Reverter driver</button>
 </div>
 </div>
-<div class="progress-container" id="progress-copr-rtl8822bu-enable"><div class="progress-bar"><div class="progress-fill" id="progress-fill-copr-rtl8822bu-enable"></div></div><div class="progress-text"><span class="status" id="progress-status-copr-rtl8822bu-enable">⏳ Iniciando...</span><span class="percentage" id="progress-percent-copr-rtl8822bu-enable">0%</span></div></div>
-<div class="progress-container" id="progress-copr-rtl8822bu-disable"><div class="progress-bar"><div class="progress-fill" id="progress-fill-copr-rtl8822bu-disable"></div></div><div class="progress-text"><span class="status" id="progress-status-copr-rtl8822bu-disable">⏳ Iniciando...</span><span class="percentage" id="progress-percent-copr-rtl8822bu-disable">0%</span></div></div>
-<div class="progress-container" id="progress-driver-rtl8822bu-install"><div class="progress-bar"><div class="progress-fill" id="progress-fill-driver-rtl8822bu-install"></div></div><div class="progress-text"><span class="status" id="progress-status-driver-rtl8822bu-install">⏳ Iniciando...</span><span class="percentage" id="progress-percent-driver-rtl8822bu-install">0%</span></div></div>
-<div class="progress-container" id="progress-driver-rtl8822bu-remove"><div class="progress-bar"><div class="progress-fill" id="progress-fill-driver-rtl8822bu-remove"></div></div><div class="progress-text"><span class="status" id="progress-status-driver-rtl8822bu-remove">⏳ Iniciando...</span><span class="percentage" id="progress-percent-driver-rtl8822bu-remove">0%</span></div></div>
-</div>
-
-<!-- COPR morrownr/8812au -->
-<div class="bloco-comando">
-<div class="comando-info">
-<h3 data-i18n="sessoes.dispositivos-perifericos.copr_8812au_titulo">RTL8812AU — Wi-Fi USB dual-band (modelos antigos)</h3>
-<p data-i18n-html="sessoes.dispositivos-perifericos.copr_8812au_desc">
-Adaptadores Wi-Fi USB com o chip Realtek RTL8812AU (dual-band AC1200, geração anterior ao 8812BU). Muito comuns em modelos Alfa, TP-Link e adaptadores com antena externa. Requer RPM Fusion para as dependências de build.
-</p>
-<div class="grupo-botoes">
-<button class="btn-executar"
-onclick="executarCoprEnable('copr-rtl8812au-enable')"
-data-comando="copr-rtl8812au-enable"
-data-logbox="log-sessao-dispositivos-perifericos"
-id="btn-copr-rtl8812au-enable"
-data-i18n="sessoes.dispositivos-perifericos.btn_copr_habilitar">🌐 Habilitar repositório</button>
-<button class="btn-executar cinza"
-onclick="executarCoprDisable('copr-rtl8812au-disable')"
-data-comando="copr-rtl8812au-disable"
-data-logbox="log-sessao-dispositivos-perifericos"
-id="btn-copr-rtl8812au-disable"
-data-i18n="sessoes.dispositivos-perifericos.btn_copr_desabilitar">↩️ Desabilitar repositório</button>
-<button class="btn-executar verde"
-onclick="executarDriverCopr('driver-rtl8812au-install')"
-data-comando="driver-rtl8812au-install"
-data-logbox="log-sessao-dispositivos-perifericos"
-id="btn-driver-rtl8812au-install"
-data-i18n="sessoes.dispositivos-perifericos.btn_driver_instalar">📦 Instalar driver</button>
-<button class="btn-executar cinza"
-onclick="executarDriverCopr('driver-rtl8812au-remove')"
-data-comando="driver-rtl8812au-remove"
-data-logbox="log-sessao-dispositivos-perifericos"
-id="btn-driver-rtl8812au-remove"
-data-i18n="sessoes.dispositivos-perifericos.btn_driver_reverter">↩️ Reverter driver</button>
-</div>
-</div>
-<div class="progress-container" id="progress-copr-rtl8812au-enable"><div class="progress-bar"><div class="progress-fill" id="progress-fill-copr-rtl8812au-enable"></div></div><div class="progress-text"><span class="status" id="progress-status-copr-rtl8812au-enable">⏳ Iniciando...</span><span class="percentage" id="progress-percent-copr-rtl8812au-enable">0%</span></div></div>
-<div class="progress-container" id="progress-copr-rtl8812au-disable"><div class="progress-bar"><div class="progress-fill" id="progress-fill-copr-rtl8812au-disable"></div></div><div class="progress-text"><span class="status" id="progress-status-copr-rtl8812au-disable">⏳ Iniciando...</span><span class="percentage" id="progress-percent-copr-rtl8812au-disable">0%</span></div></div>
-<div class="progress-container" id="progress-driver-rtl8812au-install"><div class="progress-bar"><div class="progress-fill" id="progress-fill-driver-rtl8812au-install"></div></div><div class="progress-text"><span class="status" id="progress-status-driver-rtl8812au-install">⏳ Iniciando...</span><span class="percentage" id="progress-percent-driver-rtl8812au-install">0%</span></div></div>
-<div class="progress-container" id="progress-driver-rtl8812au-remove"><div class="progress-bar"><div class="progress-fill" id="progress-fill-driver-rtl8812au-remove"></div></div><div class="progress-text"><span class="status" id="progress-status-driver-rtl8812au-remove">⏳ Iniciando...</span><span class="percentage" id="progress-percent-driver-rtl8812au-remove">0%</span></div></div>
-</div>
-
-<!-- COPR morrownr/8811au -->
-<div class="bloco-comando">
-<div class="comando-info">
-<h3 data-i18n="sessoes.dispositivos-perifericos.copr_8811au_titulo">RTL8811AU — Wi-Fi USB compacto</h3>
-<p data-i18n-html="sessoes.dispositivos-perifericos.copr_8811au_desc">
-Adaptadores Wi-Fi USB com o chip Realtek RTL8811AU (dual-band AC600, modelos compactos como nano adapters). Requer RPM Fusion para as dependências de build.
-</p>
-<div class="grupo-botoes">
-<button class="btn-executar"
-onclick="executarCoprEnable('copr-rtl8811au-enable')"
-data-comando="copr-rtl8811au-enable"
-data-logbox="log-sessao-dispositivos-perifericos"
-id="btn-copr-rtl8811au-enable"
-data-i18n="sessoes.dispositivos-perifericos.btn_copr_habilitar">🌐 Habilitar repositório</button>
-<button class="btn-executar cinza"
-onclick="executarCoprDisable('copr-rtl8811au-disable')"
-data-comando="copr-rtl8811au-disable"
-data-logbox="log-sessao-dispositivos-perifericos"
-id="btn-copr-rtl8811au-disable"
-data-i18n="sessoes.dispositivos-perifericos.btn_copr_desabilitar">↩️ Desabilitar repositório</button>
-<button class="btn-executar verde"
-onclick="executarDriverCopr('driver-rtl8811au-install')"
-data-comando="driver-rtl8811au-install"
-data-logbox="log-sessao-dispositivos-perifericos"
-id="btn-driver-rtl8811au-install"
-data-i18n="sessoes.dispositivos-perifericos.btn_driver_instalar">📦 Instalar driver</button>
-<button class="btn-executar cinza"
-onclick="executarDriverCopr('driver-rtl8811au-remove')"
-data-comando="driver-rtl8811au-remove"
-data-logbox="log-sessao-dispositivos-perifericos"
-id="btn-driver-rtl8811au-remove"
-data-i18n="sessoes.dispositivos-perifericos.btn_driver_reverter">↩️ Reverter driver</button>
-</div>
-</div>
-<div class="progress-container" id="progress-copr-rtl8811au-enable"><div class="progress-bar"><div class="progress-fill" id="progress-fill-copr-rtl8811au-enable"></div></div><div class="progress-text"><span class="status" id="progress-status-copr-rtl8811au-enable">⏳ Iniciando...</span><span class="percentage" id="progress-percent-copr-rtl8811au-enable">0%</span></div></div>
-<div class="progress-container" id="progress-copr-rtl8811au-disable"><div class="progress-bar"><div class="progress-fill" id="progress-fill-copr-rtl8811au-disable"></div></div><div class="progress-text"><span class="status" id="progress-status-copr-rtl8811au-disable">⏳ Iniciando...</span><span class="percentage" id="progress-percent-copr-rtl8811au-disable">0%</span></div></div>
-<div class="progress-container" id="progress-driver-rtl8811au-install"><div class="progress-bar"><div class="progress-fill" id="progress-fill-driver-rtl8811au-install"></div></div><div class="progress-text"><span class="status" id="progress-status-driver-rtl8811au-install">⏳ Iniciando...</span><span class="percentage" id="progress-percent-driver-rtl8811au-install">0%</span></div></div>
-<div class="progress-container" id="progress-driver-rtl8811au-remove"><div class="progress-bar"><div class="progress-fill" id="progress-fill-driver-rtl8811au-remove"></div></div><div class="progress-text"><span class="status" id="progress-status-driver-rtl8811au-remove">⏳ Iniciando...</span><span class="percentage" id="progress-percent-driver-rtl8811au-remove">0%</span></div></div>
+<div class="progress-container" id="progress-copr-xone-enable"><div class="progress-bar"><div class="progress-fill" id="progress-fill-copr-xone-enable"></div></div><div class="progress-text"><span class="status" id="progress-status-copr-xone-enable">⏳ Iniciando...</span><span class="percentage" id="progress-percent-copr-xone-enable">0%</span></div></div>
+<div class="progress-container" id="progress-copr-xone-disable"><div class="progress-bar"><div class="progress-fill" id="progress-fill-copr-xone-disable"></div></div><div class="progress-text"><span class="status" id="progress-status-copr-xone-disable">⏳ Iniciando...</span><span class="percentage" id="progress-percent-copr-xone-disable">0%</span></div></div>
+<div class="progress-container" id="progress-driver-xone-install"><div class="progress-bar"><div class="progress-fill" id="progress-fill-driver-xone-install"></div></div><div class="progress-text"><span class="status" id="progress-status-driver-xone-install">⏳ Iniciando...</span><span class="percentage" id="progress-percent-driver-xone-install">0%</span></div></div>
+<div class="progress-container" id="progress-driver-xone-remove"><div class="progress-bar"><div class="progress-fill" id="progress-fill-driver-xone-remove"></div></div><div class="progress-text"><span class="status" id="progress-status-driver-xone-remove">⏳ Iniciando...</span><span class="percentage" id="progress-percent-driver-xone-remove">0%</span></div></div>
 </div>
 
 </div>
@@ -369,14 +249,10 @@ var DRIVER_COMMANDS = {
     'driver-broadcom-wl-remove': 'sudo dnf remove -y akmod-wl',
     'driver-realtek-r8168-install': 'sudo dnf install -y akmod-r8168',
     'driver-realtek-r8168-remove': 'sudo dnf remove -y akmod-r8168',
-    'driver-rtl8821cu-install': 'sudo dnf install -y rtl8821cu-morrownr-dkms',
-    'driver-rtl8821cu-remove': 'sudo dnf remove -y rtl8821cu-morrownr-dkms',
-    'driver-rtl8822bu-install': 'sudo dnf install -y rtl8822bu-morrownr-dkms',
-    'driver-rtl8822bu-remove': 'sudo dnf remove -y rtl8822bu-morrownr-dkms',
-    'driver-rtl8812au-install': 'sudo dnf install -y rtl8812au-kmod',
-    'driver-rtl8812au-remove': 'sudo dnf remove -y rtl8812au-kmod',
-    'driver-rtl8811au-install': 'sudo dnf install -y rtl8811au-morrownr-dkms',
-    'driver-rtl8811au-remove': 'sudo dnf remove -y rtl8811au-morrownr-dkms'
+    'driver-openrazer-install': 'sudo dnf install -y akmod-openrazer',
+    'driver-openrazer-remove': 'sudo dnf remove -y akmod-openrazer',
+    'driver-xone-install': 'sudo dnf install -y xone akmod-xone',
+    'driver-xone-remove': 'sudo dnf remove -y xone akmod-xone'
 };
 
 var SUPLEMENTO_COMMANDS = {
@@ -385,14 +261,10 @@ var SUPLEMENTO_COMMANDS = {
 };
 
 var COPR_COMMANDS = {
-    'copr-rtl8821cu-enable': 'sudo dnf copr enable morrownr/8821cu -y',
-    'copr-rtl8821cu-disable': 'sudo dnf copr disable morrownr/8821cu -y',
-    'copr-rtl8822bu-enable': 'sudo dnf copr enable morrownr/8822bu -y',
-    'copr-rtl8822bu-disable': 'sudo dnf copr disable morrownr/8822bu -y',
-    'copr-rtl8812au-enable': 'sudo dnf copr enable morrownr/8812au -y',
-    'copr-rtl8812au-disable': 'sudo dnf copr disable morrownr/8812au -y',
-    'copr-rtl8811au-enable': 'sudo dnf copr enable morrownr/8811au -y',
-    'copr-rtl8811au-disable': 'sudo dnf copr disable morrownr/8811au -y'
+    'copr-openrazer-enable': 'sudo dnf copr enable lsevcik/akmod-openrazer -y',
+    'copr-openrazer-disable': 'sudo dnf copr disable lsevcik/akmod-openrazer -y',
+    'copr-xone-enable': 'sudo dnf copr enable sentry/xone -y',
+    'copr-xone-disable': 'sudo dnf copr disable sentry/xone -y'
 };
 
 // ============================================================
@@ -591,13 +463,6 @@ function _idInstallForDevice(device) {
         '14e4': 'driver-broadcom-wl-install',
         '10ec': 'driver-realtek-r8168-install'
     };
-    if (device.copr) {
-        // USB Realtek
-        if (device.copr.indexOf('8821cu') !== -1) return 'driver-rtl8821cu-install';
-        if (device.copr.indexOf('8822bu') !== -1) return 'driver-rtl8822bu-install';
-        if (device.copr.indexOf('8812au') !== -1) return 'driver-rtl8812au-install';
-        if (device.copr.indexOf('8811au') !== -1) return 'driver-rtl8811au-install';
-    }
     if (device.device_id) {
         var vid = device.device_id.split(':')[0];
         return map[vid] || null;
@@ -768,37 +633,6 @@ async function executarSteamDevices() {
     var comando = 'sudo dnf install -y steam-devices';
     await executarComandoGenerico(idComando, comando,
         _t('sessoes.dispositivos-perifericos.btn_steam_devices', '🎮 Instalar Regras para Controles'));
-}
-
-// ============================================================
-// HELPERS LOCAIS (para o toggle de input-group)
-// ============================================================
-
-async function _resetarIrmaoLocal(idIrmao, fallbackText) {
-    try {
-        await desmarcarComoExecutado(idIrmao);
-        var btn = document.getElementById('btn-' + idIrmao);
-        if (!btn) return;
-        var original = btn.getAttribute('data-texto-original') || fallbackText;
-        btn.textContent = original;
-        btn.style.backgroundColor = '';
-        btn.style.cursor = 'pointer';
-        btn.disabled = false;
-        btn.style.opacity = '1';
-    } catch (e) {
-        console.error('Erro ao limpar estado do botão irmão ' + idIrmao + ':', e);
-    }
-}
-
-function _marcarBotaoConcluidoLocal(idComando) {
-    var btn = document.getElementById('btn-' + idComando);
-    if (!btn) return;
-    _corOriginalDoBotao(btn);
-    btn.textContent = getTextoAposExecucao(idComando);
-    btn.style.backgroundColor = '#4b5563';
-    btn.style.cursor = 'default';
-    btn.disabled = true;
-    btn.style.opacity = '1';
 }
 
 // ============================================================

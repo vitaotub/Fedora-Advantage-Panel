@@ -51,17 +51,22 @@ para a nova sessão.
 - `linux-firmware-vendor` (firmwares adicionais de fabricantes)
 - Botões separados de instalar/reverter
 
-#### 🌐 COPRs de comunidade (Wi-Fi USB Realtek)
+#### 🌐 Drivers da comunidade (COPR)
 
-- RTL8811CU / RTL8821CU (`morrownr/8821cu`)
-- RTL8812BU / RTL8822BU (`morrownr/8822bu`)
-- RTL8812AU (`morrownr/8812au`)
-- RTL8811AU (`morrownr/8811au`)
+- **Razer (OpenRazer / Polychromatic)** — COPR `lsevcik/akmod-openrazer`.
+  RGB e macros para dispositivos Razer. Usa o sistema `akmods`.
+- **Xbox Wireless Adapter (dongle USB)** — COPR `sentry/xone`. Driver
+  `xone` para o adaptador sem fio oficial do Xbox.
 - Cada um com 4 botões: habilitar repositório, desabilitar repositório,
   instalar driver, reverter driver. **Os COPRs são opcionais** — o
   usuário escolhe se quer habilitar. Aviso explícito sobre riscos:
   mantidos por terceiros, podem ser descontinuados, FOF não controla
   o conteúdo.
+
+**Nota sobre Realtek Wi-Fi USB:** os quatro chipsets que estavam
+listados (`RTL8811CU/8821CU`, `RTL8812BU/8822BU`, `RTL8812AU`,
+`RTL8811AU`) foram removidos. O kernel do Fedora 44+ já tem suporte
+in-tree via `rtw88` — instalar driver externo só cria conflito.
 
 #### 🎮 Controles e periféricos (movidos de Hardware)
 

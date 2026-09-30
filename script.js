@@ -480,25 +480,17 @@ var SESSOES = [
         'driver-realtek-r8168-install': { sempreClicavel: true, textoConcluido: '✅ Driver Realtek r8168 instalado' },
         'driver-realtek-r8168-remove': { sempreClicavel: true },
 
-        // --- Drivers COPR (Wi-Fi USB Realtek) ---
-        'driver-rtl8821cu-install': { sempreClicavel: true, textoConcluido: '✅ Driver RTL8821CU instalado' },
-        'driver-rtl8821cu-remove': { sempreClicavel: true },
-        'driver-rtl8822bu-install': { sempreClicavel: true, textoConcluido: '✅ Driver RTL8822BU instalado' },
-        'driver-rtl8822bu-remove': { sempreClicavel: true },
-        'driver-rtl8812au-install': { sempreClicavel: true, textoConcluido: '✅ Driver RTL8812AU instalado' },
-        'driver-rtl8812au-remove': { sempreClicavel: true },
-        'driver-rtl8811au-install': { sempreClicavel: true, textoConcluido: '✅ Driver RTL8811AU instalado' },
-        'driver-rtl8811au-remove': { sempreClicavel: true },
+        // --- Drivers da comunidade (COPR) ---
+        'driver-openrazer-install': { sempreClicavel: true, textoConcluido: '✅ OpenRazer instalado' },
+        'driver-openrazer-remove': { sempreClicavel: true },
+        'driver-xone-install': { sempreClicavel: true, textoConcluido: '✅ Driver xone instalado' },
+        'driver-xone-remove': { sempreClicavel: true },
 
         // --- COPRs: habilitar/desabilitar (sempre clicáveis) ---
-        'copr-rtl8821cu-enable': { sempreClicavel: true, textoConcluido: '✅ COPR habilitado' },
-        'copr-rtl8821cu-disable': { sempreClicavel: true },
-        'copr-rtl8822bu-enable': { sempreClicavel: true, textoConcluido: '✅ COPR habilitado' },
-        'copr-rtl8822bu-disable': { sempreClicavel: true },
-        'copr-rtl8812au-enable': { sempreClicavel: true, textoConcluido: '✅ COPR habilitado' },
-        'copr-rtl8812au-disable': { sempreClicavel: true },
-        'copr-rtl8811au-enable': { sempreClicavel: true, textoConcluido: '✅ COPR habilitado' },
-        'copr-rtl8811au-disable': { sempreClicavel: true },
+        'copr-openrazer-enable': { sempreClicavel: true, textoConcluido: '✅ COPR habilitado' },
+        'copr-openrazer-disable': { sempreClicavel: true },
+        'copr-xone-enable': { sempreClicavel: true, textoConcluido: '✅ COPR habilitado' },
+        'copr-xone-disable': { sempreClicavel: true },
 
         // --- Controles e periféricos (movidos de hardware) ---
         'input-group-add': {
