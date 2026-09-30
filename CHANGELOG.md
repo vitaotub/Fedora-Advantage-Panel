@@ -51,17 +51,39 @@ para a nova sessão.
 - `linux-firmware-vendor` (firmwares adicionais de fabricantes)
 - Botões separados de instalar/reverter
 
-#### 🌐 Drivers da comunidade (COPR)
+#### 🌐 Drivers da comunidade (repo + pacote)
 
-- **Razer (OpenRazer / Polychromatic)** — COPR `lsevcik/akmod-openrazer`.
-  RGB e macros para dispositivos Razer. Usa o sistema `akmods`.
-- **Xbox Wireless Adapter (dongle USB)** — COPR `sentry/xone`. Driver
-  `xone` para o adaptador sem fio oficial do Xbox.
-- Cada um com 4 botões: habilitar repositório, desabilitar repositório,
-  instalar driver, reverter driver. **Os COPRs são opcionais** — o
-  usuário escolhe se quer habilitar. Aviso explícito sobre riscos:
-  mantidos por terceiros, podem ser descontinuados, FOF não controla
-  o conteúdo.
+- **Razer (OpenRazer / Polychromatic)** — repositório oficial do
+  projeto (`config-manager addrepo --from-repofile=...`). Instala o
+  pacote `polychromatic` (que traz o driver OpenRazer junto) e
+  adiciona o usuário ao grupo `plugdev`. Requer logout/login.
+- **Xbox Wireless (xpadneo)** — COPR `atim/xpadneo`. Driver `xpadneo`
+  para controles Xbox One/Series via Bluetooth e dongle wireless.
+  Requer reboot após a instalação.
+- **Broadcom BCM43xx** — `akmod-wl` do RPM Fusion Nonfree (já
+  configurado na Sessão 1). Não tem repo separado — são só 2 botões
+  (instalar/reverter).
+
+**Comportamento dos botões:** cada item com repo tem 3 botões:
+**ativar repositório**, **instalar pacote**, **reverter tudo**. O
+estado é progressivo:
+
+- Estado inicial: só "ativar repositório" clicável.
+- Após ativar: "instalar pacote" e "reverter tudo" ficam clicáveis.
+- Após instalar: "instalar pacote" vira "✅ Pacote instalado"
+  (desabilitado), "reverter tudo" continua ativo.
+- Após reverter: volta ao estado inicial.
+
+O botão "reverter tudo" combina, numa única operação, o `disable` do
+repo + o `remove` do pacote (+ desfazer alterações de grupo, quando
+houver). Não há mais botão separado de "desabilitar repositório".
+
+**Sobre a implementação:** o estado visual dos 3 botões é gerenciado
+por `aplicarEstadoItemCompleto()` em `dispositivos-perifericos.html`.
+Os IDs `*-remove` (openrazer, xpadneo, broadcom) são marcados como
+`sempreClicavel: true` no `script.js` — podem ser reexecutados
+múltiplas vezes sem bloquear, porque o estado real de "instalado ou
+não" é sempre derivado do install (não do remove).
 
 **Nota sobre Realtek Wi-Fi USB:** os quatro chipsets que estavam
 listados (`RTL8811CU/8821CU`, `RTL8812BU/8822BU`, `RTL8812AU`,
@@ -161,6 +183,15 @@ comportamento idêntico em qualquer sessão futura.
   (foram movidas para a nova sessão)
 - Chaves `texto_concluido_firmware_vendor` e
   `texto_concluido_firmware_vendor_remove` adicionadas
+- Bloco de drivers da comunidade reescrito: chaves `btn_repo_ativar`,
+  `btn_repo_ativado`, `btn_pacote_instalar`, `btn_pacote_instalado`,
+  `btn_reverter_tudo`, `btn_revertido`, `btn_broadcom_instalar`,
+  `btn_broadcom_reverter`, `ativando_repo`, `instalando_pacote`,
+  `revertendo_item`, `confirmar_reverter_tudo`, `copr_xpadneo_*`,
+  `broadcom_*` adicionadas. Chaves antigas (`btn_copr_habilitar`,
+  `btn_copr_desabilitar`, `btn_driver_instalar`, `btn_driver_reverter`,
+  `habilitando_copr`, `desabilitando_copr`,
+  `confirmar_desabilitar_copr`) removidas.
 
 ### 🧪 Ferramenta de validação unificada
 

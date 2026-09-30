@@ -107,44 +107,56 @@ ACORDEÃO 3: DRIVERS DA COMUNIDADE (COPR)
 • Se você não sabe se precisa, use primeiro a <strong>detecção automática</strong> no acórdão acima — ela identifica o modelo exato.
 </div>
 
-<!-- Razer (OpenRazer) -->
+<!-- Razer (OpenRazer / Polychromatic) -->
 <div class="bloco-comando">
 <div class="comando-info">
 <h3 data-i18n="sessoes.dispositivos-perifericos.copr_openrazer_titulo">Razer (OpenRazer / Polychromatic)</h3>
 <p data-i18n-html="sessoes.dispositivos-perifericos.copr_openrazer_desc">
-RGB e macros para mouses, teclados e laptops Razer. Usa o sistema <code>akmods</code>, que recompila o módulo a cada atualização de kernel e assina para Secure Boot.
+RGB e macros para mouses, teclados e laptops Razer. Usa o repositório oficial do OpenRazer e o frontend Polychromatic. Adiciona seu usuário ao grupo <code>plugdev</code> — requer logout/login.
 </p>
 <div class="grupo-botoes">
-<button class="btn-executar" onclick="executarCoprEnable('copr-openrazer-enable')" data-comando="copr-openrazer-enable" data-logbox="log-sessao-dispositivos-perifericos" id="btn-copr-openrazer-enable" data-i18n="sessoes.dispositivos-perifericos.btn_copr_habilitar">🌐 Habilitar repositório</button>
-<button class="btn-executar cinza" onclick="executarCoprDisable('copr-openrazer-disable')" data-comando="copr-openrazer-disable" data-logbox="log-sessao-dispositivos-perifericos" id="btn-copr-openrazer-disable" data-i18n="sessoes.dispositivos-perifericos.btn_copr_desabilitar">↩️ Desabilitar repositório</button>
-<button class="btn-executar verde" onclick="executarDriverCopr('driver-openrazer-install')" data-comando="driver-openrazer-install" data-logbox="log-sessao-dispositivos-perifericos" id="btn-driver-openrazer-install" data-i18n="sessoes.dispositivos-perifericos.btn_driver_instalar">📦 Instalar driver</button>
-<button class="btn-executar cinza" onclick="executarDriverCopr('driver-openrazer-remove')" data-comando="driver-openrazer-remove" data-logbox="log-sessao-dispositivos-perifericos" id="btn-driver-openrazer-remove" data-i18n="sessoes.dispositivos-perifericos.btn_driver_reverter">↩️ Reverter driver</button>
+<button class="btn-executar" onclick="executarCoprEnable('copr-openrazer-enable')" data-comando="copr-openrazer-enable" data-logbox="log-sessao-dispositivos-perifericos" id="btn-copr-openrazer-enable" data-i18n="sessoes.dispositivos-perifericos.btn_repo_ativar">🌐 Ativar repositório</button>
+<button class="btn-executar verde" onclick="executarDriverCopr('driver-openrazer-install')" data-comando="driver-openrazer-install" data-logbox="log-sessao-dispositivos-perifericos" id="btn-driver-openrazer-install" data-i18n="sessoes.dispositivos-perifericos.btn_pacote_instalar">📦 Instalar pacote</button>
+<button class="btn-executar cinza" onclick="executarReverterItem('driver-openrazer-remove', 'copr-openrazer-enable', 'driver-openrazer-install')" data-comando="driver-openrazer-remove" data-logbox="log-sessao-dispositivos-perifericos" id="btn-driver-openrazer-remove" data-i18n="sessoes.dispositivos-perifericos.btn_reverter_tudo">🗑️ Reverter tudo</button>
 </div>
 </div>
 <div class="progress-container" id="progress-copr-openrazer-enable"><div class="progress-bar"><div class="progress-fill" id="progress-fill-copr-openrazer-enable"></div></div><div class="progress-text"><span class="status" id="progress-status-copr-openrazer-enable">⏳ Iniciando...</span><span class="percentage" id="progress-percent-copr-openrazer-enable">0%</span></div></div>
-<div class="progress-container" id="progress-copr-openrazer-disable"><div class="progress-bar"><div class="progress-fill" id="progress-fill-copr-openrazer-disable"></div></div><div class="progress-text"><span class="status" id="progress-status-copr-openrazer-disable">⏳ Iniciando...</span><span class="percentage" id="progress-percent-copr-openrazer-disable">0%</span></div></div>
 <div class="progress-container" id="progress-driver-openrazer-install"><div class="progress-bar"><div class="progress-fill" id="progress-fill-driver-openrazer-install"></div></div><div class="progress-text"><span class="status" id="progress-status-driver-openrazer-install">⏳ Iniciando...</span><span class="percentage" id="progress-percent-driver-openrazer-install">0%</span></div></div>
 <div class="progress-container" id="progress-driver-openrazer-remove"><div class="progress-bar"><div class="progress-fill" id="progress-fill-driver-openrazer-remove"></div></div><div class="progress-text"><span class="status" id="progress-status-driver-openrazer-remove">⏳ Iniciando...</span><span class="percentage" id="progress-percent-driver-openrazer-remove">0%</span></div></div>
 </div>
 
-<!-- Xbox Wireless Adapter (xone) -->
+<!-- Xbox Wireless Adapter (xpadneo) -->
 <div class="bloco-comando">
 <div class="comando-info">
-<h3 data-i18n="sessoes.dispositivos-perifericos.copr_xone_titulo">Xbox Wireless Adapter (dongle USB)</h3>
-<p data-i18n-html="sessoes.dispositivos-perifericos.copr_xone_desc">
-Driver <code>xone</code> para o adaptador sem fio oficial do Xbox One/Series. Habilita áudio no controle, force feedback e integração com UPower. Para Bluetooth, o driver é outro (<code>xpadneo</code>).
+<h3 data-i18n="sessoes.dispositivos-perifericos.copr_xpadneo_titulo">Xbox Wireless (xpadneo)</h3>
+<p data-i18n-html="sessoes.dispositivos-perifericos.copr_xpadneo_desc">
+Driver <code>xpadneo</code> para controles Xbox One/Series via Bluetooth e dongle wireless. Habilita force feedback, áudio e leitura de bateria. Requer reboot após a instalação.
 </p>
 <div class="grupo-botoes">
-<button class="btn-executar" onclick="executarCoprEnable('copr-xone-enable')" data-comando="copr-xone-enable" data-logbox="log-sessao-dispositivos-perifericos" id="btn-copr-xone-enable" data-i18n="sessoes.dispositivos-perifericos.btn_copr_habilitar">🌐 Habilitar repositório</button>
-<button class="btn-executar cinza" onclick="executarCoprDisable('copr-xone-disable')" data-comando="copr-xone-disable" data-logbox="log-sessao-dispositivos-perifericos" id="btn-copr-xone-disable" data-i18n="sessoes.dispositivos-perifericos.btn_copr_desabilitar">↩️ Desabilitar repositório</button>
-<button class="btn-executar verde" onclick="executarDriverCopr('driver-xone-install')" data-comando="driver-xone-install" data-logbox="log-sessao-dispositivos-perifericos" id="btn-driver-xone-install" data-i18n="sessoes.dispositivos-perifericos.btn_driver_instalar">📦 Instalar driver</button>
-<button class="btn-executar cinza" onclick="executarDriverCopr('driver-xone-remove')" data-comando="driver-xone-remove" data-logbox="log-sessao-dispositivos-perifericos" id="btn-driver-xone-remove" data-i18n="sessoes.dispositivos-perifericos.btn_driver_reverter">↩️ Reverter driver</button>
+<button class="btn-executar" onclick="executarCoprEnable('copr-xpadneo-enable')" data-comando="copr-xpadneo-enable" data-logbox="log-sessao-dispositivos-perifericos" id="btn-copr-xpadneo-enable" data-i18n="sessoes.dispositivos-perifericos.btn_repo_ativar">🌐 Ativar repositório</button>
+<button class="btn-executar verde" onclick="executarDriverCopr('driver-xpadneo-install')" data-comando="driver-xpadneo-install" data-logbox="log-sessao-dispositivos-perifericos" id="btn-driver-xpadneo-install" data-i18n="sessoes.dispositivos-perifericos.btn_pacote_instalar">📦 Instalar pacote</button>
+<button class="btn-executar cinza" onclick="executarReverterItem('driver-xpadneo-remove', 'copr-xpadneo-enable', 'driver-xpadneo-install')" data-comando="driver-xpadneo-remove" data-logbox="log-sessao-dispositivos-perifericos" id="btn-driver-xpadneo-remove" data-i18n="sessoes.dispositivos-perifericos.btn_reverter_tudo">🗑️ Reverter tudo</button>
 </div>
 </div>
-<div class="progress-container" id="progress-copr-xone-enable"><div class="progress-bar"><div class="progress-fill" id="progress-fill-copr-xone-enable"></div></div><div class="progress-text"><span class="status" id="progress-status-copr-xone-enable">⏳ Iniciando...</span><span class="percentage" id="progress-percent-copr-xone-enable">0%</span></div></div>
-<div class="progress-container" id="progress-copr-xone-disable"><div class="progress-bar"><div class="progress-fill" id="progress-fill-copr-xone-disable"></div></div><div class="progress-text"><span class="status" id="progress-status-copr-xone-disable">⏳ Iniciando...</span><span class="percentage" id="progress-percent-copr-xone-disable">0%</span></div></div>
-<div class="progress-container" id="progress-driver-xone-install"><div class="progress-bar"><div class="progress-fill" id="progress-fill-driver-xone-install"></div></div><div class="progress-text"><span class="status" id="progress-status-driver-xone-install">⏳ Iniciando...</span><span class="percentage" id="progress-percent-driver-xone-install">0%</span></div></div>
-<div class="progress-container" id="progress-driver-xone-remove"><div class="progress-bar"><div class="progress-fill" id="progress-fill-driver-xone-remove"></div></div><div class="progress-text"><span class="status" id="progress-status-driver-xone-remove">⏳ Iniciando...</span><span class="percentage" id="progress-percent-driver-xone-remove">0%</span></div></div>
+<div class="progress-container" id="progress-copr-xpadneo-enable"><div class="progress-bar"><div class="progress-fill" id="progress-fill-copr-xpadneo-enable"></div></div><div class="progress-text"><span class="status" id="progress-status-copr-xpadneo-enable">⏳ Iniciando...</span><span class="percentage" id="progress-percent-copr-xpadneo-enable">0%</span></div></div>
+<div class="progress-container" id="progress-driver-xpadneo-install"><div class="progress-bar"><div class="progress-fill" id="progress-fill-driver-xpadneo-install"></div></div><div class="progress-text"><span class="status" id="progress-status-driver-xpadneo-install">⏳ Iniciando...</span><span class="percentage" id="progress-percent-driver-xpadneo-install">0%</span></div></div>
+<div class="progress-container" id="progress-driver-xpadneo-remove"><div class="progress-bar"><div class="progress-fill" id="progress-fill-driver-xpadneo-remove"></div></div><div class="progress-text"><span class="status" id="progress-status-driver-xpadneo-remove">⏳ Iniciando...</span><span class="percentage" id="progress-percent-driver-xpadneo-remove">0%</span></div></div>
+</div>
+
+<!-- Broadcom BCM43xx -->
+<div class="bloco-comando">
+<div class="comando-info">
+<h3 data-i18n="sessoes.dispositivos-perifericos.broadcom_titulo">Broadcom BCM43xx (Wi-Fi)</h3>
+<p data-i18n-html="sessoes.dispositivos-perifericos.broadcom_desc">
+Driver proprietário <code>akmod-wl</code> para chips Wi-Fi Broadcom (comuns em notebooks antigos e MacBooks). Vive no RPM Fusion Nonfree — que já é ativado na Sessão 1 (Primeiros Passos). Só instale se o driver open-source (<code>brcmfmac</code>/<code>b43</code>) não funcionar.
+</p>
+<div class="grupo-botoes">
+<button class="btn-executar verde" onclick="executarDriverCopr('driver-broadcom-wl-install')" data-comando="driver-broadcom-wl-install" data-logbox="log-sessao-dispositivos-perifericos" id="btn-driver-broadcom-wl-install" data-i18n="sessoes.dispositivos-perifericos.btn_broadcom_instalar">📦 Instalar akmod-wl</button>
+<button class="btn-executar cinza" onclick="executarReverterItem('driver-broadcom-wl-remove', null, 'driver-broadcom-wl-install')" data-comando="driver-broadcom-wl-remove" data-logbox="log-sessao-dispositivos-perifericos" id="btn-driver-broadcom-wl-remove" data-i18n="sessoes.dispositivos-perifericos.btn_broadcom_reverter">🗑️ Reverter</button>
+</div>
+</div>
+<div class="progress-container" id="progress-driver-broadcom-wl-install"><div class="progress-bar"><div class="progress-fill" id="progress-fill-driver-broadcom-wl-install"></div></div><div class="progress-text"><span class="status" id="progress-status-driver-broadcom-wl-install">⏳ Iniciando...</span><span class="percentage" id="progress-percent-driver-broadcom-wl-install">0%</span></div></div>
+<div class="progress-container" id="progress-driver-broadcom-wl-remove"><div class="progress-bar"><div class="progress-fill" id="progress-fill-driver-broadcom-wl-remove"></div></div><div class="progress-text"><span class="status" id="progress-status-driver-broadcom-wl-remove">⏳ Iniciando...</span><span class="percentage" id="progress-percent-driver-broadcom-wl-remove">0%</span></div></div>
 </div>
 
 </div>
@@ -245,14 +257,14 @@ var DRIVER_COMMANDS = {
     'driver-amd-vaapi-remove': 'sudo dnf swap mesa-va-drivers-freeworld mesa-va-drivers -y && sudo dnf swap mesa-vdpau-drivers-freeworld mesa-vdpau-drivers -y',
     'driver-intel-media-install': 'sudo dnf install -y intel-media-driver',
     'driver-intel-media-remove': 'sudo dnf remove -y intel-media-driver',
-    'driver-broadcom-wl-install': 'sudo dnf install -y akmod-wl',
-    'driver-broadcom-wl-remove': 'sudo dnf remove -y akmod-wl',
     'driver-realtek-r8168-install': 'sudo dnf install -y akmod-r8168',
     'driver-realtek-r8168-remove': 'sudo dnf remove -y akmod-r8168',
-    'driver-openrazer-install': 'sudo dnf install -y akmod-openrazer',
-    'driver-openrazer-remove': 'sudo dnf remove -y akmod-openrazer',
-    'driver-xone-install': 'sudo dnf install -y xone akmod-xone',
-    'driver-xone-remove': 'sudo dnf remove -y xone akmod-xone'
+    'driver-broadcom-wl-install': 'sudo dnf install -y akmod-wl',
+    'driver-broadcom-wl-remove': 'sudo dnf remove -y akmod-wl',
+    'driver-openrazer-install': 'sudo dnf install -y polychromatic && sudo gpasswd -a $USER plugdev',
+    'driver-openrazer-remove': 'sudo gpasswd -d $USER plugdev; sudo dnf remove -y polychromatic openrazer-driver openrazer-daemon openrazer-kmod-common',
+    'driver-xpadneo-install': 'sudo dnf install -y xpadneo',
+    'driver-xpadneo-remove': 'sudo dnf remove -y xpadneo'
 };
 
 var SUPLEMENTO_COMMANDS = {
@@ -261,10 +273,12 @@ var SUPLEMENTO_COMMANDS = {
 };
 
 var COPR_COMMANDS = {
-    'copr-openrazer-enable': 'sudo dnf copr enable lsevcik/akmod-openrazer -y',
-    'copr-openrazer-disable': 'sudo dnf copr disable lsevcik/akmod-openrazer -y',
-    'copr-xone-enable': 'sudo dnf copr enable sentry/xone -y',
-    'copr-xone-disable': 'sudo dnf copr disable sentry/xone -y'
+    // OpenRazer: usa o repositório oficial do projeto, não um COPR
+    'copr-openrazer-enable': 'sudo dnf config-manager addrepo --from-repofile=https://openrazer.github.io/hardware:razer.repo',
+    'copr-openrazer-disable': 'sudo rm -f /etc/yum.repos.d/hardware:razer.repo',
+    // xpadneo: COPR oficial do mantenedor atim
+    'copr-xpadneo-enable': 'sudo dnf copr enable atim/xpadneo -y',
+    'copr-xpadneo-disable': 'sudo dnf copr disable atim/xpadneo -y'
 };
 
 // ============================================================
@@ -510,9 +524,24 @@ function _escapeHTML(s) {
 async function executarDriverInstalar(idComando) {
     var cmd = DRIVER_COMMANDS[idComando];
     if (!cmd) return;
+
+    // Deriva os ids do repo e do remove a partir do install, para
+    // atualizar o estado dos 3 botões após a instalação.
+    // (ex.: 'driver-openrazer-install' → 'copr-openrazer-enable' / 'driver-openrazer-remove')
+    var idRepo = idComando
+        .replace('driver-', 'copr-')
+        .replace('-install', '-enable');
+    var idRemove = idComando.replace('-install', '-remove');
+
+    // Verifica se esse item tem repo separado (Broadcom não tem).
+    var temRepo = !!COPR_COMMANDS[idRepo];
+
     await executarComandoGenerico(idComando, cmd,
-        _t('sessoes.dispositivos-perifericos.instalando_driver', 'Instalando driver...'),
-        function () { executarHardwareScan(); });
+        _t('sessoes.dispositivos-perifericos.instalando_pacote', 'Instalando pacote...'),
+        function () {
+            executarHardwareScan();
+            aplicarEstadoItemCompleto(temRepo ? idRepo : null, idComando, idRemove);
+        });
 }
 
 async function executarDriverRemover(idComando) {
@@ -527,6 +556,38 @@ async function executarDriverRemover(idComando) {
         function () { executarHardwareScan(); });
 }
 
+/**
+ * Dispatcher de COPR/install para os itens com repo.
+ *
+ * Os botões do HTML chamam:
+ *   - executarCoprEnable(id)   → ativa o repo
+ *   - executarDriverCopr(id)   → instala o pacote
+ *   - executarReverterItem(...) → reverte tudo (ver abaixo)
+ *
+ * A distinção entre "instalar" e "ativar repo" é feita pelo sufixo
+ * do idComando — `-enable` para repo, `-install` para pacote. Isso
+ * permite que os dois tipos usem o mesmo dispatcher.
+ */
+async function executarCoprEnable(idComando) {
+    var cmd = COPR_COMMANDS[idComando];
+    if (!cmd) return;
+
+    // Deriva o idInstall correspondente a partir do id de enable
+    // (ex.: 'copr-openrazer-enable' → 'driver-openrazer-install').
+    // Assim conseguimos reabilitar o botão "Instalar pacote" depois
+    // do repo ser ativado.
+    var idInstall = idComando
+        .replace('copr-', 'driver-')
+        .replace('-enable', '-install');
+
+    await executarComandoGenerico(idComando, cmd,
+        _t('sessoes.dispositivos-perifericos.ativando_repo', 'Ativando repositório...'),
+        function() {
+            var idRemove = idInstall.replace('-install', '-remove');
+            aplicarEstadoItemCompleto(idComando, idInstall, idRemove);
+        });
+}
+
 async function executarDriverCopr(idComando) {
     // Mesma função dos drivers normais — os comandos estão em DRIVER_COMMANDS
     if (idComando.indexOf('-install') !== -1) {
@@ -534,6 +595,68 @@ async function executarDriverCopr(idComando) {
     } else if (idComando.indexOf('-remove') !== -1) {
         await executarDriverRemover(idComando);
     }
+}
+
+/**
+ * Reverte completamente um item que tem repo + pacote.
+ *
+ * Combina, numa única operação, o `disable` do repo e o `remove` do
+ * pacote — para que o usuário não precise clicar em dois botões.
+ *
+ * Parâmetros:
+ *   idRemoveComando — idComando do comando de remoção do pacote (obrigatório)
+ *   idRepoAtivar    — idComando do comando de ativação do repo. Se null,
+ *                     o item não tem repo separado (ex.: Broadcom usa
+ *                     RPM Fusion, que já é configurado na Sessão 1).
+ *   idInstallComando — idComando do comando de instalação. Usado para
+ *                      desmarcar o estado e reabilitar o botão "instalar".
+ */
+async function executarReverterItem(idRemoveComando, idRepoAtivar, idInstallComando) {
+    var cmdRemove = DRIVER_COMMANDS[idRemoveComando];
+    if (!cmdRemove) {
+        console.warn('[reverter] comando não encontrado:', idRemoveComando);
+        return;
+    }
+
+    // Monta o comando combinado: remove o pacote primeiro, depois
+    // o repositório. Se o repo tiver um comando de "disable" em
+    // COPR_COMMANDS, usa; senão, o item não tem repo separado.
+    var cmdFinal = cmdRemove;
+
+    if (idRepoAtivar) {
+        // Deriva o id do "disable" a partir do id do "enable"
+        // (ex.: 'copr-openrazer-enable' → 'copr-openrazer-disable')
+        var idRepoDisable = idRepoAtivar.replace('-enable', '-disable');
+        var cmdDisable = COPR_COMMANDS[idRepoDisable];
+        if (cmdDisable) {
+            cmdFinal = cmdRemove + '; ' + cmdDisable;
+        } else {
+            console.warn('[reverter] comando de disable não encontrado:', idRepoDisable);
+        }
+    }
+
+    if (!confirm(_t('sessoes.dispositivos-perifericos.confirmar_reverter_tudo',
+        '⚠️ Atenção!\n\nVocê está prestes a reverter completamente este item:\n\n• O pacote será desinstalado\n• O repositório será removido\n• Alterações de grupo (se houver) serão desfeitas\n\nSe você depende deste driver (por exemplo, um adaptador Wi-Fi ou um controle), vai perder a funcionalidade.\n\nContinuar?'))) return;
+
+    await executarComandoGenerico(idRemoveComando, cmdFinal,
+        _t('sessoes.dispositivos-perifericos.revertendo_item', 'Revertendo item...'),
+        function() {
+            // Após reverter, limpa o estado do "ativar repo" e do "instalar"
+            // para que os botões voltem aos textos originais.
+            var promessas = [];
+            if (idInstallComando) {
+                promessas.push(desmarcarComoExecutado(idInstallComando));
+            }
+            if (idRepoAtivar) {
+                promessas.push(desmarcarComoExecutado(idRepoAtivar));
+            }
+            Promise.all(promessas).then(function() {
+                aplicarEstadoItemCompleto(idRepoAtivar, idInstallComando, idRemoveComando);
+            }).catch(function(e) {
+                console.warn('[reverter] erro ao limpar estado:', e);
+                aplicarEstadoItemCompleto(idRepoAtivar, idInstallComando, idRemoveComando);
+            });
+        });
 }
 
 // ============================================================
@@ -546,9 +669,6 @@ async function executarSuplemento(idComando) {
     await executarComandoGenerico(idComando, cmd,
         _t('sessoes.dispositivos-perifericos.instalando_suplemento', 'Instalando suplemento...'),
         function() {
-            // Após install bem-sucedido, atualiza o estado do par.
-            // O idComando segue o padrão '<nome>-install'; o revert
-            // é '<nome>-remove'.
             var idRevert = idComando.replace('-install', '-remove');
             aplicarEstadoToggle(idComando, idRevert);
         });
@@ -564,9 +684,6 @@ async function executarSuplementoRemover(idComando) {
     await executarComandoGenerico(idComando, cmd,
         _t('sessoes.dispositivos-perifericos.revertendo_suplemento', 'Revertendo suplemento...'),
         function() {
-            // Após revert bem-sucedido, desmarca o install e atualiza
-            // o par. O idComando é '<nome>-remove'; o install é
-            // '<nome>-install'.
             var idInstall = idComando.replace('-remove', '-install');
             desmarcarComoExecutado(idInstall).then(function() {
                 aplicarEstadoToggle(idInstall, idComando);
@@ -575,28 +692,6 @@ async function executarSuplementoRemover(idComando) {
                 aplicarEstadoToggle(idInstall, idComando);
             });
         });
-}
-
-// ============================================================
-// COPRs
-// ============================================================
-
-async function executarCoprEnable(idComando) {
-    var cmd = COPR_COMMANDS[idComando];
-    if (!cmd) return;
-    await executarComandoGenerico(idComando, cmd,
-        _t('sessoes.dispositivos-perifericos.habilitando_copr', 'Habilitando repositório COPR...'));
-}
-
-async function executarCoprDisable(idComando) {
-    var cmd = COPR_COMMANDS[idComando];
-    if (!cmd) return;
-
-    if (!confirm(_t('sessoes.dispositivos-perifericos.confirmar_desabilitar_copr',
-        '⚠️ Ao desabilitar um repositório COPR, os drivers instalados a partir dele param de receber atualizações.\n\nSe o dispositivo depende do driver, considere reverter o driver antes de desabilitar o repositório.\n\nContinuar?'))) return;
-
-    await executarComandoGenerico(idComando, cmd,
-        _t('sessoes.dispositivos-perifericos.desabilitando_copr', 'Desabilitando repositório COPR...'));
 }
 
 // ============================================================
@@ -636,28 +731,135 @@ async function executarSteamDevices() {
 }
 
 // ============================================================
+// ESTADO DOS ITENS COM REPO + PACOTE
+// ============================================================
+//
+// Cada item pode ter até 3 botões:
+//   - Ativar repo (opcional — Broadcom não tem)
+//   - Instalar pacote
+//   - Reverter tudo
+//
+// Regra de estado (progressiva):
+//   Estado inicial:  repo ativo, instalar DESABILITADO, reverter DESABILITADO
+//   Após ativar:     repo feito, instalar ATIVO,       reverter ATIVO
+//   Após instalar:   repo feito, instalar feito,       reverter ATIVO
+//   Após reverter:   volta ao estado inicial
+//
+// O estado é persistido via `.progresso.json` (usando marcarComoExecutado
+// e desmarcarComoExecutado). Não há detecção em runtime do estado real
+// dos pacotes — é o mesmo trade-off do firmware-vendor.
+
+function aplicarEstadoItemCompleto(idRepoAtivar, idInstall, idRemove) {
+    var repoBtn    = idRepoAtivar ? document.getElementById('btn-' + idRepoAtivar) : null;
+    var installBtn = idInstall    ? document.getElementById('btn-' + idInstall)    : null;
+    var removeBtn  = idRemove     ? document.getElementById('btn-' + idRemove)     : null;
+
+    var repoFeito    = idRepoAtivar ? isExecutado(idRepoAtivar) : true; // sem repo = já está "pronto"
+    var pacoteFeito  = idInstall    ? isExecutado(idInstall)    : false;
+
+    // --- Botão "Ativar repositório" ---
+    if (repoBtn) {
+        var textoRepoOriginal = repoBtn.getAttribute('data-texto-original') || repoBtn.textContent;
+        if (repoFeito) {
+            repoBtn.textContent = _t('sessoes.dispositivos-perifericos.btn_repo_ativado',
+                '✅ Repositório ativado');
+            repoBtn.style.backgroundColor = '#4b5563';
+            repoBtn.style.cursor = 'default';
+            repoBtn.disabled = true;
+            repoBtn.style.opacity = '1';
+        } else {
+            repoBtn.textContent = textoRepoOriginal;
+            repoBtn.style.backgroundColor = '';
+            repoBtn.style.cursor = 'pointer';
+            repoBtn.disabled = false;
+            repoBtn.style.opacity = '1';
+        }
+    }
+
+    // --- Botão "Instalar pacote" ---
+    if (installBtn) {
+        var textoInstallOriginal = installBtn.getAttribute('data-texto-original') || installBtn.textContent;
+        if (pacoteFeito) {
+            installBtn.textContent = getTextoAposExecucao(idInstall) ||
+                _t('sessoes.dispositivos-perifericos.btn_pacote_instalado', '✅ Pacote instalado');
+            installBtn.style.backgroundColor = '#4b5563';
+            installBtn.style.cursor = 'default';
+            installBtn.disabled = true;
+            installBtn.style.opacity = '1';
+        } else if (repoFeito) {
+            // Repo ativo → pode instalar
+            installBtn.textContent = textoInstallOriginal;
+            installBtn.style.backgroundColor = '';
+            installBtn.style.cursor = 'pointer';
+            installBtn.disabled = false;
+            installBtn.style.opacity = '1';
+        } else {
+            // Sem repo → não pode instalar
+            installBtn.textContent = textoInstallOriginal;
+            installBtn.style.backgroundColor = '';
+            installBtn.style.cursor = 'not-allowed';
+            installBtn.disabled = true;
+            installBtn.style.opacity = '0.5';
+        }
+    }
+
+    // --- Botão "Reverter tudo" ---
+    if (removeBtn) {
+        var textoRemoveOriginal = removeBtn.getAttribute('data-texto-original') || removeBtn.textContent;
+        removeBtn.textContent = textoRemoveOriginal;
+        if (repoFeito || pacoteFeito) {
+            removeBtn.style.backgroundColor = '';
+            removeBtn.style.cursor = 'pointer';
+            removeBtn.disabled = false;
+            removeBtn.style.opacity = '1';
+        } else {
+            removeBtn.style.backgroundColor = '';
+            removeBtn.style.cursor = 'not-allowed';
+            removeBtn.disabled = true;
+            removeBtn.style.opacity = '0.5';
+        }
+    }
+}
+
+// ============================================================
 // RESTAURAR ESTADO DA SESSÃO
 // ============================================================
 
 function restaurarEstadoSessao() {
     // --- Suplementos seguros: toggles via aplicarEstadoToggle ---
-    //
-    // O helper consulta apenas o estado do install para decidir o
-    // estado do par. Se install não está marcado, o reverter fica
-    // desabilitado (nada a reverter). Se está, install fica
-    // desabilitado com texto final e reverter fica clicável.
     aplicarEstadoToggle('firmware-vendor-install', 'firmware-vendor-remove');
 
     // --- Controles: toggles via aplicarEstadoToggle ---
-    //
-    // Mesmo padrão. Substitui a lógica manual que existia antes —
-    // agora centralizada no helper do script.js.
     aplicarEstadoToggle('input-group-add', 'input-group-remove');
 
     // --- Steam Devices: one-shot ---
     if (isExecutado('steam-devices-install')) {
         _marcarBotaoConcluidoLocal('steam-devices-install');
     }
+
+    // --- Itens com repo + pacote (Razer, Xbox, Broadcom) ---
+    //
+    // Cada item tem até 3 botões. A função aplicarEstadoItemCompleto
+    // lê o estado persistido e ajusta cada um conforme a regra
+    // progressiva (repo → instalar → reverter).
+    aplicarEstadoItemCompleto('copr-openrazer-enable',  'driver-openrazer-install',  'driver-openrazer-remove');
+    aplicarEstadoItemCompleto('copr-xpadneo-enable',    'driver-xpadneo-install',    'driver-xpadneo-remove');
+    aplicarEstadoItemCompleto(null,                     'driver-broadcom-wl-install','driver-broadcom-wl-remove');
+}
+
+// ============================================================
+// HELPERS LOCAIS
+// ============================================================
+
+function _marcarBotaoConcluidoLocal(idComando) {
+    var btn = document.getElementById('btn-' + idComando);
+    if (!btn) return;
+    _corOriginalDoBotao(btn);
+    btn.textContent = getTextoAposExecucao(idComando);
+    btn.style.backgroundColor = '#4b5563';
+    btn.style.cursor = 'default';
+    btn.disabled = true;
+    btn.style.opacity = '1';
 }
 
 // ============================================================

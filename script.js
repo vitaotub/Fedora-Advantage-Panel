@@ -468,29 +468,69 @@ var SESSOES = [
             textoConcluidoKey: 'sessoes.dispositivos-perifericos.texto_concluido_firmware_vendor_remove'
         },
 
-        // --- Drivers de hardware (sempre clicáveis; estado real via rpm -q) ---
+        // --- Drivers de hardware (estado real via rpm -q) ---
+        // NOTA: os drivers com repo separado (openrazer, xpadneo) NÃO ficam
+        // sempreClicavel — são gerenciados por aplicarEstadoItemCompleto.
+        // Só os drivers PCI sem repo (nvidia, amd-vaapi, intel-media,
+        // realtek-r8168) ficam sempreClicavel, porque a UI é re-construída
+        // a cada scan (os cards são gerados dinamicamente, com botões
+        // próprios, fora do registrarEstadoSessao).
         'driver-nvidia-install': { sempreClicavel: true, textoConcluido: '✅ Driver NVIDIA instalado' },
         'driver-nvidia-remove': { sempreClicavel: true },
         'driver-amd-vaapi-install': { sempreClicavel: true, textoConcluido: '✅ VA-API AMD instalado' },
         'driver-amd-vaapi-remove': { sempreClicavel: true },
         'driver-intel-media-install': { sempreClicavel: true, textoConcluido: '✅ Driver Intel Media instalado' },
         'driver-intel-media-remove': { sempreClicavel: true },
-        'driver-broadcom-wl-install': { sempreClicavel: true, textoConcluido: '✅ Driver Broadcom WL instalado' },
-        'driver-broadcom-wl-remove': { sempreClicavel: true },
         'driver-realtek-r8168-install': { sempreClicavel: true, textoConcluido: '✅ Driver Realtek r8168 instalado' },
         'driver-realtek-r8168-remove': { sempreClicavel: true },
 
-        // --- Drivers da comunidade (COPR) ---
-        'driver-openrazer-install': { sempreClicavel: true, textoConcluido: '✅ OpenRazer instalado' },
-        'driver-openrazer-remove': { sempreClicavel: true },
-        'driver-xone-install': { sempreClicavel: true, textoConcluido: '✅ Driver xone instalado' },
-        'driver-xone-remove': { sempreClicavel: true },
+        // --- Drivers da comunidade (repo + pacote) ---
+        // Estes IDs formam o par principal de cada item. O "reverter"
+        // não tem estado próprio — é consequência do "instalar" e do
+        // "ativar repo". Ver aplicarEstadoItemCompleto() em
+        // dispositivos-perifericos.html.
+        'copr-openrazer-enable': {
+            textoConcluido: '✅ Repositório ativado',
+            textoConcluidoKey: 'sessoes.dispositivos-perifericos.btn_repo_ativado'
+        },
+        'driver-openrazer-install': {
+            textoConcluido: '✅ Pacote instalado',
+            textoConcluidoKey: 'sessoes.dispositivos-perifericos.btn_pacote_instalado'
+        },
+        // O remove é sempre clicável porque pode ser executado
+        // múltiplas vezes (reverter → reinstalar → reverter).
+        // aplicarEstadoItemCompleto() decide quando ele fica ativo
+        // baseado no estado do install, não do próprio remove.
+        'driver-openrazer-remove': {
+            sempreClicavel: true,
+            textoConcluido: '✅ Removido',
+            textoConcluidoKey: 'sessoes.dispositivos-perifericos.btn_revertido'
+        },
 
-        // --- COPRs: habilitar/desabilitar (sempre clicáveis) ---
-        'copr-openrazer-enable': { sempreClicavel: true, textoConcluido: '✅ COPR habilitado' },
-        'copr-openrazer-disable': { sempreClicavel: true },
-        'copr-xone-enable': { sempreClicavel: true, textoConcluido: '✅ COPR habilitado' },
-        'copr-xone-disable': { sempreClicavel: true },
+        'copr-xpadneo-enable': {
+            textoConcluido: '✅ Repositório ativado',
+            textoConcluidoKey: 'sessoes.dispositivos-perifericos.btn_repo_ativado'
+        },
+        'driver-xpadneo-install': {
+            textoConcluido: '✅ Pacote instalado',
+            textoConcluidoKey: 'sessoes.dispositivos-perifericos.btn_pacote_instalado'
+        },
+        'driver-xpadneo-remove': {
+            sempreClicavel: true,
+            textoConcluido: '✅ Removido',
+            textoConcluidoKey: 'sessoes.dispositivos-perifericos.btn_revertido'
+        },
+
+        // Broadcom não tem repo separado (usa RPM Fusion da Sessão 1)
+        'driver-broadcom-wl-install': {
+            textoConcluido: '✅ Pacote instalado',
+            textoConcluidoKey: 'sessoes.dispositivos-perifericos.btn_pacote_instalado'
+        },
+        'driver-broadcom-wl-remove': {
+            sempreClicavel: true,
+            textoConcluido: '✅ Removido',
+            textoConcluidoKey: 'sessoes.dispositivos-perifericos.btn_revertido'
+        },
 
         // --- Controles e periféricos (movidos de hardware) ---
         'input-group-add': {
