@@ -47,8 +47,11 @@ Thumbs.db
 *~
 
 # ------------------------------------------------------------
-# NÃO IGNORAR (documentação de manutenção)
+# NÃO IGNORAR (arquivos lidos em runtime — precisam ser
+# rastreados para o FOF funcionar depois do clone)
 # ------------------------------------------------------------
+# hardware_map.json precisa ser rastreado — o hardware-service.js
+# o lê em runtime para o endpoint /hardware-scan.
 # CHANGELOG.md precisa ser rastreado — o endpoint /changelog
 # do server.js o lê em runtime.
 # locales/en.json e locales/es.json precisam ser rastreados —
