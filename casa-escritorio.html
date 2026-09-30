@@ -7,19 +7,22 @@
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
+<body>
+<div class="sessao-container" id="sessao-casa-escritorio">
 <div class="sessao-titulo">
 <span class="sessao-label">Sessão</span>
 <span data-i18n="sessoes.casa-escritorio.titulo">🏠 Casa e Escritório</span>
 </div>
 
-<div class="sessao-descricao" data-i18n="sessoes.casa-escritorio.descricao">
-Configurações para deixar o Fedora pronto para uso doméstico: impressora, compartilhamento de arquivos com Windows/celular, gerenciador de senhas e leitura de PDF com OCR. Tudo em blocos independentes — use só o que precisar.
+<!-- Acórdeão principal — descrição da sessão -->
+<div class="acordeao-principal">
+<span data-i18n="sessoes.casa-escritorio.descricao">Configurações para deixar o Fedora pronto para uso doméstico: impressora, compartilhamento de arquivos com Windows/celular, gerenciador de senhas e leitura de PDF com OCR. Tudo em blocos independentes — use só o que precisar.</span>
 </div>
 
 <!-- ============================================================
 IMPRESSORA E SCANNER
 ============================================================ -->
-<details class="acordeao" open>
+<details class="acordeao">
 <summary data-i18n="sessoes.casa-escritorio.impressora_titulo">🖨️ Impressora e Scanner</summary>
 <div class="acordeao-conteudo">
 
@@ -243,7 +246,7 @@ data-i18n="sessoes.casa-escritorio.btn_okular_tesseract">
 <!-- ===== JAVASCRIPT ESPECÍFICO DA SESSÃO ===== -->
 <script>
 // ============================================================
-// SESSÃO 10: CASA PRONTA
+// SESSÃO 7: CASA E ESCRITÓRIO
 // ============================================================
 
 function _t(chave, fallback) {

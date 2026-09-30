@@ -240,7 +240,6 @@ local pacotes=(
 "gcc"
 "make"
 "pkgconfig"
-"python3-pyqt6"
 )
 
 local instalar=()

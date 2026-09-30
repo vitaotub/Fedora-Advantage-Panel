@@ -7,12 +7,21 @@
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<!-- ===== CONTEÚDO DA SESSÃO ===== -->
 <div class="sessao-container" id="sessao-producao-multimidia">
 <div class="sessao-titulo">
 <span class="sessao-label">Sessão</span>
 <span data-i18n="sessoes.producao-multimidia.titulo">🎬 Produção Multimídia</span>
 </div>
+
+<!-- Acórdeão principal — descrição da sessão -->
+<div class="acordeao-principal">
+<span data-i18n="sessoes.producao-multimidia.descricao">Ferramentas para gravar, editar, transmitir e produzir conteúdo de áudio e vídeo no Fedora.</span>
+</div>
+
+<!-- Acórdeão único: Gravação, transmissão e áudio -->
+<details class="acordeao">
+<summary data-i18n="sessoes.producao-multimidia.acordeao_titulo">🎬 Gravação, transmissão e áudio</summary>
+<div class="acordeao-conteudo">
 
 <!-- OBS Studio -->
 <div class="bloco-comando destaque">
@@ -83,11 +92,13 @@ Instalar EasyEffects (Flatpak)
 </div>
 </div>
 
+</div>
+</details>
+
 <!-- Log único da sessão -->
 <div class="terminal-log sessao-compartilhado" id="log-sessao-producao-multimidia"></div>
 </div>
 
-<!-- ===== JAVASCRIPT ESPECÍFICO DA SESSÃO ===== -->
 <script>
 // ============================================================
 // SESSÃO: PRODUÇÃO MULTIMÍDIA

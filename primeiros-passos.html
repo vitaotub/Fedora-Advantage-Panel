@@ -13,14 +13,18 @@
 <span data-i18n="sessoes.primeiros-passos.titulo">🚀 Primeiros Passos</span>
 </div>
 
-<div class="sessao-descricao" data-i18n="sessoes.primeiros-passos.descricao">
-Antes de qualquer configuração, atualize o sistema e habilite os repositórios essenciais. Estes passos são pré-requisito para todas as próximas sessões.
+<!-- Acórdeão principal — descrição da sessão -->
+<div class="acordeao-principal">
+<span data-i18n="sessoes.primeiros-passos.descricao">Antes de qualquer configuração, atualize o sistema e habilite os repositórios essenciais. Estes passos são pré-requisito para todas as próximas sessões.</span>
 </div>
 
-<!-- Atualização do sistema -->
+<!-- Acórdeão: Atualizar o Fedora -->
+<details class="acordeao">
+<summary data-i18n="sessoes.primeiros-passos.atualizacao_titulo">🔄 Atualizar o Fedora</summary>
+<div class="acordeao-conteudo">
+
 <div class="bloco-comando">
 <div class="comando-info">
-<h3 data-i18n="sessoes.primeiros-passos.atualizacao_titulo">🔄 Atualizar o Fedora</h3>
 <p data-i18n-html="sessoes.primeiros-passos.atualizacao_desc">
 Atualiza o índice de repositórios, sincroniza as chaves de segurança e baixa as versões mais recentes de todos os componentes do sistema.
 </p>
@@ -39,6 +43,14 @@ Atualiza o índice de repositórios, sincroniza as chaves de segurança e baixa 
 </div>
 </div>
 
+</div>
+</details>
+
+<!-- Acórdeão: Repositórios do Fedora (3 blocos temáticos) -->
+<details class="acordeao">
+<summary data-i18n="sessoes.primeiros-passos.repositorios_titulo">📦 Repositórios do Fedora</summary>
+<div class="acordeao-conteudo">
+
 <!-- RPM Fusion -->
 <div class="bloco-comando">
 <div class="comando-info">
@@ -56,7 +68,7 @@ Atualiza o índice de repositórios, sincroniza as chaves de segurança e baixa 
 </div>
 </div>
 
-<!-- Flatpak -->
+<!-- Flatpak (Flathub) -->
 <div class="bloco-comando">
 <div class="comando-info">
 <h3 data-i18n="sessoes.primeiros-passos.flatpak_titulo">📦 Habilitar Flatpak (Flathub)</h3>
@@ -113,6 +125,9 @@ data-i18n="sessoes.primeiros-passos.btn_remover_fedora_flatpak">
 <div class="progress-text"><span class="status" id="progress-status-remover-repo-fedora-flatpak">⏳ Iniciando...</span><span class="percentage" id="progress-percent-remover-repo-fedora-flatpak">0%</span></div>
 </div>
 </div>
+
+</div>
+</details>
 
 <!-- Log único da sessão -->
 <div class="terminal-log sessao-compartilhado" id="log-sessao-primeiros-passos"></div>

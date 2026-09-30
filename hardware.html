@@ -12,14 +12,16 @@
 <span class="sessao-label">Sessão</span>
 <span data-i18n="sessoes.hardware.titulo">🖥️ Hardware</span>
 </div>
-<div class="sessao-descricao" data-i18n-html="sessoes.hardware.descricao">
-Configurações específicas do seu hardware. Escolha abaixo o tipo de GPU (AMD, NVIDIA ou Intel) para ver os drivers e ferramentas correspondentes. Para controles, webcams, Wi-Fi e outros periféricos, use a sessão <strong>Dispositivos e Periféricos</strong>.
+
+<!-- Acórdeão principal — descrição da sessão -->
+<div class="acordeao-principal">
+<span data-i18n-html="sessoes.hardware.descricao">Configurações específicas do seu hardware. Escolha abaixo o tipo de GPU (AMD, NVIDIA ou Intel) para ver os drivers e ferramentas correspondentes. Para controles, webcams, Wi-Fi e outros periféricos, use a sessão <strong>Dispositivos e Periféricos</strong>.</span>
 </div>
 
 <!-- ============================================================
 AMD
 ============================================================ -->
-<details class="acordeao" open>
+<details class="acordeao">
 <summary data-i18n="sessoes.hardware.amd_titulo">🟥 Hardware AMD</summary>
 <div class="acordeao-conteudo">
 
@@ -294,7 +296,7 @@ data-i18n="sessoes.hardware.btn_intel_media_instalar">
 
 <script>
 // ============================================================
-// SESSÃO 05: HARDWARE
+// SESSÃO 3: HARDWARE
 // ============================================================
 
 function _t(chave, fallback) {

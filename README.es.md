@@ -2,7 +2,7 @@
 
 **🌐 Idioma:** [Português (BR)](README.md) | [English](README.en.md) | Español
 
-![Versión](https://img.shields.io/badge/Versi%C3%B3n-v1.0.0--09292026-orange?style=flat-square)
+![Versión](https://img.shields.io/badge/Versi%C3%B3n-v1.0.0--09302026-orange?style=flat-square)
 ![Fedora](https://img.shields.io/badge/Fedora-44+-294172?style=flat-square&logo=fedora)
 ![Licencia](https://img.shields.io/badge/Licencia-GPL--3.0-green?style=flat-square)
 ![Idiomas](https://img.shields.io/badge/Idiomas-PT--BR%20%7C%20EN%20%7C%20ES-3c67e3?style=flat-square)
@@ -34,7 +34,7 @@ fof-compat                          # Iniciar (modo compatibilidad — GPUs anti
 
 FOF tiene **un único punto de entrada**: el botón **"Iniciar"**, que te lleva por las 13 sesiones paso a paso, en orden lógico. Cada sesión agrupa tareas relacionadas, y el progreso se guarda automáticamente.
 
-Cada botón recuerda su propio estado. Cerrar y reabrir FOF (o reiniciar el equipo) siempre muestra exactamente dónde te detuviste.
+Cada botón recuerda su propio estado. Cerrar y reabrir FOF siempre muestra exactamente dónde te detuviste.
 
 ---
 
@@ -45,13 +45,13 @@ Cada botón recuerda su propio estado. Cerrar y reabrir FOF (o reiniciar el equi
 | 1 | 🚀 Primeros Pasos | Actualización completa del sistema + RPM Fusion + Flathub + eliminación opcional del repositorio Fedora Flatpak |
 | 2 | 🔤 Códecs y Compatibilidad | Códecs multimedia, reproducción de DVD comercial (tainted), fuentes Microsoft |
 | 3 | 🖥️ Hardware | AMD (Vulkan/Mesa/RADV, VA-API, CoreCtrl, LACT, overclock), NVIDIA (controlador propietario, modeset), Intel (Intel Media Driver) |
-| 4 | 🔌 Dispositivos y Periféricos | Detección automática de hardware, firmware adicional, COPRs de la comunidad (Wi-Fi USB Realtek), mandos (grupo input, reglas udev) |
-| 5 | 🎬 Producción Multimedia | OBS Studio, cámara virtual y EasyEffects |
+| 4 | 🔌 Dispositivos y Periféricos | Detección automática de hardware, firmware adicional, COPRs de la comunidad (Razer/OpenRazer, xpadneo, Broadcom), mandos (grupo input, reglas udev) |
+| 5 | 🎬 Producción Multimedia | OBS Studio, cámara virtual, EasyEffects |
 | 6 | 📦 Aplicaciones Recomendadas | ~45 apps vía Flatpak (productividad, multimedia, gráficos, internet, edición de vídeo/audio, nube) |
 | 7 | 🏠 Hogar y Oficina | CUPS, Samba/LocalSend/Warpinator, KeePassXC, Okular+Tesseract (PDF+OCR) |
 | 8 | 🎮 Gaming | Launchers, Wine/Proton/NTSYNC, GameMode/MangoHud/Gamescope, ProtonUp-Qt, vkBasalt, emuladores, anti-cheat awareness |
 | 9 | 📱 Waydroid | Android en Linux vía COPR, GApps, libndk/libhoudini, Magisk, Widevine, SmartDock |
-| 10 | 📊 Diagnóstico | Panel del sistema, top procesos, particiones, GSmartControl, CoolerControl, journal, **estado de optimizaciones** |
+| 10 | 📊 Diagnóstico | Panel del sistema, top procesos, particiones, GSmartControl, CoolerControl, journal, estado de optimizaciones |
 | 11 | 🛠️ Ajustes y Mantenimiento | Ajustes de rendimiento, audio, DNF, idioma, dual-boot, limpieza, kernels, GRUB |
 | 12 | 🐧 Estado de Fedora | Versión, detección de Atomic/Silverblue, SELinux (estado, AVCs, setroubleshoot, GUI) |
 | 13 | 📖 Acerca de FOF | Sobre el proyecto + actualizar/desinstalar FOF + changelog dinámico |
@@ -63,17 +63,17 @@ Cada botón recuerda su propio estado. Cerrar y reabrir FOF (o reiniciar el equi
 - **Tema claro/oscuro** — alternancia en tiempo real, preferencia guardada
 - **Multiidioma** — PT-BR, EN, ES con cambio en tiempo real
 - **Registros en tiempo real** vía SSE, expandidos por defecto
+- **Estructura visual consistente** — cada sesión comienza con una tarjeta de información, y los acordeones de contenido están colapsados por defecto
 - **Icono de desinstalar** al lado de cada app Flatpak instalada
-- **Detección de Flatpak eliminado externamente** — si el usuario borra la app por fuera, el botón de FOF vuelve al estado inicial
-- **Detección automática de hardware** — endpoint `/hardware-scan` cruza IDs PCI/USB con `hardware_map.json` y sugiere controladores
-- **Soporte multi-escritorio** — funciona en GNOME, KDE, XFCE, Cinnamon, MATE, LXQt, LXDE, Budgie y tiling WMs. El terminal de arranque sigue el escritorio detectado
-- **Pares install/revert consistentes** — el botón de revertir comienza deshabilitado y solo se vuelve clicable tras el install correspondiente
-- **Validación unificada** — `./validar.sh` ejecuta 10 comprobaciones de sanidad en una sola pasada
+- **Detección de Flatpak eliminado externamente**
+- **Detección automática de hardware** — endpoint `/hardware-scan` cruza IDs PCI/USB con `hardware_map.json`
+- **Soporte multi-escritorio** — funciona en GNOME, KDE, XFCE, Cinnamon, MATE, LXQt, LXDE, Budgie y tiling WMs
+- **Pares install/revert consistentes** — el botón de revertir comienza deshabilitado
 - **Barra de progreso global** en el header (N/M sesiones completadas)
 - **Toasts + notificaciones nativas** al completar tareas largas (>30s)
 - **Autenticación segura** vía pkexec/kdesu con whitelist de comandos de solo lectura
 - **Doble persistencia** — servidor local + localStorage
-- **Limpieza automática de IDs huérfanos** — sesiones renombradas no dejan residuos en el progreso
+- **Limpieza automática de IDs huérfanos**
 - **Contenedor nativo WebKitGTK** (sin navegador externo)
 - **Changelog dinámico** — leído del `CHANGELOG.md` en runtime
 - **Versión centralizada** en `package.json`
@@ -125,9 +125,7 @@ Fedora-Only-Fans/
 
 ## 🖥️ Escritorios soportados
 
-FOF es agnóstico al escritorio — fue construido para funcionar en
-cualquier entorno Linux que siga el stack XDG estándar. No depende
-de KDE, GNOME ni de ningún DE específico.
+FOF es agnóstico al escritorio — fue construido para funcionar en cualquier entorno Linux que siga el stack XDG estándar.
 
 | Escritorio | Estado | Notas |
 |---|---|---|
@@ -143,30 +141,14 @@ de KDE, GNOME ni de ningún DE específico.
 
 ### Qué es automático
 
-- **Terminal de arranque** — `iniciar_fof.sh` detecta tu escritorio
-  vía `XDG_CURRENT_DESKTOP` y prefiere su terminal nativo (por
-  ejemplo `konsole` en KDE, `ptyxis` en GNOME, `xfce4-terminal` en
-  XFCE). Si no lo encuentra, cae en terminales universales.
-- **Autenticación** — `install.sh` instala `zenity` automáticamente
-  si no tienes ni `kdialog` ni `zenity` (necesario para autenticación
-  gráfica en escritorios no-KDE).
-- **Acceso directo en el menú** — creado en
-  `~/.local/share/applications/` (funciona en cualquier DE que siga
-  el estándar XDG).
-- **Icono** — instalado en `hicolor/256x256/apps/` con el nombre
-  `fof-container`, coincidiendo con el `StartupWMClass` del `.desktop`.
+- **Terminal de arranque** — `iniciar_fof.sh` detecta tu escritorio vía `XDG_CURRENT_DESKTOP`
+- **Autenticación** — `install.sh` instala `zenity` automáticamente si no tienes `kdialog` ni `zenity`
+- **Acceso directo en el menú** — en `~/.local/share/applications/`
+- **Icono** — instalado en `hicolor/256x256/apps/` con el nombre `fof-container`
 
 ### Qué NO es automático
 
-- **Fijar en la barra de tareas.** FOF **no** fija accesos directos
-  en la barra automáticamente. La implementación antigua usaba
-  `kwriteconfig5` y `qdbus` en KDE, pero Plasma sobrescribe cambios
-  externos en su archivo de configuración con frecuencia — la
-  fijación raramente funcionaba. En cualquier escritorio, fija
-  manualmente:
-  - **KDE:** clic derecho en el icono de FOF del menú → *Fijar en el panel*
-  - **GNOME:** abrir FOF una vez, luego *clic derecho en el icono del dock → Add to Favorites*
-  - **XFCE/Cinnamon/MATE:** arrastrar el icono del menú a la barra
+- **Fijar en la barra de tareas.** FOF **no** fija accesos directos automáticamente. Fija manualmente por el menú de tu escritorio.
 
 ### Requisitos mínimos
 
@@ -191,8 +173,9 @@ de KDE, GNOME ni de ningún DE específico.
 
 ## 🛡️ Seguridad
 
-- Autenticación vía **pkexec/kdesu** (nunca expone contraseñas)
-- **Whitelist** de comandos de solo lectura sin autenticación (`rpm -q`, `uname -r`, `flatpak`, `systemctl --user`, `gtk-launch`)
+- Autenticación vía **pkexec/kdesu**
+- **Whitelist** de comandos de solo lectura sin autenticación
+- **Rechazo de encadenamiento de shell** en comandos sin auth
 - **Sanitización** de entrada y validación de `idComando`
 - **Rate limiting** de 1.5s por `idComando`
 - **Rotación automática de registros** (7 días en `/tmp/fof-*.log`)
@@ -201,51 +184,19 @@ de KDE, GNOME ni de ningún DE específico.
 
 ## 🎯 Changelog
 
-El historial completo de cambios está en [`CHANGELOG.md`](CHANGELOG.md). FOF mismo muestra el changelog de la versión actual dentro de la sesión **Acerca de FOF** — cargado dinámicamente del archivo.
+El historial completo está disponible en las [releases de GitHub](https://github.com/vitaotek/Fedora-Only-Fans/releases). FOF también muestra el changelog de la versión actual dentro de la sesión **Acerca de FOF**, cargado dinámicamente del `CHANGELOG.md`.
 
-### v1.0.0-09292026 (Actual) 🚧
+### v1.0.0-09302026 (Actual) 🚧
 
-- Nueva sesión **Dispositivos y Periféricos** (posición 4), entre Hardware y Producción Multimedia
-- Sesión **Hardware** gana acordeón Intel (`intel-media-driver`) y pierde el bloque de mandos
-- Nuevo endpoint `/hardware-scan` + `hardware-service.js` + `hardware_map.json`
-- Detección automática vía `lspci`/`lsusb` cruzada con mapa de vendors, con `nvidia-detect` para refinar NVIDIA
-- Suplementos seguros: `linux-firmware-vendor`
-- COPRs de la comunidad para Wi-Fi USB Realtek (RTL8811CU/8821CU, RTL8812BU/8822BU, RTL8812AU, RTL8811AU) — opcionales, con avisos de riesgo
-- Detección de estado real vía `rpm -q` sustituye `.progresso.json` para esos controladores
-- Soporte multi-escritorio (GNOME, KDE, XFCE, Cinnamon, MATE, LXQt, LXDE, Budgie, tiling WMs)
-- Pares install/revert consistentes — botón de revertir comienza deshabilitado
-- Validación unificada vía `./validar.sh` (10 comprobaciones)
-- Eliminado: `akmod-intel-ipu6` (soporte nativo en el kernel de Fedora 44+)
-- Eliminada: fijación automática en la barra de tareas (era KDE-only y raramente funcionaba)
-- Comentarios de sesión en `script.js` renumerados (6 a 13)
-- READMEs actualizados para reflejar las 13 sesiones
-
-### v1.0.0-09282026 ✅
-
-- Reestructuración completa de las sesiones (13 → 12), con IDs semánticos (sin número)
-- Nueva sesión **Ajustes y Mantenimiento** agrupa ajustes de rendimiento, audio, DNF, idioma, dual-boot, limpieza, kernels y GRUB
-- Nueva sesión **Acerca de FOF** agrupa el texto institucional, actualización y desinstalación del FOF
-- Eliminadas: sesión **Restauración** (Btrfs-Assistant) y página **Mantenimiento** (contenido redistribuido)
-- Pantalla inicial rediseñada: reloj en vivo y tarjeta única con texto + botón "Iniciar"
-- Búsqueda global (Ctrl+K) eliminada — presentaba problemas en WebKitGTK
-- Sesión **Primeros Pasos** ganó opción de eliminar el repositorio Fedora Flatpak (con aviso explícito sobre eliminación de datos)
-- Changelog dinámico vía `GET /changelog`
-- Botón "Ver changelog completo" corregido (usaba `window.open`, bloqueado por WebKitGTK)
-- `install.sh --update` ahora limpia archivos de sesiones antiguas antes del `git pull`
-- El progreso limpia automáticamente IDs huérfanos al inicio
-- Badge de actualización apunta a `guiado.html?session=sobre-fof`
-
-### v1.0.0-09232026 ✅
-
-- Verificación automática de actualizaciones vía GitHub Releases
-- Popup post-actualización
-- Icono de desinstalar en cada app Flatpak
-- Detección de Flatpak eliminado externamente
-- Panel "Ajustes de Rendimiento" en Diagnóstico
-
-### v1.0.0 ✅
-
-- Versión inicial pública
+- **Estandarización visual de las sesiones** — cada sesión comienza con una tarjeta de información (rectángulo azul con ℹ️, siempre visible, sin colapsar). Todos los acordeones de contenido quedan colapsados por defecto.
+- **Avisos de alcance amplio** (que afectan a la sesión entera) ahora aparecen fuera de los acordeones, en evidencia, justo debajo del título.
+- **Primeros Pasos** — los tres bloques relacionados con repositorios (RPM Fusion, Flathub, eliminación del Fedora Flatpak) se unificaron en un único acordeón llamado **📦 Repositorios de Fedora**.
+- **Producción Multimedia** — los dos bloques (OBS Studio y EasyEffects) se unificaron en un único acordeón temático.
+- **Waydroid** — el botón de eliminación se movió al final de la sesión, se renombró a "Deshacer Cambios y Eliminar Completamente", y ahora realiza una limpieza completa (paquete, contenedor, carpeta de extras, venv, accesos directos, datos en `/var/lib`). Waydroid ahora sobrevive al cierre de FOF (iniciado en su propia sesión vía `setsid -f`). El botón de eliminación se deshabilita cuando no hay nada que eliminar.
+- **Hogar y Oficina** — corregido el wrapper `.sessao-container` que faltaba.
+- **Aplicaciones Recomendadas** — corregidos seis `</div>` extras que hacían que el primer bloque apareciera dentro de la tarjeta principal.
+- **`python3-pyqt6` eliminado de `install.sh`** — ahora se instala bajo demanda por el botón de la Suite Affinity.
+- **Eliminado `validar.sh`** y todas las referencias a él.
 
 ---
 
@@ -253,35 +204,29 @@ El historial completo de cambios está en [`CHANGELOG.md`](CHANGELOG.md). FOF mi
 
 1. Copia `template-sessao.html` a `<nombre>.html` (sin número)
 2. Rellena los placeholders
-3. Añade una entrada al array `SESSOES` en `script.js` (con `id: '<nombre>'`)
+3. Añade una entrada al array `SESSOES` en `script.js`
 4. Añade el emoji a `ICONES_SESSOES` en `guiado.html`
-5. Añade las claves i18n a `locales/en.json` y `locales/es.json` (y también al HTML como fallback PT-BR)
+5. Añade las claves i18n a `locales/en.json` y `locales/es.json`
 
-El orden de visualización viene de la posición de la entrada en el array `SESSOES`, no del nombre del archivo.
-
-**Sobre `flatpakId` y `sempreClicavel`:** los comandos que instalan un Flatpak deben tener `flatpakId: 'org.ejemplo.App'` en el registro de `script.js` — esto permite que FOF detecte la eliminación externa y restaure el botón. Los comandos cuyo estado real es consultable vía `rpm -q` (controladores de hardware, por ejemplo) deben usar `sempreClicavel: true` y verificar el estado vía endpoint, en lugar de confiar en el `.progresso.json`.
+El orden de visualización viene de la posición de la entrada en el array `SESSOES`.
 
 ---
 
 ## 🌐 Cómo añadir un idioma
 
 1. Copia `locales/en.json` a `locales/XX.json`
-2. Traduce los valores (mantén las claves)
+2. Traduce los valores
 3. Añade `XX` a `LANGS_DISPONIVEIS` (`i18n.js`) y `LANGS_SUPORTADOS` (`server.js`)
 4. Añade la opción al array `opcoes` de `criarSeletorIdioma()`
-
-**Nota:** el idioma predeterminado (pt-BR) **no tiene archivo JSON** a propósito. El HTML de cada sesión contiene el texto en portugués como fallback, y `i18n.js` hace corto-circuito cuando el idioma es el predeterminado — nunca dispara `fetch` a `/locales/pt-BR.json`. Esto evita mantener strings duplicadas.
 
 ---
 
 ## 🏷️ Cómo publicar una versión
 
 1. Edita `package.json` → `"version": "1.0.0-<NUEVA>"`
-2. Edita `i18n.js` → `FALLBACK_VERSION = '1.0.0-<NUEVA>'` (única excepción a la regla de fuente única — usado como cache-buster antes de que `/info` responda)
-3. Añade una sección nueva al inicio de `CHANGELOG.md`, con encabezado exactamente `## v1.0.0-<NUEVA>` (que coincida con el `package.json`)
+2. Edita `i18n.js` → `FALLBACK_VERSION = '1.0.0-<NUEVA>'`
+3. Reemplaza `CHANGELOG.md` con la sección de la nueva versión (el historial completo queda en las releases de GitHub)
 4. Crea el tag/release en GitHub con el mismo nombre
-
-Todo lo demás (banner del `install.sh`, badge del FOF, `--help` del contenedor) es automático.
 
 ---
 
@@ -291,15 +236,11 @@ Todo lo demás (banner del `install.sh`, badge del FOF, `--help` del contenedor)
 
 ## 🐛 Reportar errores
 
-Abre un issue en [github.com/vitaotek/Fedora-Only-Fans/issues](https://github.com/vitaotek/Fedora-Only-Fans/issues) incluyendo:
-- Versión de Fedora
-- Entorno de escritorio
-- Registros (`/tmp/fof-*.log`)
-- Pasos para reproducir
+Abre un issue en [github.com/vitaotek/Fedora-Only-Fans/issues](https://github.com/vitaotek/Fedora-Only-Fans/issues)
 
 ## ⚠️ Aviso legal
 
-Proyecto en desarrollo (alpha). Uso en producción bajo tu propio riesgo. **Haz siempre copia de seguridad** antes de alterar el sistema.
+Proyecto en desarrollo (alpha). **Haz siempre copia de seguridad** antes de alterar el sistema.
 
 ## 📄 Licencia
 

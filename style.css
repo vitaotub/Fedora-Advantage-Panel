@@ -421,6 +421,50 @@ body {
 }
 
 /* ============================================================
+ * ACÓRDEÃO PRINCIPAL
+ * ============================================================
+ * Cada sessão começa com um retângulo azul cujo conteúdo é a
+ * própria descrição da sessão. Ele é visualmente distinto dos
+ * acórdeãos de conteúdo (borda accent, ícone ℹ️, texto muted
+ * itálico) para que o usuário perceba que é "introdução" e não
+ * "ação".
+ *
+ * Diferente dos demais acórdeãos, este NÃO é um <details>:
+ * é um <div> estático. Não colapsa, não tem seta, não tem
+ * cursor de clique. É puramente informativo.
+ */
+
+.acordeao-principal {
+    background-color: rgba(60, 103, 227, 0.04);
+    border: 1px solid var(--accent);
+    border-left: 4px solid var(--accent);
+    border-radius: 8px;
+    margin-bottom: 1.25rem;
+    padding: 1rem 1.25rem;
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    font-size: 0.95rem;
+    font-weight: 400;
+    font-style: italic;
+    color: var(--text-muted);
+    line-height: 1.55;
+}
+
+.acordeao-principal::before {
+    content: 'ℹ️';
+    font-style: normal;
+    font-size: 1rem;
+    flex-shrink: 0;
+    line-height: 1.55;
+}
+
+.acordeao-principal > span {
+    flex: 1;
+    min-width: 0;
+}
+
+/* ============================================================
  * PROGRESSO
  * ============================================================ */
 

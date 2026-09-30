@@ -63,7 +63,7 @@
         <div class="fill" id="progress-guia-fill"></div>
     </div>
     <div class="info">
-        <span class="sessao-atual" id="progress-guia-text">1 de 12</span>
+        <span class="sessao-atual" id="progress-guia-text">1 de 13</span>
     </div>
 </div>
 
@@ -78,7 +78,7 @@
 <!-- ===== NAVEGAÇÃO ===== -->
 <div class="nav-guide" id="nav-guide">
     <div class="info">
-        <span id="info-sessao"><strong>1/12</strong> - Carregando...</span>
+        <span id="info-sessao"><strong>1/13</strong> - Carregando...</span>
     </div>
     <div class="botoes">
         <button class="btn-voltar" id="btn-anterior" onclick="sessaoAnterior()" data-i18n="comum.btn_anterior">◀ Anterior</button>
@@ -337,10 +337,16 @@ function criarMenuSessoes() {
         item.setAttribute('tabindex', '0');
         item.title = nome;
 
+        // O menu é construído antes do JSON de tradução terminar de
+        // carregar (o fetch é assíncrono). Por isso o texto inicial
+        // cai no fallback pt-BR. Adicionar data-i18n no <span> faz o
+        // aplicarTraducoes() do i18n.js encontrar e retraduzir o chip
+        // quando o JSON chegar — sem precisar reconstruir o menu.
+        var chaveNome = 'sessoes.' + sessaoId + '.nome';
         item.innerHTML =
             '<span class="session-icon">' + icone + '</span>' +
             '<span class="session-numero">' + (i + 1) + '</span>' +
-            '<span class="session-label">' + nome + '</span>';
+            '<span class="session-label" data-i18n="' + chaveNome + '">' + nome + '</span>';
 
         item.addEventListener('click', function() {
             var idx = parseInt(this.dataset.index, 10);
@@ -434,6 +440,61 @@ marcarComoPulado = async function(idComando) {
 };
 
 // ============================================================
+// REAPLICAÇÃO DE TEXTOS DINÂMICOS APÓS O I18N CARREGAR
+// ============================================================
+//
+// Os elementos abaixo são preenchidos por JS durante o boot, ANTES
+// do JSON de tradução terminar de carregar (o fetch é assíncrono).
+// Resultado: em EN/ES, ficam em pt-BR até a próxima interação.
+//
+// Esta função reaplica os textos que dependem do idioma. É chamada
+// em dois momentos:
+//   1. Quando o i18n.js dispara 'i18n-pronto' (JSON recém-carregado)
+//   2. A cada 'sessao-carregada' (para garantir que os textos do
+//      rodapé/label também reflitam o idioma atual)
+
+function _reaplicarTextosDinamicos() {
+    var total = SESSOES_PRINCIPAIS.length;
+    if (total === 0) return;
+
+    // Guarda de sanidade: se por algum motivo sessaoAtual está fora
+    // do intervalo, reseta para 0 para não quebrar os lookups abaixo.
+    if (sessaoAtual < 0 || sessaoAtual >= total) sessaoAtual = 0;
+
+    // 1. Barra de posição ("N de total")
+    atualizarBarraPosicao(sessaoAtual, total);
+
+    // 2. Rodapé com o nome da sessão ("N/total - Sessão X")
+    var infoSessao = document.getElementById('info-sessao');
+    if (infoSessao) {
+        var nomeAtual = nomeDaSessao(SESSOES_PRINCIPAIS[sessaoAtual]);
+        infoSessao.innerHTML = _tVars(
+            'comum.sessao_info_nav',
+            '<strong>' + (sessaoAtual + 1) + '/' + total + '</strong> - ' + nomeAtual,
+            { n: sessaoAtual + 1, total: total, nome: nomeAtual }
+        );
+    }
+
+    // 3. Label "Sessão N" no topo da sessão carregada
+    var container = document.getElementById('sessao-container');
+    if (container && typeof numerarSessao === 'function') {
+        numerarSessao(SESSOES_PRINCIPAIS[sessaoAtual], container);
+    }
+
+    // 4. Menu de sessões (chips com data-i18n agora)
+    var menu = document.getElementById('session-menu');
+    if (menu && typeof I18N !== 'undefined' && typeof I18N.aplicarTraducoes === 'function') {
+        I18N.aplicarTraducoes(menu);
+    }
+}
+
+document.addEventListener('i18n-pronto', function() {
+    // Pequeno delay para garantir que o DOM já foi populado pelo
+    // carregarSessao inicial (que também é assíncrono).
+    setTimeout(_reaplicarTextosDinamicos, 100);
+});
+
+// ============================================================
 // INICIALIZAÇÃO
 // ============================================================
 
@@ -476,10 +537,11 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // A cada sessão carregada, atualiza o menu (para refletir
-// mudanças de estado) e reaplica traduções
+// mudanças de estado) e reaplica textos dinâmicos traduzidos
 document.addEventListener('sessao-carregada', function() {
     setTimeout(function() {
         atualizarMenuSessoes();
+        _reaplicarTextosDinamicos();
     }, 150);
 });
 </script>

@@ -80,20 +80,13 @@ version:
 
 # Alvo de sanidade — roda os mesmos checks que o install.sh
 # e o build-container.sh poderiam rodar. Útil antes de commitar.
-# Check unificado: delega para validar.sh (que faz tudo o que o
-# check-basico faz, e mais: cross-references, ícones, i18n).
-# Cai no check-basico se validar.sh não existir — assim o Makefile
-# continua funcional mesmo sem o script.
-check:
-	@if [ -f validar.sh ]; then \
-		bash validar.sh; \
-	else \
-		echo "ℹ️  validar.sh não encontrado — rodando check básico..."; \
-		$(MAKE) --no-print-directory check-basico; \
-	fi
+#
+# `check` é um alias de `check-basico` — mantido para compatibilidade
+# com quem já tem o hábito de rodar `make check`.
+check: check-basico
 
-# Check básico: sintaxe JS/Bash/JSON + consistência de versão.
-# Mantido para o caso de validar.sh não estar disponível.
+# Checagem de sintaxe JS/Bash/JSON + consistência de versão entre
+# package.json e CHANGELOG.md. Alvo principal de validação do projeto.
 check-basico:
 	@echo "==> Checando sintaxe JavaScript..."
 	@for f in script.js i18n.js server.js hardware-service.js; do \

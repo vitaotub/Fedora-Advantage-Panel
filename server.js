@@ -68,6 +68,16 @@ const LOCALES_DIR = path.join(__dirname, 'locales');
 //   o bus correto — o comando falharia silenciosamente.
 // - A whitelist faz ele rodar como o usuário real, com o env
 //   correto ajustado por `_precisaEnvUserContext()`.
+//
+// SOBRE `setsid -f waydroid show-full-ui`:
+// - O Waydroid iniciado via `waydroid show-full-ui` herda a sessão
+//   de terminal do FOF. Quando o FOF fecha, o kernel envia SIGHUP
+//   para toda a sessão, e o Waydroid (que não está em nohup) morre.
+// - `setsid -f` força o Waydroid a criar uma nova sessão própria,
+//   desatada do terminal do FOF. Fechar o FOF NÃO fecha mais o
+//   Waydroid — mesmo comportamento de abrir pelo menu do Fedora.
+// - O comando entra na whitelist para não exigir senha a cada
+//   abertura do Waydroid (é uma ação de usuário, não administrativa).
 
 const COMANDOS_SEM_AUTENTICACAO = [
     'rpm -q',
@@ -82,6 +92,7 @@ const COMANDOS_SEM_AUTENTICACAO = [
 'lact',
 'waydroid status',
 'waydroid show-full-ui',
+'setsid -f waydroid show-full-ui',
 // Flatpak roda como usuário; a autenticação (quando necessária)
 // é resolvida pelo Polkit do sistema, não pelo FOF.
 'flatpak install',
@@ -776,41 +787,41 @@ function executarComandoComStream(comandoFinal, idComando, isReversao, callback)
         if (prog) enviarProgresso(idComando, prog.atual, prog.total);
     });
 
-    processo.stderr.on('data', (data) => {
-        const texto = data.toString();
-        erros += texto;
-        const textoFiltrado = texto.replace(/\[sudo\] password for .+: /g, '');
-        if (textoFiltrado.trim()) {
-            enviarLog(idComando, textoFiltrado, 'error');
-        }
-    });
-
-    processo.on('close', (code) => {
-        if (code === 0) {
-            if (isReversao) {
-                removerProgresso(idComando);
-            } else {
-                salvarProgresso(idComando);
+        processo.stderr.on('data', (data) => {
+            const texto = data.toString();
+            erros += texto;
+            const textoFiltrado = texto.replace(/\[sudo\] password for .+: /g, '');
+            if (textoFiltrado.trim()) {
+                enviarLog(idComando, textoFiltrado, 'error');
             }
-            enviarLog(idComando, `\n✅ Comando concluído com sucesso! (código: ${code})\n`, 'success');
-            console.log(`[SUCESSO] ${idComando}`);
-        } else {
-            enviarLog(idComando, `\n❌ Comando falhou com código: ${code}\n`, 'error');
-            console.error(`[ERRO] ${idComando}: Código ${code}`);
-        }
+        });
 
-        enviarLog(idComando, '─'.repeat(50) + '\n', 'info');
-        enviarLog(idComando, code === 0 ? '✅ Tarefa concluída!\n' : '❌ Tarefa falhou!\n', code === 0 ? 'success' : 'error');
-        enviarLog(idComando, '__END__', 'end', { sucesso: code === 0 });
+        processo.on('close', (code) => {
+            if (code === 0) {
+                if (isReversao) {
+                    removerProgresso(idComando);
+                } else {
+                    salvarProgresso(idComando);
+                }
+                enviarLog(idComando, `\n✅ Comando concluído com sucesso! (código: ${code})\n`, 'success');
+                console.log(`[SUCESSO] ${idComando}`);
+            } else {
+                enviarLog(idComando, `\n❌ Comando falhou com código: ${code}\n`, 'error');
+                console.error(`[ERRO] ${idComando}: Código ${code}`);
+            }
 
-        callback(code === 0 ? null : new Error(`Código de saída: ${code}`), saidaCompleta, erros);
-    });
+            enviarLog(idComando, '─'.repeat(50) + '\n', 'info');
+            enviarLog(idComando, code === 0 ? '✅ Tarefa concluída!\n' : '❌ Tarefa falhou!\n', code === 0 ? 'success' : 'error');
+            enviarLog(idComando, '__END__', 'end', { sucesso: code === 0 });
 
-    processo.on('error', (err) => {
-        enviarLog(idComando, `\n❌ Erro ao iniciar processo: ${err.message}\n`, 'error');
-        enviarLog(idComando, '__END__', 'end', { sucesso: false });
-        callback(err, saidaCompleta, erros);
-    });
+            callback(code === 0 ? null : new Error(`Código de saída: ${code}`), saidaCompleta, erros);
+        });
+
+        processo.on('error', (err) => {
+            enviarLog(idComando, `\n❌ Erro ao iniciar processo: ${err.message}\n`, 'error');
+            enviarLog(idComando, '__END__', 'end', { sucesso: false });
+            callback(err, saidaCompleta, erros);
+        });
 }
 
 // ============================================================
@@ -1698,6 +1709,16 @@ const server = http.createServer((req, res) => {
     // ----------------------------------------------------------
     // /waydroid-status — status do container Android
     // ----------------------------------------------------------
+    //
+    // O campo `clean` é usado pelo frontend para decidir se o botão
+    // de remoção do Waydroid deve ficar habilitado. `clean: true`
+    // significa: nenhum pacote instalado E nenhum resquício no
+    // filesystem (pastas de dados, venv de extras, atalhos).
+    //
+    // Sem esse campo, o botão de remoção é sempre clicável porque
+    // `waydroid-uninstall` está registrado como `sempreClicavel` no
+    // script.js — o que faz sentido para permitir re-execuções, mas
+    // deixa o botão "vivo" mesmo depois de uma limpeza completa.
     if (req.method === 'GET' && url === '/waydroid-status') {
         exec('waydroid status 2>&1', { shell: '/bin/bash', timeout: 5000 }, (error, stdout, stderr) => {
             const output = ((stdout || '') + (stderr || '')).trim();
@@ -1706,9 +1727,17 @@ const server = http.createServer((req, res) => {
             let initialized = false;
             let running = false;
 
-            if (/command not found/i.test(output) || /No such file or directory/i.test(output)) {
+            // Detecção de "não instalado" multilíngue: o bash do Fedora
+            // emite mensagens localizadas ("comando não encontrado" em
+            // PT-BR, "command not found" em EN). O `error` do exec
+            // também é checado — o shell retorna 127 quando o comando
+            // não existe, o que cobre qualquer variação de locale.
+            if (/command not found/i.test(output) ||
+                /comando não encontrado/i.test(output) ||
+                /No such file or directory/i.test(output) ||
+                error) {
                 installed = false;
-            }
+                }
 
             if (output.indexOf('is not initialized') !== -1) {
                 initialized = false;
@@ -1719,13 +1748,35 @@ const server = http.createServer((req, res) => {
                 }
             }
 
-            res.writeHead(200, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify({
-                installed: installed,
-                initialized: initialized,
-                running: running,
-                raw: output
-            }));
+            // Verifica resquícios no filesystem. Se NADA for
+            // encontrado (nem pacote, nem pastas, nem atalhos),
+            // `clean` é true e o frontend desabilita o botão.
+            //
+            // Usa $HOME do usuário real (HOME_DIR_USUARIO), porque
+            // o Node pode ter sido iniciado com HOME diferente.
+            const homeDir = HOME_DIR_USUARIO;
+            const residualCmd =
+            '[ -d /var/lib/waydroid ] && echo "residual" && exit 0; ' +
+            '[ -d "' + homeDir + '/.local/share/waydroid" ] && echo "residual" && exit 0; ' +
+            '[ -d "' + homeDir + '/.local/share/fof-waydroid" ] && echo "residual" && exit 0; ' +
+            '[ -f "' + homeDir + '/.local/share/applications/Waydroid.desktop" ] && echo "residual" && exit 0; ' +
+            '[ -f "' + homeDir + '/.local/share/applications/waydroid-helper.desktop" ] && echo "residual" && exit 0; ' +
+            'echo "clean"';
+
+            exec(residualCmd, { shell: '/bin/bash', timeout: 3000 }, (errResidual, stdoutResidual) => {
+                const residual = (stdoutResidual || '').trim();
+                // Clean = nenhum resquício E pacote não instalado.
+                const clean = (residual === 'clean') && !installed;
+
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({
+                    installed: installed,
+                    initialized: initialized,
+                    running: running,
+                    clean: clean,
+                    raw: output
+                }));
+            });
         });
         return;
     }
@@ -1832,7 +1883,7 @@ server.listen(PORT, HOST, () => {
     console.log(` 📡 SSE: Ativo (logs em tempo real, com buffer de replay)`);
     console.log(` 📁 Arquivos estáticos: Ativo (HTML, CSS, JS, ícone)`);
     console.log(` 🌐 i18n: Ativo (locales em /locales/<lang>.json)`);
-    console.log(` 📄 Páginas: index.html, guiado.html + 12 sessões dinâmicas`);
+    console.log(` 📄 Páginas: index.html, guiado.html + 13 sessões dinâmicas`);
     console.log(` 📝 Changelog: /changelog (lê CHANGELOG.md)`);
     console.log(` 🔧 Comandos SEM autenticação: rpm -q, uname -r, gtk-launch, flatpak, systemctl --user, etc`);
     console.log(` 🎯 Comandos USER-CONTEXT (env ajustado): ${COMANDOS_USER_CONTEXT.join(', ')}`);

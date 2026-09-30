@@ -13,14 +13,15 @@
 <span data-i18n="sessoes.dispositivos-perifericos.titulo">🔌 Dispositivos e Periféricos</span>
 </div>
 
-<div class="sessao-descricao" data-i18n="sessoes.dispositivos-perifericos.descricao">
-Detecta hardware que pode precisar de drivers ou firmwares adicionais (não incluídos no Fedora por questões de licenciamento), oferece suplementos seguros e permite habilitar repositórios da comunidade para dispositivos específicos. Nada é instalado automaticamente — cada sugestão tem botões separados de instalar e reverter.
+<!-- Acórdeão principal — descrição da sessão -->
+<div class="acordeao-principal">
+<span data-i18n="sessoes.dispositivos-perifericos.descricao">Detecta hardware que pode precisar de drivers ou firmwares adicionais (não incluídos no Fedora por questões de licenciamento), oferece suplementos seguros e permite habilitar repositórios da comunidade para dispositivos específicos. Nada é instalado automaticamente — cada sugestão tem botões separados de instalar e reverter.</span>
 </div>
 
 <!-- ============================================================
 ACORDEÃO 1: DETECÇÃO AUTOMÁTICA
 ============================================================ -->
-<details class="acordeao" open>
+<details class="acordeao">
 <summary data-i18n="sessoes.dispositivos-perifericos.deteccao_titulo">🎯 Detecção automática de hardware</summary>
 <div class="acordeao-conteudo">
 
@@ -537,11 +538,11 @@ async function executarDriverInstalar(idComando) {
     var temRepo = !!COPR_COMMANDS[idRepo];
 
     await executarComandoGenerico(idComando, cmd,
-        _t('sessoes.dispositivos-perifericos.instalando_pacote', 'Instalando pacote...'),
-        function () {
-            executarHardwareScan();
-            aplicarEstadoItemCompleto(temRepo ? idRepo : null, idComando, idRemove);
-        });
+    _t('sessoes.dispositivos-perifericos.instalando_pacote', 'Instalando pacote...'),
+    async function () {
+        await executarHardwareScan();
+        aplicarEstadoItemCompleto(temRepo ? idRepo : null, idComando, idRemove);
+    });
 }
 
 async function executarDriverRemover(idComando) {
@@ -552,8 +553,8 @@ async function executarDriverRemover(idComando) {
         '⚠️ Atenção!\n\nVocê está prestes a reverter um driver.\n\nSe o dispositivo depende deste driver para funcionar (por exemplo, um adaptador Wi-Fi), você vai perder a funcionalidade após o reboot.\n\nTenha uma conexão alternativa disponível antes de continuar.\n\nContinuar?'))) return;
 
     await executarComandoGenerico(idComando, cmd,
-        _t('sessoes.dispositivos-perifericos.revertendo_driver', 'Revertendo driver...'),
-        function () { executarHardwareScan(); });
+    _t('sessoes.dispositivos-perifericos.revertendo_driver', 'Revertendo driver...'),
+    async function () { await executarHardwareScan(); });
 }
 
 /**

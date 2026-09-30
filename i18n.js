@@ -52,7 +52,7 @@
     // alguns segundos, até o /info responder e popular
     // window.FOF_VERSION_UI18N (aí o _chaveCache() passa a usar a
     // versão real e o cache é invalidado naturalmente).
-    var FALLBACK_VERSION = '1.0.0-09292026';
+    var FALLBACK_VERSION = '1.0.0-09302026';
 
     // ============================================================
     // ESTADO

@@ -13,18 +13,20 @@
 <span data-i18n="sessoes.diagnostico.titulo">📊 Diagnóstico</span>
 </div>
 
-<div class="sessao-descricao" data-i18n="sessoes.diagnostico.descricao">
-Painel visual do estado do sistema. Mostra em tempo real o que está acontecendo com CPU, memória, disco e serviços — sem precisar abrir o terminal. Útil para investigar lentidão, uso de disco, temperatura e erros recentes.
-</div>
-
+<!-- Aviso de escopo amplo: natureza da sessão (somente leitura) -->
 <div class="aviso-caixa" data-i18n-html="sessoes.diagnostico.aviso_geral">
 ℹ️ <strong>Este painel é somente leitura.</strong> Nenhum comando aqui altera o sistema — todos são consultas. Se quiser corrigir algo específico, as ações ficam nas outras sessões do FOF.
+</div>
+
+<!-- Acórdeão principal — descrição da sessão -->
+<div class="acordeao-principal">
+<span data-i18n="sessoes.diagnostico.descricao">Painel visual do estado do sistema. Mostra em tempo real o que está acontecendo com CPU, memória, disco e serviços — sem precisar abrir o terminal. Útil para investigar lentidão, uso de disco, temperatura e erros recentes.</span>
 </div>
 
 <!-- ============================================================
 PAINEL DO SISTEMA
 ============================================================ -->
-<details class="acordeao" open>
+<details class="acordeao">
 <summary data-i18n="sessoes.diagnostico.painel_titulo">📊 Painel do Sistema</summary>
 <div class="acordeao-conteudo">
 
