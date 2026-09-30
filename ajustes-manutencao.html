@@ -371,12 +371,15 @@ async function _restaurarParToggle(idAplicar, idReverter, textoAplicar, textoRev
     var reverterMarcado = isExecutado(idReverter);
 
     if (aplicarMarcado && !reverterMarcado) {
+        // Install feito, nada revertido: install disabled, revert ativo.
         _marcarBotaoConcluido(idAplicar);
         _resetarBotao(idReverter, textoReverter);
     } else if (reverterMarcado && !aplicarMarcado) {
+        // Revert feito, install desmarcado: revert disabled, install ativo.
         _marcarBotaoConcluido(idReverter);
         _resetarBotao(idAplicar, textoAplicar);
     } else if (aplicarMarcado && reverterMarcado) {
+        // Estado ambíguo: limpa ambos.
         _resetarBotao(idAplicar, textoAplicar);
         _resetarBotao(idReverter, textoReverter);
         try {
@@ -386,9 +389,28 @@ async function _restaurarParToggle(idAplicar, idReverter, textoAplicar, textoRev
             console.error('Erro ao limpar estado ambíguo do toggle ' + idAplicar + ':', e);
         }
     } else {
+        // Nada marcado: install ativo, revert DESABILITADO
+        // (não há nada para reverter).
         _resetarBotao(idAplicar, textoAplicar);
-        _resetarBotao(idReverter, textoReverter);
+        _desabilitarBotaoReverter(idReverter, textoReverter);
     }
+}
+
+/**
+ * Coloca um botão de reverter no estado inicial desabilitado.
+ * Usado quando o comando de instalação correspondente não está
+ * marcado — não há nada para reverter, então o botão não deve
+ * estar clicável.
+ */
+function _desabilitarBotaoReverter(idComando, fallbackText) {
+    var btn = document.getElementById('btn-' + idComando);
+    if (!btn) return;
+    var original = btn.getAttribute('data-texto-original') || fallbackText;
+    btn.textContent = original;
+    btn.style.backgroundColor = '';
+    btn.style.cursor = 'not-allowed';
+    btn.disabled = true;
+    btn.style.opacity = '0.5';
 }
 
 // ------------------------------------------------------------

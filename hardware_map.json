@@ -1,0 +1,100 @@
+{
+    "_meta": {
+        "description": "Mapa de hardware do FOF. Associa IDs de dispositivo (PCI/USB) a pacotes e repositórios. PRs bem-vindos em github.com/vitaotek/Fedora-Only-Fans.",
+        "format_version": "1.0",
+        "notes": "Este arquivo é lido em runtime pelo endpoint /hardware-scan do server.js. Alterações aqui afetam a sessão 'Dispositivos e Periféricos'."
+    },
+
+    "pci_vendors": {
+        "10de": {
+            "name": "NVIDIA Corporation",
+            "category": "gpu",
+            "detection": "nvidia-detect",
+            "packages": ["akmod-nvidia"],
+            "repo_required": "rpmfusion-nonfree",
+            "notes": "Requer RPM Fusion nonfree. O FOF tenta usar nvidia-detect para identificar a geração exata e sugerir o pacote correto (akmod-nvidia, akmod-nvidia-470xx ou akmod-nvidia-390xx)."
+        },
+        "1002": {
+            "name": "AMD/ATI",
+            "category": "gpu",
+            "packages": ["mesa-va-drivers-freeworld"],
+            "repo_required": "rpmfusion-free",
+            "notes": "Aceleração de vídeo por hardware (VA-API) em GPUs AMD. O Mesa padrão do Fedora tem esse suporte bloqueado por licenciamento."
+        },
+        "1022": {
+            "name": "AMD (APU)",
+            "category": "gpu",
+            "packages": ["mesa-va-drivers-freeworld"],
+            "repo_required": "rpmfusion-free",
+            "notes": "APUs AMD com gráficos integrados (Ryzen com Radeon Vega ou RDNA)."
+        },
+        "8086": {
+            "name": "Intel Corporation",
+            "category": "gpu",
+            "packages": ["intel-media-driver"],
+            "repo_required": "fedora",
+            "notes": "Aceleração de vídeo em iGPUs Intel Skylake (6ª geração) ou mais recentes. Chips mais antigos (Haswell ou anteriores) usam o driver i965, já presente no Fedora."
+        },
+        "14e4": {
+            "name": "Broadcom Inc.",
+            "category": "wifi",
+            "packages": ["akmod-wl"],
+            "repo_required": "rpmfusion-nonfree",
+            "conflict_check": ["brcmfmac", "b43", "bcma"],
+            "notes": "Só instale se o driver open-source (brcmfmac/b43) não funcionar. akmod-wl conflita com eles e pode derrubar o Wi-Fi que já funcionava."
+        },
+        "10ec": {
+            "name": "Realtek Semiconductor",
+            "category": "ethernet",
+            "packages": ["akmod-r8168"],
+            "repo_required": "rpmfusion-nonfree",
+            "conflict_check": ["r8169"],
+            "notes": "Driver alternativo para placas Ethernet Realtek. O driver padrão (r8169) funciona na maioria dos casos — só instale akmod-r8168 se o cabo não for reconhecido."
+        }
+    },
+
+    "usb_devices": {
+        "0bda:c811": {
+            "name": "Realtek RTL8811CU (Wi-Fi USB)",
+            "category": "wifi",
+            "copr": "morrownr/8821cu",
+            "package": "rtl8821cu-morrownr-dkms",
+            "notes": "Driver DKMS mantido pela comunidade no COPR morrownr/8821cu. Requer RPM Fusion para as dependências de build (kernel-devel, akmods)."
+        },
+        "0bda:1a2b": {
+            "name": "Realtek RTL8821CU (Wi-Fi USB)",
+            "category": "wifi",
+            "copr": "morrownr/8821cu",
+            "package": "rtl8821cu-morrownr-dkms",
+            "notes": "Mesmo driver do RTL8811CU."
+        },
+        "7392:c611": {
+            "name": "Edimax EW-7611ULB (Realtek RTL8821CU)",
+            "category": "wifi",
+            "copr": "morrownr/8821cu",
+            "package": "rtl8821cu-morrownr-dkms",
+            "notes": "Adaptador USB Wi-Fi + Bluetooth vendido pela Edimax. Usa o mesmo chip do RTL8811CU."
+        },
+        "0bda:b812": {
+            "name": "Realtek RTL8812BU (Wi-Fi USB)",
+            "category": "wifi",
+            "copr": "morrownr/8822bu",
+            "package": "rtl8822bu-morrownr-dkms",
+            "notes": "Driver DKMS no COPR morrownr/8822bu. Cobre modelos como COMFAST CF-926AC v2."
+        },
+        "0bda:8812": {
+            "name": "Realtek RTL8812AU (Wi-Fi USB)",
+            "category": "wifi",
+            "copr": "morrownr/8812au",
+            "package": "rtl8812au-kmod",
+            "notes": "Driver DKMS no COPR morrownr/8812au. Chip comum em adaptadores Wi-Fi USB dual-band mais antigos."
+        },
+        "0bda:8811": {
+            "name": "Realtek RTL8811AU (Wi-Fi USB)",
+            "category": "wifi",
+            "copr": "morrownr/8811au",
+            "package": "rtl8811au-morrownr-dkms",
+            "notes": "Driver DKMS no COPR morrownr/8811au. Chip comum em adaptadores Wi-Fi USB compactos."
+        }
+    }
+}

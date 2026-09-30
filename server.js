@@ -2,6 +2,7 @@ const http = require('http');
 const { exec, spawn, spawnSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
+const hardwareService = require('./hardware-service');
 
 const PORT = parseInt(process.env.PORT, 10) || 3000;
 const ARQUIVO_PROGRESSO = path.join(__dirname, '.progresso.json');
@@ -121,8 +122,20 @@ function _precisaEnvUserContext(comando) {
     });
 }
 
+// Caracteres de encadeamento de shell: ponto-e-vírgula (;), pipe (| ou ||),
+// subshell ($()), substituição de comando (`...`) e AND lógico (&&).
+// O `&` sozinho é permitido porque o comando de abrir Waydroid roda em
+// background (`waydroid show-full-ui >... &`) e é legitimamente usuário.
+//
+// Sem esta validação, um comando como "rpm -q kernel; rm -rf ~" passaria
+// pelo startsWith("rpm -q ") e executaria o `rm` sem autenticação.
+const _CARACTERES_ENCADEAMENTO = /[;`|]|\$\(|&&/;
+
 function _cmdSemAutenticacao(comando) {
     const trimmed = (comando || '').trim();
+    if (_CARACTERES_ENCADEAMENTO.test(trimmed)) {
+        return false;
+    }
     return COMANDOS_SEM_AUTENTICACAO.some(function(cmd) {
         return trimmed === cmd
         || trimmed.startsWith(cmd + ' ')
@@ -510,6 +523,53 @@ function adicionarClienteSSE(idComando, res) {
 }
 
 // ============================================================
+// PROGRESSO DE PACOTES (parser de [N/M] do DNF)
+// ============================================================
+//
+// O DNF imprime "[N/M]" durante transações (verificação, download,
+// instalação). Este parser extrai o N e M mais recentes de cada
+// chunk e envia um evento SSE do tipo "progress" para o frontend,
+// que usa esses números para atualizar a barra de progresso.
+//
+// Não substitui o log normal — o texto do DNF continua indo pelo
+// canal "output". É um evento adicional e paralelo.
+
+function _detectarProgressoPacotes(texto) {
+    if (!texto) return null;
+    var matches = [];
+    var re = /\[(\d+)\/(\d+)\]/g;
+    var m;
+    while ((m = re.exec(texto)) !== null) {
+        matches.push(m);
+    }
+    if (matches.length === 0) return null;
+
+    var ultimo = matches[matches.length - 1];
+    var atual = parseInt(ultimo[1], 10);
+    var total = parseInt(ultimo[2], 10);
+
+    if (isNaN(atual) || isNaN(total) || total <= 0) return null;
+    if (atual > total) return null;
+
+    return { atual: atual, total: total };
+}
+
+function enviarProgresso(idComando, atual, total) {
+    var dados = { tipo: 'progress', pacote_atual: atual, pacote_total: total };
+
+    if (!sseBuffers.has(idComando)) sseBuffers.set(idComando, []);
+    var buffer = sseBuffers.get(idComando);
+    buffer.push(dados);
+    if (buffer.length > SSE_BUFFER_MAX) buffer.shift();
+
+    var clients = sseClients.get(idComando) || [];
+    var json = JSON.stringify(dados);
+    clients.forEach(function(client) {
+        client.write(`data: ${json}\n\n`);
+    });
+}
+
+// ============================================================
 // DETECÇÃO DE DESKTOP E AUTENTICAÇÃO
 // ============================================================
 
@@ -619,6 +679,8 @@ function executarComandoComStream(comandoFinal, idComando, isReversao, callback)
         }, (error, stdout, stderr) => {
             if (stdout) {
                 enviarLog(idComando, stdout, 'output');
+                var prog = _detectarProgressoPacotes(stdout);
+                if (prog) enviarProgresso(idComando, prog.atual, prog.total);
             }
             if (stderr) {
                 const stderrFiltrado = stderr.replace(/\[sudo\] password for .+: /g, '');
@@ -665,6 +727,8 @@ function executarComandoComStream(comandoFinal, idComando, isReversao, callback)
         }, (error, stdout, stderr) => {
             if (stdout) {
                 enviarLog(idComando, stdout, 'output');
+                var prog = _detectarProgressoPacotes(stdout);
+                if (prog) enviarProgresso(idComando, prog.atual, prog.total);
             }
             if (stderr) {
                 const stderrFiltrado = stderr.replace(/\[sudo\] password for .+: /g, '');
@@ -708,6 +772,8 @@ function executarComandoComStream(comandoFinal, idComando, isReversao, callback)
         const texto = data.toString();
         saidaCompleta += texto;
         enviarLog(idComando, texto, 'output');
+        var prog = _detectarProgressoPacotes(texto);
+        if (prog) enviarProgresso(idComando, prog.atual, prog.total);
     });
 
     processo.stderr.on('data', (data) => {
@@ -805,6 +871,8 @@ function _criarReaderOutput(idComando, outputTemp) {
                 bytesLidos = conteudo.length;
                 if (novoConteudo) {
                     enviarLog(idComando, novoConteudo, 'output');
+                    var prog = _detectarProgressoPacotes(novoConteudo);
+                    if (prog) enviarProgresso(idComando, prog.atual, prog.total);
                 }
             }
         } catch (e) {
@@ -819,7 +887,11 @@ function _criarReaderOutput(idComando, outputTemp) {
                 const conteudo = fs.readFileSync(outputTemp);
                 if (conteudo.length > bytesLidos) {
                     const resto = conteudo.slice(bytesLidos).toString('utf8');
-                    if (resto) enviarLog(idComando, resto, 'output');
+                    if (resto) {
+                        enviarLog(idComando, resto, 'output');
+                        var prog = _detectarProgressoPacotes(resto);
+                        if (prog) enviarProgresso(idComando, prog.atual, prog.total);
+                    }
                 }
             } catch (e) {}
             try { fs.unlinkSync(outputTemp); } catch (e) {}
@@ -1376,6 +1448,31 @@ const server = http.createServer((req, res) => {
     }
 
     // ----------------------------------------------------------
+    // /hardware-scan — detecção de hardware e sugestão de drivers
+    // ----------------------------------------------------------
+    //
+    // Roda lspci, lsusb e rpm -q, cruza com hardware_map.json e
+    // devolve a lista de dispositivos detectados com estado de
+    // driver. Nada é instalado — é puramente read-only.
+    //
+    // Também devolve o estado dos repositórios (RPM Fusion) e do
+    // Secure Boot, para o frontend montar avisos contextuais.
+    if (req.method === 'GET' && url === '/hardware-scan') {
+        hardwareService.scanHardware().then(function (resultado) {
+            res.writeHead(200, {
+                'Content-Type': 'application/json',
+                'Cache-Control': 'no-cache, no-store, must-revalidate'
+            });
+            res.end(JSON.stringify(resultado));
+        }).catch(function (e) {
+            console.error('[hardware-scan] Erro:', e.message);
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ devices: [], repos: {}, secure_boot: 'unknown', error: e.message }));
+        });
+        return;
+    }
+
+    // ----------------------------------------------------------
     // /system-info — painel de diagnóstico
     // ----------------------------------------------------------
     //
@@ -1389,7 +1486,7 @@ const server = http.createServer((req, res) => {
         FEDORA=$(cat /etc/fedora-release 2>/dev/null || echo "")
         KERNEL=$(uname -r 2>/dev/null || echo "")
         CPU=$(grep -m1 'model name' /proc/cpuinfo 2>/dev/null | cut -d: -f2 | sed 's/^ *//' | head -c 60)
-        CPU_USO=$(top -bn1 2>/dev/null | grep -m1 "Cpu(s)" | sed "s/.*, *\\([0-9.]*\\)%* id.*/\\1/" | awk '{printf "%d", 100 - $1}')
+        CPU_USO=$(top -bn2 -d 0.5 2>/dev/null | grep "Cpu(s)" | tail -1 | sed "s/.*, *\\([0-9.]*\\)%* id.*/\\1/" | awk '{printf "%d", 100 - $1}')
         RAM_TOTAL=$(free -b 2>/dev/null | awk '/^Mem:/{print $2}')
         RAM_USADO=$(free -b 2>/dev/null | awk '/^Mem:/{print $3}')
         DISCO_INFO=$(df -B1 / 2>/dev/null | tail -1 | awk '{print $2" "$3}')
@@ -1742,6 +1839,7 @@ server.listen(PORT, HOST, () => {
     console.log(` 📊 Progresso: .progresso.json (persistente no servidor)`);
     console.log(` 📱 Waydroid status: /waydroid-status`);
     console.log(` 📦 Flatpak instalados: /flatpak-installed`);
+    console.log(` 🔌 Hardware scan: /hardware-scan (lê hardware_map.json)`);
     console.log(` 🧠 Kernels: /kernels`);
     console.log(` 🖥️ System info: /system-info (com KSM, BBR, max_map_count, PipeWire quantum)`);
     console.log(` 📈 Top processos: /top-processes`);

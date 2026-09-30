@@ -1,0 +1,846 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FOF - Dispositivos e Periféricos</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="sessao-container" id="sessao-dispositivos-perifericos">
+<div class="sessao-titulo">
+<span class="sessao-label">Sessão</span>
+<span data-i18n="sessoes.dispositivos-perifericos.titulo">🔌 Dispositivos e Periféricos</span>
+</div>
+
+<div class="sessao-descricao" data-i18n="sessoes.dispositivos-perifericos.descricao">
+Detecta hardware que pode precisar de drivers ou firmwares adicionais (não incluídos no Fedora por questões de licenciamento), oferece suplementos seguros e permite habilitar repositórios da comunidade para dispositivos específicos. Nada é instalado automaticamente — cada sugestão tem botões separados de instalar e reverter.
+</div>
+
+<!-- ============================================================
+ACORDEÃO 1: DETECÇÃO AUTOMÁTICA
+============================================================ -->
+<details class="acordeao" open>
+<summary data-i18n="sessoes.dispositivos-perifericos.deteccao_titulo">🎯 Detecção automática de hardware</summary>
+<div class="acordeao-conteudo">
+
+<div class="sessao-descricao" data-i18n-html="sessoes.dispositivos-perifericos.deteccao_desc">
+Clique no botão abaixo para escanear seu computador. O FOF vai identificar GPUs, placas de rede e adaptadores USB que podem precisar de drivers adicionais, cruzando os IDs de hardware com um mapa mantido pela comunidade. <strong>Nada é instalado automaticamente</strong> — cada sugestão aparece como um card separado, com botões explícitos de instalar e reverter.
+</div>
+
+<div class="grupo-botoes" style="margin-bottom: 1rem;">
+<button class="btn-executar"
+onclick="executarHardwareScan()"
+data-comando="hw-scan"
+id="btn-hw-scan"
+data-i18n="sessoes.dispositivos-perifericos.btn_escanear">
+🔍 Detectar meu hardware
+</button>
+</div>
+
+<div id="hw-repo-aviso" style="display: none;"></div>
+
+<div id="hw-scan-resultado" style="display: none;">
+<!-- Cards gerados dinamicamente pelo JS -->
+</div>
+
+</div>
+</details>
+
+<!-- ============================================================
+ACORDEÃO 2: SUPLEMENTOS SEGUROS
+============================================================ -->
+<details class="acordeao">
+<summary data-i18n="sessoes.dispositivos-perifericos.suplementos_titulo">📦 Firmwares e suplementos seguros</summary>
+<div class="acordeao-conteudo">
+
+<div class="sessao-descricao" data-i18n="sessoes.dispositivos-perifericos.suplementos_desc">
+Estes pacotes complementam o <code>linux-firmware</code> padrão do Fedora. São seguros para instalar em qualquer sistema — não conflitam com drivers existentes e cobrem hardware que a Red Hat não distribui por questões de licenciamento ou por não fazer parte do escopo do Fedora.
+</div>
+
+<!-- linux-firmware-vendor -->
+<div class="bloco-comando">
+<div class="comando-info">
+<h3 data-i18n="sessoes.dispositivos-perifericos.firmware_vendor_titulo">Firmwares adicionais de fabricantes</h3>
+<p data-i18n-html="sessoes.dispositivos-perifericos.firmware_vendor_desc">
+O pacote <code>linux-firmware-vendor</code> traz firmwares que não estão no pacote principal — chips Wi-Fi Realtek recentes (RTL8852), alguns modelos Intel, e firmwares de fabricantes que exigem redistribuição restrita. É complementar ao <code>linux-firmware</code>, não o substitui.
+</p>
+<div class="grupo-botoes">
+<button class="btn-executar verde"
+onclick="executarSuplemento('firmware-vendor-install')"
+data-comando="firmware-vendor-install"
+data-logbox="log-sessao-dispositivos-perifericos"
+id="btn-firmware-vendor-install"
+data-i18n="sessoes.dispositivos-perifericos.btn_firmware_vendor_instalar">
+📦 Instalar firmwares adicionais
+</button>
+<button class="btn-executar cinza"
+onclick="executarSuplementoRemover('firmware-vendor-remove')"
+data-comando="firmware-vendor-remove"
+data-logbox="log-sessao-dispositivos-perifericos"
+id="btn-firmware-vendor-remove"
+data-i18n="sessoes.dispositivos-perifericos.btn_firmware_vendor_reverter">
+↩️ Reverter
+</button>
+</div>
+</div>
+<div class="progress-container" id="progress-firmware-vendor-install"><div class="progress-bar"><div class="progress-fill" id="progress-fill-firmware-vendor-install"></div></div><div class="progress-text"><span class="status" id="progress-status-firmware-vendor-install">⏳ Iniciando...</span><span class="percentage" id="progress-percent-firmware-vendor-install">0%</span></div></div>
+<div class="progress-container" id="progress-firmware-vendor-remove"><div class="progress-bar"><div class="progress-fill" id="progress-fill-firmware-vendor-remove"></div></div><div class="progress-text"><span class="status" id="progress-status-firmware-vendor-remove">⏳ Iniciando...</span><span class="percentage" id="progress-percent-firmware-vendor-remove">0%</span></div></div>
+</div>
+
+</div>
+</details>
+
+<!-- ============================================================
+ACORDEÃO 3: DRIVERS DA COMUNIDADE (COPR)
+============================================================ -->
+<details class="acordeao">
+<summary data-i18n="sessoes.dispositivos-perifericos.copr_titulo">🌐 Drivers da comunidade (COPR)</summary>
+<div class="acordeao-conteudo">
+
+<div class="aviso-caixa" data-i18n-html="sessoes.dispositivos-perifericos.copr_aviso">
+⚠️ <strong>Atenção antes de continuar:</strong><br>
+• Estes repositórios são <strong>mantidos por terceiros</strong> (indivíduos ou pequenos grupos da comunidade), não pela Red Hat nem pelo RPM Fusion.<br>
+• O FOF <strong>não controla</strong> o conteúdo, a frequência de atualização nem a segurança dos pacotes.<br>
+• Um COPR pode ser descontinuado a qualquer momento — se isso acontecer, o driver deixa de receber atualizações até alguém publicar uma alternativa.<br>
+• Estes drivers são para <strong>adaptadores Wi-Fi USB Realtek específicos</strong>. Só instale se você tiver um dos dispositivos listados.<br>
+• Se você não sabe se precisa, use primeiro a <strong>detecção automática</strong> no acórdeão acima — ela identifica o modelo exato.
+</div>
+
+<!-- COPR morrownr/8821cu -->
+<div class="bloco-comando">
+<div class="comando-info">
+<h3 data-i18n="sessoes.dispositivos-perifericos.copr_8821cu_titulo">RTL8811CU / RTL8821CU — Wi-Fi USB</h3>
+<p data-i18n-html="sessoes.dispositivos-perifericos.copr_8821cu_desc">
+Adaptadores Wi-Fi USB com os chips Realtek RTL8811CU e RTL8821CU (muito comuns em modelos compactos dual-band). Driver DKMS mantido por <code>morrownr</code> — comunidade ativa, com histórico de atualizações rápidas para novos kernels. Requer RPM Fusion para as dependências de build.
+</p>
+<div class="grupo-botoes">
+<button class="btn-executar"
+onclick="executarCoprEnable('copr-rtl8821cu-enable')"
+data-comando="copr-rtl8821cu-enable"
+data-logbox="log-sessao-dispositivos-perifericos"
+id="btn-copr-rtl8821cu-enable"
+data-i18n="sessoes.dispositivos-perifericos.btn_copr_habilitar">🌐 Habilitar repositório</button>
+<button class="btn-executar cinza"
+onclick="executarCoprDisable('copr-rtl8821cu-disable')"
+data-comando="copr-rtl8821cu-disable"
+data-logbox="log-sessao-dispositivos-perifericos"
+id="btn-copr-rtl8821cu-disable"
+data-i18n="sessoes.dispositivos-perifericos.btn_copr_desabilitar">↩️ Desabilitar repositório</button>
+<button class="btn-executar verde"
+onclick="executarDriverCopr('driver-rtl8821cu-install')"
+data-comando="driver-rtl8821cu-install"
+data-logbox="log-sessao-dispositivos-perifericos"
+id="btn-driver-rtl8821cu-install"
+data-i18n="sessoes.dispositivos-perifericos.btn_driver_instalar">📦 Instalar driver</button>
+<button class="btn-executar cinza"
+onclick="executarDriverCopr('driver-rtl8821cu-remove')"
+data-comando="driver-rtl8821cu-remove"
+data-logbox="log-sessao-dispositivos-perifericos"
+id="btn-driver-rtl8821cu-remove"
+data-i18n="sessoes.dispositivos-perifericos.btn_driver_reverter">↩️ Reverter driver</button>
+</div>
+</div>
+<div class="progress-container" id="progress-copr-rtl8821cu-enable"><div class="progress-bar"><div class="progress-fill" id="progress-fill-copr-rtl8821cu-enable"></div></div><div class="progress-text"><span class="status" id="progress-status-copr-rtl8821cu-enable">⏳ Iniciando...</span><span class="percentage" id="progress-percent-copr-rtl8821cu-enable">0%</span></div></div>
+<div class="progress-container" id="progress-copr-rtl8821cu-disable"><div class="progress-bar"><div class="progress-fill" id="progress-fill-copr-rtl8821cu-disable"></div></div><div class="progress-text"><span class="status" id="progress-status-copr-rtl8821cu-disable">⏳ Iniciando...</span><span class="percentage" id="progress-percent-copr-rtl8821cu-disable">0%</span></div></div>
+<div class="progress-container" id="progress-driver-rtl8821cu-install"><div class="progress-bar"><div class="progress-fill" id="progress-fill-driver-rtl8821cu-install"></div></div><div class="progress-text"><span class="status" id="progress-status-driver-rtl8821cu-install">⏳ Iniciando...</span><span class="percentage" id="progress-percent-driver-rtl8821cu-install">0%</span></div></div>
+<div class="progress-container" id="progress-driver-rtl8821cu-remove"><div class="progress-bar"><div class="progress-fill" id="progress-fill-driver-rtl8821cu-remove"></div></div><div class="progress-text"><span class="status" id="progress-status-driver-rtl8821cu-remove">⏳ Iniciando...</span><span class="percentage" id="progress-percent-driver-rtl8821cu-remove">0%</span></div></div>
+</div>
+
+<!-- COPR morrownr/8822bu -->
+<div class="bloco-comando">
+<div class="comando-info">
+<h3 data-i18n="sessoes.dispositivos-perifericos.copr_8822bu_titulo">RTL8812BU / RTL8822BU — Wi-Fi USB dual-band</h3>
+<p data-i18n-html="sessoes.dispositivos-perifericos.copr_8822bu_desc">
+Adaptadores Wi-Fi USB com os chips Realtek RTL8812BU e RTL8822BU (dual-band AC1200, comuns em modelos COMFAST e similares). Mesmo mantenedor do COPR anterior. Requer RPM Fusion para as dependências de build.
+</p>
+<div class="grupo-botoes">
+<button class="btn-executar"
+onclick="executarCoprEnable('copr-rtl8822bu-enable')"
+data-comando="copr-rtl8822bu-enable"
+data-logbox="log-sessao-dispositivos-perifericos"
+id="btn-copr-rtl8822bu-enable"
+data-i18n="sessoes.dispositivos-perifericos.btn_copr_habilitar">🌐 Habilitar repositório</button>
+<button class="btn-executar cinza"
+onclick="executarCoprDisable('copr-rtl8822bu-disable')"
+data-comando="copr-rtl8822bu-disable"
+data-logbox="log-sessao-dispositivos-perifericos"
+id="btn-copr-rtl8822bu-disable"
+data-i18n="sessoes.dispositivos-perifericos.btn_copr_desabilitar">↩️ Desabilitar repositório</button>
+<button class="btn-executar verde"
+onclick="executarDriverCopr('driver-rtl8822bu-install')"
+data-comando="driver-rtl8822bu-install"
+data-logbox="log-sessao-dispositivos-perifericos"
+id="btn-driver-rtl8822bu-install"
+data-i18n="sessoes.dispositivos-perifericos.btn_driver_instalar">📦 Instalar driver</button>
+<button class="btn-executar cinza"
+onclick="executarDriverCopr('driver-rtl8822bu-remove')"
+data-comando="driver-rtl8822bu-remove"
+data-logbox="log-sessao-dispositivos-perifericos"
+id="btn-driver-rtl8822bu-remove"
+data-i18n="sessoes.dispositivos-perifericos.btn_driver_reverter">↩️ Reverter driver</button>
+</div>
+</div>
+<div class="progress-container" id="progress-copr-rtl8822bu-enable"><div class="progress-bar"><div class="progress-fill" id="progress-fill-copr-rtl8822bu-enable"></div></div><div class="progress-text"><span class="status" id="progress-status-copr-rtl8822bu-enable">⏳ Iniciando...</span><span class="percentage" id="progress-percent-copr-rtl8822bu-enable">0%</span></div></div>
+<div class="progress-container" id="progress-copr-rtl8822bu-disable"><div class="progress-bar"><div class="progress-fill" id="progress-fill-copr-rtl8822bu-disable"></div></div><div class="progress-text"><span class="status" id="progress-status-copr-rtl8822bu-disable">⏳ Iniciando...</span><span class="percentage" id="progress-percent-copr-rtl8822bu-disable">0%</span></div></div>
+<div class="progress-container" id="progress-driver-rtl8822bu-install"><div class="progress-bar"><div class="progress-fill" id="progress-fill-driver-rtl8822bu-install"></div></div><div class="progress-text"><span class="status" id="progress-status-driver-rtl8822bu-install">⏳ Iniciando...</span><span class="percentage" id="progress-percent-driver-rtl8822bu-install">0%</span></div></div>
+<div class="progress-container" id="progress-driver-rtl8822bu-remove"><div class="progress-bar"><div class="progress-fill" id="progress-fill-driver-rtl8822bu-remove"></div></div><div class="progress-text"><span class="status" id="progress-status-driver-rtl8822bu-remove">⏳ Iniciando...</span><span class="percentage" id="progress-percent-driver-rtl8822bu-remove">0%</span></div></div>
+</div>
+
+<!-- COPR morrownr/8812au -->
+<div class="bloco-comando">
+<div class="comando-info">
+<h3 data-i18n="sessoes.dispositivos-perifericos.copr_8812au_titulo">RTL8812AU — Wi-Fi USB dual-band (modelos antigos)</h3>
+<p data-i18n-html="sessoes.dispositivos-perifericos.copr_8812au_desc">
+Adaptadores Wi-Fi USB com o chip Realtek RTL8812AU (dual-band AC1200, geração anterior ao 8812BU). Muito comuns em modelos Alfa, TP-Link e adaptadores com antena externa. Requer RPM Fusion para as dependências de build.
+</p>
+<div class="grupo-botoes">
+<button class="btn-executar"
+onclick="executarCoprEnable('copr-rtl8812au-enable')"
+data-comando="copr-rtl8812au-enable"
+data-logbox="log-sessao-dispositivos-perifericos"
+id="btn-copr-rtl8812au-enable"
+data-i18n="sessoes.dispositivos-perifericos.btn_copr_habilitar">🌐 Habilitar repositório</button>
+<button class="btn-executar cinza"
+onclick="executarCoprDisable('copr-rtl8812au-disable')"
+data-comando="copr-rtl8812au-disable"
+data-logbox="log-sessao-dispositivos-perifericos"
+id="btn-copr-rtl8812au-disable"
+data-i18n="sessoes.dispositivos-perifericos.btn_copr_desabilitar">↩️ Desabilitar repositório</button>
+<button class="btn-executar verde"
+onclick="executarDriverCopr('driver-rtl8812au-install')"
+data-comando="driver-rtl8812au-install"
+data-logbox="log-sessao-dispositivos-perifericos"
+id="btn-driver-rtl8812au-install"
+data-i18n="sessoes.dispositivos-perifericos.btn_driver_instalar">📦 Instalar driver</button>
+<button class="btn-executar cinza"
+onclick="executarDriverCopr('driver-rtl8812au-remove')"
+data-comando="driver-rtl8812au-remove"
+data-logbox="log-sessao-dispositivos-perifericos"
+id="btn-driver-rtl8812au-remove"
+data-i18n="sessoes.dispositivos-perifericos.btn_driver_reverter">↩️ Reverter driver</button>
+</div>
+</div>
+<div class="progress-container" id="progress-copr-rtl8812au-enable"><div class="progress-bar"><div class="progress-fill" id="progress-fill-copr-rtl8812au-enable"></div></div><div class="progress-text"><span class="status" id="progress-status-copr-rtl8812au-enable">⏳ Iniciando...</span><span class="percentage" id="progress-percent-copr-rtl8812au-enable">0%</span></div></div>
+<div class="progress-container" id="progress-copr-rtl8812au-disable"><div class="progress-bar"><div class="progress-fill" id="progress-fill-copr-rtl8812au-disable"></div></div><div class="progress-text"><span class="status" id="progress-status-copr-rtl8812au-disable">⏳ Iniciando...</span><span class="percentage" id="progress-percent-copr-rtl8812au-disable">0%</span></div></div>
+<div class="progress-container" id="progress-driver-rtl8812au-install"><div class="progress-bar"><div class="progress-fill" id="progress-fill-driver-rtl8812au-install"></div></div><div class="progress-text"><span class="status" id="progress-status-driver-rtl8812au-install">⏳ Iniciando...</span><span class="percentage" id="progress-percent-driver-rtl8812au-install">0%</span></div></div>
+<div class="progress-container" id="progress-driver-rtl8812au-remove"><div class="progress-bar"><div class="progress-fill" id="progress-fill-driver-rtl8812au-remove"></div></div><div class="progress-text"><span class="status" id="progress-status-driver-rtl8812au-remove">⏳ Iniciando...</span><span class="percentage" id="progress-percent-driver-rtl8812au-remove">0%</span></div></div>
+</div>
+
+<!-- COPR morrownr/8811au -->
+<div class="bloco-comando">
+<div class="comando-info">
+<h3 data-i18n="sessoes.dispositivos-perifericos.copr_8811au_titulo">RTL8811AU — Wi-Fi USB compacto</h3>
+<p data-i18n-html="sessoes.dispositivos-perifericos.copr_8811au_desc">
+Adaptadores Wi-Fi USB com o chip Realtek RTL8811AU (dual-band AC600, modelos compactos como nano adapters). Requer RPM Fusion para as dependências de build.
+</p>
+<div class="grupo-botoes">
+<button class="btn-executar"
+onclick="executarCoprEnable('copr-rtl8811au-enable')"
+data-comando="copr-rtl8811au-enable"
+data-logbox="log-sessao-dispositivos-perifericos"
+id="btn-copr-rtl8811au-enable"
+data-i18n="sessoes.dispositivos-perifericos.btn_copr_habilitar">🌐 Habilitar repositório</button>
+<button class="btn-executar cinza"
+onclick="executarCoprDisable('copr-rtl8811au-disable')"
+data-comando="copr-rtl8811au-disable"
+data-logbox="log-sessao-dispositivos-perifericos"
+id="btn-copr-rtl8811au-disable"
+data-i18n="sessoes.dispositivos-perifericos.btn_copr_desabilitar">↩️ Desabilitar repositório</button>
+<button class="btn-executar verde"
+onclick="executarDriverCopr('driver-rtl8811au-install')"
+data-comando="driver-rtl8811au-install"
+data-logbox="log-sessao-dispositivos-perifericos"
+id="btn-driver-rtl8811au-install"
+data-i18n="sessoes.dispositivos-perifericos.btn_driver_instalar">📦 Instalar driver</button>
+<button class="btn-executar cinza"
+onclick="executarDriverCopr('driver-rtl8811au-remove')"
+data-comando="driver-rtl8811au-remove"
+data-logbox="log-sessao-dispositivos-perifericos"
+id="btn-driver-rtl8811au-remove"
+data-i18n="sessoes.dispositivos-perifericos.btn_driver_reverter">↩️ Reverter driver</button>
+</div>
+</div>
+<div class="progress-container" id="progress-copr-rtl8811au-enable"><div class="progress-bar"><div class="progress-fill" id="progress-fill-copr-rtl8811au-enable"></div></div><div class="progress-text"><span class="status" id="progress-status-copr-rtl8811au-enable">⏳ Iniciando...</span><span class="percentage" id="progress-percent-copr-rtl8811au-enable">0%</span></div></div>
+<div class="progress-container" id="progress-copr-rtl8811au-disable"><div class="progress-bar"><div class="progress-fill" id="progress-fill-copr-rtl8811au-disable"></div></div><div class="progress-text"><span class="status" id="progress-status-copr-rtl8811au-disable">⏳ Iniciando...</span><span class="percentage" id="progress-percent-copr-rtl8811au-disable">0%</span></div></div>
+<div class="progress-container" id="progress-driver-rtl8811au-install"><div class="progress-bar"><div class="progress-fill" id="progress-fill-driver-rtl8811au-install"></div></div><div class="progress-text"><span class="status" id="progress-status-driver-rtl8811au-install">⏳ Iniciando...</span><span class="percentage" id="progress-percent-driver-rtl8811au-install">0%</span></div></div>
+<div class="progress-container" id="progress-driver-rtl8811au-remove"><div class="progress-bar"><div class="progress-fill" id="progress-fill-driver-rtl8811au-remove"></div></div><div class="progress-text"><span class="status" id="progress-status-driver-rtl8811au-remove">⏳ Iniciando...</span><span class="percentage" id="progress-percent-driver-rtl8811au-remove">0%</span></div></div>
+</div>
+
+</div>
+</details>
+
+<!-- ============================================================
+ACORDEÃO 4: CONTROLES E PERIFÉRICOS
+============================================================ -->
+<details class="acordeao">
+<summary data-i18n="sessoes.dispositivos-perifericos.controles_titulo">🎮 Controles e periféricos</summary>
+<div class="acordeao-conteudo">
+
+<div class="bloco-comando">
+<div class="comando-info">
+<h3 data-i18n="sessoes.dispositivos-perifericos.input_add_titulo">Adicionar usuário ao grupo input</h3>
+<p data-i18n="sessoes.dispositivos-perifericos.input_add_desc">Necessário para Steam Input, xpadneo e drivers de controle reconhecerem o usuário. Funciona para controles Xbox, PlayStation e Nintendo que usam os drivers do kernel.</p>
+<div class="aviso-caixa" data-i18n="sessoes.dispositivos-perifericos.input_add_aviso">
+ℹ️ Requer logout/login para ter efeito.
+</div>
+<div class="botoes-flex">
+<button class="btn-executar verde"
+onclick="executarInputAdd()"
+data-comando="input-group-add"
+data-logbox="log-sessao-dispositivos-perifericos"
+id="btn-input-group-add"
+data-i18n="sessoes.dispositivos-perifericos.btn_input_add">
+👤 Adicionar ao grupo input
+</button>
+<button class="btn-executar cinza"
+onclick="executarInputRemove()"
+data-comando="input-group-remove"
+data-logbox="log-sessao-dispositivos-perifericos"
+id="btn-input-group-remove"
+data-i18n="sessoes.dispositivos-perifericos.btn_input_remove">
+↩️ Remover do grupo input
+</button>
+</div>
+</div>
+<div class="progress-container" id="progress-input-group-add"><div class="progress-bar"><div class="progress-fill" id="progress-fill-input-group-add"></div></div><div class="progress-text"><span class="status" id="progress-status-input-group-add">⏳ Iniciando...</span><span class="percentage" id="progress-percent-input-group-add">0%</span></div></div>
+<div class="progress-container" id="progress-input-group-remove"><div class="progress-bar"><div class="progress-fill" id="progress-fill-input-group-remove"></div></div><div class="progress-text"><span class="status" id="progress-status-input-group-remove">⏳ Iniciando...</span><span class="percentage" id="progress-percent-input-group-remove">0%</span></div></div>
+</div>
+
+<div class="bloco-comando">
+<div class="comando-info">
+<h3 data-i18n="sessoes.dispositivos-perifericos.steam_devices_titulo">Regras Udev para Controles (Steam Devices)</h3>
+<p data-i18n="sessoes.dispositivos-perifericos.steam_devices_desc">Instala as regras udev do pacote <code>steam-devices</code>, que permitem ao sistema reconhecer corretamente controles Xbox, PlayStation e Nintendo ao usá-los com o Steam.</p>
+
+<div class="info-extra" data-i18n-html="sessoes.dispositivos-perifericos.steam_devices_info">
+ℹ️ <strong>O que isso resolve:</strong> sem essas regras, alguns controles podem não ser detectados pelo Steam, mesmo conectados. É um pacote pequeno e complementar ao grupo <code>input</code> acima — o grupo dá permissão ao seu usuário, e este pacote ensina o sistema a identificar cada modelo de controle.
+</div>
+
+<div class="grupo-botoes">
+<button class="btn-executar verde"
+onclick="executarSteamDevices()"
+data-comando="steam-devices-install"
+data-logbox="log-sessao-dispositivos-perifericos"
+id="btn-steam-devices-install"
+data-i18n="sessoes.dispositivos-perifericos.btn_steam_devices">
+🎮 Instalar Regras para Controles
+</button>
+</div>
+</div>
+<div class="progress-container" id="progress-steam-devices-install"><div class="progress-bar"><div class="progress-fill" id="progress-fill-steam-devices-install"></div></div><div class="progress-text"><span class="status" id="progress-status-steam-devices-install">⏳ Iniciando...</span><span class="percentage" id="progress-percent-steam-devices-install">0%</span></div></div>
+</div>
+
+</div>
+</details>
+
+<!-- Log único da sessão -->
+<div class="terminal-log sessao-compartilhado" id="log-sessao-dispositivos-perifericos"></div>
+</div>
+
+<script>
+// ============================================================
+// SESSÃO: DISPOSITIVOS E PERIFÉRICOS
+// ============================================================
+
+function _t(chave, fallback) {
+    return (typeof tOr === 'function') ? tOr(chave, fallback) : fallback;
+}
+function _tVars(chave, fallback, vars) {
+    return (typeof tOr === 'function') ? tOr(chave, fallback, vars) : fallback;
+}
+
+// ============================================================
+// MAPA DE COMANDOS POR idComando
+// ============================================================
+//
+// Como os botões de driver são "sempreClicavel" e não usam o
+// .progresso.json para estado, o idComando aqui serve apenas
+// como identificador do stream SSE. O estado real (instalado ou
+// não) vem do endpoint /hardware-scan via rpm -q.
+
+var DRIVER_COMMANDS = {
+    'driver-nvidia-install': 'sudo dnf install -y akmod-nvidia',
+    'driver-nvidia-remove': 'sudo dnf remove -y akmod-nvidia xorg-x11-drv-nvidia* nvidia-settings',
+    'driver-amd-vaapi-install': 'sudo dnf swap mesa-va-drivers mesa-va-drivers-freeworld -y && sudo dnf swap mesa-vdpau-drivers mesa-vdpau-drivers-freeworld -y',
+    'driver-amd-vaapi-remove': 'sudo dnf swap mesa-va-drivers-freeworld mesa-va-drivers -y && sudo dnf swap mesa-vdpau-drivers-freeworld mesa-vdpau-drivers -y',
+    'driver-intel-media-install': 'sudo dnf install -y intel-media-driver',
+    'driver-intel-media-remove': 'sudo dnf remove -y intel-media-driver',
+    'driver-broadcom-wl-install': 'sudo dnf install -y akmod-wl',
+    'driver-broadcom-wl-remove': 'sudo dnf remove -y akmod-wl',
+    'driver-realtek-r8168-install': 'sudo dnf install -y akmod-r8168',
+    'driver-realtek-r8168-remove': 'sudo dnf remove -y akmod-r8168',
+    'driver-rtl8821cu-install': 'sudo dnf install -y rtl8821cu-morrownr-dkms',
+    'driver-rtl8821cu-remove': 'sudo dnf remove -y rtl8821cu-morrownr-dkms',
+    'driver-rtl8822bu-install': 'sudo dnf install -y rtl8822bu-morrownr-dkms',
+    'driver-rtl8822bu-remove': 'sudo dnf remove -y rtl8822bu-morrownr-dkms',
+    'driver-rtl8812au-install': 'sudo dnf install -y rtl8812au-kmod',
+    'driver-rtl8812au-remove': 'sudo dnf remove -y rtl8812au-kmod',
+    'driver-rtl8811au-install': 'sudo dnf install -y rtl8811au-morrownr-dkms',
+    'driver-rtl8811au-remove': 'sudo dnf remove -y rtl8811au-morrownr-dkms'
+};
+
+var SUPLEMENTO_COMMANDS = {
+    'firmware-vendor-install': 'sudo dnf install -y linux-firmware-vendor',
+    'firmware-vendor-remove': 'sudo dnf remove -y linux-firmware-vendor'
+};
+
+var COPR_COMMANDS = {
+    'copr-rtl8821cu-enable': 'sudo dnf copr enable morrownr/8821cu -y',
+    'copr-rtl8821cu-disable': 'sudo dnf copr disable morrownr/8821cu -y',
+    'copr-rtl8822bu-enable': 'sudo dnf copr enable morrownr/8822bu -y',
+    'copr-rtl8822bu-disable': 'sudo dnf copr disable morrownr/8822bu -y',
+    'copr-rtl8812au-enable': 'sudo dnf copr enable morrownr/8812au -y',
+    'copr-rtl8812au-disable': 'sudo dnf copr disable morrownr/8812au -y',
+    'copr-rtl8811au-enable': 'sudo dnf copr enable morrownr/8811au -y',
+    'copr-rtl8811au-disable': 'sudo dnf copr disable morrownr/8811au -y'
+};
+
+// ============================================================
+// DETECÇÃO DE HARDWARE
+// ============================================================
+
+async function executarHardwareScan() {
+    var btn = document.getElementById('btn-hw-scan');
+    var resultado = document.getElementById('hw-scan-resultado');
+    var aviso = document.getElementById('hw-repo-aviso');
+
+    if (btn) {
+        btn.disabled = true;
+        btn.textContent = '⏳ ' + _t('sessoes.dispositivos-perifericos.escaneando', 'Escaneando hardware...');
+        btn.style.opacity = '0.6';
+    }
+
+    if (resultado) {
+        resultado.style.display = 'block';
+        resultado.innerHTML = '<div class="loading-sessao"><div class="spinner"></div><p>' +
+            _t('sessoes.dispositivos-perifericos.escaneando', 'Escaneando hardware...') + '</p></div>';
+    }
+
+    try {
+        var r = await fetch(API_URL + '/hardware-scan', { cache: 'no-store' });
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+
+        var data = await r.json();
+        _renderHardwareCards(data, resultado, aviso);
+    } catch (e) {
+        if (resultado) {
+            resultado.innerHTML = '<div class="aviso-caixa">❌ ' +
+                _tVars('comum.erro_conexao', 'Erro de conexão: {msg}', { msg: e.message }) +
+                '</div>';
+        }
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.textContent = _t('sessoes.dispositivos-perifericos.btn_escanear', '🔍 Detectar meu hardware');
+            btn.style.opacity = '1';
+        }
+    }
+}
+
+function _renderHardwareCards(data, container, avisoContainer) {
+    if (!container) return;
+    container.innerHTML = '';
+
+    // Banner: RPM Fusion desativado
+    if (avisoContainer) {
+        if (!data.repos.rpmfusion_free || !data.repos.rpmfusion_nonfree) {
+            avisoContainer.style.display = 'block';
+            avisoContainer.innerHTML =
+                '<div class="aviso-caixa">' +
+                '⚠️ <strong>' + _t('sessoes.dispositivos-perifericos.aviso_rpmfusion_titulo', 'RPM Fusion não está ativo') + '</strong><br>' +
+                _t('sessoes.dispositivos-perifericos.aviso_rpmfusion_corpo', 'Alguns drivers (NVIDIA, Broadcom, Realtek Ethernet) exigem o RPM Fusion. Ative-o na sessão Primeiros Passos antes de instalar estes drivers.') +
+                '</div>';
+        } else {
+            avisoContainer.style.display = 'none';
+            avisoContainer.innerHTML = '';
+        }
+    }
+
+    // Banner: Secure Boot
+    if (data.secure_boot === 'enabled') {
+        var temNvidia = data.devices.some(function (d) { return d.device_id && d.device_id.indexOf('10de:') === 0; });
+        if (temNvidia) {
+            container.innerHTML +=
+                '<div class="aviso-caixa">' +
+                '⚠️ <strong>' + _t('sessoes.dispositivos-perifericos.aviso_secureboot_titulo', 'Secure Boot está ativo') + '</strong><br>' +
+                _t('sessoes.dispositivos-perifericos.aviso_secureboot_corpo', 'Para usar o driver NVIDIA, você precisa registrar a chave MOK durante a instalação ou desativar o Secure Boot. Sem isso, o driver não carrega e a máquina pode iniciar em resolução mínima.') +
+                '</div>';
+        }
+    }
+
+    // Nenhum dispositivo com sugestão
+    if (data.devices.length === 0) {
+        container.innerHTML +=
+            '<div class="bloco-info">✅ ' +
+            _t('sessoes.dispositivos-perifericos.sem_dispositivos', 'Nenhum dispositivo com sugestão de driver adicional foi detectado. Seu hardware funciona com os drivers padrão do Fedora.') +
+            '</div>';
+        return;
+    }
+
+    // Cards
+    data.devices.forEach(function (device) {
+        container.appendChild(_buildCard(device));
+    });
+}
+
+function _buildCard(device) {
+    var card = document.createElement('div');
+    card.className = 'bloco-comando';
+    card.style.borderLeft = '4px solid ' + _corCategoria(device.category);
+
+    var icon = _iconeCategoria(device.category);
+    var tipo = device.type === 'PCI' ? 'PCI' : 'USB';
+    var meta = tipo + ' • ' + _nomeCategoria(device.category);
+    if (device.driver_in_use) {
+        meta += ' • driver atual: ' + device.driver_in_use;
+    }
+
+    var statusHtml = '';
+    var acoesHtml = '';
+
+    if (device.driver_default_working) {
+        // Hardware já funciona com driver padrão do Fedora
+        statusHtml =
+            '<div class="bloco-info" style="border-left-color: #34d399;">✅ ' +
+            _tVars('sessoes.dispositivos-perifericos.ja_funciona',
+                'Este dispositivo já funciona com o driver padrão ({driver}). Não recomendamos instalar o driver proprietário — pode causar conflito.',
+                { driver: device.driver_in_use }) +
+            '</div>';
+    } else if (device.installed) {
+        // Driver já instalado
+        statusHtml =
+            '<div class="bloco-info" style="border-left-color: #34d399;">✅ ' +
+            _t('sessoes.dispositivos-perifericos.ja_instalado', 'O driver sugerido já está instalado neste sistema.') +
+            '</div>';
+
+        var idRemove = _idRemoveForDevice(device);
+        if (idRemove) {
+            acoesHtml =
+                '<button class="btn-executar cinza" onclick="executarDriverRemover(\'' + idRemove + '\')" ' +
+                'data-comando="' + idRemove + '" data-logbox="log-sessao-dispositivos-perifericos" ' +
+                'id="btn-' + idRemove + '">↩️ ' +
+                _t('sessoes.dispositivos-perifericos.btn_driver_reverter', 'Reverter driver') +
+                '</button>';
+        }
+    } else {
+        // Não instalado e precisa de driver
+        var pacoteExibicao = (device.packages && device.packages[0]) || '?';
+        statusHtml =
+            '<p>' + _tVars('sessoes.dispositivos-perifericos.precisa_driver',
+                'Este dispositivo pode precisar do pacote <code>{pkg}</code>. Instale se o hardware não estiver funcionando corretamente.',
+                { pkg: pacoteExibicao }) + '</p>';
+
+        if (device.copr) {
+            statusHtml +=
+                '<div class="aviso-caixa" style="font-size: 0.85rem;">⚠️ ' +
+                _tVars('sessoes.dispositivos-perifericos.copr_necessario',
+                    'Este driver vive no repositório de comunidade <code>{copr}</code>. Habilite o repositório no acórdeão "Drivers da comunidade" antes de instalar.',
+                    { copr: device.copr }) +
+                '</div>';
+        }
+
+        var idInstall = _idInstallForDevice(device);
+        if (idInstall) {
+            acoesHtml =
+                '<button class="btn-executar verde" onclick="executarDriverInstalar(\'' + idInstall + '\')" ' +
+                'data-comando="' + idInstall + '" data-logbox="log-sessao-dispositivos-perifericos" ' +
+                'id="btn-' + idInstall + '">📦 ' +
+                _tVars('sessoes.dispositivos-perifericos.btn_instalar_driver',
+                    'Instalar {pkg}', { pkg: pacoteExibicao }) +
+                '</button>';
+        }
+    }
+
+    card.innerHTML =
+        '<div class="comando-info">' +
+        '<h3>' + icon + ' ' + _escapeHTML(device.name) + '</h3>' +
+        '<p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.5rem;">' +
+        _escapeHTML(meta) +
+        '</p>' +
+        statusHtml +
+        (device.notes ? '<div class="info-extra">' + _escapeHTML(device.notes) + '</div>' : '') +
+        (acoesHtml ? '<div class="botoes-flex" style="margin-top: 0.75rem;">' + acoesHtml + '</div>' : '') +
+        '</div>';
+
+    // Progressos (criados só se houver botão correspondente)
+    var idInstall = _idInstallForDevice(device);
+    var idRemove = _idRemoveForDevice(device);
+    if (idInstall) {
+        card.innerHTML += _buildProgressHtml(idInstall);
+    }
+    if (idRemove) {
+        card.innerHTML += _buildProgressHtml(idRemove);
+    }
+
+    return card;
+}
+
+function _buildProgressHtml(idComando) {
+    return '<div class="progress-container" id="progress-' + idComando + '">' +
+        '<div class="progress-bar"><div class="progress-fill" id="progress-fill-' + idComando + '"></div></div>' +
+        '<div class="progress-text"><span class="status" id="progress-status-' + idComando + '">⏳ Iniciando...</span>' +
+        '<span class="percentage" id="progress-percent-' + idComando + '">0%</span></div></div>';
+}
+
+function _idInstallForDevice(device) {
+    var map = {
+        '10de': 'driver-nvidia-install',
+        '1002': 'driver-amd-vaapi-install',
+        '1022': 'driver-amd-vaapi-install',
+        '8086': 'driver-intel-media-install',
+        '14e4': 'driver-broadcom-wl-install',
+        '10ec': 'driver-realtek-r8168-install'
+    };
+    if (device.copr) {
+        // USB Realtek
+        if (device.copr.indexOf('8821cu') !== -1) return 'driver-rtl8821cu-install';
+        if (device.copr.indexOf('8822bu') !== -1) return 'driver-rtl8822bu-install';
+        if (device.copr.indexOf('8812au') !== -1) return 'driver-rtl8812au-install';
+        if (device.copr.indexOf('8811au') !== -1) return 'driver-rtl8811au-install';
+    }
+    if (device.device_id) {
+        var vid = device.device_id.split(':')[0];
+        return map[vid] || null;
+    }
+    return null;
+}
+
+function _idRemoveForDevice(device) {
+    var install = _idInstallForDevice(device);
+    return install ? install.replace('-install', '-remove') : null;
+}
+
+function _corCategoria(cat) {
+    if (cat === 'gpu') return '#3c67e3';
+    if (cat === 'wifi') return '#8b5cf6';
+    if (cat === 'ethernet') return '#10b981';
+    return '#6b7280';
+}
+
+function _iconeCategoria(cat) {
+    if (cat === 'gpu') return '🎮';
+    if (cat === 'wifi') return '📶';
+    if (cat === 'ethernet') return '🔌';
+    return '💻';
+}
+
+function _nomeCategoria(cat) {
+    if (cat === 'gpu') return 'GPU';
+    if (cat === 'wifi') return 'Wi-Fi';
+    if (cat === 'ethernet') return 'Ethernet';
+    return cat;
+}
+
+function _escapeHTML(s) {
+    if (s == null) return '';
+    return String(s).replace(/[&<>"']/g, function (c) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+}
+
+// ============================================================
+// EXECUÇÃO DE DRIVERS
+// ============================================================
+
+async function executarDriverInstalar(idComando) {
+    var cmd = DRIVER_COMMANDS[idComando];
+    if (!cmd) return;
+    await executarComandoGenerico(idComando, cmd,
+        _t('sessoes.dispositivos-perifericos.instalando_driver', 'Instalando driver...'),
+        function () { executarHardwareScan(); });
+}
+
+async function executarDriverRemover(idComando) {
+    var cmd = DRIVER_COMMANDS[idComando];
+    if (!cmd) return;
+
+    if (!confirm(_t('sessoes.dispositivos-perifericos.confirmar_reverter',
+        '⚠️ Atenção!\n\nVocê está prestes a reverter um driver.\n\nSe o dispositivo depende deste driver para funcionar (por exemplo, um adaptador Wi-Fi), você vai perder a funcionalidade após o reboot.\n\nTenha uma conexão alternativa disponível antes de continuar.\n\nContinuar?'))) return;
+
+    await executarComandoGenerico(idComando, cmd,
+        _t('sessoes.dispositivos-perifericos.revertendo_driver', 'Revertendo driver...'),
+        function () { executarHardwareScan(); });
+}
+
+async function executarDriverCopr(idComando) {
+    // Mesma função dos drivers normais — os comandos estão em DRIVER_COMMANDS
+    if (idComando.indexOf('-install') !== -1) {
+        await executarDriverInstalar(idComando);
+    } else if (idComando.indexOf('-remove') !== -1) {
+        await executarDriverRemover(idComando);
+    }
+}
+
+// ============================================================
+// SUPLEMENTOS SEGUROS
+// ============================================================
+
+async function executarSuplemento(idComando) {
+    var cmd = SUPLEMENTO_COMMANDS[idComando];
+    if (!cmd) return;
+    await executarComandoGenerico(idComando, cmd,
+        _t('sessoes.dispositivos-perifericos.instalando_suplemento', 'Instalando suplemento...'),
+        function() {
+            // Após install bem-sucedido, atualiza o estado do par.
+            // O idComando segue o padrão '<nome>-install'; o revert
+            // é '<nome>-remove'.
+            var idRevert = idComando.replace('-install', '-remove');
+            aplicarEstadoToggle(idComando, idRevert);
+        });
+}
+
+async function executarSuplementoRemover(idComando) {
+    var cmd = SUPLEMENTO_COMMANDS[idComando];
+    if (!cmd) return;
+
+    if (!confirm(_t('sessoes.dispositivos-perifericos.confirmar_reverter',
+        '⚠️ Atenção!\n\nVocê está prestes a reverter um driver.\n\nSe o dispositivo depende deste driver para funcionar (por exemplo, um adaptador Wi-Fi), você vai perder a funcionalidade após o reboot.\n\nTenha uma conexão alternativa disponível antes de continuar.\n\nContinuar?'))) return;
+
+    await executarComandoGenerico(idComando, cmd,
+        _t('sessoes.dispositivos-perifericos.revertendo_suplemento', 'Revertendo suplemento...'),
+        function() {
+            // Após revert bem-sucedido, desmarca o install e atualiza
+            // o par. O idComando é '<nome>-remove'; o install é
+            // '<nome>-install'.
+            var idInstall = idComando.replace('-remove', '-install');
+            desmarcarComoExecutado(idInstall).then(function() {
+                aplicarEstadoToggle(idInstall, idComando);
+            }).catch(function(e) {
+                console.warn('[toggle] Erro ao limpar estado do install:', e);
+                aplicarEstadoToggle(idInstall, idComando);
+            });
+        });
+}
+
+// ============================================================
+// COPRs
+// ============================================================
+
+async function executarCoprEnable(idComando) {
+    var cmd = COPR_COMMANDS[idComando];
+    if (!cmd) return;
+    await executarComandoGenerico(idComando, cmd,
+        _t('sessoes.dispositivos-perifericos.habilitando_copr', 'Habilitando repositório COPR...'));
+}
+
+async function executarCoprDisable(idComando) {
+    var cmd = COPR_COMMANDS[idComando];
+    if (!cmd) return;
+
+    if (!confirm(_t('sessoes.dispositivos-perifericos.confirmar_desabilitar_copr',
+        '⚠️ Ao desabilitar um repositório COPR, os drivers instalados a partir dele param de receber atualizações.\n\nSe o dispositivo depende do driver, considere reverter o driver antes de desabilitar o repositório.\n\nContinuar?'))) return;
+
+    await executarComandoGenerico(idComando, cmd,
+        _t('sessoes.dispositivos-perifericos.desabilitando_copr', 'Desabilitando repositório COPR...'));
+}
+
+// ============================================================
+// CONTROLES (movidos da sessão de Hardware)
+// ============================================================
+
+async function executarInputAdd() {
+    var idComando = 'input-group-add';
+    var comando = 'sudo usermod -aG input $USER';
+    await executarComandoGenerico(idComando, comando,
+        _t('sessoes.dispositivos-perifericos.btn_input_add', '👤 Adicionar ao grupo input'),
+        function () {
+            aplicarEstadoToggle('input-group-add', 'input-group-remove');
+        });
+}
+
+async function executarInputRemove() {
+    var idComando = 'input-group-remove';
+    var comando = 'sudo gpasswd -d $USER input';
+    await executarComandoGenerico(idComando, comando,
+        _t('sessoes.dispositivos-perifericos.btn_input_remove', '↩️ Remover do grupo input'),
+        function () {
+            desmarcarComoExecutado('input-group-add').then(function() {
+                aplicarEstadoToggle('input-group-add', 'input-group-remove');
+            }).catch(function(e) {
+                console.warn('[toggle] Erro ao limpar estado do install:', e);
+                aplicarEstadoToggle('input-group-add', 'input-group-remove');
+            });
+        });
+}
+
+async function executarSteamDevices() {
+    var idComando = 'steam-devices-install';
+    var comando = 'sudo dnf install -y steam-devices';
+    await executarComandoGenerico(idComando, comando,
+        _t('sessoes.dispositivos-perifericos.btn_steam_devices', '🎮 Instalar Regras para Controles'));
+}
+
+// ============================================================
+// HELPERS LOCAIS (para o toggle de input-group)
+// ============================================================
+
+async function _resetarIrmaoLocal(idIrmao, fallbackText) {
+    try {
+        await desmarcarComoExecutado(idIrmao);
+        var btn = document.getElementById('btn-' + idIrmao);
+        if (!btn) return;
+        var original = btn.getAttribute('data-texto-original') || fallbackText;
+        btn.textContent = original;
+        btn.style.backgroundColor = '';
+        btn.style.cursor = 'pointer';
+        btn.disabled = false;
+        btn.style.opacity = '1';
+    } catch (e) {
+        console.error('Erro ao limpar estado do botão irmão ' + idIrmao + ':', e);
+    }
+}
+
+function _marcarBotaoConcluidoLocal(idComando) {
+    var btn = document.getElementById('btn-' + idComando);
+    if (!btn) return;
+    _corOriginalDoBotao(btn);
+    btn.textContent = getTextoAposExecucao(idComando);
+    btn.style.backgroundColor = '#4b5563';
+    btn.style.cursor = 'default';
+    btn.disabled = true;
+    btn.style.opacity = '1';
+}
+
+// ============================================================
+// RESTAURAR ESTADO DA SESSÃO
+// ============================================================
+
+function restaurarEstadoSessao() {
+    // --- Suplementos seguros: toggles via aplicarEstadoToggle ---
+    //
+    // O helper consulta apenas o estado do install para decidir o
+    // estado do par. Se install não está marcado, o reverter fica
+    // desabilitado (nada a reverter). Se está, install fica
+    // desabilitado com texto final e reverter fica clicável.
+    aplicarEstadoToggle('firmware-vendor-install', 'firmware-vendor-remove');
+
+    // --- Controles: toggles via aplicarEstadoToggle ---
+    //
+    // Mesmo padrão. Substitui a lógica manual que existia antes —
+    // agora centralizada no helper do script.js.
+    aplicarEstadoToggle('input-group-add', 'input-group-remove');
+
+    // --- Steam Devices: one-shot ---
+    if (isExecutado('steam-devices-install')) {
+        _marcarBotaoConcluidoLocal('steam-devices-install');
+    }
+}
+
+// ============================================================
+// INICIALIZAÇÃO
+// ============================================================
+
+(function () {
+    document.querySelectorAll('.btn-executar').forEach(function (btn) {
+        if (!btn.hasAttribute('data-texto-original')) {
+            btn.setAttribute('data-texto-original', btn.textContent);
+        }
+    });
+
+    restaurarEstadoSessao();
+
+    console.log('📦 Componente dispositivos-perifericos carregado!');
+})();
+</script>
+</body>
+</html>

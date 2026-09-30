@@ -14,6 +14,233 @@ que exibe a seção da versão atual dentro do FOF, na sessão **Sobre o FOF**.
 
 ---
 
+## v1.0.0-09292026
+
+### 🔌 Nova sessão: Dispositivos e Periféricos
+
+A sessão **Hardware** foi dividida em duas. A nova sessão
+**Dispositivos e Periféricos** aparece logo depois de Hardware
+(posição 4) e reúne tudo que não é driver gráfico: detecção
+automática de hardware, firmwares e suplementos seguros, drivers
+da comunidade via COPR, e controles/periféricos (movidos de
+Hardware).
+
+**Hardware** ficou focada em drivers gráficos (AMD, NVIDIA, Intel) —
+a sessão ganhou um acórdeão **Intel** com drivers de vídeo Intel, e
+o bloco de controles (que estava misturado com AMD/NVIDIA) foi movido
+para a nova sessão.
+
+#### 🎯 Detecção automática de hardware
+
+- Novo endpoint `GET /hardware-scan` (via `hardware-service.js`)
+- Novo arquivo `hardware_map.json` com o mapa de vendors (NVIDIA,
+  AMD, Intel, Broadcom, Realtek Wi-Fi/Ethernet)
+- Cruza IDs PCI/USB com o mapa e sugere pacotes; usa `nvidia-detect`
+  quando disponível para refinar a sugestão da NVIDIA
+- Detecta conflitos (ex.: Broadcom `akmod-wl` vs `brcmfmac`, Realtek
+  `akmod-r8168` vs `r8169`) e mostra aviso quando o driver padrão já
+  está funcionando
+- Mostra banner de RPM Fusion desativado e aviso de Secure Boot +
+  NVIDIA
+- Detecção do estado real via `rpm -q` substitui o `.progresso.json`
+  para esses drivers — mais confiável: se o usuário removeu o pacote
+  manualmente, o botão volta ao estado inicial automaticamente
+
+#### 📦 Suplementos seguros
+
+- `linux-firmware-vendor` (firmwares adicionais de fabricantes)
+- Botões separados de instalar/reverter
+
+#### 🌐 COPRs de comunidade (Wi-Fi USB Realtek)
+
+- RTL8811CU / RTL8821CU (`morrownr/8821cu`)
+- RTL8812BU / RTL8822BU (`morrownr/8822bu`)
+- RTL8812AU (`morrownr/8812au`)
+- RTL8811AU (`morrownr/8811au`)
+- Cada um com 4 botões: habilitar repositório, desabilitar repositório,
+  instalar driver, reverter driver. **Os COPRs são opcionais** — o
+  usuário escolhe se quer habilitar. Aviso explícito sobre riscos:
+  mantidos por terceiros, podem ser descontinuados, FOF não controla
+  o conteúdo.
+
+#### 🎮 Controles e periféricos (movidos de Hardware)
+
+- Adicionar/remover usuário do grupo `input`
+- Instalar regras udev (`steam-devices`)
+
+### 🟦 Hardware ganha acórdeão Intel
+
+- `intel-media-driver` para aceleração de vídeo VA-API em iGPUs Intel
+  Skylake ou mais recentes
+
+### 🖥️ Suporte a múltiplos desktops
+
+O FOF sempre foi desktop-agnóstico na arquitetura, mas alguns
+detalhes de implementação assumiam KDE. Esta versão corrige:
+
+- **`zenity` adicionado como dependência do instalador.** Fedora
+  GNOME minimal não traz `zenity` por padrão, o que quebrava a
+  autenticação gráfica em DEs não-KDE (o comando travava esperando
+  input que nunca vinha). Agora o `install.sh` instala
+  automaticamente se nem `zenity` nem `kdialog` estiverem presentes.
+- **Terminal de inicialização agora segue o desktop detectado.**
+  Antes, o `iniciar_fof.sh` tentava `konsole` primeiro mesmo em
+  GNOME/XFCE/etc., o que abria o terminal errado se o usuário
+  tivesse konsole instalado por outro motivo. Agora a ordem é:
+  terminal nativo do DE → `xdg-terminal-exec` → terminal de outro
+  DE (fallback) → terminal universal (`xterm`, etc.).
+- **Desktop detectado agora aparece nos logs** (`XDG_CURRENT_DESKTOP`
+  e `DESKTOP_SESSION`), facilitando o diagnóstico de problemas
+  relatados por usuários em DEs específicos.
+- **Fixação automática na barra de tarefas removida.** A
+  implementação só cobria KDE via `kwriteconfig5`/`qdbus` e, na
+  prática, raramente funcionava — o Plasma sobrescreve alterações
+  externas no arquivo de configuração com frequência. Fixar na
+  barra agora é responsabilidade do usuário, e o FOF não promete
+  fazer isso. Os READMEs explicam como fazer em cada desktop.
+- **Removido `X-GNOME-Autostart-enabled=true`** do `.desktop`
+  gerado (era um campo específico do GNOME, ignorado nos outros
+  DEs).
+
+### 🎛️ Comportamento consistente de pares install/revert
+
+Todos os pares install/revert do FOF (toggles de ajuste, suplementos
+e controles) agora seguem a mesma regra:
+
+- **Estado inicial**: botão de install ativo, botão de reverter
+  **desabilitado** — não há nada para reverter.
+- **Após instalar**: install fica desabilitado com texto final
+  ("✅ ... instalado"), reverter fica habilitado.
+- **Após reverter**: install volta a ficar ativo com o texto
+  original, reverter fica desabilitado novamente.
+
+Antes, o botão de reverter ficava clicável desde o carregamento da
+sessão, sem indicação visual de que não havia nada a reverter. E o
+`firmware-vendor-install`/`firmware-vendor-remove` nem seguia esse
+padrão (era `sempreClicavel`, então nunca desabilitava).
+
+A lógica foi centralizada num helper novo, `aplicarEstadoToggle()`,
+em `script.js` — usado pelas sessões Hardware, Dispositivos e
+Periféricos, e Ajustes e Manutenção. Reduz duplicação e garante
+comportamento idêntico em qualquer sessão futura.
+
+### 🛡️ Melhorias de segurança
+
+- **Whitelist de comandos sem autenticação agora rejeita
+  encadeamento de shell.** A validação antiga (`startsWith`) aceitaria
+  um comando como `rpm -q kernel; rm -rf ~` como se fosse apenas
+  `rpm -q`. Agora comandos sem autenticação que contenham `;`, `` ` ``,
+  `|`, `$(` ou `&&` são rejeitados e exigem pkexec/kdesu.
+- **Ctrl+Enter exige foco explícito no botão.** Antes, o atalho
+  disparava o primeiro botão visível da tela — o que podia acionar
+  acidentalmente "Remover repositório Fedora Flatpak" ou
+  "Desinstalar FOF". Agora só funciona com o botão em foco.
+
+### 🚀 Melhorias de performance
+
+- **Detecção de hardware paralela.** O scan agora roda os comandos
+  `lspci -k` / `rpm -q` via `Promise.all` em vez de sequencialmente.
+  Em máquinas com várias GPUs e NICs, a detecção fica 1–2 segundos
+  mais rápida.
+- **`isExecutado()` / `isPulado()` usam cache.** Antes faziam
+  `JSON.parse` do `localStorage` a cada chamada, o que somava
+  centenas de parses em cada atualização do progresso global. Agora
+  usam o `progressCache` já populado.
+
+### 🔤 i18n — novas chaves
+
+- `locales/en.json` e `locales/es.json` ganharam a seção completa
+  `sessoes.dispositivos-perifericos.*`
+- Chaves `hardware.intel_*` adicionadas
+- Chaves `hardware.controles_*` e `hardware.steam_devices_*` removidas
+  (foram movidas para a nova sessão)
+- Chaves `texto_concluido_firmware_vendor` e
+  `texto_concluido_firmware_vendor_remove` adicionadas
+
+### 🧪 Ferramenta de validação unificada
+
+- Novo script `validar.sh` que roda 10 checks de sanidade em uma
+  única passada: ambiente, presença de arquivos, sintaxe JS/JSON/
+  Bash/C, cross-references entre `script.js` e os `.html` de sessão,
+  ícones em `guiado.html`, chaves i18n usadas vs. presentes nos
+  locales, e consistência de versão (`package.json` ↔
+  `CHANGELOG.md` ↔ `i18n.js`).
+- `make check` agora delega para `validar.sh` quando presente, com
+  fallback para `check-basico` se o script não existir.
+- `Makefile` ganhou alvo `check-basico` para validação mínima de
+  sintaxe sem depender do `validar.sh`.
+
+### 🐛 Corrigido
+
+- **Comentários de sessão no `script.js`** estavam fora de sincronia
+  após a inserção da nova sessão — `aplicativos`,
+  `casa-escritorio`, `gaming`, `waydroid`, `diagnostico`,
+  `ajustes-manutencao`, `estado-fedora` e `sobre-fof` agora
+  numerados corretamente de 6 a 13.
+- **`data-i18n` com HTML literal.** Em `hardware.html`,
+  `codecs.html` e `gaming.html`, três elementos usavam `data-i18n`
+  (que substitui por `textContent`) mas continham `<strong>` ou
+  `<code>`. Usuários em EN/ES viam as tags na tela. Corrigido para
+  `data-i18n-html`.
+- **Referências a "Sessão 4" erradas.** O RPM Fusion está na
+  Sessão 1 (Primeiros Passos), não na 4. Texto corrigido em
+  `hardware.html` e nos dois locales.
+- **`hardware.descricao` em EN/ES desatualizado.** Ainda mencionava
+  um "bloco de controles" que foi removido da sessão. Reescrito para
+  apontar para Dispositivos e Periféricos.
+- **Comando de instalação do RTL8822BU errado.**
+  `hardware_map.json` e `dispositivos-perifericos.html` apontavam
+  para o pacote `rtw88` (driver in-tree do kernel) em vez do pacote
+  DKMS do COPR. Corrigido para `rtl8822bu-morrownr-dkms`.
+- **`hardware-service.js` tolera `hardware_map.json` vazio.** Antes,
+  um JSON válido sem a chave `usb_devices` causava erro silencioso
+  na detecção. Agora normaliza as chaves antes de usar.
+- **Banner de atualização em `sobre-fof.html` não traduzia.** Estava
+  hardcoded em PT-BR; agora usa a chave
+  `sessoes.sobre-fof.atualizacao_disponivel`.
+- **CPU no painel de Diagnóstico mostrava média desde o boot.**
+  `top -bn1` retorna a primeira amostra (média histórica). Trocado
+  para `top -bn2` — a segunda amostra reflete o uso real no
+  intervalo.
+- **7 comandos órfãos removidos da sessão Produção Multimídia.**
+  Eram resquício de uma versão anterior em que a sessão era maior.
+  Como não tinham botão correspondente no HTML, nunca podiam ser
+  executados — mas poluíam o cálculo de progresso, fazendo a sessão
+  nunca fechar.
+- **Log órfão removido da sessão Dispositivos e Periféricos.** O
+  botão "Detectar meu hardware" renderiza o resultado em cards, não
+  em log — o `<div id="log-hw-scan">` nunca era usado. Removido.
+- **Título interno da sessão Casa e Escritório estava desatualizado.**
+  Mostrava "Casa Pronta" (nome antigo), enquanto o menu e os locales
+  usavam "Casa e Escritório". Alinhado.
+
+### 🗑️ Removido
+
+- **`akmod-intel-ipu6`** — o kernel do Fedora 44+ já tem suporte
+  nativo a webcams Intel MIPI (via `libcamera`). O pacote do RPM
+  Fusion está desatualizado desde o final de 2024 e pode entrar em
+  conflito com o suporte FOSS. O bloco foi removido da sessão
+  Dispositivos e Periféricos.
+- **Fixação automática na barra de tarefas** — implementação só
+  cobria KDE e raramente funcionava. Removida completamente do
+  `install.sh`.
+
+### 📝 Documentação
+
+- `README.md`, `README.en.md` e `README.es.md` atualizados para
+  refletir as 13 sessões (antes listavam 12)
+- Nova seção **"Desktops suportados"** nos três READMEs, com tabela
+  de compatibilidade e explicação do que é automático vs. manual
+- Badges de versão atualizadas para `v1.0.0-09292026`
+- Tabela de estrutura de diretórios ganhou `hardware-service.js`,
+  `hardware_map.json` e `dispositivos-perifericos.html`
+- `template-sessao.html` reescrito com IDs semânticos, referências
+  atualizadas e notas sobre `flatpakId` e `sempreClicavel`
+- `iniciar_fof.sh --help` agora menciona 13 sessões e os arquivos
+  novos
+
+---
+
 ## v1.0.0-09282026
 
 ### 🔄 Reestruturação completa das sessões

@@ -4,30 +4,38 @@ MOLDE PARA UMA NOVA SESSÃO DO FOF
 ============================================================
 
 Como usar:
-1. Copie este arquivo para NN-nome-da-sessao.html (dois dígitos +
-hífen + nome em minúsculas, ex.: 12-emuladores.html).
+1. Copie este arquivo para nome-da-sessao.html (sem número).
+   Os IDs de sessão são semânticos desde a v1.0.0-09282026 —
+   a ordem de exibição vem da posição no array SESSOES em
+   script.js, não do nome do arquivo. Ex.: emuladores.html.
 2. Troque os placeholders entre <> pelo conteúdo real.
 3. Adicione uma entrada no array SESSOES, em script.js, com o
-mesmo id do arquivo (sem o .html) e os data-comando dos seus
-botões. Não precisa editar mais nada — nem guiado.html,
-manutencao.html, index.html, nem server.js.
+   mesmo id do arquivo (sem o .html) e os data-comando dos seus
+   botões. Adicione também o emoji em ICONES_SESSOES (guiado.html).
+   Não precisa editar mais nada — nem index.html, nem server.js.
 4. Apague este comentário e os comentários "MOLDE:" abaixo.
 
 Este molde traz UM botão simples (instalar). Pra ver outros
 padrões prontos:
 - Botão sempre clicável (ação repetível, nunca desabilita):
-veja 'atualizacao-inicial' em 00-boas-vindas.html e a flag
-sempreClicavel em script.js.
+  veja 'atualizacao-inicial' em primeiros-passos.html e a flag
+  sempreClicavel em script.js.
+- Flatpak com detecção de remoção externa: adicione
+  `flatpakId: 'org.exemplo.App'` no registro de script.js e o
+  botão ganha o ícone de lixeira automaticamente. Veja
+  'instalar-vlc' em aplicativos.html.
 - Vários botões instalar em grade, cada um independente:
-veja 06-gaming.html (bloco "Launchers").
+  veja gaming.html (bloco "Launchers").
 - Botão com par "aplicar/reverter" (dois botões independentes,
-ambos sempre clicáveis): veja 'amdgpu-overclock' e
-'amdgpu-overclock-remove' em hardware.html.
+  ambos sempre clicáveis): veja 'amdgpu-overclock' e
+  'amdgpu-overclock-remove' em hardware.html.
 - Dropdown + botão "aplicar valor selecionado": veja o ajuste de
-DNF em 02-otimizacao.html.
+  DNF em ajustes-manutencao.html.
 - Fluxo mais elaborado (dropdown populado dinamicamente, duas
-confirmações, bloqueio condicional): veja o gerenciamento de
-kernels em ajustes-manutencao.html.
+  confirmações, bloqueio condicional): veja o gerenciamento de
+  kernels em ajustes-manutencao.html.
+- Detecção de hardware via endpoint (estado real via rpm -q, não
+  progresso do .progresso.json): veja dispositivos-perifericos.html.
 
 IMPORTANTE — o FOF não tem botões de "desfazer" genéricos. Se
 uma ação tiver um "desfazer" com sentido, modele como um
@@ -47,12 +55,13 @@ ajustes-manutencao.html e o par amdgpu-overclock em hardware.html).
 <body>
 <!-- ===== CONTEÚDO DA SESSÃO ===== -->
 <!--
-O id="sessao-XX-nome" deve ser "sessao-" + o mesmo id que você
-usar no array SESSOES em script.js. O texto dentro de
-.sessao-label ("Sessão N") é preenchido automaticamente — não
-precisa escrever o número certo aqui.
+O id="sessao-nome-da-sessao" deve ser "sessao-" + o mesmo id que
+você usar no array SESSOES em script.js (sem número — os IDs são
+semânticos). O texto dentro de .sessao-label ("Sessão N") é
+preenchido automaticamente — não precisa escrever o número certo
+aqui.
 -->
-<div class="sessao-container" id="sessao-XX-nome-da-sessao">
+<div class="sessao-container" id="sessao-nome-da-sessao">
 <div class="sessao-titulo">
 <span class="sessao-label">Sessão</span>
 <!-- MOLDE: emoji + título, ex.: "🕹️ Emuladores" -->
@@ -98,9 +107,8 @@ await executarComandoGenerico('meu-comando-novo', comando, 'Instalando <!-- MOLD
 }
 
 // ===== RESTAURAR ESTADO DA SESSÃO =====
-// Chamada automaticamente pelo Modo Guiado (ou Manutenção) assim que
-// esta sessão é carregada — não precisa ser adicionada a nenhum
-// outro lugar.
+// Chamada automaticamente pelo Modo Guiado assim que esta sessão é
+// carregada — não precisa ser adicionada a nenhum outro lugar.
 function restaurarEstadoSessao() {
 if (isExecutado('meu-comando-novo')) {
 const btn = document.getElementById('btn-meu-comando-novo');

@@ -83,6 +83,7 @@ SESSAO_ARQUIVOS=(
 "primeiros-passos.html"
 "codecs.html"
 "hardware.html"
+"dispositivos-perifericos.html"
 "producao-multimidia.html"
 "aplicativos.html"
 "casa-escritorio.html"
@@ -96,6 +97,8 @@ SESSAO_ARQUIVOS=(
 
 ARQUIVOS_PRINCIPAIS=(
 "server.js"
+"hardware-service.js"
+"hardware_map.json"
 "index.html"
 "guiado.html"
 "style.css"
@@ -355,6 +358,29 @@ else
 print_success "curl: $(curl --version | head -1 | cut -d' ' -f2)"
 fi
 
+# ------------------------------------------------------------
+# zenity: diálogo gráfico de senha em DEs não-KDE
+# ------------------------------------------------------------
+#
+# Em KDE, o FOF usa kdesu/kdialog para autenticação. Em qualquer
+# outro desktop (GNOME, XFCE, Cinnamon, MATE, LXQt, tiling WMs),
+# o fallback é pkexec + zenity. Sem zenity, a autenticação
+# quebra silenciosamente: pkexec não consegue abrir diálogo e o
+# comando trava esperando input que nunca vem.
+#
+# Fedora Workstation (GNOME) não traz zenity por padrão desde o
+# GNOME 42 — instalar explicitamente resolve.
+#
+# Só instala se o usuário não tiver kdialog tampouco (KDE puro).
+if ! command -v zenity &> /dev/null && ! command -v kdialog &> /dev/null; then
+faltando+=("zenity")
+print_warning "zenity não encontrado (necessário para autenticação gráfica em DEs não-KDE)"
+else
+if command -v zenity &> /dev/null; then
+print_success "zenity: $(zenity --version 2>/dev/null || echo 'presente')"
+fi
+fi
+
 if [ ${#faltando[@]} -gt 0 ]; then
 print_info "Instalando dependências faltando: ${faltando[*]}"
 log "Instalando: ${faltando[*]}"
@@ -455,7 +481,6 @@ Terminal=false
 Categories=System;Settings;
 StartupNotify=false
 StartupWMClass=fof-container
-X-GNOME-Autostart-enabled=true
 EOF
 
 chmod +x "$DESKTOP_FILE"
@@ -475,7 +500,6 @@ Terminal=false
 Categories=System;Settings;
 StartupNotify=false
 StartupWMClass=fof-container
-X-GNOME-Autostart-enabled=true
 EOF
 
 chmod +x "$DESKTOP_FILE_COMPAT"
@@ -484,62 +508,6 @@ fi
 
 update-desktop-database ~/.local/share/applications/ 2>/dev/null || true
 kbuildsycoca6 --noincremental 2>/dev/null || kbuildsycoca5 --noincremental 2>/dev/null || true
-}
-
-fixar_na_barra() {
-print_step "Fixando atalho na barra de tarefas..."
-
-if [[ "$XDG_CURRENT_DESKTOP" != *"KDE"* ]] && [[ "$DESKTOP_SESSION" != *"plasma"* ]]; then
-return 0
-fi
-
-if [ ! -f "$DESKTOP_FILE" ]; then
-return 1
-fi
-
-local fixed=false
-
-if command -v kwriteconfig5 &> /dev/null; then
-local current_launchers=$(kwriteconfig5 --file ~/.config/plasma-org.kde.plasma.desktop-appletsrc \
---group Containments --group "1" --group Applets \
---group "2" --group Configuration --group General \
---key launcherList 2>/dev/null || echo "")
-
-if [[ ! "$current_launchers" == *"fof-container"* ]]; then
-if [ -z "$current_launchers" ]; then
-current_launchers="applications:fof-container.desktop"
-else
-current_launchers="$current_launchers,applications:fof-container.desktop"
-fi
-
-kwriteconfig5 --file ~/.config/plasma-org.kde.plasma.desktop-appletsrc \
---group Containments --group "1" --group Applets \
---group "2" --group Configuration --group General \
---key launcherList "$current_launchers" \
---type string
-
-fixed=true
-print_success "Atalho adicionado à barra de tarefas (kwriteconfig5)"
-else
-fixed=true
-fi
-fi
-
-if [ "$fixed" = false ] && command -v qdbus &> /dev/null; then
-if qdbus org.kde.plasmashell /PlasmaShell org.kde.PlasmaShell.addFavorite "applications:fof-container.desktop" 2>/dev/null; then
-fixed=true
-print_success "Atalho fixado na barra de tarefas (qdbus)"
-fi
-fi
-
-if [ "$fixed" = true ]; then
-print_success "✨ FOF fixado na barra de tarefas!"
-else
-print_warning "Não foi possível fixar automaticamente na barra de tarefas"
-print_info "Fixar manualmente: botão direito no ícone do FOF → 'Adicionar ao Painel'"
-fi
-
-return 0
 }
 
 configurar_path() {
@@ -755,7 +723,6 @@ print_success "Symlinks atualizados"
 verificar_arquivos_instalados
 reaplicar_permissoes
 criar_atalhos
-fixar_na_barra
 
 print_success "✅ FOF atualizado para a versão mais recente!"
 
@@ -797,6 +764,14 @@ Após a instalação:
 - O comando 'fof-compat' estará disponível (modo compatibilidade)
 - Dois atalhos serão criados no menu de aplicativos
 
+Nota sobre desktops:
+- Todos os desktops Linux são suportados (GNOME, KDE, XFCE,
+  Cinnamon, MATE, LXQt, tiling WMs).
+- Em KDE, a autenticação usa kdesu/kdialog. Nos demais,
+  pkexec+zenity (instalado automaticamente se faltar).
+- O FOF NÃO fixa atalhos na barra de tarefas. Faça manualmente
+  pelo menu do seu desktop (botão direito no ícone do FOF).
+
 EOF
 exit 0
 }
@@ -826,7 +801,6 @@ verificar_arquivos_instalados
 instalar_dependencias_container
 compilar_container_install
 criar_atalhos
-fixar_na_barra
 configurar_path
 reaplicar_permissoes
 
@@ -838,6 +812,9 @@ print_info ""
 print_info "Para iniciar o FOF:"
 echo " - Terminal: digite 'fof' ou 'fof-compat'"
 echo " - Menu: procure por 'Fedora Only Fans'"
+echo ""
+print_info "💡 Para fixar na barra de tarefas, use o menu do seu desktop"
+print_info "   (botão direito no ícone do FOF → 'Adicionar ao Painel' ou similar)"
 echo ""
 print_info "📋 Log da instalação: $LOG_FILE"
 echo ""

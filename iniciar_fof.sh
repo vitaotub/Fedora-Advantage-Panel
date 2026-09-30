@@ -59,6 +59,20 @@ done
 VERSION="$(grep -oP '"version"\s*:\s*"\K[^"]+' "$DIR/package.json" 2>/dev/null | head -1)"
 [ -z "$VERSION" ] && VERSION="desconhecida"
 
+# ============================================================
+# DETECÇÃO DE DESKTOP
+# ============================================================
+#
+# XDG_CURRENT_DESKTOP é o padrão do freedesktop.org e é respeitado
+# por todos os ambientes modernos. Alguns sistemas também setam
+# DESKTOP_SESSION (mais antigo). Usamos os dois concatenados para
+# maximizar a chance de detectar corretamente — e normalizamos para
+# maiúsculas para facilitar os `case` abaixo.
+#
+# Se nenhuma das variáveis estiver setada (ambiente mínimo, SSH,
+# tiling WM sem XDG setado), cai no fallback genérico.
+DESKTOP_ATUAL="$(echo "${XDG_CURRENT_DESKTOP:-} ${DESKTOP_SESSION:-}" | tr '[:lower:]' '[:upper:]')"
+
 DEBUG=false
 NO_CLEAN=false
 
@@ -126,77 +140,172 @@ log_header() {
 # 2. Usar `setsid ... &` + `disown` + `exit 0`. Isso cria uma
 #    sessão independente para o terminal, remove do job control
 #    e sai limpo, deixando o terminal sobreviver.
+#
+# ORDEM DE PREFERÊNCIA POR DESKTOP
+# --------------------------------
+# Antes, o script tentava konsole primeiro, mesmo em GNOME — o que
+# abria o terminal errado se o usuário tivesse konsole instalado.
+# Agora a ordem é:
+#
+#   1. Terminal nativo do desktop detectado
+#   2. Terminal genérico do freedesktop (xdg-terminal-exec)
+#   3. Terminais de outros DEs (fallback, mantém funcionalidade)
+#   4. Terminais universais (xterm, x-terminal-emulator)
+#
+# Cada `case` abaixo monta um array de prioridade. Se o desktop não
+# é reconhecido, o array fica vazio — e a função cai direto nos
+# genéricos.
+
+_terminais_para_desktop() {
+    # Retorna os terminais preferidos, na ordem, separados por espaço.
+    # O desktop detectado está em $DESKTOP_ATUAL (uppercase).
+    case "$DESKTOP_ATUAL" in
+        *KDE*|*PLASMA*)
+            echo "konsole"
+            ;;
+        *GNOME*)
+            echo "ptyxis gnome-terminal"
+            ;;
+        *XFCE*)
+            echo "xfce4-terminal"
+            ;;
+        *CINNAMON*)
+            echo "gnome-terminal"
+            ;;
+        *MATE*)
+            echo "mate-terminal gnome-terminal"
+            ;;
+        *LXQT*)
+            echo "qterminal konsole"
+            ;;
+        *LXDE*)
+            echo "lxterminal x-terminal-emulator"
+            ;;
+        *BUDGIE*)
+            echo "gnome-terminal tilix"
+            ;;
+        *SWAY*|*HYPRLAND*|*I3*|*RIVER*)
+            # Tiling WMs geralmente configuram um terminal default
+            # via $TERMINAL, e não têm "terminal nativo" no sentido
+            # tradicional. Tentamos primeiro respeitar $TERMINAL.
+            echo "${TERMINAL:-} kitty alacritty foot"
+            ;;
+        *)
+            echo ""
+            ;;
+    esac
+}
 
 abrir_no_terminal_nativo() {
     local script_path="$1"
     local titulo="Fedora Only Fans - Servidor"
 
     log_debug "Tentando abrir no terminal nativo..."
+    log_debug "Desktop detectado: ${DESKTOP_ATUAL:-(desconhecido)}"
 
-    # ─── KDE: konsole ──────────────────────────────────────────
-    if command -v konsole &> /dev/null; then
-        log_debug "Usando konsole (KDE)"
-        # stderr vai para o log (não /dev/null) para diagnóstico.
-        setsid konsole --title "$titulo" \
-            -e bash "$script_path" --no-fork \
-            >> "$LOG_FILE" 2>&1 &
-        disown 2>/dev/null || true
-        exit 0
-    fi
+    # --- Etapa 1: terminal nativo do desktop detectado ---
+    local terminais_nativos
+    terminais_nativos="$(_terminais_para_desktop)"
 
-    # ─── GNOME / genéricos ──────────────────────────────────────
+    for term in $terminais_nativos; do
+        # Ignora entradas vazias (caso de $TERMINAL não setado em tiling WM)
+        [ -z "$term" ] && continue
+
+        if command -v "$term" &> /dev/null; then
+            log_debug "Usando $term (terminal nativo de $DESKTOP_ATUAL)"
+            _executar_terminal "$term" "$script_path" "$titulo"
+            return 0
+        fi
+    done
+
+    # --- Etapa 2: xdg-terminal-exec (genérico do freedesktop) ---
     if command -v xdg-terminal-exec &> /dev/null; then
-        log_debug "Usando xdg-terminal-exec"
+        log_debug "Usando xdg-terminal-exec (genérico)"
         setsid xdg-terminal-exec bash "$script_path" --no-fork \
             >> "$LOG_FILE" 2>&1 &
         disown 2>/dev/null || true
         exit 0
     fi
 
-    if command -v ptyxis &> /dev/null; then
-        log_debug "Usando ptyxis (GNOME)"
-        setsid ptyxis --title "$titulo" -- bash "$script_path" --no-fork \
-            >> "$LOG_FILE" 2>&1 &
-        disown 2>/dev/null || true
-        exit 0
-    fi
+    # --- Etapa 3: terminais de outros DEs (fallback) ---
+    # Ordem: os mais prováveis de existir, agnósticos de DE.
+    for term in konsole ptyxis gnome-terminal xfce4-terminal mate-terminal qterminal lxterminal; do
+        if command -v "$term" &> /dev/null; then
+            log_debug "Usando $term (fallback cross-DE)"
+            _executar_terminal "$term" "$script_path" "$titulo"
+            return 0
+        fi
+    done
 
-    if command -v gnome-terminal &> /dev/null; then
-        log_debug "Usando gnome-terminal (GNOME)"
-        setsid gnome-terminal --title="$titulo" -- bash "$script_path" --no-fork \
-            >> "$LOG_FILE" 2>&1 &
-        disown 2>/dev/null || true
-        exit 0
-    fi
-
-    # ─── XFCE ──────────────────────────────────────────────────
-    #
-    # xfce4-terminal -e espera comando e argumentos como argumentos
-    # separados (não uma única string). Passar "-e \"bash ...\""
-    # fazia o terminal tentar executar um programa literalmente
-    # chamado 'bash "/caminho/script.sh" --no-fork'.
-    if command -v xfce4-terminal &> /dev/null; then
-        log_debug "Usando xfce4-terminal (XFCE)"
-        setsid xfce4-terminal --title="$titulo" \
-            -e bash "$script_path" --no-fork \
-            >> "$LOG_FILE" 2>&1 &
-        disown 2>/dev/null || true
-        exit 0
-    fi
-
-    # ─── Fallbacks universais ──────────────────────────────────
-    for term in tilix alacritty kitty xterm x-terminal-emulator; do
-        if command -v $term &> /dev/null; then
-            log_debug "Usando $term (fallback)"
-            setsid $term -e bash "$script_path" --no-fork \
-                >> "$LOG_FILE" 2>&1 &
-            disown 2>/dev/null || true
-            exit 0
+    # --- Etapa 4: terminais universais ---
+    # Se nem isso funcionar, aceitamos que pode ser um DE/TWM muito
+    # minimalista. Tentamos os "genéricos de terminal" mais comuns.
+    for term in tilix alacritty kitty foot xterm x-terminal-emulator; do
+        if command -v "$term" &> /dev/null; then
+            log_debug "Usando $term (universal)"
+            _executar_terminal "$term" "$script_path" "$titulo"
+            return 0
         fi
     done
 
     log_error "Nenhum emulador de terminal compatível foi encontrado."
+    log_error "Instale um terminal gráfico (ex.: gnome-terminal, konsole, xfce4-terminal, xterm)."
     exit 1
+}
+
+# Encapsula o `setsid ... & disown` para não repetir 6 linhas por
+# terminal. Recebe o binário do terminal, o script a executar e o
+# título da janela. Suporta o padrão genérico `-e bash <script> --no-fork`.
+_executar_terminal() {
+    local term="$1"
+    local script_path="$2"
+    local titulo="$3"
+
+    # Alguns terminais usam `--title` longo, outros aceitam `-T`.
+    # Usamos `--title` para todos os modernos; se falhar, o fallback
+    # abaixo (sem título) entra.
+    case "$term" in
+        konsole)
+            setsid konsole --title "$titulo" -e bash "$script_path" --no-fork \
+                >> "$LOG_FILE" 2>&1 &
+            ;;
+        xfce4-terminal)
+            # xfce4-terminal -e espera comando e argumentos como
+            # argumentos separados (não uma única string).
+            setsid xfce4-terminal --title="$titulo" -e bash "$script_path" --no-fork \
+                >> "$LOG_FILE" 2>&1 &
+            ;;
+        ptyxis)
+            setsid ptyxis --title "$titulo" -- bash "$script_path" --no-fork \
+                >> "$LOG_FILE" 2>&1 &
+            ;;
+        gnome-terminal)
+            setsid gnome-terminal --title="$titulo" -- bash "$script_path" --no-fork \
+                >> "$LOG_FILE" 2>&1 &
+            ;;
+        mate-terminal)
+            setsid mate-terminal --title="$titulo" -e bash "$script_path" --no-fork \
+                >> "$LOG_FILE" 2>&1 &
+            ;;
+        qterminal)
+            setsid qterminal --title "$titulo" -e bash "$script_path" --no-fork \
+                >> "$LOG_FILE" 2>&1 &
+            ;;
+        lxterminal)
+            setsid lxterminal --title="$titulo" -e bash "$script_path" --no-fork \
+                >> "$LOG_FILE" 2>&1 &
+            ;;
+        *)
+            # Fallback genérico: `-e bash <script> --no-fork`.
+            # Funciona em tilix, alacritty, kitty, xterm, foot e a
+            # maioria dos terminais universais.
+            setsid "$term" -e bash "$script_path" --no-fork \
+                >> "$LOG_FILE" 2>&1 &
+            ;;
+    esac
+
+    disown 2>/dev/null || true
+    exit 0
 }
 
 # ============================================================
@@ -280,6 +389,25 @@ verificar_arquivos() {
         exit 1
     fi
 
+    # hardware-service.js é require()'d no topo do server.js. Se
+    # estiver ausente, o Node falha antes de subir o servidor — e
+    # o usuário só vê "servidor não respondeu após 15s" sem saber
+    # por quê. Por isso é um erro fatal, não um warning.
+    if [ ! -f "$DIR/hardware-service.js" ]; then
+        log_error "Arquivo hardware-service.js não encontrado!"
+        log_error "Ele é obrigatório — o server.js depende dele para subir."
+        exit 1
+    fi
+
+    # hardware_map.json é lido em runtime pelo hardware-service.js
+    # quando /hardware-scan é chamado. Sem ele, o servidor sobe,
+    # mas a detecção de hardware falha silenciosamente — daí o
+    # warning (não é crítico para o resto do FOF funcionar).
+    if [ ! -f "$DIR/hardware_map.json" ]; then
+        log_warning "Arquivo hardware_map.json não encontrado!"
+        log_warning "A sessão 'Dispositivos e Periféricos' não conseguirá detectar hardware."
+    fi
+
     if [ ! -f "$DIR/index.html" ]; then
         log_error "Arquivo index.html não encontrado!"
         exit 1
@@ -301,7 +429,7 @@ verificar_arquivos() {
         log_warning "Arquivo i18n.js não encontrado!"
     fi
 
-        # ============================================================
+    # ============================================================
     # ARQUIVOS DE SESSÃO
     # ============================================================
     #
@@ -317,6 +445,7 @@ verificar_arquivos() {
         "primeiros-passos.html"
         "codecs.html"
         "hardware.html"
+        "dispositivos-perifericos.html"
         "producao-multimidia.html"
         "aplicativos.html"
         "casa-escritorio.html"
@@ -668,7 +797,6 @@ Terminal=false
 Categories=System;Settings;
 StartupNotify=false
 StartupWMClass=fof-container
-X-GNOME-Autostart-enabled=true
 EOF
 
     chmod +x "$desktop_file"
@@ -697,12 +825,19 @@ Descrição:
   Ele detecta automaticamente seu ambiente desktop e
   abre o terminal apropriado.
 
+Desktops suportados:
+  GNOME, KDE Plasma, XFCE, Cinnamon, MATE, LXQt, LXDE,
+  Budgie, Sway, Hyprland, i3 e outros tiling WMs. A ordem de
+  preferência de terminal é ajustada automaticamente.
+
 Arquivos:
-  server.js         Servidor Node.js
-  index.html        Landing page (botão único "Iniciar Configurações")
-  guiado.html       Configuração passo a passo (12 sessões)
-  CHANGELOG.md      Histórico de mudanças (lido em runtime)
-  icone_app.png     Ícone do aplicativo
+  server.js           Servidor Node.js
+  hardware-service.js Detecção de hardware (endpoint /hardware-scan)
+  hardware_map.json   Mapa de vendors PCI/USB → pacotes
+  index.html          Landing page (botão único "Iniciar Configurações")
+  guiado.html         Configuração passo a passo (13 sessões)
+  CHANGELOG.md        Histórico de mudanças (lido em runtime)
+  icone_app.png       Ícone do aplicativo
 
 Logs:
   $LOG_FILE
@@ -736,6 +871,8 @@ main() {
     done
 
     log_header
+
+    log_info "🖥️ Desktop detectado: ${XDG_CURRENT_DESKTOP:-${DESKTOP_SESSION:-(desconhecido)}}"
 
     if [ "$DEBUG" = true ]; then
         log_info "🐛 Modo DEBUG ativado"

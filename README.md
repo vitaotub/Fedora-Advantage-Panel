@@ -2,7 +2,7 @@
 
 **🌐 Idioma:** Português (BR) | [English](README.en.md) | [Español](README.es.md)
 
-![Versão](https://img.shields.io/badge/Vers%C3%A3o-v1.0.0--09282026-orange?style=flat-square)
+![Versão](https://img.shields.io/badge/Vers%C3%A3o-v1.0.0--09292026-orange?style=flat-square)
 ![Fedora](https://img.shields.io/badge/Fedora-44+-294172?style=flat-square&logo=fedora)
 ![Licença](https://img.shields.io/badge/Licen%C3%A7a-GPL--3.0-green?style=flat-square)
 ![Idiomas](https://img.shields.io/badge/Idiomas-PT--BR%20%7C%20EN%20%7C%20ES-3c67e3?style=flat-square)
@@ -32,7 +32,7 @@ fof-compat                          # Iniciar (modo compatibilidade — GPUs ant
 
 O **Fedora Only Fans (FOF)** é um painel de automação visual para o Fedora Linux. Transforma uma instalação limpa em um sistema completo — codecs, drivers, repositórios, ferramentas — através de cliques, sem abrir o terminal.
 
-O FOF tem **um único ponto de entrada**: o botão **"Iniciar"**, que leva você pelas 12 sessões passo a passo, na ordem lógica. Cada sessão agrupa tarefas relacionadas, e o progresso é salvo automaticamente.
+O FOF tem **um único ponto de entrada**: o botão **"Iniciar"**, que leva você pelas 13 sessões passo a passo, na ordem lógica. Cada sessão agrupa tarefas relacionadas, e o progresso é salvo automaticamente.
 
 Cada botão lembra seu próprio estado. Fechar e reabrir o FOF (ou reiniciar o computador) sempre mostra exatamente onde você parou.
 
@@ -44,16 +44,17 @@ Cada botão lembra seu próprio estado. Fechar e reabrir o FOF (ou reiniciar o c
 |---|---|---|
 | 1 | 🚀 Primeiros Passos | Atualização completa do sistema + RPM Fusion + Flathub + remoção opcional do repositório Fedora Flatpak |
 | 2 | 🔤 Codecs e Compatibilidade | Codecs multimídia, reprodução de DVD comercial (tainted), fontes Microsoft |
-| 3 | 🖥️ Hardware | AMD (Vulkan/Mesa/RADV, VA-API, CoreCtrl, LACT, overclock), NVIDIA (driver proprietário, modeset), controles (grupo input) |
-| 4 | 🎬 Produção Multimídia | OBS Studio, EasyEffects, streaming, qpwgraph, HandBrake, wf-recorder |
-| 5 | 📦 Aplicativos Recomendados | ~45 apps via Flatpak (produtividade, mídia, gráficos, internet, edição de vídeo/áudio, nuvem) |
-| 6 | 🏠 Casa e Escritório | CUPS, Samba/LocalSend/Warpinator, KeePassXC, Okular+Tesseract (PDF+OCR) |
-| 7 | 🎮 Gaming | Launchers, Wine/Proton/NTSYNC, GameMode/MangoHud/Gamescope, ProtonUp-Qt, vkBasalt, emuladores, anti-cheat awareness |
-| 8 | 📱 Waydroid | Android no Linux via COPR, GApps, libndk/libhoudini, Magisk, Widevine, SmartDock |
-| 9 | 📊 Diagnóstico | Painel do sistema, top processos, partições, GSmartControl, CoolerControl, journal, **status de otimizações** |
-| 10 | 🛠️ Ajustes e Manutenção | Tunings de desempenho, ajustes de áudio, DNF, idioma, dual-boot, limpeza, kernels, GRUB |
-| 11 | 🐧 Estado do Fedora | Versão, detecção de Atomic/Silverblue, SELinux (status, AVCs, setroubleshoot, GUI) |
-| 12 | 📖 Sobre o FOF | Sobre o projeto + atualizar/desinstalar FOF + changelog dinâmico |
+| 3 | 🖥️ Hardware | AMD (Vulkan/Mesa/RADV, VA-API, CoreCtrl, LACT, overclock), NVIDIA (driver proprietário, modeset), Intel (Intel Media Driver) |
+| 4 | 🔌 Dispositivos e Periféricos | Detecção automática de hardware, firmwares adicionais, COPRs de comunidade (Wi-Fi USB Realtek), controles (grupo input, regras udev) |
+| 5 | 🎬 Produção Multimídia | OBS Studio, câmera virtual e EasyEffects |
+| 6 | 📦 Aplicativos Recomendados | ~45 apps via Flatpak (produtividade, mídia, gráficos, internet, edição de vídeo/áudio, nuvem) |
+| 7 | 🏠 Casa e Escritório | CUPS, Samba/LocalSend/Warpinator, KeePassXC, Okular+Tesseract (PDF+OCR) |
+| 8 | 🎮 Gaming | Launchers, Wine/Proton/NTSYNC, GameMode/MangoHud/Gamescope, ProtonUp-Qt, vkBasalt, emuladores, anti-cheat awareness |
+| 9 | 📱 Waydroid | Android no Linux via COPR, GApps, libndk/libhoudini, Magisk, Widevine, SmartDock |
+| 10 | 📊 Diagnóstico | Painel do sistema, top processos, partições, GSmartControl, CoolerControl, journal, **status de otimizações** |
+| 11 | 🛠️ Ajustes e Manutenção | Tunings de desempenho, ajustes de áudio, DNF, idioma, dual-boot, limpeza, kernels, GRUB |
+| 12 | 🐧 Estado do Fedora | Versão, detecção de Atomic/Silverblue, SELinux (status, AVCs, setroubleshoot, GUI) |
+| 13 | 📖 Sobre o FOF | Sobre o projeto + atualizar/desinstalar FOF + changelog dinâmico |
 
 ---
 
@@ -64,6 +65,10 @@ Cada botão lembra seu próprio estado. Fechar e reabrir o FOF (ou reiniciar o c
 - **Logs em tempo real** via SSE, expandidos por padrão
 - **Ícone de desinstalar** ao lado de cada app Flatpak instalado
 - **Detecção de Flatpak removido externamente** — se o usuário apagar o app por fora, o botão do FOF volta ao estado inicial
+- **Detecção automática de hardware** — endpoint `/hardware-scan` cruza IDs PCI/USB com `hardware_map.json` e sugere drivers
+- **Suporte a múltiplos desktops** — funciona em GNOME, KDE, XFCE, Cinnamon, MATE, LXQt, LXDE, Budgie e tiling WMs. O terminal de inicialização segue o desktop detectado
+- **Pares install/revert consistentes** — o botão de reverter começa desabilitado e só fica clicável após o install correspondente
+- **Validação unificada** — `./validar.sh` roda 10 checks de sanidade em uma única passada
 - **Barra de progresso global** no header (N/M sessões concluídas)
 - **Toasts + notificações nativas** ao concluir tarefas longas (>30s)
 - **Autenticação segura** via pkexec/kdesu com whitelist de comandos read-only
@@ -91,18 +96,21 @@ Fedora-Only-Fans/
 ├── primeiros-passos.html            # Sessão 1
 ├── codecs.html                      # Sessão 2
 ├── hardware.html                    # Sessão 3
-├── producao-multimidia.html         # Sessão 4
-├── aplicativos.html                 # Sessão 5
-├── casa-escritorio.html             # Sessão 6
-├── gaming.html                      # Sessão 7
-├── waydroid.html                    # Sessão 8
-├── diagnostico.html                 # Sessão 9
-├── ajustes-manutencao.html          # Sessão 10
-├── estado-fedora.html               # Sessão 11
-├── sobre-fof.html                   # Sessão 12
+├── dispositivos-perifericos.html    # Sessão 4
+├── producao-multimidia.html         # Sessão 5
+├── aplicativos.html                 # Sessão 6
+├── casa-escritorio.html             # Sessão 7
+├── gaming.html                      # Sessão 8
+├── waydroid.html                    # Sessão 9
+├── diagnostico.html                 # Sessão 10
+├── ajustes-manutencao.html          # Sessão 11
+├── estado-fedora.html               # Sessão 12
+├── sobre-fof.html                   # Sessão 13
 ├── template-sessao.html             # Molde para criar novas sessões
 ├── CHANGELOG.md                     # Histórico de mudanças (lido pelo FOF)
 ├── server.js                        # Servidor Node.js + SSE + endpoints
+├── hardware-service.js              # Detecção de hardware (lspci/lsusb + rpm)
+├── hardware_map.json                # Mapa de vendors PCI/USB → pacotes
 ├── iniciar_fof.sh                   # Inicializador
 ├── iniciar_fof_compat.sh            # Modo compatibilidade
 ├── install.sh                       # Instalador / desinstalador / updater
@@ -112,6 +120,58 @@ Fedora-Only-Fans/
 ├── icone_app.png                    # Ícone do app
 └── LICENSE                          # GPL-3.0
 ```
+
+---
+
+## 🖥️ Desktops suportados
+
+O FOF é desktop-agnóstico — foi construído para rodar em qualquer
+ambiente Linux que use a stack XDG padrão. Não depende de KDE,
+GNOME ou qualquer DE específico.
+
+| Desktop | Status | Observação |
+|---|---|---|
+| **KDE Plasma** | ✅ Testado | Autenticação via `kdesu`/`kdialog`; terminal nativo `konsole` |
+| **GNOME** | ✅ Testado | Autenticação via `pkexec`+`zenity`; terminal `ptyxis`/`gnome-terminal` |
+| **XFCE** | ✅ Funciona | Autenticação via `pkexec`+`zenity`; terminal `xfce4-terminal` |
+| **Cinnamon** | ✅ Funciona | Autenticação via `pkexec`+`zenity` |
+| **MATE** | ✅ Funciona | Autenticação via `pkexec`+`zenity` |
+| **LXQt** | ✅ Funciona | Autenticação via `pkexec`+`kdialog` |
+| **LXDE** | ✅ Funciona | Autenticação via `pkexec`+`zenity` |
+| **Budgie** | ✅ Funciona | Autenticação via `pkexec`+`zenity` |
+| **Sway / Hyprland / i3** | ✅ Funciona | Requer `$TERMINAL` setado ou um terminal gráfico instalado |
+
+### O que é automático
+
+- **Terminal de inicialização** — o `iniciar_fof.sh` detecta seu
+  desktop via `XDG_CURRENT_DESKTOP` e prefere o terminal nativo dele
+  (ex.: `konsole` no KDE, `ptyxis` no GNOME, `xfce4-terminal` no XFCE).
+  Se não encontrar, cai em fallbacks universais.
+- **Autenticação** — o `install.sh` instala `zenity` automaticamente
+  se você não tiver `kdialog` nem `zenity` (necessário para autenticação
+  gráfica em DEs não-KDE).
+- **Atalho no menu** — criado em `~/.local/share/applications/`
+  (funciona em todos os DEs que seguem o padrão XDG).
+- **Ícone** — instalado em `hicolor/256x256/apps/` com o nome
+  `fof-container`, casando com o `StartupWMClass` do `.desktop`.
+
+### O que NÃO é automático
+
+- **Fixar na barra de tarefas.** O FOF **não** fixa atalhos na barra
+  automaticamente. A implementação antiga usava `kwriteconfig5` e
+  `qdbus` no KDE, mas o Plasma sobrescreve alterações externas no
+  arquivo de configuração com frequência — a fixação raramente
+  funcionava. Em qualquer desktop, fixe manualmente:
+  - **KDE:** botão direito no ícone do FOF no menu → *Fixar no painel*
+  - **GNOME:** abrir o FOF uma vez, depois *botão direito no ícone no dock → Add to Favorites*
+  - **XFCE/Cinnamon/MATE:** arrastar o ícone do menu para a barra
+
+### Requisitos mínimos
+
+- Fedora 43, 44 ou 45 (testado em 44)
+- Kernel com WebKitGTK 4.1 (todo Fedora 40+ tem)
+- `nodejs` >= 18 (o `iniciar_fof.sh` instala se faltar)
+- `zenity` **ou** `kdialog` (para autenticação gráfica)
 
 ---
 
@@ -141,7 +201,24 @@ Fedora-Only-Fans/
 
 O histórico completo de mudanças está em [`CHANGELOG.md`](CHANGELOG.md). O próprio FOF exibe o changelog da versão atual, dentro da sessão **Sobre o FOF** — carregado dinamicamente do arquivo.
 
-### v1.0.0-09282026 (Atual) 🚧
+### v1.0.0-09292026 (Atual) 🚧
+
+- Nova sessão **Dispositivos e Periféricos** (posição 4), entre Hardware e Produção Multimídia
+- Sessão **Hardware** ganha acórdeão Intel (`intel-media-driver`) e perde o bloco de controles
+- Novo endpoint `/hardware-scan` + `hardware-service.js` + `hardware_map.json`
+- Detecção automática via `lspci`/`lsusb` cruzada com mapa de vendors, com `nvidia-detect` para refinar NVIDIA
+- Suplementos seguros: `linux-firmware-vendor`
+- COPRs de comunidade para Wi-Fi USB Realtek (RTL8811CU/8821CU, RTL8812BU/8822BU, RTL8812AU, RTL8811AU) — opcionais, com avisos de risco
+- Detecção de estado real via `rpm -q` substitui `.progresso.json` para esses drivers
+- Suporte a múltiplos desktops (GNOME, KDE, XFCE, Cinnamon, MATE, LXQt, LXDE, Budgie, tiling WMs)
+- Pares install/revert consistentes — botão de reverter começa desabilitado
+- Validação unificada via `./validar.sh` (10 checks)
+- Removido: `akmod-intel-ipu6` (suporte nativo no kernel do Fedora 44+)
+- Removida: fixação automática na barra de tarefas (era KDE-only e raramente funcionava)
+- Comentários de sessão no `script.js` renumerados (6 a 13)
+- READMEs atualizados para refletir as 13 sessões
+
+### v1.0.0-09282026 ✅
 
 - Reestruturação completa das sessões (13 → 12), com IDs semânticos (sem número)
 - Sessão **Ajustes e Manutenção** agrupa tunings de desempenho, ajustes de áudio, DNF, idioma, dual-boot, limpeza, kernels e GRUB
@@ -179,6 +256,8 @@ O histórico completo de mudanças está em [`CHANGELOG.md`](CHANGELOG.md). O pr
 5. Adicione as chaves i18n em `locales/en.json` e `locales/es.json` (e também no HTML, como fallback PT-BR)
 
 A ordem de exibição vem da posição da entrada no array `SESSOES`, não do nome do arquivo.
+
+**Sobre `flatpakId` e `sempreClicavel`:** comandos que instalam Flatpak devem ter `flatpakId: 'org.exemplo.App'` no registro de `script.js` — isso permite que o FOF detecte remoção externa e restaure o botão. Comandos cujo estado real é consultável via `rpm -q` (drivers de hardware, por exemplo) devem usar `sempreClicavel: true` e verificar o estado via endpoint, em vez de confiar no `.progresso.json`.
 
 ---
 

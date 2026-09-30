@@ -393,12 +393,15 @@ var SESSOES = [
 
 // ============================================================
 // SESSÃO 3 — HARDWARE
+// Drivers gráficos AMD, NVIDIA e Intel. Os controles, periféricos
+// e detecção de hardware vivem na sessão "Dispositivos e Periféricos".
 // ============================================================
 {
     id: 'hardware',
     nome: 'Hardware',
     nomeKey: 'sessoes.hardware.nome',
     comandos: {
+        // --- AMD ---
         'vulkan-amd': {
             textoConcluido: '✅ Vulkan instalado',
             textoConcluidoKey: 'sessoes.hardware.texto_concluido_vulkan'
@@ -427,30 +430,95 @@ var SESSOES = [
             textoConcluido: '✅ Overclock desativado',
             textoConcluidoKey: 'sessoes.hardware.texto_concluido_overclock_remove'
         },
+        // --- NVIDIA ---
         'nvidia-driver-install': {
             textoConcluido: '✅ Driver Nvidia instalado',
             textoConcluidoKey: 'sessoes.hardware.texto_concluido_nvidia_driver'
         },
         'nvidia-modeset-on': { sempreClicavel: true },
         'nvidia-modeset-off': { sempreClicavel: true },
-        'input-group-add': {
-            textoConcluido: '✅ Adicionado ao grupo input',
-            textoConcluidoKey: 'sessoes.hardware.texto_concluido_input_add'
-        },
-        'input-group-remove': {
-            textoConcluido: '✅ Removido do grupo input',
-            textoConcluidoKey: 'sessoes.hardware.texto_concluido_input_remove'
-        },
-        'steam-devices-install': {
-            textoConcluido: '✅ Steam Devices instalado',
-            textoConcluidoKey: 'sessoes.hardware.texto_concluido_steam_devices'
+        // --- Intel ---
+        'intel-media-install': {
+            textoConcluido: '🎬 Intel Media Driver instalado',
+            textoConcluidoKey: 'sessoes.hardware.texto_concluido_intel_media'
         }
     }
 },
 
 // ============================================================
-// SESSÃO 4 — PRODUÇÃO MULTIMÍDIA
-// Ajustes de áudio (realtime, PipeWire) migraram para a sessão 10.
+// SESSÃO 4 — DISPOSITIVOS E PERIFÉRICOS
+// Detecção de hardware, suplementos seguros, COPRs de comunidade
+// e controles/periféricos.
+// ============================================================
+{
+    id: 'dispositivos-perifericos',
+    nome: 'Dispositivos e Periféricos',
+    nomeKey: 'sessoes.dispositivos-perifericos.nome',
+    comandos: {
+        // --- Detecção (sempre clicável) ---
+        'hw-scan': { sempreClicavel: true },
+
+        // --- Suplementos seguros (toggle) ---
+        'firmware-vendor-install': {
+            textoConcluido: '✅ Firmwares adicionais instalados',
+            textoConcluidoKey: 'sessoes.dispositivos-perifericos.texto_concluido_firmware_vendor'
+        },
+        'firmware-vendor-remove': {
+            textoConcluido: '✅ Firmwares revertidos',
+            textoConcluidoKey: 'sessoes.dispositivos-perifericos.texto_concluido_firmware_vendor_remove'
+        },
+
+        // --- Drivers de hardware (sempre clicáveis; estado real via rpm -q) ---
+        'driver-nvidia-install': { sempreClicavel: true, textoConcluido: '✅ Driver NVIDIA instalado' },
+        'driver-nvidia-remove': { sempreClicavel: true },
+        'driver-amd-vaapi-install': { sempreClicavel: true, textoConcluido: '✅ VA-API AMD instalado' },
+        'driver-amd-vaapi-remove': { sempreClicavel: true },
+        'driver-intel-media-install': { sempreClicavel: true, textoConcluido: '✅ Driver Intel Media instalado' },
+        'driver-intel-media-remove': { sempreClicavel: true },
+        'driver-broadcom-wl-install': { sempreClicavel: true, textoConcluido: '✅ Driver Broadcom WL instalado' },
+        'driver-broadcom-wl-remove': { sempreClicavel: true },
+        'driver-realtek-r8168-install': { sempreClicavel: true, textoConcluido: '✅ Driver Realtek r8168 instalado' },
+        'driver-realtek-r8168-remove': { sempreClicavel: true },
+
+        // --- Drivers COPR (Wi-Fi USB Realtek) ---
+        'driver-rtl8821cu-install': { sempreClicavel: true, textoConcluido: '✅ Driver RTL8821CU instalado' },
+        'driver-rtl8821cu-remove': { sempreClicavel: true },
+        'driver-rtl8822bu-install': { sempreClicavel: true, textoConcluido: '✅ Driver RTL8822BU instalado' },
+        'driver-rtl8822bu-remove': { sempreClicavel: true },
+        'driver-rtl8812au-install': { sempreClicavel: true, textoConcluido: '✅ Driver RTL8812AU instalado' },
+        'driver-rtl8812au-remove': { sempreClicavel: true },
+        'driver-rtl8811au-install': { sempreClicavel: true, textoConcluido: '✅ Driver RTL8811AU instalado' },
+        'driver-rtl8811au-remove': { sempreClicavel: true },
+
+        // --- COPRs: habilitar/desabilitar (sempre clicáveis) ---
+        'copr-rtl8821cu-enable': { sempreClicavel: true, textoConcluido: '✅ COPR habilitado' },
+        'copr-rtl8821cu-disable': { sempreClicavel: true },
+        'copr-rtl8822bu-enable': { sempreClicavel: true, textoConcluido: '✅ COPR habilitado' },
+        'copr-rtl8822bu-disable': { sempreClicavel: true },
+        'copr-rtl8812au-enable': { sempreClicavel: true, textoConcluido: '✅ COPR habilitado' },
+        'copr-rtl8812au-disable': { sempreClicavel: true },
+        'copr-rtl8811au-enable': { sempreClicavel: true, textoConcluido: '✅ COPR habilitado' },
+        'copr-rtl8811au-disable': { sempreClicavel: true },
+
+        // --- Controles e periféricos (movidos de hardware) ---
+        'input-group-add': {
+            textoConcluido: '✅ Adicionado ao grupo input',
+            textoConcluidoKey: 'sessoes.dispositivos-perifericos.texto_concluido_input_add'
+        },
+        'input-group-remove': {
+            textoConcluido: '✅ Removido do grupo input',
+            textoConcluidoKey: 'sessoes.dispositivos-perifericos.texto_concluido_input_remove'
+        },
+        'steam-devices-install': {
+            textoConcluido: '✅ Steam Devices instalado',
+            textoConcluidoKey: 'sessoes.dispositivos-perifericos.texto_concluido_steam_devices'
+        }
+    }
+},
+
+// ============================================================
+// SESSÃO 5 — PRODUÇÃO MULTIMÍDIA
+// Ajustes de áudio (realtime, PipeWire) migraram para a sessão 11.
 // ============================================================
 {
     id: 'producao-multimidia',
@@ -470,40 +538,12 @@ var SESSOES = [
             textoConcluido: '✅ EasyEffects instalado',
             textoConcluidoKey: 'sessoes.producao-multimidia.texto_concluido_easyeffects',
             flatpakId: 'com.github.wwmm.easyeffects'
-        },
-        'obs-scene-templates': {
-            sempreClicavel: true,
-            textoConcluido: '✅ Templates aplicados'
-        },
-        'streamdeck-ui-install': {
-            textoConcluido: '✅ Streamdeck-ui instalado',
-            textoConcluidoKey: 'sessoes.producao-multimidia.texto_concluido_streamdeck'
-        },
-        'ndi-tools-install': {
-            textoConcluido: '✅ NDI Tools instalado',
-            textoConcluidoKey: 'sessoes.producao-multimidia.texto_concluido_ndi'
-        },
-        'qpwgraph-install': {
-            textoConcluido: '✅ qpwgraph instalado',
-            textoConcluidoKey: 'sessoes.producao-multimidia.texto_concluido_qpwgraph'
-        },
-        'handbrake-install': {
-            textoConcluido: '✅ HandBrake instalado',
-            textoConcluidoKey: 'sessoes.producao-multimidia.texto_concluido_handbrake'
-        },
-        'kdenlive-templates-install': {
-            sempreClicavel: true,
-            textoConcluido: '✅ Templates instalados'
-        },
-        'screen-recorder-install': {
-            textoConcluido: '✅ Gravador instalado',
-            textoConcluidoKey: 'sessoes.producao-multimidia.texto_concluido_screen_recorder'
         }
     }
 },
 
 // ============================================================
-// SESSÃO 5 — APLICATIVOS RECOMENDADOS
+// SESSÃO 6 — APLICATIVOS RECOMENDADOS
 // ============================================================
 {
     id: 'aplicativos',
@@ -561,7 +601,7 @@ var SESSOES = [
 },
 
 // ============================================================
-// SESSÃO 6 — CASA E ESCRITÓRIO
+// SESSÃO 7 — CASA E ESCRITÓRIO
 // Conteúdo integral da antiga 10-casa-pronta.
 // ============================================================
 {
@@ -599,7 +639,7 @@ var SESSOES = [
 },
 
 // ============================================================
-// SESSÃO 7 — GAMING
+// SESSÃO 8 — GAMING
 // Bufferbloat removido nesta versão.
 // ============================================================
 {
@@ -677,7 +717,7 @@ var SESSOES = [
 },
 
 // ============================================================
-// SESSÃO 8 — WAYDROID
+// SESSÃO 9 — WAYDROID
 // ============================================================
 {
     id: 'waydroid',
@@ -701,7 +741,7 @@ var SESSOES = [
 },
 
 // ============================================================
-// SESSÃO 9 — DIAGNÓSTICO
+// SESSÃO 10 — DIAGNÓSTICO
 // Baobab removido nesta versão.
 // ============================================================
 {
@@ -723,7 +763,7 @@ var SESSOES = [
 },
 
 // ============================================================
-// SESSÃO 10 — AJUSTES E MANUTENÇÃO
+// SESSÃO 11 — AJUSTES E MANUTENÇÃO
 // Fusão da antiga 02-otimizacao + ajustes de áudio da 07-loja
 // + acórdeão "Manutenção do Fedora" da antiga manutencao.html.
 // ============================================================
@@ -772,7 +812,7 @@ var SESSOES = [
 },
 
 // ============================================================
-// SESSÃO 11 — ESTADO DO FEDORA
+// SESSÃO 12 — ESTADO DO FEDORA
 // ============================================================
 {
     id: 'estado-fedora',
@@ -795,7 +835,7 @@ var SESSOES = [
 },
 
 // ============================================================
-// SESSÃO 12 — SOBRE O FOF
+// SESSÃO 13 — SOBRE O FOF
 // Sobre do FOF + Manutenção do FOF (atualizar, desinstalar, changelog).
 // ============================================================
 {
@@ -1072,13 +1112,17 @@ async function _limparIdsOrfaos() {
     (pulAntes - pulNovos.length) + ' pulados');
 }
 
+// Usa progressCache quando já populado (evita JSON.parse a cada
+// chamada). isExecutado/isPulado são chamados em _atualizarProgressoGlobal()
+// uma vez por comando e em getStatusSessao() mais uma vez — numa UI com
+// ~200 botões, isso economiza centenas de parses por atualização.
 function isExecutado(idComando) {
-    const progress = getProgressSync();
+    const progress = progressCache || getProgressSync();
     return progress.executados.includes(idComando);
 }
 
 function isPulado(idComando) {
-    const progress = getProgressSync();
+    const progress = progressCache || getProgressSync();
     return progress.pulados.includes(idComando);
 }
 
@@ -1250,10 +1294,14 @@ function iniciarProgresso(idComando) {
         }
     }, 1800000);
 
+    // Timer de fallback. Só avança enquanto nenhum evento "progress"
+    // real chegou do servidor. Quando chega, o _atualizarProgressoPacotes()
+    // sobrescreve o valor. O timer não passa de 30% para não "mentir"
+    // se o DNF travar antes de emitir [N/M].
     progressIntervals[idComando] = setInterval(() => {
-        if (progresso < 85) {
-            const incremento = Math.max(0.05, (85 - progresso) / 200);
-            progresso = Math.min(85, progresso + incremento);
+        if (progresso < 30) {
+            const incremento = Math.max(0.05, (30 - progresso) / 200);
+            progresso = Math.min(30, progresso + incremento);
             fill.style.width = progresso + '%';
             percent.textContent = Math.round(progresso) + '%';
             status.textContent = _t('comum.status_executando', '⏳ Executando...');
@@ -1397,6 +1445,66 @@ function _corOriginalDoBotao(btn) {
     return cor;
 }
 
+/**
+ * Aplica o estado visual de um par install/revert.
+ *
+ * Regra única:
+ * - Se o comando de install está marcado como executado:
+ *     install → desabilitado, com texto final ("✅ ...")
+ *     revert  → habilitado, clicável
+ * - Se o comando de install NÃO está marcado:
+ *     install → habilitado, texto original
+ *     revert  → DESABILITADO (não há o que reverter)
+ *
+ * Esta é a ÚNICA fonte de verdade do estado visual desses pares.
+ * Não consulta o estado do revert — apenas do install. A semântica
+ * é: existe uma verdade por par ("está instalado ou não"), e o
+ * botão de reverter só faz sentido quando essa verdade é "sim".
+ *
+ * Chamada em dois momentos:
+ *   1. restaurarEstadoSessao() — para aplicar o estado persistido
+ *      no carregamento da sessão
+ *   2. onSucesso dos comandos install/revert — para atualizar os
+ *      dois botões em uníssono após uma transição de estado
+ */
+function aplicarEstadoToggle(idInstall, idRevert) {
+    var installBtn = document.getElementById('btn-' + idInstall);
+    var revertBtn = document.getElementById('btn-' + idRevert);
+    if (!installBtn || !revertBtn) return;
+
+    var installFeito = isExecutado(idInstall);
+
+    var textoOriginalInstall = installBtn.getAttribute('data-texto-original') || installBtn.textContent;
+    var textoOriginalRevert = revertBtn.getAttribute('data-texto-original') || revertBtn.textContent;
+    var corOriginalInstall = _corOriginalDoBotao(installBtn);
+
+    if (installFeito) {
+        installBtn.textContent = getTextoAposExecucao(idInstall);
+        installBtn.style.backgroundColor = '#4b5563';
+        installBtn.style.cursor = 'default';
+        installBtn.disabled = true;
+        installBtn.style.opacity = '1';
+
+        revertBtn.textContent = textoOriginalRevert;
+        revertBtn.style.backgroundColor = '';
+        revertBtn.style.cursor = 'pointer';
+        revertBtn.disabled = false;
+        revertBtn.style.opacity = '1';
+    } else {
+        installBtn.textContent = textoOriginalInstall;
+        installBtn.style.backgroundColor = corOriginalInstall || '';
+        installBtn.style.cursor = 'pointer';
+        installBtn.disabled = false;
+        installBtn.style.opacity = '1';
+
+        revertBtn.textContent = textoOriginalRevert;
+        revertBtn.style.backgroundColor = '';
+        revertBtn.style.cursor = 'not-allowed';
+        revertBtn.disabled = true;
+        revertBtn.style.opacity = '0.5';
+    }
+}
+
 function restaurarBotaoAposExecucao(idComando, sucesso) {
     const botoes = obterBotoesPorId(idComando);
     const btnExecutar = botoes.btnExecutar;
@@ -1501,6 +1609,38 @@ function inicializarLogsDaSessao(root) {
     });
 }
 
+// ============================================================
+// PROGRESSO REAL DE PACOTES
+// ============================================================
+//
+// Recebe eventos do tipo "progress" emitidos pelo server.js quando
+// o parser de [N/M] detecta avanço do DNF. Substitui o valor da
+// barra de progresso por uma estimativa baseada em pacotes
+// processados (N de M), que é mais honesto do que o timer
+// contínuo original.
+
+function _atualizarProgressoPacotes(idComando, atual, total) {
+    if (!total || total <= 0) return;
+
+    var fill = document.getElementById('progress-fill-' + idComando);
+    var percent = document.getElementById('progress-percent-' + idComando);
+    var status = document.getElementById('progress-status-' + idComando);
+
+    if (!fill || !percent || !status) return;
+
+    // Reserva 90% da barra para os pacotes; os 10% finais são
+    // preenchidos na conclusão real (completarProgresso).
+    var fracao = Math.min(atual / total, 1);
+    var perc = Math.round(fracao * 90);
+
+    fill.style.width = perc + '%';
+    percent.textContent = perc + '%';
+    status.textContent = _tVars('comum.status_pacote',
+                                'Pacote {atual} de {total}',
+                                { atual: atual, total: total });
+    status.className = 'status running';
+}
+
 function conectarSSE(idComando, logBox) {
     if (!logBox) return;
 
@@ -1532,6 +1672,11 @@ function conectarSSE(idComando, logBox) {
                     delete sseConnections[idComando];
                     const sucesso = dados.sucesso !== false;
                     completarProgresso(idComando, sucesso);
+                    return;
+                }
+
+                if (dados.tipo === 'progress') {
+                    _atualizarProgressoPacotes(idComando, dados.pacote_atual, dados.pacote_total);
                     return;
                 }
 
@@ -1914,23 +2059,17 @@ function initCustomSelects() {
 // ATALHOS DE TECLADO
 // ============================================================
 
-// Ctrl+Enter: dispara o primeiro botão .btn-executar visível e habilitado
+// Ctrl+Enter: dispara o botão que está em foco, se for um .btn-executar
+// habilitado. Antes havia um fallback que clicava no primeiro botão
+// visível — mas isso podia acionar acidentalmente botões destrutivos
+// (ex.: "Remover repositório Fedora Flatpak" ou "Desinstalar FOF") sem
+// o usuário perceber. Agora exige foco explícito.
 document.addEventListener('keydown', function(e) {
     if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
         var foco = document.activeElement;
         if (foco && foco.classList && foco.classList.contains('btn-executar') && !foco.disabled) {
             e.preventDefault();
             foco.click();
-            return;
-        }
-        var botoes = document.querySelectorAll('.btn-executar:not(:disabled)');
-        for (var i = 0; i < botoes.length; i++) {
-            var r = botoes[i].getBoundingClientRect();
-            if (r.top >= 0 && r.bottom <= window.innerHeight && r.width > 0) {
-                e.preventDefault();
-                botoes[i].click();
-                return;
-            }
         }
     }
 });

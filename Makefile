@@ -52,7 +52,7 @@ PKG_LIBS := $(shell pkg-config --libs $(WEBKIT_PKG) gtk+-3.0)
 TARGET = fof-container
 SRC = src/fof-container.c
 
-.PHONY: all clean install uninstall run version check
+.PHONY: all clean install uninstall run version check check-basico
 
 all: $(TARGET)
 
@@ -80,17 +80,31 @@ version:
 
 # Alvo de sanidade — roda os mesmos checks que o install.sh
 # e o build-container.sh poderiam rodar. Útil antes de commitar.
+# Check unificado: delega para validar.sh (que faz tudo o que o
+# check-basico faz, e mais: cross-references, ícones, i18n).
+# Cai no check-basico se validar.sh não existir — assim o Makefile
+# continua funcional mesmo sem o script.
 check:
+	@if [ -f validar.sh ]; then \
+		bash validar.sh; \
+	else \
+		echo "ℹ️  validar.sh não encontrado — rodando check básico..."; \
+		$(MAKE) --no-print-directory check-basico; \
+	fi
+
+# Check básico: sintaxe JS/Bash/JSON + consistência de versão.
+# Mantido para o caso de validar.sh não estar disponível.
+check-basico:
 	@echo "==> Checando sintaxe JavaScript..."
-	@for f in script.js i18n.js server.js; do \
+	@for f in script.js i18n.js server.js hardware-service.js; do \
 		node --check "$$f" && echo "  OK: $$f" || exit 1; \
 	done
 	@echo "==> Checando sintaxe Bash..."
 	@for f in iniciar_fof.sh iniciar_fof_compat.sh install.sh build-container.sh; do \
 		bash -n "$$f" && echo "  OK: $$f" || exit 1; \
 	done
-	@echo "==> Checando JSON dos locales..."
-	@for f in locales/*.json; do \
+	@echo "==> Checando JSON dos locales e do mapa de hardware..."
+	@for f in locales/*.json hardware_map.json; do \
 		node -e "JSON.parse(require('fs').readFileSync('$$f','utf8'))" && echo "  OK: $$f" || exit 1; \
 	done
 	@echo "==> Checando CHANGELOG.md vs package.json..."
@@ -103,4 +117,4 @@ check:
 		console.log('  OK: seção v' + v + ' encontrada no CHANGELOG.md'); \
 	"
 	@echo ""
-	@echo "✅ Todos os checks passaram."
+	@echo "✅ Todos os checks básicos passaram."

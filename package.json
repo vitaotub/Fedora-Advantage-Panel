@@ -1,6 +1,6 @@
 {
 "name": "fedora-only-fans",
-"version": "1.0.0-09282026",
+"version": "1.0.0-09292026",
 "description": "Painel de automação para Fedora Linux - Facilite a configuração do seu sistema",
 "main": "server.js",
 "scripts": {
