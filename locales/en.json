@@ -201,19 +201,12 @@
     "texto_concluido_firmware_vendor_remove": "✅ Firmwares reverted",
 
     "copr_titulo": "🌐 Community drivers (COPR)",
-    "copr_aviso": "⚠️ <strong>Attention before continuing:</strong><br>• These repositories are <strong>maintained by third parties</strong> (individuals or small community groups), not by Red Hat or RPM Fusion.<br>• FOF <strong>does not control</strong> the content, update frequency or security of the packages.<br>• A COPR can be discontinued at any time — if that happens, the driver stops receiving updates until someone publishes an alternative.<br>• These drivers are for <strong>specific Realtek USB Wi-Fi adapters</strong>. Only install if you have one of the listed devices.<br>• If you don't know whether you need it, use the <strong>automatic detection</strong> in the accordion above first — it identifies the exact model.",
+    "copr_aviso": "⚠️ <strong>Attention before continuing:</strong><br>• These repositories are <strong>maintained by third parties</strong> (individuals or small community groups), not by Red Hat or RPM Fusion.<br>• FOF <strong>does not control</strong> the content, update frequency or security of the packages.<br>• A COPR can be discontinued at any time — if that happens, the driver stops receiving updates until someone publishes an alternative.<br>• Only install if you have one of the listed devices.<br>• If you don't know whether you need it, use the <strong>automatic detection</strong> in the accordion above first — it identifies the exact model.",
 
-    "copr_8821cu_titulo": "RTL8811CU / RTL8821CU — USB Wi-Fi",
-    "copr_8821cu_desc": "USB Wi-Fi adapters with Realtek RTL8811CU and RTL8821CU chips (very common in compact dual-band models). DKMS driver maintained by <code>morrownr</code> — active community, with a history of fast updates for new kernels. Requires RPM Fusion for the build dependencies.",
-
-    "copr_8822bu_titulo": "RTL8812BU / RTL8822BU — dual-band USB Wi-Fi",
-    "copr_8822bu_desc": "USB Wi-Fi adapters with Realtek RTL8812BU and RTL8822BU chips (dual-band AC1200, common in COMFAST and similar models). Same maintainer as the previous COPR. Requires RPM Fusion for the build dependencies.",
-
-    "copr_8812au_titulo": "RTL8812AU — dual-band USB Wi-Fi (older models)",
-    "copr_8812au_desc": "USB Wi-Fi adapters with the Realtek RTL8812AU chip (dual-band AC1200, previous generation to the 8812BU). Very common in Alfa, TP-Link models and adapters with external antenna. Requires RPM Fusion for the build dependencies.",
-
-    "copr_8811au_titulo": "RTL8811AU — compact USB Wi-Fi",
-    "copr_8811au_desc": "USB Wi-Fi adapters with the Realtek RTL8811AU chip (dual-band AC600, compact models like nano adapters). Requires RPM Fusion for the build dependencies.",
+    "copr_openrazer_titulo": "Razer (OpenRazer / Polychromatic)",
+    "copr_openrazer_desc": "RGB and macros for Razer mice, keyboards and laptops. Uses the <code>akmods</code> system, which rebuilds the module on every kernel update and signs it for Secure Boot.",
+    "copr_xone_titulo": "Xbox Wireless Adapter (USB dongle)",
+    "copr_xone_desc": "The <code>xone</code> driver for the official Xbox One/Series wireless adapter. Enables audio on the controller, force feedback and UPower integration. For Bluetooth, the driver is different (<code>xpadneo</code>).",
 
     "btn_copr_habilitar": "🌐 Enable repository",
     "btn_copr_desabilitar": "↩️ Disable repository",
