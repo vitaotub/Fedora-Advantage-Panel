@@ -22,7 +22,6 @@
         "sessao_posicao": "{atual} de {total}",
         "sessao_info_nav": "<strong>{n}/{total}</strong> - {nome}",
         "loading_sessao": "Cargando {nome}...",
-        "loading_generico": "Cargando...",
         "spinner_carregando_sessao": "Cargando sesión...",
         "erro_script_js": "❌ Error: ¡script.js no se cargó!",
         "erro_script_js_msg": "Recarga la página o verifica si el archivo existe.",
@@ -33,7 +32,6 @@
         "autenticacao_cancelada": "❌ Autenticación cancelada por el usuario.",
         "ja_executado": "Este comando ya ha sido ejecutado anteriormente.",
         "nao_instalado": "{nome} no está instalado.",
-        "nao_configurado": "{nome} no está configurado.",
         "status_iniciando": "⏳ Iniciando...",
         "status_executando": "⏳ Ejecutando...",
         "status_concluido": "✅ ¡Completado!",
@@ -45,7 +43,11 @@
         "tema_para_claro": "Cambiar a tema claro",
         "tema_para_escuro": "Cambiar a tema oscuro",
         "notif_tarefa_concluida_titulo": "FOF — Tarea completada",
-        "notif_tarefa_concluida_corpo": "La tarea ha finalizado. Consulta el registro para más detalles."
+        "notif_tarefa_concluida_corpo": "La tarea ha finalizado. Consulta el registro para más detalles.",
+        "status_pacote": "Paquete {atual} de {total}",
+        "badge_atualizar": "Actualizar",
+        "badge_atualizando": "🔄 Actualizando FOF... Sigue el progreso en Acerca de FOF.",
+        "badge_ja_atualizando": "⏳ Actualización ya en curso..."
     },
 
     "index": {
@@ -263,6 +265,16 @@
             "precisa_driver": "Este dispositivo puede necesitar el paquete <code>{pkg}</code>. Instálalo si el hardware no está funcionando correctamente.",
             "copr_necessario": "Este driver vive en el repositorio de la comunidad <code>{copr}</code>. Habilita el repositorio en el acordeón \"Drivers de la comunidad\" antes de instalar.",
             "btn_instalar_driver": "Instalar {pkg}",
+            "btn_driver_reverter": "Revertir controlador",
+            "driver_atual": "controlador actual",
+            "notes": {
+                "nvidia": "Requiere RPM Fusion nonfree. FOF intenta usar nvidia-detect para identificar la generación exacta y sugerir el paquete correcto (akmod-nvidia, akmod-nvidia-470xx o akmod-nvidia-390xx).",
+                "amd_gpu": "Aceleración de vídeo por hardware (VA-API) en GPUs AMD. El Mesa predeterminado de Fedora bloquea este soporte por licenciamiento.",
+                "amd_apu": "APUs AMD con gráficos integrados (Ryzen con Radeon Vega o RDNA).",
+                "intel_gpu": "Aceleración de vídeo en iGPUs Intel Skylake (6ª generación) o más recientes. Chips más antiguos (Haswell o anteriores) usan el controlador i965, ya presente en Fedora.",
+                "broadcom_wifi": "Instalar solo si el controlador de código abierto (brcmfmac/b43) no funciona. akmod-wl entra en conflicto con ellos y puede tumbar un Wi-Fi que ya funcionaba.",
+                "realtek_ethernet": "Controlador alternativo para tarjetas Ethernet Realtek. El controlador predeterminado (r8169) funciona en la mayoría de los casos — instalar akmod-r8168 solo si el cable no es reconocido."
+            },
             "instalando_driver": "Instalando driver...",
             "revertendo_driver": "Revirtiendo driver...",
             "instalando_suplemento": "Instalando suplemento...",
@@ -635,7 +647,8 @@
             "container_guard_alert": "El contenedor de Waydroid no está en ejecución. Haz clic en \"Abrir Waydroid\" primero.",
             "open_waiting_short": "Abriendo Waydroid...",
             "checking_container": "Verificando estado del contenedor...",
-            "zona_perigo_titulo": "🗑️ Eliminar Waydroid Completamente"
+            "zona_perigo_titulo": "🗑️ Eliminar Waydroid Completamente",
+            "nada_remover": "✅ Nada que eliminar"
         },
 
         "virtualizacao": {

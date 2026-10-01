@@ -22,7 +22,6 @@
         "sessao_posicao": "{atual} of {total}",
         "sessao_info_nav": "<strong>{n}/{total}</strong> - {nome}",
         "loading_sessao": "Loading {nome}...",
-        "loading_generico": "Loading...",
         "spinner_carregando_sessao": "Loading session...",
         "erro_script_js": "❌ Error: script.js was not loaded!",
         "erro_script_js_msg": "Reload the page or check if the file exists.",
@@ -33,7 +32,6 @@
         "autenticacao_cancelada": "❌ Authentication cancelled by user.",
         "ja_executado": "This command has already been executed.",
         "nao_instalado": "{nome} is not installed.",
-        "nao_configurado": "{nome} is not configured.",
         "status_iniciando": "⏳ Starting...",
         "status_executando": "⏳ Running...",
         "status_concluido": "✅ Done!",
@@ -45,7 +43,11 @@
         "tema_para_claro": "Switch to light theme",
         "tema_para_escuro": "Switch to dark theme",
         "notif_tarefa_concluida_titulo": "FOF — Task completed",
-        "notif_tarefa_concluida_corpo": "The task has finished. Check the log for details."
+        "notif_tarefa_concluida_corpo": "The task has finished. Check the log for details.",
+        "status_pacote": "Package {atual} of {total}",
+        "badge_atualizar": "Update",
+        "badge_atualizando": "🔄 Updating FOF... Follow progress in About FOF.",
+        "badge_ja_atualizando": "⏳ Update already in progress..."
     },
 
     "index": {
@@ -263,6 +265,16 @@
             "precisa_driver": "This device may need the <code>{pkg}</code> package. Install it if the hardware isn't working correctly.",
             "copr_necessario": "This driver lives in the community repository <code>{copr}</code>. Enable the repository in the \"Community drivers\" accordion before installing.",
             "btn_instalar_driver": "Install {pkg}",
+            "btn_driver_reverter": "Revert driver",
+            "driver_atual": "current driver",
+            "notes": {
+                "nvidia": "Requires RPM Fusion nonfree. FOF tries to use nvidia-detect to identify the exact generation and suggest the correct package (akmod-nvidia, akmod-nvidia-470xx or akmod-nvidia-390xx).",
+                "amd_gpu": "Hardware video acceleration (VA-API) on AMD GPUs. Fedora's default Mesa blocks this support due to licensing.",
+                "amd_apu": "AMD APUs with integrated graphics (Ryzen with Radeon Vega or RDNA).",
+                "intel_gpu": "Video acceleration on Intel iGPUs Skylake (6th gen) or newer. Older chips (Haswell or earlier) use the i965 driver, already in Fedora.",
+                "broadcom_wifi": "Only install if the open-source driver (brcmfmac/b43) doesn't work. akmod-wl conflicts with them and can take down a working Wi-Fi.",
+                "realtek_ethernet": "Alternative driver for Realtek Ethernet cards. The default driver (r8169) works in most cases — only install akmod-r8168 if the cable isn't recognized."
+            },
             "instalando_driver": "Installing driver...",
             "revertendo_driver": "Reverting driver...",
             "instalando_suplemento": "Installing supplement...",
@@ -635,7 +647,8 @@
             "container_guard_alert": "Waydroid container is not running. Click \"Open Waydroid\" first.",
             "open_waiting_short": "Opening Waydroid...",
             "checking_container": "Checking container status...",
-            "zona_perigo_titulo": "🗑️ Remove Waydroid Completely"
+            "zona_perigo_titulo": "🗑️ Remove Waydroid Completely",
+            "nada_remover": "✅ Nothing to remove"
         },
 
         "virtualizacao": {
