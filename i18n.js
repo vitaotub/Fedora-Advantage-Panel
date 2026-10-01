@@ -36,23 +36,10 @@
     var STORAGE_KEY = 'fof_lang';
     var CACHE_PREFIX = 'fof_lang_data_';
 
-    // Versão de fallback para a chave de cache.
-    //
-    // ATENÇÃO: este valor NÃO é lido do package.json por design. Ele é
-    // usado como cache-buster ANTES de qualquer requisição ao /info —
-    // ou seja, antes de o Node ter chance de responder qualquer coisa.
-    // Ler o package.json aqui exigiria um fetch, e o cache-buster
-    // perderia o sentido (o fetch já viria com cache, potencialmente).
-    //
-    // Por isso, esta é a ÚNICA exceção à regra "versão em um só lugar".
-    // Ao lançar uma release que altere strings dos locales, atualize
-    // este valor manualmente — junto com a mudança no package.json.
-    //
-    // Impacto de esquecer: o usuário pode ver strings antigas por até
-    // alguns segundos, até o /info responder e popular
-    // window.FOF_VERSION_UI18N (aí o _chaveCache() passa a usar a
-    // versão real e o cache é invalidado naturalmente).
-    var FALLBACK_VERSION = '1.0.0-10012026';
+    // A versão do FOF é injetada em window.FOF_VERSION_UI18N pelo
+    // server.js, no <head> de cada HTML servido. Sem essa injeção
+    // (ex.: abertura via file://), caímos num timestamp, que
+    // sempre dribla o cache — ao custo de uma request a mais.
 
     // ============================================================
     // ESTADO
@@ -109,17 +96,10 @@
     }
 
     function _chaveCache(lang) {
-        // O cache inclui a versão do FOF para que atualizações de
-        // strings sejam refletidas automaticamente. Sem isso, um cache
-        // antigo podia servir strings desatualizadas por tempo
-        // indefinido (o cache-buster HTTP só atua na requisição, não
-        // no localStorage).
-        //
-        // Usa window.FOF_VERSION_UI18N se disponível; senão, cai na
-        // constante FALLBACK_VERSION deste módulo. Antes, o fallback
-        // era 'dev' — que criava uma chave órfã permanente (nunca
-        // mais usada depois que a versão real chegava).
-        var v = window.FOF_VERSION_UI18N || FALLBACK_VERSION;
+        // A versão faz parte da chave do cache: quando o FOF é
+        // atualizado, a chave muda e o cache antigo é descartado
+        // automaticamente por _limparCachesAntigos().
+        var v = window.FOF_VERSION_UI18N || 'unknown';
         return CACHE_PREFIX + lang + '_' + v;
     }
 

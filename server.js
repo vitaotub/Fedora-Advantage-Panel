@@ -133,14 +133,14 @@ function _precisaEnvUserContext(comando) {
     });
 }
 
-// Caracteres de encadeamento de shell: ponto-e-vírgula (;), pipe (| ou ||),
-// subshell ($()), substituição de comando (`...`) e AND lógico (&&).
-// O `&` sozinho é permitido porque o comando de abrir Waydroid roda em
-// background (`waydroid show-full-ui >... &`) e é legitimamente usuário.
+// Caracteres de encadeamento de shell que permitem burlar a whitelist.
+// Cobre: ; ` | $( ) <( ) >( ) && & (background, não 2>&1) e quebras de linha.
+// O padrão `(?:^|\s)&(?:\s|$)` casa `&` como operador de background
+// (com espaço antes e depois), mas NÃO casa `2>&1` (onde `&` está colado).
 //
 // Sem esta validação, um comando como "rpm -q kernel; rm -rf ~" passaria
 // pelo startsWith("rpm -q ") e executaria o `rm` sem autenticação.
-const _CARACTERES_ENCADEAMENTO = /[;`|]|\$\(|&&/;
+const _CARACTERES_ENCADEAMENTO = /[\n\r;`|]|\$\(|&&|<\(|>\(|(?:^|\s)&(?:\s|$)/;
 
 function _cmdSemAutenticacao(comando) {
     const trimmed = (comando || '').trim();
@@ -195,6 +195,55 @@ const sseClients = new Map();
 const sseBuffers = new Map();
 const SSE_BUFFER_MAX = 2000;
 const SSE_BUFFER_TTL_MS = 10000;
+
+// ============================================================
+// RASTREAMENTO DE PROCESSOS FILHOS
+// ============================================================
+//
+// Todo comando disparado pelo FOF é registrado neste Set. No SIGINT
+// (Ctrl+C no terminal), o handler percorre o Set e mata a árvore de
+// cada processo — não só o pai direto.
+//
+// O motivo de precisar matar a árvore: entre o bash que o Node
+// criou e o comando real (dnf, apt, etc.) há camadas (pkexec,
+// script root). Matar só o bash deixa o dnf órfão — foi o bug do
+// teste 8.
+//
+// A solução tem duas partes:
+//   1. `detached: true` no spawn/exec — o bash vira líder de sessão
+//      e todos os descendentes herdam o mesmo PGID.
+//   2. `process.kill(-pid, 'SIGTERM')` no SIGINT — o `-` antes do
+//      PID envia o sinal para o grupo inteiro.
+
+const _processosAtivos = new Set();
+
+function _registrarProcesso(proc) {
+    _processosAtivos.add(proc);
+    proc.on('close', () => _processosAtivos.delete(proc));
+    return proc;
+}
+
+function _matarArvoreProcessos(proc) {
+    if (!proc || !proc.pid) return;
+
+    // Tenta matar o grupo inteiro (o `-` é o sinal de "grupo do PID").
+    // Se por algum motivo o processo não é líder de sessão (ex.: algum
+    // caminho antigo que não passa por detached), cai no fallback de
+    // matar só ele mesmo.
+    let grupoMorto = false;
+    try {
+        process.kill(-proc.pid, 'SIGTERM');
+        grupoMorto = true;
+    } catch (e) {
+        // ESRCH = grupo não existe (o processo já morreu, ou não é líder).
+        // EPERM = sem permissão (não deveria acontecer aqui).
+        // Em ambos os casos, tenta o kill simples abaixo.
+    }
+
+    if (!grupoMorto) {
+        try { proc.kill('SIGTERM'); } catch (e) {}
+    }
+}
 
 // ============================================================
 // RATE LIMITING
@@ -310,7 +359,7 @@ function _markdownParaHTML(md) {
 
         if (/^###\s+/.test(t)) {
             if (emLista) { html += '</ul>'; emLista = false; }
-            html += '<h4>' + _inlineMd(t.replace(/^###\s+/, '')) + '</h4>';
+            html += '<h5>' + _inlineMd(t.replace(/^###\s+/, '')) + '</h5>';
             continue;
         }
 
@@ -396,7 +445,7 @@ function lerProgresso() {
 
             return {
                 executados: Array.isArray(dados.executados) ? dados.executados : [],
-                pulados: Array.isArray(dados.pulados) ? dados.pulados : []
+                                                       pulados: Array.isArray(dados.pulados) ? dados.pulados : []
             };
         }
     } catch (e) {
@@ -628,7 +677,7 @@ function obterMetodoAutenticacao() {
         return {
             tipo: 'dialog_fallback',
             comando: commandExists('kdialog') ? 'kdialog' : 'zenity',
-            descricao: (commandExists('kdialog') ? 'kdialog' : 'zenity') + ' (fallback gráfico)'
+                                                       descricao: (commandExists('kdialog') ? 'kdialog' : 'zenity') + ' (fallback gráfico)'
         };
     }
 
@@ -682,11 +731,16 @@ function executarComandoComStream(comandoFinal, idComando, isReversao, callback)
             console.log(`[USER-CTX] HOME=${env.HOME}`);
         }
 
-        exec(comandoFinal, {
+        _registrarProcesso(exec(comandoFinal, {
             shell: '/bin/bash',
             maxBuffer: 1024 * 1024 * 50,
             timeout: 1800000,
-            env: env
+            env: env,
+            // detached: cria sessão própria (setsid). Isso faz todos
+            // os descendentes compartilharem o PGID do bash,
+            // permitindo que process.kill(-pid, ...) alcance a
+            // árvore inteira no SIGINT.
+            detached: true
         }, (error, stdout, stderr) => {
             if (stdout) {
                 enviarLog(idComando, stdout, 'output');
@@ -715,66 +769,21 @@ function executarComandoComStream(comandoFinal, idComando, isReversao, callback)
                 enviarLog(idComando, '__END__', 'end', { sucesso: true });
                 callback(null, stdout, stderr);
             }
-        });
+        }));
         return;
     }
 
     enviarLog(idComando, `$ ${comandoFinal}\n`, 'info');
     enviarLog(idComando, '─'.repeat(50) + '\n', 'info');
 
-    const isComplexo = comandoFinal.includes('|') ||
-    comandoFinal.includes('<(') ||
-    comandoFinal.includes('>') ||
-    comandoFinal.includes('&&') ||
-    comandoFinal.includes(';');
-
-    if (isComplexo) {
-        console.log(`[EXEC] Comando complexo: ${comandoFinal.substring(0, 50)}...`);
-
-        exec(comandoFinal, {
-            shell: '/bin/bash',
-            maxBuffer: 1024 * 1024 * 50,
-            timeout: 1800000
-        }, (error, stdout, stderr) => {
-            if (stdout) {
-                enviarLog(idComando, stdout, 'output');
-                var prog = _detectarProgressoPacotes(stdout);
-                if (prog) enviarProgresso(idComando, prog.atual, prog.total);
-            }
-            if (stderr) {
-                const stderrFiltrado = stderr.replace(/\[sudo\] password for .+: /g, '');
-                if (stderrFiltrado.trim()) {
-                    enviarLog(idComando, stderrFiltrado, 'error');
-                }
-            }
-
-            if (error) {
-                enviarLog(idComando, `\n❌ Comando falhou com código: ${error.code || 1}\n`, 'error');
-                console.error(`[ERRO] ${idComando}: Código ${error.code || 1}`);
-            } else {
-                if (isReversao) {
-                    removerProgresso(idComando);
-                } else {
-                    salvarProgresso(idComando);
-                }
-                enviarLog(idComando, `\n✅ Comando concluído com sucesso!\n`, 'success');
-                console.log(`[SUCESSO] ${idComando}`);
-            }
-
-            enviarLog(idComando, '─'.repeat(50) + '\n', 'info');
-            enviarLog(idComando, error ? '❌ Tarefa falhou!\n' : '✅ Tarefa concluída!\n', error ? 'error' : 'success');
-            enviarLog(idComando, '__END__', 'end', { sucesso: !error });
-
-            callback(error, stdout, stderr);
-        });
-        return;
-    }
-
-    const processo = spawn(comandoFinal, {
+    const processo = _registrarProcesso(spawn(comandoFinal, {
         shell: '/bin/bash',
         env: process.env,
-        stdio: ['pipe', 'pipe', 'pipe']
-    });
+        stdio: ['pipe', 'pipe', 'pipe'],
+        // Mesmo motivo do exec acima: garante que o kill alcance
+        // os descendentes via PGID.
+        detached: true
+    }));
 
     let saidaCompleta = '';
     let erros = '';
@@ -840,21 +849,21 @@ function _construirScripts(timestamp, random, comandoCorrigido, descricao, outpu
         '#!/bin/bash',
         '# Fedora Only Fans - ' + descricao,
         '# Executado em: ' + new Date().toLocaleString('pt-BR'),
-        '',
-        '# Exports obrigatórios quando roda via pkexec/kdesu (root).',
-        '# Sem HOME/USER corretos, scripts como install.sh --uninstall',
-        '# procurariam o FOF em /root/.local/share em vez de',
-        '# /home/<user>/.local/share.',
-        'export DISPLAY=' + (process.env.DISPLAY || ':0'),
-        'export XAUTHORITY=' + (process.env.XAUTHORITY || homeDir + '/.Xauthority'),
-        'export DBUS_SESSION_BUS_ADDRESS=' + (process.env.DBUS_SESSION_BUS_ADDRESS || ''),
-        'export HOME=' + homeDir,
-        'export USER=' + USUARIO_REAL,
-        'export LOGNAME=' + USUARIO_REAL,
-        'exec > ' + outputTemp + ' 2>&1',
-        '',
-        comandoLimpo,
-        ''
+                                                       '',
+                                                       '# Exports obrigatórios quando roda via pkexec/kdesu (root).',
+                                                       '# Sem HOME/USER corretos, scripts como install.sh --uninstall',
+                                                       '# procurariam o FOF em /root/.local/share em vez de',
+                                                       '# /home/<user>/.local/share.',
+                                                       'export DISPLAY=' + (process.env.DISPLAY || ':0'),
+                                                       'export XAUTHORITY=' + (process.env.XAUTHORITY || homeDir + '/.Xauthority'),
+                                                       'export DBUS_SESSION_BUS_ADDRESS=' + (process.env.DBUS_SESSION_BUS_ADDRESS || ''),
+                                                       'export HOME=' + homeDir,
+                                                       'export USER=' + USUARIO_REAL,
+                                                       'export LOGNAME=' + USUARIO_REAL,
+                                                       'exec > ' + outputTemp + ' 2>&1',
+                                                       '',
+                                                       comandoLimpo,
+                                                       ''
     ].join('\n');
 
     return { scriptTemp, scriptContent };
@@ -937,12 +946,12 @@ function executarComAutenticacaoSegura(comandoOriginal, idComando, isReversao, c
         'gpasswd': 'Modificar grupos do usuário',
         'systemctl': 'Gerenciar serviços do sistema',
         'waydroid init': 'Inicializar container Android (Waydroid)',
-        'tc qdisc': 'Configurar QoS de rede',
-        'ip link': 'Configurar interface de rede',
-        'chown': 'Ajustar permissões de arquivo',
-        'tee': 'Escrever arquivo de configuração',
-        'sysctl': 'Ajustar parâmetros do kernel',
-        'modprobe': 'Carregar módulo do kernel'
+                                                       'tc qdisc': 'Configurar QoS de rede',
+                                                       'ip link': 'Configurar interface de rede',
+                                                       'chown': 'Ajustar permissões de arquivo',
+                                                       'tee': 'Escrever arquivo de configuração',
+                                                       'sysctl': 'Ajustar parâmetros do kernel',
+                                                       'modprobe': 'Carregar módulo do kernel'
     };
 
     let descricao = 'Executar comando administrativo';
@@ -1056,10 +1065,13 @@ function executarComAutenticacaoSegura(comandoOriginal, idComando, isReversao, c
         enviarLog(idComando, `$ sudo -S sh -c '<comando>'\n`, 'info');
         enviarLog(idComando, '─'.repeat(50) + '\n', 'info');
 
-        const proc = spawn('sudo', ['-S', 'sh', '-c', comandoCorrigido], {
+        const proc = _registrarProcesso(spawn('sudo', ['-S', 'sh', '-c', comandoCorrigido], {
             env: process.env,
-            stdio: ['pipe', 'pipe', 'pipe']
-        });
+            stdio: ['pipe', 'pipe', 'pipe'],
+            // Mesmo motivo dos outros spawns: matar a árvore inteira
+            // no SIGINT via PGID.
+            detached: true
+        }));
 
         proc.stdin.write(senha.trim() + '\n');
         proc.stdin.end();
@@ -1210,14 +1222,28 @@ function servirLocale(req, res, lang) {
 // ============================================================
 
 const server = http.createServer((req, res) => {
-    const url = req.url;
+    // Parse única no topo. `url` vira só o pathname (sem query),
+    // e `query` fica disponível para rotas que usam searchParams
+    // (como /stream?id=...).
+    //
+    // Sem isso, "guiado.html?session=sobre-fof" não casa com o
+    // `url === '/guiado.html'` e cai no 404.
+    let parsedUrl;
+    try {
+        parsedUrl = new URL(req.url, 'http://' + (req.headers.host || 'localhost'));
+    } catch (e) {
+        res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
+        res.end('Requisição inválida');
+        return;
+    }
+    const url = parsedUrl.pathname;
+    const query = parsedUrl.searchParams;
 
     // ----------------------------------------------------------
     // SSE — logs em tempo real
     // ----------------------------------------------------------
     if (req.method === 'GET' && url.startsWith('/stream')) {
-        const urlParams = new URL(url, `http://${req.headers.host}`);
-        const idComando = urlParams.searchParams.get('id');
+        const idComando = query.get('id');
 
         if (!idComando) {
             res.writeHead(400);
@@ -1251,9 +1277,8 @@ const server = http.createServer((req, res) => {
     // LOCALES (JSON de tradução)
     // ----------------------------------------------------------
     if (req.method === 'GET' && url.startsWith('/locales/')) {
+        // `url` já é pathname-only, então não há query para remover.
         let resto = url.substring('/locales/'.length);
-        const interroga = resto.indexOf('?');
-        if (interroga !== -1) resto = resto.substring(0, interroga);
 
         if (resto.endsWith('.json')) {
             resto = resto.substring(0, resto.length - '.json'.length);
@@ -1410,6 +1435,26 @@ const server = http.createServer((req, res) => {
     }
 
     // ----------------------------------------------------------
+    // /kernel-atual — apenas o kernel em execução
+    // ----------------------------------------------------------
+    //
+    // Endpoint dedicado para o fluxo de remoção de kernel. Antes, o
+    // frontend parseava o log compartilhado da sessão para descobrir
+    // o kernel atual — frágil, porque outra linha `output` podia se
+    // misturar se o usuário clicasse em outro botão ao mesmo tempo.
+    if (req.method === 'GET' && url === '/kernel-atual') {
+        exec('uname -r', { shell: '/bin/bash', timeout: 3000 }, (error, stdout) => {
+            var kernel = (stdout || '').trim();
+            res.writeHead(200, {
+                'Content-Type': 'application/json',
+                'Cache-Control': 'no-cache, no-store, must-revalidate'
+            });
+            res.end(JSON.stringify({ kernel: kernel }));
+        });
+        return;
+    }
+
+    // ----------------------------------------------------------
     // /kernels — lista de kernels instalados
     // ----------------------------------------------------------
     if (req.method === 'GET' && url === '/kernels') {
@@ -1557,8 +1602,6 @@ const server = http.createServer((req, res) => {
                                          selinux: raw.selinux || 'desconhecido',
                                          selinux_modo: raw.selinux_modo || '-',
                                          processos: raw.processos ? parseInt(raw.processos, 10) : null,
-                                         // Campos de otimização (aditivos — não alteram os
-                                         // consumidores existentes que só leem os campos acima)
                                          ksm_run: raw.ksm_run || '0',
                                          ksm_pages_saved: raw.ksm_pages_saved || '0',
                                          tcp_congestion: raw.tcp_congestion || 'unknown',
@@ -1739,44 +1782,44 @@ const server = http.createServer((req, res) => {
                 installed = false;
                 }
 
-            if (output.indexOf('is not initialized') !== -1) {
-                initialized = false;
-            } else if (output.indexOf('Session:') !== -1 || output.indexOf('Vendor type:') !== -1) {
-                initialized = true;
-                if (/Session:\s*RUNNING/i.test(output)) {
-                    running = true;
+                if (output.indexOf('is not initialized') !== -1) {
+                    initialized = false;
+                } else if (output.indexOf('Session:') !== -1 || output.indexOf('Vendor type:') !== -1) {
+                    initialized = true;
+                    if (/Session:\s*RUNNING/i.test(output)) {
+                        running = true;
+                    }
                 }
-            }
 
-            // Verifica resquícios no filesystem. Se NADA for
-            // encontrado (nem pacote, nem pastas, nem atalhos),
-            // `clean` é true e o frontend desabilita o botão.
-            //
-            // Usa $HOME do usuário real (HOME_DIR_USUARIO), porque
-            // o Node pode ter sido iniciado com HOME diferente.
-            const homeDir = HOME_DIR_USUARIO;
-            const residualCmd =
-            '[ -d /var/lib/waydroid ] && echo "residual" && exit 0; ' +
-            '[ -d "' + homeDir + '/.local/share/waydroid" ] && echo "residual" && exit 0; ' +
-            '[ -d "' + homeDir + '/.local/share/fof-waydroid" ] && echo "residual" && exit 0; ' +
-            '[ -f "' + homeDir + '/.local/share/applications/Waydroid.desktop" ] && echo "residual" && exit 0; ' +
-            '[ -f "' + homeDir + '/.local/share/applications/waydroid-helper.desktop" ] && echo "residual" && exit 0; ' +
-            'echo "clean"';
+                // Verifica resquícios no filesystem. Se NADA for
+                // encontrado (nem pacote, nem pastas, nem atalhos),
+                // `clean` é true e o frontend desabilita o botão.
+                //
+                // Usa $HOME do usuário real (HOME_DIR_USUARIO), porque
+                // o Node pode ter sido iniciado com HOME diferente.
+                const homeDir = HOME_DIR_USUARIO;
+                const residualCmd =
+                '[ -d /var/lib/waydroid ] && echo "residual" && exit 0; ' +
+                '[ -d "' + homeDir + '/.local/share/waydroid" ] && echo "residual" && exit 0; ' +
+                '[ -d "' + homeDir + '/.local/share/fof-waydroid" ] && echo "residual" && exit 0; ' +
+                '[ -f "' + homeDir + '/.local/share/applications/Waydroid.desktop" ] && echo "residual" && exit 0; ' +
+                '[ -f "' + homeDir + '/.local/share/applications/waydroid-helper.desktop" ] && echo "residual" && exit 0; ' +
+                'echo "clean"';
 
-            exec(residualCmd, { shell: '/bin/bash', timeout: 3000 }, (errResidual, stdoutResidual) => {
-                const residual = (stdoutResidual || '').trim();
-                // Clean = nenhum resquício E pacote não instalado.
-                const clean = (residual === 'clean') && !installed;
+                exec(residualCmd, { shell: '/bin/bash', timeout: 3000 }, (errResidual, stdoutResidual) => {
+                    const residual = (stdoutResidual || '').trim();
+                    // Clean = nenhum resquício E pacote não instalado.
+                    const clean = (residual === 'clean') && !installed;
 
-                res.writeHead(200, { 'Content-Type': 'application/json' });
-                res.end(JSON.stringify({
-                    installed: installed,
-                    initialized: initialized,
-                    running: running,
-                    clean: clean,
-                    raw: output
-                }));
-            });
+                    res.writeHead(200, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({
+                        installed: installed,
+                        initialized: initialized,
+                        running: running,
+                        clean: clean,
+                        raw: output
+                    }));
+                });
         });
         return;
     }
@@ -1784,6 +1827,14 @@ const server = http.createServer((req, res) => {
     // ----------------------------------------------------------
     // /executar — executa comando (POST)
     // ----------------------------------------------------------
+    //
+    // IMPORTANTE: TODA a lógica (validação do body, rate limit,
+    // despacho) roda DENTRO do req.on('end'). Só assim `comando` e
+    // `idComando` estão definidos. Colocar `_podeExecutar(idComando)`
+    // ou `procederComExecucao(...)` fora do callback fazia o Node
+    // lançar ReferenceError (idComando não declarado no escopo do
+    // handler) antes do body chegar — o processo morria e o cliente
+    // via "Erro de conexão".
     if (req.method === 'POST' && url === '/executar') {
         let body = '';
         req.on('data', chunk => { body += chunk.toString(); });
@@ -1815,6 +1866,11 @@ const server = http.createServer((req, res) => {
                         output: 'Aguarde um instante antes de executar novamente.'
                     }));
                 }
+
+                // Descarta o buffer de execuções anteriores do mesmo
+                // idComando. Sem isso, um novo cliente SSE recebia o
+                // replay da rodada anterior antes dos logs da nova.
+                sseBuffers.delete(idComando);
 
                 procederComExecucao(comando, idComando, isReversao, res);
 
@@ -1852,6 +1908,12 @@ server.on('error', (e) => {
 
 process.on('SIGINT', () => {
     console.log('\n🛑 Encerrando servidor...');
+
+    // Mata a árvore de cada processo filho (grupo inteiro, não só
+    // o bash pai). Sem isso, o `dnf upgrade` continua rodando como
+    // órfão depois que o servidor morre.
+    _processosAtivos.forEach(_matarArvoreProcessos);
+
     sseClients.forEach((clients) => {
         clients.forEach(client => {
             client.end();

@@ -98,6 +98,14 @@
 var sessaoAtual = 0;
 var sessoesCarregadas = {};
 
+// Token de geração: cada chamada a carregarSessao() incrementa
+// este contador. Se outra chamada começar antes desta terminar,
+// a mais antiga percebe que foi cancelada e não escreve no DOM.
+// Sem isso, o carregamento da sessão 0 (disparado no boot) e o
+// da sessão 13 (via ?session=sobre-fof) podiam competir e deixar
+// a tela em branco.
+var _geracaoCarregamento = 0;
+
 // ------------------------------------------------------------
 // ÍCONES das sessões (emoji usado no menu fixo).
 // A ORDEM DESTE MAPA não importa — a ordem de exibição é
@@ -147,6 +155,8 @@ async function carregarSessao(index) {
     var container = document.getElementById('sessao-container');
     if (!container) return;
 
+    var minhaGeracao = ++_geracaoCarregamento;
+
     var nomeSessao = SESSOES_PRINCIPAIS[index];
     var arquivo = nomeSessao + '.html';
     var nomeTraduzido = nomeDaSessao(nomeSessao);
@@ -160,6 +170,10 @@ async function carregarSessao(index) {
 
     await getProgress();
 
+    // Se outra chamada começou enquanto esperávamos o progresso,
+    // aborta — a geração mais nova cuida do DOM.
+    if (minhaGeracao !== _geracaoCarregamento) return;
+
     try {
         var response = await fetch(arquivo);
         if (!response.ok) {
@@ -167,6 +181,10 @@ async function carregarSessao(index) {
         }
 
         var html = await response.text();
+
+        // Checa de novo: se a geração mudou enquanto o fetch
+        // resolvia, não escreve no DOM.
+        if (minhaGeracao !== _geracaoCarregamento) return;
         var bodyMatch = html.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
         var conteudo = bodyMatch ? bodyMatch[1] : html;
         var scriptMatch = conteudo.match(/<script[^>]*>([\s\S]*?)<\/script>/gi);
@@ -222,7 +240,11 @@ async function carregarSessao(index) {
         document.dispatchEvent(event);
         console.log('✅ Sessão carregada: ' + nomeSessao);
 
-    } catch (e) {
+        } catch (e) {
+        // Se fomos cancelados por uma geração mais nova, não sobrescreve
+        // o conteúdo que a chamada nova está montando.
+        if (minhaGeracao !== _geracaoCarregamento) return;
+
         console.error('Erro ao carregar sessão:', e);
         var msgErro = _t('comum.erro_carregar_sessao', '❌ Erro ao carregar sessão');
         var msgTentar = _t('comum.btn_tentar_novamente', '🔄 Tentar novamente');

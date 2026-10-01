@@ -836,7 +836,7 @@ Arquivos:
   hardware-service.js Detecção de hardware (endpoint /hardware-scan)
   hardware_map.json   Mapa de vendors PCI/USB → pacotes
   index.html          Landing page (botão único "Iniciar Configurações")
-  guiado.html         Configuração passo a passo (13 sessões)
+  guiado.html         Configuração passo a passo (14 sessões)
   CHANGELOG.md        Histórico de mudanças (lido em runtime)
   icone_app.png       Ícone do aplicativo
 

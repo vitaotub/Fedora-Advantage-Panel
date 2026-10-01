@@ -75,7 +75,7 @@ MANUTENÇÃO DO FOF
 <h3 data-i18n="sessoes.sobre-fof.atualizar_titulo">🔄 Atualizar Fedora Only Fans</h3>
 <p data-i18n="sessoes.sobre-fof.atualizar_desc">Baixa e instala a versão mais recente do FOF diretamente do GitHub. Mantenha seu app sempre atualizado!</p>
 <div style="margin-top: 1rem;">
-<button class="btn-executar" style="background-color: #3c67e3;" onclick="atualizarFOF()" data-comando="atualizar-fof" data-logbox="log-sessao-sobre-fof" id="btn-atualizar-fof" data-i18n="sessoes.sobre-fof.btn_atualizar">🔄 Atualizar FOF</button>
+<button class="btn-executar" onclick="atualizarFOF()" data-comando="atualizar-fof" data-logbox="log-sessao-sobre-fof" id="btn-atualizar-fof" data-i18n="sessoes.sobre-fof.btn_atualizar">🔄 Atualizar FOF</button>
 </div>
 <div style="margin-top: 0.75rem; font-size: 0.8rem; color: var(--text-muted);" data-i18n="sessoes.sobre-fof.atualizar_info">
 ℹ️ A atualização mantém suas configurações e histórico.
@@ -90,7 +90,7 @@ MANUTENÇÃO DO FOF
 <p data-i18n="sessoes.sobre-fof.desinstalar_desc">Remove completamente o FOF do seu sistema, incluindo todos os arquivos, configurações e atalhos.</p>
 <div class="aviso-caixa" data-i18n="sessoes.sobre-fof.desinstalar_aviso">⚠️ ATENÇÃO: Esta ação é irreversível! Todos os dados do FOF serão removidos.</div>
 <div style="margin-top: 1rem;">
-<button class="btn-executar" style="background-color: #ef4444;" onclick="desinstalarFOF()" data-comando="desinstalar-fof" data-logbox="log-sessao-sobre-fof" id="btn-desinstalar-fof" data-i18n="sessoes.sobre-fof.btn_desinstalar">🗑️ Desinstalar FOF</button>
+<button class="btn-executar destrutivo" onclick="desinstalarFOF()" data-comando="desinstalar-fof" data-logbox="log-sessao-sobre-fof" id="btn-desinstalar-fof" data-i18n="sessoes.sobre-fof.btn_desinstalar">🗑️ Desinstalar FOF</button>
 </div>
 </div>
 </div>
@@ -135,89 +135,10 @@ function _t(chave, fallback) {
 // ------------------------------------------------------------
 
 async function atualizarFOF() {
-    var idComando = 'atualizar-fof';
-    var logBox = _getLogBox(idComando);
-    var btn = document.getElementById('btn-' + idComando);
-
-    if (!logBox) return;
-
-    if (!confirm(_t('sessoes.sobre-fof.atualizar_confirmar',
-        '🔄 Deseja atualizar o Fedora Only Fans para a versão mais recente?\n\nIsso irá baixar e instalar a última versão do GitHub.'))) return;
-
-    iniciarProgresso(idComando);
-    logBox.style.display = 'block';
-
-    var nomeAcao = _t('sessoes.sobre-fof.btn_atualizar', '🔄 Atualizar FOF');
-    _separadorLog(logBox, nomeAcao);
-
-    var header = document.createElement('div');
-    header.className = 'log-line info';
-    header.textContent = '🔄 Atualizando FOF... (' + new Date().toLocaleTimeString() + ')';
-    logBox.appendChild(header);
-    logBox.scrollTop = logBox.scrollHeight;
-
-    conectarSSE(idComando, logBox);
-
-    if (btn) {
-        btn.disabled = true;
-        btn.textContent = '⏳ ' + nomeAcao.replace(/^[^\s]+\s/, '') + '...';
-        btn.style.opacity = '0.6';
-    }
-
-    _bloquearSessao(idComando);
-
-    try {
-        var comando = 'bash <(curl -s https://raw.githubusercontent.com/vitaotek/Fedora-Only-Fans/main/install.sh) --update';
-        var response = await fetch(API_URL + '/executar', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ comando: comando, idComando: idComando })
-        });
-
-        if (!response.ok) {
-            var errorLine = document.createElement('div');
-            errorLine.className = 'log-line error';
-            errorLine.textContent = '❌ Erro HTTP: ' + response.status;
-            logBox.appendChild(errorLine);
-            logBox.scrollTop = logBox.scrollHeight;
-            completarProgresso(idComando, false);
-        } else {
-            var sucesso = await aguardarConclusaoReal(idComando, 1800000);
-
-            if (sucesso) {
-                var aviso = document.createElement('div');
-                aviso.className = 'log-line warning';
-                aviso.textContent = '💡 Feche e reabra o FOF para usar a nova versão do container.';
-                logBox.appendChild(aviso);
-                logBox.scrollTop = logBox.scrollHeight;
-
-                setTimeout(function() {
-                    alert(_t('sessoes.sobre-fof.atualizar_popup_concluido',
-                        '✅ Atualização concluída com sucesso!\n\nPor favor, feche e reabra o FOF para que as novas alterações entrem em vigor.'));
-                }, 300);
-
-                var avisoTopo = document.getElementById('aviso-atualizacao-disponivel');
-                if (avisoTopo) {
-                    avisoTopo.style.display = 'none';
-                }
-            }
-        }
-    } catch (e) {
-        var errorLine2 = document.createElement('div');
-        errorLine2.className = 'log-line error';
-        errorLine2.textContent = '❌ Erro de conexão: ' + e.message;
-        logBox.appendChild(errorLine2);
-        logBox.scrollTop = logBox.scrollHeight;
-        completarProgresso(idComando, false);
-    } finally {
-        setTimeout(function() {
-            if (btn) {
-                btn.disabled = false;
-                btn.textContent = nomeAcao;
-                btn.style.opacity = '1';
-                btn.style.backgroundColor = '#3c67e3';
-            }
-        }, 3000);
+    // Delega para a função global do script.js, que já cuida da
+    // confirmação, do toast, do rate-limit e do POST /executar.
+    if (typeof _dispararAtualizacaoFOF === 'function') {
+        await _dispararAtualizacaoFOF();
     }
 }
 
@@ -314,11 +235,6 @@ async function desinstalarFOF() {
 // ------------------------------------------------------------
 // CHANGELOG DINÂMICO
 // ------------------------------------------------------------
-//
-// Busca o CHANGELOG.md parseado via GET /changelog.
-// O server (Lote 4) lê o arquivo, encontra a seção da versão
-// atual e devolve {versao, corpo}. Se a rota ainda não existir
-// (Lote 4 não aplicado), cai num fallback simples.
 
 async function carregarChangelog() {
     var container = document.getElementById('changelog-conteudo');
@@ -326,7 +242,6 @@ async function carregarChangelog() {
 
     if (!container) return;
 
-    // Preenche o título com a versão atual
     var versaoAtual = window.FOF_VERSION_UI18N || '?';
     if (summary) {
         summary.textContent = '🆕 ' + _t('sessoes.sobre-fof.changelog_atual_titulo',
@@ -356,11 +271,6 @@ async function carregarChangelog() {
 // ------------------------------------------------------------
 // ABRIR CHANGELOG NO GITHUB
 // ------------------------------------------------------------
-//
-// Usa window.location.href em vez de window.open — o WebKitGTK
-// bloqueia popups por padrão. Quando o C detecta uma navegação
-// externa (não-localhost), ele chama xdg-open e cancela a
-// navegação interna. Ver fof-container.c, on_webview_decide_policy.
 
 function abrirChangelogCompleto() {
     var url = 'https://github.com/vitaotek/Fedora-Only-Fans/releases';
@@ -382,27 +292,35 @@ function abrirChangelogCompleto() {
 // AVISO DE ATUALIZAÇÃO DISPONÍVEL
 // ------------------------------------------------------------
 
-async function verificarEExibirAvisoAtualizacao() {
-    var aviso = document.getElementById('aviso-atualizacao-disponivel');
-    if (!aviso) return;
-
+function _verificarAtualizacaoAposVersao() {
     if (typeof verificarAtualizacoes !== 'function' || typeof temAtualizacao !== 'function') {
         return;
     }
 
-    var tentativas = 0;
-    while (!window.FOF_VERSION_UI18N && tentativas < 100) {
-        await new Promise(function(res) { setTimeout(res, 100); });
-        tentativas++;
+    verificarAtualizacoes().then(function(versaoRemota) {
+        if (!versaoRemota) return;
+
+        var versaoLocal = (window.FOF_VERSION_UI18N || '').replace(/^v/, '').trim();
+        if (!temAtualizacao(versaoLocal, versaoRemota)) return;
+
+        var aviso = document.getElementById('aviso-atualizacao-disponivel');
+        if (aviso) aviso.style.display = 'block';
+    });
+}
+
+async function verificarEExibirAvisoAtualizacao() {
+    // Se a versão já está disponível (injeção do server.js), checa
+    // imediatamente. Senão, espera o evento — sem polling.
+    if (window.FOF_VERSION_UI18N) {
+        _verificarAtualizacaoAposVersao();
+        return;
     }
-
-    var versaoRemota = await verificarAtualizacoes();
-    if (!versaoRemota) return;
-
-    var versaoLocal = (window.FOF_VERSION_UI18N || '').replace(/^v/, '').trim();
-    if (!temAtualizacao(versaoLocal, versaoRemota)) return;
-
-    aviso.style.display = 'block';
+    document.addEventListener('fof-versao-pronta', _verificarAtualizacaoAposVersao, { once: true });
+    // Timeout de segurança: se o evento nunca chegar (falha de rede,
+    // por exemplo), tenta mesmo assim depois de 15s.
+    setTimeout(function() {
+        if (window.FOF_VERSION_UI18N) _verificarAtualizacaoAposVersao();
+    }, 15000);
 }
 
 // ------------------------------------------------------------
@@ -415,7 +333,6 @@ function restaurarEstadoSessao() {
     if (btnAtualizar) {
         btnAtualizar.disabled = false;
         btnAtualizar.textContent = _t('sessoes.sobre-fof.btn_atualizar', '🔄 Atualizar FOF');
-        btnAtualizar.style.backgroundColor = '#3c67e3';
         btnAtualizar.style.opacity = '1';
         btnAtualizar.style.cursor = 'pointer';
     }

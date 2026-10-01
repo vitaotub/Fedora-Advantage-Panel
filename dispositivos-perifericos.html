@@ -67,7 +67,7 @@ Estes pacotes complementam o <code>linux-firmware</code> padrão do Fedora. São
 O pacote <code>linux-firmware-vendor</code> traz firmwares que não estão no pacote principal — chips Wi-Fi Realtek recentes (RTL8852), alguns modelos Intel, e firmwares de fabricantes que exigem redistribuição restrita. É complementar ao <code>linux-firmware</code>, não o substitui.
 </p>
 <div class="grupo-botoes">
-<button class="btn-executar verde"
+<button class="btn-executar"
 onclick="executarSuplemento('firmware-vendor-install')"
 data-comando="firmware-vendor-install"
 data-logbox="log-sessao-dispositivos-perifericos"
@@ -75,7 +75,7 @@ id="btn-firmware-vendor-install"
 data-i18n="sessoes.dispositivos-perifericos.btn_firmware_vendor_instalar">
 📦 Instalar firmwares adicionais
 </button>
-<button class="btn-executar cinza"
+<button class="btn-executar vermelho"
 onclick="executarSuplementoRemover('firmware-vendor-remove')"
 data-comando="firmware-vendor-remove"
 data-logbox="log-sessao-dispositivos-perifericos"
@@ -117,8 +117,8 @@ RGB e macros para mouses, teclados e laptops Razer. Usa o repositório oficial d
 </p>
 <div class="grupo-botoes">
 <button class="btn-executar" onclick="executarCoprEnable('copr-openrazer-enable')" data-comando="copr-openrazer-enable" data-logbox="log-sessao-dispositivos-perifericos" id="btn-copr-openrazer-enable" data-i18n="sessoes.dispositivos-perifericos.btn_repo_ativar">🌐 Ativar repositório</button>
-<button class="btn-executar verde" onclick="executarDriverCopr('driver-openrazer-install')" data-comando="driver-openrazer-install" data-logbox="log-sessao-dispositivos-perifericos" id="btn-driver-openrazer-install" data-i18n="sessoes.dispositivos-perifericos.btn_pacote_instalar">📦 Instalar pacote</button>
-<button class="btn-executar cinza" onclick="executarReverterItem('driver-openrazer-remove', 'copr-openrazer-enable', 'driver-openrazer-install')" data-comando="driver-openrazer-remove" data-logbox="log-sessao-dispositivos-perifericos" id="btn-driver-openrazer-remove" data-i18n="sessoes.dispositivos-perifericos.btn_reverter_tudo">🗑️ Reverter tudo</button>
+<button class="btn-executar" onclick="executarDriverCopr('driver-openrazer-install')" data-comando="driver-openrazer-install" data-logbox="log-sessao-dispositivos-perifericos" id="btn-driver-openrazer-install" data-i18n="sessoes.dispositivos-perifericos.btn_pacote_instalar">📦 Instalar pacote</button>
+<button class="btn-executar vermelho" onclick="executarReverterItem('driver-openrazer-remove', 'copr-openrazer-enable', 'driver-openrazer-install')" data-comando="driver-openrazer-remove" data-logbox="log-sessao-dispositivos-perifericos" id="btn-driver-openrazer-remove" data-i18n="sessoes.dispositivos-perifericos.btn_reverter_tudo">🗑️ Reverter tudo</button>
 </div>
 </div>
 <div class="progress-container" id="progress-copr-openrazer-enable"><div class="progress-bar"><div class="progress-fill" id="progress-fill-copr-openrazer-enable"></div></div><div class="progress-text"><span class="status" id="progress-status-copr-openrazer-enable">⏳ Iniciando...</span><span class="percentage" id="progress-percent-copr-openrazer-enable">0%</span></div></div>
@@ -135,8 +135,8 @@ Driver <code>xpadneo</code> para controles Xbox One/Series via Bluetooth e dongl
 </p>
 <div class="grupo-botoes">
 <button class="btn-executar" onclick="executarCoprEnable('copr-xpadneo-enable')" data-comando="copr-xpadneo-enable" data-logbox="log-sessao-dispositivos-perifericos" id="btn-copr-xpadneo-enable" data-i18n="sessoes.dispositivos-perifericos.btn_repo_ativar">🌐 Ativar repositório</button>
-<button class="btn-executar verde" onclick="executarDriverCopr('driver-xpadneo-install')" data-comando="driver-xpadneo-install" data-logbox="log-sessao-dispositivos-perifericos" id="btn-driver-xpadneo-install" data-i18n="sessoes.dispositivos-perifericos.btn_pacote_instalar">📦 Instalar pacote</button>
-<button class="btn-executar cinza" onclick="executarReverterItem('driver-xpadneo-remove', 'copr-xpadneo-enable', 'driver-xpadneo-install')" data-comando="driver-xpadneo-remove" data-logbox="log-sessao-dispositivos-perifericos" id="btn-driver-xpadneo-remove" data-i18n="sessoes.dispositivos-perifericos.btn_reverter_tudo">🗑️ Reverter tudo</button>
+<button class="btn-executar" onclick="executarDriverCopr('driver-xpadneo-install')" data-comando="driver-xpadneo-install" data-logbox="log-sessao-dispositivos-perifericos" id="btn-driver-xpadneo-install" data-i18n="sessoes.dispositivos-perifericos.btn_pacote_instalar">📦 Instalar pacote</button>
+<button class="btn-executar vermelho" onclick="executarReverterItem('driver-xpadneo-remove', 'copr-xpadneo-enable', 'driver-xpadneo-install')" data-comando="driver-xpadneo-remove" data-logbox="log-sessao-dispositivos-perifericos" id="btn-driver-xpadneo-remove" data-i18n="sessoes.dispositivos-perifericos.btn_reverter_tudo">🗑️ Reverter tudo</button>
 </div>
 </div>
 <div class="progress-container" id="progress-copr-xpadneo-enable"><div class="progress-bar"><div class="progress-fill" id="progress-fill-copr-xpadneo-enable"></div></div><div class="progress-text"><span class="status" id="progress-status-copr-xpadneo-enable">⏳ Iniciando...</span><span class="percentage" id="progress-percent-copr-xpadneo-enable">0%</span></div></div>
@@ -152,8 +152,8 @@ Driver <code>xpadneo</code> para controles Xbox One/Series via Bluetooth e dongl
 Driver proprietário <code>akmod-wl</code> para chips Wi-Fi Broadcom (comuns em notebooks antigos e MacBooks). Vive no RPM Fusion Nonfree — que já é ativado na Sessão 1 (Primeiros Passos). Só instale se o driver open-source (<code>brcmfmac</code>/<code>b43</code>) não funcionar.
 </p>
 <div class="grupo-botoes">
-<button class="btn-executar verde" onclick="executarDriverCopr('driver-broadcom-wl-install')" data-comando="driver-broadcom-wl-install" data-logbox="log-sessao-dispositivos-perifericos" id="btn-driver-broadcom-wl-install" data-i18n="sessoes.dispositivos-perifericos.btn_broadcom_instalar">📦 Instalar akmod-wl</button>
-<button class="btn-executar cinza" onclick="executarReverterItem('driver-broadcom-wl-remove', null, 'driver-broadcom-wl-install')" data-comando="driver-broadcom-wl-remove" data-logbox="log-sessao-dispositivos-perifericos" id="btn-driver-broadcom-wl-remove" data-i18n="sessoes.dispositivos-perifericos.btn_broadcom_reverter">🗑️ Reverter</button>
+<button class="btn-executar" onclick="executarDriverCopr('driver-broadcom-wl-install')" data-comando="driver-broadcom-wl-install" data-logbox="log-sessao-dispositivos-perifericos" id="btn-driver-broadcom-wl-install" data-i18n="sessoes.dispositivos-perifericos.btn_broadcom_instalar">📦 Instalar akmod-wl</button>
+<button class="btn-executar vermelho" onclick="executarReverterItem('driver-broadcom-wl-remove', null, 'driver-broadcom-wl-install')" data-comando="driver-broadcom-wl-remove" data-logbox="log-sessao-dispositivos-perifericos" id="btn-driver-broadcom-wl-remove" data-i18n="sessoes.dispositivos-perifericos.btn_broadcom_reverter">🗑️ Reverter</button>
 </div>
 </div>
 <div class="progress-container" id="progress-driver-broadcom-wl-install"><div class="progress-bar"><div class="progress-fill" id="progress-fill-driver-broadcom-wl-install"></div></div><div class="progress-text"><span class="status" id="progress-status-driver-broadcom-wl-install">⏳ Iniciando...</span><span class="percentage" id="progress-percent-driver-broadcom-wl-install">0%</span></div></div>
@@ -178,7 +178,7 @@ ACORDEÃO 4: CONTROLES E PERIFÉRICOS
 ℹ️ Requer logout/login para ter efeito.
 </div>
 <div class="botoes-flex">
-<button class="btn-executar verde"
+<button class="btn-executar"
 onclick="executarInputAdd()"
 data-comando="input-group-add"
 data-logbox="log-sessao-dispositivos-perifericos"
@@ -186,7 +186,7 @@ id="btn-input-group-add"
 data-i18n="sessoes.dispositivos-perifericos.btn_input_add">
 👤 Adicionar ao grupo input
 </button>
-<button class="btn-executar cinza"
+<button class="btn-executar vermelho"
 onclick="executarInputRemove()"
 data-comando="input-group-remove"
 data-logbox="log-sessao-dispositivos-perifericos"
@@ -210,7 +210,7 @@ data-i18n="sessoes.dispositivos-perifericos.btn_input_remove">
 </div>
 
 <div class="grupo-botoes">
-<button class="btn-executar verde"
+<button class="btn-executar"
 onclick="executarSteamDevices()"
 data-comando="steam-devices-install"
 data-logbox="log-sessao-dispositivos-perifericos"
@@ -234,6 +234,10 @@ data-i18n="sessoes.dispositivos-perifericos.btn_steam_devices">
 // ============================================================
 // SESSÃO: DISPOSITIVOS E PERIFÉRICOS
 // ============================================================
+//
+// NOTA: este arquivo NÃO define mais _marcarBotaoConcluidoLocal.
+// A função global _marcarBotaoConcluido (em script.js) faz
+// exatamente a mesma coisa, evitando duplicação.
 
 function _t(chave, fallback) {
     return (typeof tOr === 'function') ? tOr(chave, fallback) : fallback;
@@ -379,7 +383,9 @@ function _buildCard(device) {
     var tipo = device.type === 'PCI' ? 'PCI' : 'USB';
     var meta = tipo + ' • ' + _nomeCategoria(device.category);
     if (device.driver_in_use) {
-        meta += ' • driver atual: ' + device.driver_in_use;
+        meta += ' • ' +
+            _t('sessoes.dispositivos-perifericos.driver_atual', 'driver atual') +
+            ': ' + device.driver_in_use;
     }
 
     var statusHtml = '';
@@ -403,7 +409,7 @@ function _buildCard(device) {
         var idRemove = _idRemoveForDevice(device);
         if (idRemove) {
             acoesHtml =
-                '<button class="btn-executar cinza" onclick="executarDriverRemover(\'' + idRemove + '\')" ' +
+                '<button class="btn-executar vermelho" onclick="executarDriverRemover(\'' + idRemove + '\')" ' +
                 'data-comando="' + idRemove + '" data-logbox="log-sessao-dispositivos-perifericos" ' +
                 'id="btn-' + idRemove + '">↩️ ' +
                 _t('sessoes.dispositivos-perifericos.btn_driver_reverter', 'Reverter driver') +
@@ -429,7 +435,7 @@ function _buildCard(device) {
         var idInstall = _idInstallForDevice(device);
         if (idInstall) {
             acoesHtml =
-                '<button class="btn-executar verde" onclick="executarDriverInstalar(\'' + idInstall + '\')" ' +
+                '<button class="btn-executar" onclick="executarDriverInstalar(\'' + idInstall + '\')" ' +
                 'data-comando="' + idInstall + '" data-logbox="log-sessao-dispositivos-perifericos" ' +
                 'id="btn-' + idInstall + '">📦 ' +
                 _tVars('sessoes.dispositivos-perifericos.btn_instalar_driver',
@@ -445,7 +451,14 @@ function _buildCard(device) {
         _escapeHTML(meta) +
         '</p>' +
         statusHtml +
-        (device.notes ? '<div class="info-extra">' + _escapeHTML(device.notes) + '</div>' : '') +
+        (function() {
+            var textoNotes = device.notes_key
+                ? _t(device.notes_key, device.notes || '')
+                : (device.notes || '');
+            return textoNotes
+                ? '<div class="info-extra">' + _escapeHTML(textoNotes) + '</div>'
+                : '';
+        })() +
         (acoesHtml ? '<div class="botoes-flex" style="margin-top: 0.75rem;">' + acoesHtml + '</div>' : '') +
         '</div>';
 
@@ -835,7 +848,7 @@ function restaurarEstadoSessao() {
 
     // --- Steam Devices: one-shot ---
     if (isExecutado('steam-devices-install')) {
-        _marcarBotaoConcluidoLocal('steam-devices-install');
+        _marcarBotaoConcluido('steam-devices-install');
     }
 
     // --- Itens com repo + pacote (Razer, Xbox, Broadcom) ---
@@ -846,21 +859,6 @@ function restaurarEstadoSessao() {
     aplicarEstadoItemCompleto('copr-openrazer-enable',  'driver-openrazer-install',  'driver-openrazer-remove');
     aplicarEstadoItemCompleto('copr-xpadneo-enable',    'driver-xpadneo-install',    'driver-xpadneo-remove');
     aplicarEstadoItemCompleto(null,                     'driver-broadcom-wl-install','driver-broadcom-wl-remove');
-}
-
-// ============================================================
-// HELPERS LOCAIS
-// ============================================================
-
-function _marcarBotaoConcluidoLocal(idComando) {
-    var btn = document.getElementById('btn-' + idComando);
-    if (!btn) return;
-    _corOriginalDoBotao(btn);
-    btn.textContent = getTextoAposExecucao(idComando);
-    btn.style.backgroundColor = '#4b5563';
-    btn.style.cursor = 'default';
-    btn.disabled = true;
-    btn.style.opacity = '1';
 }
 
 // ============================================================

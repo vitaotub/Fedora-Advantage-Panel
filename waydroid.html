@@ -56,7 +56,7 @@ data-i18n="sessoes.waydroid.btn_waydroid">
 <h3 data-i18n="sessoes.waydroid.init_titulo">Inicializar o Waydroid (uma vez só)</h3>
 <p data-i18n="sessoes.waydroid.init_desc">Baixa as imagens do Android (sistema ~1,2 GB + vendor ~190 MB) e inicializa o container. Usa a variante GAPPS (com Google Apps). Roda uma vez só — depois disso, use "Abrir Waydroid" para iniciar o container sempre que quiser.</p>
 <div class="grupo-botoes">
-<button class="btn-executar verde"
+<button class="btn-executar"
 onclick="executarWaydroidInit()"
 data-comando="waydroid-init"
 data-logbox="log-sessao-waydroid"
@@ -80,7 +80,7 @@ data-i18n="sessoes.waydroid.btn_init">
 ℹ️ <strong>Sobre o ciclo de vida:</strong> o Waydroid é iniciado numa sessão própria, independente do FOF. Fechar a janela do FOF <strong>não fecha o Waydroid</strong> — ele continua rodando normalmente. Para encerrá-lo, use o botão de remoção no final desta sessão, ou rode <code>waydroid session stop</code> no terminal.
 </div>
 <div class="grupo-botoes">
-<button class="btn-executar"
+<button class="btn-executar verde"
 onclick="abrirWaydroidUI()"
 data-comando="abrir-waydroid"
 data-logbox="log-sessao-waydroid"
@@ -114,7 +114,7 @@ EXTRAS
 ⚠️ Requer que o Waydroid já esteja instalado, inicializado E com o container rodando (use "Abrir Waydroid" acima). Sem isso, os extras falham.
 </div>
 <div class="grupo-botoes">
-<button class="btn-executar laranja"
+<button class="btn-executar"
 onclick="executarWaydroidPrep()"
 data-comando="waydroid-extras-prep"
 data-logbox="log-sessao-waydroid"
@@ -164,7 +164,7 @@ id="btn-waydroid-libndk"
 data-i18n="sessoes.waydroid.btn_libndk">
 📦 libndk (AMD)
 </button>
-<button class="btn-executar cinza"
+<button class="btn-executar"
 onclick="executarWaydroidLibhoudini()"
 data-comando="waydroid-libhoudini"
 data-logbox="log-sessao-waydroid"
@@ -295,7 +295,7 @@ data-i18n="sessoes.waydroid.btn_helper_open">
 ⚠️ O container do Waydroid precisa estar em execução para estas configurações serem aplicadas. Abra o Waydroid uma vez antes de usar este botão.
 </div>
 <div class="grupo-botoes">
-<button class="btn-executar verde"
+<button class="btn-executar"
 onclick="executarWaydroidPrefs()"
 data-comando="waydroid-prefs"
 data-logbox="log-sessao-waydroid"
@@ -331,7 +331,7 @@ Remove <strong>absolutamente tudo</strong> que esta sessão instala: o pacote Wa
 ⚠️ <strong>Atenção:</strong> se você instalou GApps, Magisk, Widevine ou qualquer extra, os dados associados (contas Google, apps Android, configurações) <strong>serão perdidos permanentemente</strong>. Só use este botão se tiver certeza de que não precisa mais do Waydroid neste sistema.
 </div>
 <div class="grupo-botoes">
-<button class="btn-executar vermelho"
+<button class="btn-executar destrutivo"
 onclick="executarWaydroidUninstall()"
 data-comando="waydroid-uninstall"
 data-logbox="log-sessao-waydroid"
@@ -357,22 +357,6 @@ data-i18n="sessoes.waydroid.btn_uninstall_waydroid">
 // ============================================================
 // SESSÃO: WAYDROID
 // ============================================================
-//
-// CORREÇÕES APLICADAS NESTA VERSÃO:
-// - Botão de remoção movido para o fim da sessão, com nome novo
-//   ("Desfazer Alterações e Remover Completamente") e descrição
-//   explícita sobre o que é removido.
-// - Comando de remoção reescrito com estratégia resiliente:
-//   cada passo é independente (`;` em vez de `&&`), com `|| true`
-//   nas etapas falíveis. Usa `chattr -R -i` antes do `rm -rf` para
-//   resolver arquivos imutáveis deixados pelo venv do pip.
-// - `abrirWaydroidUI` agora usa `setsid -f`, desatando o Waydroid
-//   da sessão do terminal do FOF. Fechar o FOF NÃO fecha mais o
-//   Waydroid.
-//
-// IMPORTANTE: o `setsid -f waydroid show-full-ui` precisa estar na
-// whitelist COMANDOS_SEM_AUTENTICACAO do server.js, senão o usuário
-// vai ver a janela de senha a cada abertura do Waydroid.
 
 function _t(chave, fallback) {
 return (typeof tOr === 'function') ? tOr(chave, fallback) : fallback;
@@ -469,23 +453,6 @@ _bloquearBotaoExtra(id);
 });
 }
 
-/**
- * Gerencia o estado do botão de remoção completa do Waydroid.
- *
- * Regra: o botão só fica clicável se houver ALGO para remover —
- * ou seja, se o pacote Waydroid estiver instalado, ou se existirem
- * resquícios no filesystem (pastas de dados, venv de extras,
- * atalhos .desktop). Quando tudo está limpo, o botão é desabilitado
- * com um texto indicando que não há nada a remover.
- *
- * É chamada em dois momentos:
- *   1. No carregamento da sessão (restaurarEstadoSessao)
- *   2. Após uma remoção bem-sucedida (onSucesso do comando)
- *
- * Isso garante que o botão reflita o estado real do sistema mesmo
- * que o `waydroid-uninstall` esteja registrado como sempreClicavel
- * no script.js.
- */
 async function _atualizarBotaoUninstallWaydroid() {
 var btn = document.getElementById('btn-waydroid-uninstall');
 if (!btn) return;
@@ -493,17 +460,14 @@ if (!btn) return;
 var status = await _verificarContainerWaydroid();
 
 if (status.clean) {
-// Sistema completamente limpo: nada a remover.
 btn.disabled = true;
 btn.style.opacity = '0.5';
 btn.style.cursor = 'not-allowed';
 btn.style.backgroundColor = '#4b5563';
-btn.textContent = '✅ Nada a remover';
+btn.textContent = _t('sessoes.waydroid.nada_remover', '✅ Nada a remover');
 return;
 }
 
-// Há algo a remover (pacote instalado ou resquícios no FS).
-// Restaura o estado clicável com o texto original.
 btn.disabled = false;
 btn.style.opacity = '1';
 btn.style.cursor = 'pointer';
@@ -518,17 +482,12 @@ _t('sessoes.waydroid.btn_uninstall_waydroid', '🗑️ Desfazer Alterações e R
 
 async function executarWaydroidInstall() {
 var idComando = 'waydroid-install';
-// git e python3-pip são pré-requisitos do waydroid_script (extras):
-// git para o clone, python3-pip para bootstrap do venv.
 var comando = 'sudo dnf copr enable yanqiyu/waydroid -y && sudo dnf install -y waydroid lzip git python3-pip';
 await executarComandoGenerico(idComando, comando, _t('sessoes.waydroid.btn_waydroid', '📦 Instalar Waydroid'));
 }
 
 async function executarWaydroidInit() {
 var idComando = 'waydroid-init';
-// -f força reinicialização: se a primeira tentativa falhar no meio,
-// o usuário pode reclicar (o botão é one-shot, então não há risco de
-// reset acidental depois que completa).
 var comando = 'sudo waydroid init -f -s GAPPS -c https://ota.waydro.id/system -v https://ota.waydro.id/vendor';
 await executarComandoGenerico(idComando, comando, _t('sessoes.waydroid.btn_init', '🚀 Inicializar Waydroid'));
 }
@@ -567,12 +526,6 @@ await fetch(API_URL + '/executar', {
 method: 'POST',
 headers: { 'Content-Type': 'application/json' },
 body: JSON.stringify({
-// setsid -f cria uma nova sessão para o Waydroid, desatando-o
-// do terminal do FOF. Sem isso, fechar o FOF dispara SIGHUP
-// na sessão do terminal, e o Waydroid (que não está em nohup)
-// morre junto. Com setsid -f, o Waydroid vive em sessão própria
-// e sobrevive ao fechamento do FOF — mesmo comportamento de
-// abrir pelo menu do Fedora.
 comando: 'setsid -f waydroid show-full-ui >/tmp/fof-waydroid-ui.log 2>&1 < /dev/null',
 idComando: idComando + '-open'
 })
@@ -582,10 +535,6 @@ adicionarLinha('❌ ' + _tVars('sessoes.waydroid.container_dispatch_error',
 'Erro ao disparar comando: {msg}', { msg: e.message }), 'error');
 }
 
-// Timeout aumentado de 60s para 180s. Em máquinas lentas, o primeiro
-// boot do container (que precisa montar imagens de ~1,4 GB) pode
-// levar bem mais que um minuto. 3 minutos é uma margem confortável,
-// e o polling continua a cada 3s — se ficar pronto antes, libera.
 adicionarLinha('⏳ ' + _t('sessoes.waydroid.container_waiting',
 'Aguardando o container subir (até 3 minutos)...'), 'info');
 
@@ -629,49 +578,23 @@ if (!confirm(_t('sessoes.waydroid.confirmar_uninstall',
 'Isso irá remover o Waydroid e TODOS os dados do container Android (apps instalados, configurações). Continuar?'))) return;
 var idComando = 'waydroid-uninstall';
 
-// Estratégia:
-// 1. Cada passo é independente (`;` em vez de `&&`), então uma falha
-//    em um passo não impede os seguintes. Todas as falhas são
-//    suprimidas com `|| true` para o script SEMPRE chegar ao fim.
-// 2. Para processos do Waydroid, tenta parar via systemd e via
-//    pkill (com patterns específicos, para não matar outros
-//    processos). Falhas são OK.
-// 3. Para a pasta de extras (~/.local/share/fof-waydroid), o venv
-//    do waydroid_script pode ter deixado arquivos com atributo
-//    imutável (`chattr +i`) que quebram o `rm -rf`. Por isso o
-//    `chattr -R -i` antes do `rm -rf`.
-// 4. Remove TODOS os paths conhecidos do Waydroid, inclusive
-//    atalhos .desktop gerados pelo próprio Waydroid.
-// 5. Usa $HOME (substituído pelo server.js para o caminho real
-//    do usuário ANTES de rodar como root — senão expandiria para
-//    /root).
 var comando =
-// --- Parar o Waydroid ---
 'systemctl stop waydroid-container 2>/dev/null || true; ' +
 'waydroid container stop 2>/dev/null || true; ' +
 'pkill -f "waydroid show-full-ui" 2>/dev/null || true; ' +
 'pkill -f "waydroid session" 2>/dev/null || true; ' +
-
-// --- Remover o pacote via dnf ---
 'dnf remove -y waydroid 2>/dev/null || true; ' +
 'dnf remove -y waydroid-script 2>/dev/null || true; ' +
-
-// --- Remover a pasta de extras e o venv (com chattr preventivo) ---
 'if [ -d $HOME/.local/share/fof-waydroid ]; then ' +
 '  chattr -R -i $HOME/.local/share/fof-waydroid 2>/dev/null || true; ' +
 '  rm -rf $HOME/.local/share/fof-waydroid; ' +
 'fi; ' +
-
-// --- Remover dados do Waydroid ---
 'rm -rf $HOME/.local/share/waydroid; ' +
 'rm -f $HOME/.local/share/applications/Waydroid.desktop 2>/dev/null; ' +
 'rm -f $HOME/.local/share/applications/waydroid-helper.desktop 2>/dev/null; ' +
-
-// --- Remover dados do sistema ---
 'rm -rf /var/lib/waydroid; ' +
 'rm -rf /var/lib/waydroid-data; ' +
 'rm -rf /etc/waydroid 2>/dev/null; ' +
-
 'echo ""; ' +
 'echo "════════════════════════════════════════════════════════════"; ' +
 'echo "✅ Waydroid e TODOS os dados associados foram removidos."; ' +
@@ -680,9 +603,6 @@ var comando =
 await executarComandoGenerico(idComando, comando,
 _t('sessoes.waydroid.btn_uninstall_waydroid', '🗑️ Desfazer Alterações e Remover Completamente'),
 async function() {
-// Após a remoção, atualiza o estado do botão com base no
-// sistema real. Se a limpeza foi completa, o botão fica
-// desabilitado ("Nada a remover").
 await _atualizarBotaoUninstallWaydroid();
 });
 }
@@ -693,10 +613,6 @@ await _atualizarBotaoUninstallWaydroid();
 
 async function executarWaydroidPrep() {
 var idComando = 'waydroid-extras-prep';
-// Prepara o repositório, cria o venv do Python e ajusta permissões.
-// O `chown -R $USER:$USER` no final é OBRIGATÓRIO: como o comando
-// roda via pkexec (root), os arquivos clonados/criados ficam com
-// owner root. Sem o chown, o usuário não consegue mexer depois.
 var comando = 'mkdir -p $HOME/.local/share/fof-waydroid && cd $HOME/.local/share/fof-waydroid && ' +
 '(test -d waydroid_script || git clone https://github.com/casualsnek/waydroid_script.git) && ' +
 'cd waydroid_script && python3 -m venv venv && ./venv/bin/pip install --upgrade pip && ./venv/bin/pip install -r requirements.txt && ' +
@@ -712,12 +628,6 @@ alert(_t('sessoes.waydroid.container_guard_alert',
 await _atualizarBloqueioExtrasWaydroid();
 return;
 }
-// IMPORTANTE: NÃO usar `sudo` aqui. O venv tem seu próprio shebang
-// e roda direto como o usuário atual (o server.js é quem decide se
-// escala via pkexec/kdesu, com base na whitelist de comandos).
-// Adicionar `sudo` desnecessariamente só complicaria: o script
-// resultante herdaria HOME=/root e o venv procuraria arquivos no
-// lugar errado.
 var comando = 'cd $HOME/.local/share/fof-waydroid/waydroid_script && ./venv/bin/python3 main.py install ' + componente;
 await executarComandoGenerico(idComando, comando, nomeBotao);
 }
@@ -750,25 +660,6 @@ await _waydroidExtra('waydroid-smartdock', 'smartdock', _t('sessoes.waydroid.btn
 // CONFIGURAÇÕES AVANÇADAS — waydroid-helper (install + open)
 // ============================================================
 
-/**
- * INSTALL: instala o waydroid-helper via COPR oficial cuteneko/waydroid-helper.
- *
- * O projeto upstream recomenda explicitamente o COPR no Fedora:
- *   sudo dnf copr enable cuteneko/waydroid-helper
- *   sudo dnf install waydroid-helper
- *
- * Isso substitui a abordagem antiga (baixar AppImage do GitHub
- * Releases), que era frágil:
- *  - exigia `nohup ... &` dentro do bloco redirecionado do kdesu/pkexec
- *    (o bloco nunca fechava, o job herdava stdout de processo morto);
- *  - rodava o AppImage como root, sem acesso ao display do usuário;
- *  - silenciava erros com `> /dev/null 2>&1`;
- *  - exigia `chown` manual para devolver posse ao usuário.
- *
- * Com o COPR, o pacote é instalado via dnf como qualquer outro, fica
- * no PATH, aparece no menu de aplicativos, e ganha atualizações
- * automáticas via `dnf upgrade`.
- */
 async function executarWaydroidHelperInstall() {
 var idComando = 'waydroid-helper-install';
 var comando = 'sudo dnf copr enable cuteneko/waydroid-helper -y && sudo dnf install -y waydroid-helper';
@@ -779,15 +670,6 @@ atualizarBotaoAbrirWaydroidHelper();
 });
 }
 
-/**
- * OPEN: abre o waydroid-helper instalado via dnf.
- *
- * Usa `abrirFerramentaExterna` com `gtk-launch`, exatamente o mesmo
- * padrão do Btrfs-Assistant (01-restauracao.html). `gtk-launch` está
- * na whitelist COMANDOS_SEM_AUTENTICACAO do server.js, então este
- * comando não pede senha — só dispara o binário como o usuário atual,
- * via DBus do desktop.
- */
 function executarWaydroidHelperOpen() {
 abrirFerramentaExterna('gtk-launch com.jaoushingan.WaydroidHelper 2>/dev/null &', 'waydroid-helper-install', 'waydroid-helper');
 }
@@ -815,9 +697,6 @@ await _atualizarBloqueioExtrasWaydroid();
 return;
 }
 var idComando = 'waydroid-prefs';
-// Os três prop set são independentes. Com ';' (em vez de '&&'), uma
-// falha num deles não impede os outros. Como o pkexec retorna o exit
-// code do ÚLTIMO comando, ainda temos o resultado correto ao final.
 var comando = 'sudo waydroid prop set persist.waydroid.multi_windows true; sudo waydroid prop set persist.waydroid.fake_touch "*"; sudo waydroid prop set persist.waydroid.fake_wifi "*"';
 await executarComandoGenerico(idComando, comando, _t('sessoes.waydroid.btn_prefs', '⚙️ Aplicar Ajustes Recomendados'));
 }
@@ -853,36 +732,19 @@ b.style.opacity = '1';
 }
 });
 
-// Bloqueia TODOS os extras preventivamente. Os botões que já
-// foram executados continuam com o texto "✅ ..." e disabled.
 _bloquearExtrasPreventivamente();
 
-// Ajusta visibilidade do botão "Abrir waydroid-helper" conforme o
-// estado persistido do install.
 atualizarBotaoAbrirWaydroidHelper();
 
-// Agora consulta o /waydroid-status e ajusta conforme o caso.
-// Se o container estiver rodando, libera; se não, mantém bloqueado.
 _atualizarBloqueioExtrasWaydroid();
 
-// Ajusta o botão de remoção completa conforme o estado real do
-// sistema (habilita se houver algo a remover, desabilita se limpo).
 _atualizarBotaoUninstallWaydroid();
 }
 
 // ============================================================
 // INICIALIZAÇÃO
 // ============================================================
-//
-// IMPORTANTE: NÃO usamos DOMContentLoaded aqui. Esta sessão é
-// carregada dinamicamente pelo guiado.html via eval(), e nesse
-// momento o DOMContentLoaded da página principal já disparou — o
-// listener nunca seria executado. A inicialização fica em
-// restaurarEstadoSessao(), que o guiado.html chama explicitamente
-// logo após o eval.
 
-// Registra o listener do acordeão de extras o mais cedo possível.
-// Isso roda imediatamente após o eval() do script.
 (function() {
 var extrasAccordion = document.getElementById('waydroid-extras-accordion');
 if (extrasAccordion) {

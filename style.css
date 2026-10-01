@@ -190,7 +190,32 @@ body {
 
 /* ============================================================
  * BOTÕES
- * ============================================================ */
+ * ============================================================
+ * Esquema de cores semântico (v1.0.0-10012026):
+ *
+ *   1. AZUL   (.btn-executar, padrão) — ação principal
+ *              instalar, executar, aplicar, detectar, atualizar,
+ *              configurar, ativar. É a cor da maioria dos botões.
+ *
+ *   2. VERDE  (.btn-executar.verde) — abrir aplicativo
+ *              só para botões "Abrir X" (aparecem após o install).
+ *
+ *   3. VERMELHO (.btn-executar.vermelho) — remover/reverter
+ *              desinstalar, reverter, desativar, remover.
+ *
+ *   4. VERMELHO DESTRUTIVO (.btn-executar.destrutivo) — exceção
+ *              ações irreversíveis: desinstalar FOF, remover repo
+ *              Fedora Flatpak, remover Waydroid completamente.
+ *              Vermelho + contorno tracejado, para dar peso visual.
+ *
+ * Botão cinza = botão DESABILITADO. Nunca use cinza como estado
+ * normal — o `:disabled` já aplica `opacity: 0.5` + cursor
+ * `not-allowed` automaticamente.
+ *
+ * As classes antigas (.ativo, .roxo, .laranja, .azul-claro,
+ * .verde-escuro, .cinza) foram removidas. Se algum HTML ainda
+ * tiver essas classes, elas caem no .btn-executar padrão (azul).
+ */
 
 .grupo-botoes {
     display: inline-flex;
@@ -238,22 +263,7 @@ body {
     transform: none;
 }
 
-.btn-executar.ativo {
-    background-color: #d97706;
-}
-
-.btn-executar.ativo:hover:not(:disabled) {
-    background-color: #b45309;
-}
-
-.btn-executar.roxo {
-    background-color: #8b5cf6;
-}
-
-.btn-executar.roxo:hover:not(:disabled) {
-    background-color: #7c3aed;
-}
-
+/* --- Verde: abrir aplicativo --- */
 .btn-executar.verde {
     background-color: #10b981;
 }
@@ -262,38 +272,7 @@ body {
     background-color: #059669;
 }
 
-.btn-executar.verde-escuro {
-    background-color: #357a38;
-}
-
-.btn-executar.verde-escuro:hover:not(:disabled) {
-    background-color: #2d6a30;
-}
-
-.btn-executar.cinza {
-    background-color: #4b5563;
-}
-
-.btn-executar.cinza:hover:not(:disabled) {
-    background-color: #6b7280;
-}
-
-.btn-executar.laranja {
-    background-color: #d97706;
-}
-
-.btn-executar.laranja:hover:not(:disabled) {
-    background-color: #b45309;
-}
-
-.btn-executar.azul-claro {
-    background-color: #3b82f6;
-}
-
-.btn-executar.azul-claro:hover:not(:disabled) {
-    background-color: #2563eb;
-}
-
+/* --- Vermelho: remover / reverter / desativar --- */
 .btn-executar.vermelho {
     background-color: #ef4444;
 }
@@ -302,6 +281,27 @@ body {
     background-color: #dc2626;
 }
 
+/* --- Vermelho destrutivo: ações irreversíveis ---
+ *
+ * Usa `outline` em vez de `border` para não deslocar o layout
+ * (outline não ocupa espaço no box model). O `outline-offset`
+ * negativo puxa o contorno para dentro do botão, criando o
+ * efeito de "borda tracejada interna" sem alterar padding ou
+ * dimensão.
+ */
+.btn-executar.destrutivo {
+    background-color: var(--danger);
+    outline: 2px dashed rgba(255, 255, 255, 0.45);
+    outline-offset: -5px;
+}
+
+.btn-executar.destrutivo:hover:not(:disabled) {
+    background-color: var(--danger-hover);
+    outline-color: rgba(255, 255, 255, 0.7);
+}
+
+/* --- Botão de reverter genérico (legado, mantido para
+ *     compatibilidade com sessões futuras) --- */
 .btn-reverter {
     background-color: var(--danger);
     color: white;
@@ -424,14 +424,8 @@ body {
  * ACÓRDEÃO PRINCIPAL
  * ============================================================
  * Cada sessão começa com um retângulo azul cujo conteúdo é a
- * própria descrição da sessão. Ele é visualmente distinto dos
- * acórdeãos de conteúdo (borda accent, ícone ℹ️, texto muted
- * itálico) para que o usuário perceba que é "introdução" e não
- * "ação".
- *
- * Diferente dos demais acórdeãos, este NÃO é um <details>:
- * é um <div> estático. Não colapsa, não tem seta, não tem
- * cursor de clique. É puramente informativo.
+ * própria descrição da sessão. É um <div> estático, não um
+ * <details> — puramente informativo.
  */
 
 .acordeao-principal {
@@ -504,11 +498,6 @@ body {
 
 .progress-fill.complete {
     background: linear-gradient(90deg, #34d399, #10b981);
-    animation: none;
-}
-
-.progress-fill.error {
-    background: linear-gradient(90deg, #ef4444, #dc2626);
     animation: none;
 }
 
@@ -637,11 +626,14 @@ body {
     color: var(--matrix-green);
 }
 
+/* Vermelho distinguível do verde Matrix. Antes usava #4dff4d
+ * (verde claro), quase idêntico a .success — erros e sucessos
+ * ficavam visualmente confundíveis. */
 .terminal-log .log-line.error {
-    color: #4dff4d;
+    color: #ff6b6b;
     text-shadow:
-    0 0 4px rgba(77, 255, 77, 0.7),
-    0 0 8px rgba(0, 255, 65, 0.5);
+    0 0 4px rgba(255, 107, 107, 0.7),
+    0 0 8px rgba(255, 107, 107, 0.4);
 }
 
 .terminal-log .log-line.success {
@@ -662,11 +654,6 @@ body {
     text-shadow:
     0 0 3px rgba(153, 255, 153, 0.6),
     0 0 6px rgba(0, 255, 65, 0.3);
-}
-
-.terminal-log .log-line.end {
-    color: #00aa22;
-    font-style: italic;
 }
 
 .terminal-log .log-line.separator {
@@ -830,10 +817,6 @@ body {
  * SESSÕES
  * ============================================================ */
 
-.sessao-wrapper {
-    margin-bottom: 2rem;
-}
-
 .sessao-container {
     background-color: var(--bg-card, #151f32);
     border: 1px solid var(--border, #24334d);
@@ -876,8 +859,7 @@ body {
  * HEADER DOS MODOS
  * ============================================================ */
 
-.header-guide,
-.header-avancado {
+.header-guide {
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -888,8 +870,7 @@ body {
     border-bottom: 1px solid var(--border);
 }
 
-.header-guide .titulo,
-.header-avancado .titulo {
+.header-guide .titulo {
     display: flex;
     align-items: center;
     gap: 0.75rem;
@@ -898,8 +879,7 @@ body {
     overflow: hidden;
 }
 
-.header-guide .titulo h1,
-.header-avancado .titulo h1 {
+.header-guide .titulo h1 {
     font-size: 1.5rem;
     color: var(--text-main);
     margin: 0;
@@ -913,17 +893,6 @@ body {
     background-color: rgba(60, 103, 227, 0.2);
     color: var(--accent);
     border: 1px solid var(--accent);
-    padding: 0.2rem 0.8rem;
-    border-radius: 12px;
-    font-size: 0.7rem;
-    font-weight: 600;
-    flex-shrink: 0;
-}
-
-.header-avancado .titulo .badge-modo {
-    background-color: rgba(245, 158, 11, 0.2);
-    color: var(--warning-soft);
-    border: 1px solid var(--warning-soft);
     padding: 0.2rem 0.8rem;
     border-radius: 12px;
     font-size: 0.7rem;
@@ -1089,29 +1058,74 @@ body {
 
 /* ============================================================
  * BADGE "ATUALIZAÇÃO DISPONÍVEL"
- * ============================================================ */
+ * ============================================================
+ * Botão circular flutuante no canto superior direito do
+ * .version-badge. Só ícone SVG — sem texto.
+ *
+ * O pai (.version-badge, definido em index.html) tem
+ * `position: relative`, então o posicionamento absoluto ancora
+ * nele. O `border` de 2px na cor do fundo da página cria um
+ * "recorte" que separa visualmente o badge do retângulo da
+ * versão, sem precisar de overflow ou clip-path.
+ */
 
 .badge-atualizacao {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background-color: var(--warning-border);
+    color: #ffffff;
+    border: 2px solid var(--bg-primary);
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    margin-left: 0.4rem;
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    background-color: var(--warning-bg);
-    border: 1px solid var(--warning-border);
-    font-size: 0.75rem;
-    text-decoration: none;
+    padding: 0;
+    margin: 0;
     cursor: pointer;
-    transition: all 0.2s ease;
-    animation: pulse-badge 2s infinite ease-in-out;
-    vertical-align: middle;
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    box-sizing: border-box;
+    font-family: inherit;
+    line-height: 1;
+    box-shadow: 0 2px 8px rgba(245, 158, 11, 0.4);
+    transition: transform 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+    animation: pulse-badge 2.5s infinite ease-in-out;
+    z-index: 10;
+    outline: none;
+    text-decoration: none;
 }
 
 .badge-atualizacao:hover {
-    background-color: var(--warning-border);
-    transform: scale(1.15);
+    background-color: #d97706;
+    transform: scale(1.1);
+    animation: none;
+    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.6);
+}
+
+.badge-atualizacao:focus,
+.badge-atualizacao:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.5);
+}
+
+.badge-atualizacao:active {
+    transform: scale(0.95);
+}
+
+.badge-atualizacao-icon {
+    width: 16px;
+    height: 16px;
+    display: block;
+    stroke: currentColor;
+    fill: none;
+    stroke-width: 2.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    pointer-events: none;
 }
 
 @keyframes pulse-badge {
@@ -1240,80 +1254,6 @@ body {
 }
 
 /* ============================================================
- * INDICADORES DE SESSÃO (legado — mantido para compatibilidade)
- * ============================================================ */
-
-.sessao-indicador {
-    display: flex;
-    gap: 0.75rem;
-    justify-content: center;
-    margin-bottom: 1.5rem;
-    flex-wrap: wrap;
-}
-
-.sessao-indicador .dot {
-    width: 14px;
-    height: 14px;
-    border-radius: 50%;
-    border: 2px solid transparent;
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-    cursor: pointer;
-}
-
-.sessao-indicador .dot:hover {
-    transform: scale(1.3);
-    box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
-}
-
-[data-tema="claro"] .sessao-indicador .dot:hover {
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
-}
-
-.sessao-indicador .dot.ativa {
-    transform: scale(1.3);
-    box-shadow: 0 0 12px rgba(255, 255, 255, 0.5);
-    border-color: #ffffff;
-}
-
-[data-tema="claro"] .sessao-indicador .dot.ativa {
-    box-shadow: 0 0 12px rgba(0, 0, 0, 0.4);
-    border-color: #1f2937;
-}
-
-/* ============================================================
- * BOTÃO VOLTAR AO TOPO
- * ============================================================ */
-
-.btn-topo {
-    position: fixed;
-    bottom: 2rem;
-    right: 2rem;
-    background-color: var(--accent);
-    color: white;
-    border: none;
-    border-radius: 50%;
-    width: 50px;
-    height: 50px;
-    font-size: 1.5rem;
-    cursor: pointer;
-    box-shadow: 0 4px 15px rgba(60, 103, 227, 0.3);
-    transition: all 0.3s ease;
-    opacity: 0;
-    visibility: hidden;
-    z-index: 1000;
-}
-
-.btn-topo.visivel {
-    opacity: 1;
-    visibility: visible;
-}
-
-.btn-topo:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 6px 25px rgba(60, 103, 227, 0.5);
-}
-
-/* ============================================================
  * LOADING
  * ============================================================ */
 
@@ -1365,14 +1305,6 @@ body {
         width: 100%;
         max-width: 200px;
     }
-
-    .btn-topo {
-        bottom: 1rem;
-        right: 1rem;
-        width: 44px;
-        height: 44px;
-        font-size: 1.2rem;
-    }
 }
 
 @media (max-width: 480px) {
@@ -1404,7 +1336,6 @@ body {
 .btn-reverter:active:not(:disabled),
 .btn-voltar:active:not(:disabled),
 .btn-proximo:active:not(:disabled),
-.btn-topo:active,
 .btn-tema:active,
 .btn-voltar-inicio:active,
 .session-menu-item:active {
@@ -1415,7 +1346,7 @@ body {
 /* ============================================================
  * PROGRESSO GLOBAL
  * ============================================================
- * Mostrado no header de guiado.html e manutencao.html.
+ * Mostrado no header de guiado.html e manutenção.
  * "N/M" onde N é o número de sessões concluídas.
  */
 
@@ -1440,20 +1371,32 @@ body {
 /* ============================================================
  * TOASTS
  * ============================================================
- * Notificações leves para tarefas longas (>30s) que terminam.
- * Aparecem no canto superior direito, com animação de slide.
+ * O container é um overlay full-viewport com pointer-events: none
+ * e overflow: hidden. Os toasts são alinhados ao topo-direito
+ * dentro dele.
+ *
+ * Correção crítica: antes, o container tinha `position: fixed;
+ * top: 1rem; right: 1rem` sem largura explícita. Como `body` do
+ * index.html é `display: flex`, o toast virava um segundo flex
+ * item e empurrava o conteúdo para a esquerda. Com o overlay
+ * full-viewport + overflow: hidden, nada vaza.
  */
 
 .fof-toast-container {
     position: fixed;
-    top: 1rem;
-    right: 1rem;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 99999;
+    pointer-events: none;
     display: flex;
     flex-direction: column;
+    align-items: flex-end;
+    justify-content: flex-start;
+    padding: 1rem;
     gap: 0.5rem;
-    z-index: 9999;
-    pointer-events: none;
-    max-width: 360px;
+    overflow: hidden;
 }
 
 .fof-toast {
@@ -1468,6 +1411,11 @@ body {
     line-height: 1.4;
     pointer-events: auto;
     animation: slideInToast 0.3s ease-out;
+    max-width: min(360px, calc(100vw - 2rem));
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    box-sizing: border-box;
+    flex-shrink: 0;
 }
 
 .fof-toast.success {
@@ -1476,6 +1424,10 @@ body {
 
 .fof-toast.error {
     border-left-color: var(--danger);
+}
+
+.fof-toast.info {
+    border-left-color: var(--accent);
 }
 
 .fof-toast.removendo {
@@ -1495,12 +1447,10 @@ body {
 /* ============================================================
  * MENU DE SESSÕES FIXO
  * ============================================================
- * Substitui as bolinhas coloridas (.sessao-indicador .dot) por
- * um menu horizontal de "chips" clicáveis, fixo no topo da
- * página, sempre visível durante a rolagem.
+ * Substitui as bolinhas coloridas por um menu horizontal de
+ * "chips" clicáveis, fixo no topo da página.
  *
  * A sessão ativa é destacada com borda + fundo colorido.
- *
  * O menu tem scroll horizontal automático quando há mais
  * sessões que espaço disponível. Em telas pequenas, quebra em
  * múltiplas linhas via flex-wrap.
@@ -1637,7 +1587,7 @@ body {
 /* ============================================================
  * DASHBOARD
  * ============================================================
- * Grid de cards usada pela sessão 11-diagnostico.html.
+ * Grid de cards usada pela sessão de diagnóstico.
  * Mostra métricas de sistema, progresso, tema e idioma.
  */
 
@@ -1693,10 +1643,6 @@ body {
     border-left: 3px solid var(--accent);
 }
 
-.dashboard-card.sucesso-card {
-    border-left: 3px solid var(--success);
-}
-
 .dashboard-card .dashboard-valor.ok {
     color: var(--success-soft);
 }
@@ -1709,7 +1655,6 @@ body {
     color: var(--danger);
 }
 
-/* Dashboard — responsividade */
 @media (max-width: 600px) {
     .dashboard-grid {
         grid-template-columns: 1fr;
@@ -1721,16 +1666,14 @@ body {
 }
 
 /* ============================================================
- * ESTILOS ESPECÍFICOS DAS NOVAS SESSÕES
+ * ESTILOS ESPECÍFICOS DAS SESSÕES
  * ============================================================
- / ** As sessões em geral usam os mesmos componentes
+ * As sessões em geral usam os mesmos componentes
  * (bloco-comando, acordeao, progress-container, terminal-log)
- * definidos acima — este bloco é reservado para estilos
- * adicionais que possam surgir (listas de informações,
- * badges especiais, etc).
+ * definidos acima. Este bloco é reservado para estilos
+ * adicionais que possam surgir.
  */
 
-/* Lista de informações (usada em diagnóstico) */
 .lista-info {
     list-style: none;
     padding: 0;
@@ -1799,8 +1742,6 @@ body {
 /* ============================================================
  * WRAPPER DE FLATPAK COM ÍCONE DE DESINSTALAR
  * ============================================================
- * Usado nas sessões 09-softwares-uteis e 10-casa-pronta.
- *
  * Estrutura:
  *   <div class="btn-flatpak-wrapper">
  *     <button class="btn-executar">...</button>

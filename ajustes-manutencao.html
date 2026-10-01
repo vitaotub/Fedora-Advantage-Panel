@@ -40,8 +40,8 @@ Aumenta o número máximo de áreas de memória que cada processo pode mapear. O
 ℹ️ <strong>O que muda:</strong> o limite sobe de 65.530 para 2.147.483.642 (o máximo prático). É uma correção de compatibilidade, não um "tweak".
 </div>
 <div class="botoes-flex">
-<button class="btn-executar verde" onclick="executarVmMaxMapCount()" data-comando="vm-max-map-count" data-logbox="log-sessao-ajustes-manutencao" id="btn-vm-max-map-count" data-i18n="sessoes.ajustes-manutencao.btn_vm_max_map_count">⚙️ Aplicar Ajuste</button>
-<button class="btn-executar cinza" onclick="executarVmMaxMapCountRemove()" data-comando="vm-max-map-count-remove" data-logbox="log-sessao-ajustes-manutencao" id="btn-vm-max-map-count-remove" data-i18n="sessoes.ajustes-manutencao.btn_vm_max_map_count_remove">↩️ Reverter</button>
+<button class="btn-executar" onclick="executarVmMaxMapCount()" data-comando="vm-max-map-count" data-logbox="log-sessao-ajustes-manutencao" id="btn-vm-max-map-count" data-i18n="sessoes.ajustes-manutencao.btn_vm_max_map_count">⚙️ Aplicar Ajuste</button>
+<button class="btn-executar vermelho" onclick="executarVmMaxMapCountRemove()" data-comando="vm-max-map-count-remove" data-logbox="log-sessao-ajustes-manutencao" id="btn-vm-max-map-count-remove" data-i18n="sessoes.ajustes-manutencao.btn_vm_max_map_count_remove">↩️ Reverter</button>
 </div>
 </div>
 <div class="progress-container" id="progress-vm-max-map-count"><div class="progress-bar"><div class="progress-fill" id="progress-fill-vm-max-map-count"></div></div><div class="progress-text"><span class="status" id="progress-status-vm-max-map-count">⏳ Iniciando...</span><span class="percentage" id="progress-percent-vm-max-map-count">0%</span></div></div>
@@ -61,8 +61,8 @@ Ajusta dois parâmetros do kernel que controlam swap e cache de arquivos. O Fedo
 • <code>vm.vfs_cache_pressure</code>: 100 → 50
 </div>
 <div class="botoes-flex">
-<button class="btn-executar verde" onclick="executarVmSwappinessCache()" data-comando="vm-swappiness-cache" data-logbox="log-sessao-ajustes-manutencao" id="btn-vm-swappiness-cache" data-i18n="sessoes.ajustes-manutencao.btn_vm_swappiness_cache">⚙️ Aplicar Ajuste</button>
-<button class="btn-executar cinza" onclick="executarVmSwappinessCacheRemove()" data-comando="vm-swappiness-cache-remove" data-logbox="log-sessao-ajustes-manutencao" id="btn-vm-swappiness-cache-remove" data-i18n="sessoes.ajustes-manutencao.btn_vm_swappiness_cache_remove">↩️ Reverter</button>
+<button class="btn-executar" onclick="executarVmSwappinessCache()" data-comando="vm-swappiness-cache" data-logbox="log-sessao-ajustes-manutencao" id="btn-vm-swappiness-cache" data-i18n="sessoes.ajustes-manutencao.btn_vm_swappiness_cache">⚙️ Aplicar Ajuste</button>
+<button class="btn-executar vermelho" onclick="executarVmSwappinessCacheRemove()" data-comando="vm-swappiness-cache-remove" data-logbox="log-sessao-ajustes-manutencao" id="btn-vm-swappiness-cache-remove" data-i18n="sessoes.ajustes-manutencao.btn_vm_swappiness_cache_remove">↩️ Reverter</button>
 </div>
 </div>
 <div class="progress-container" id="progress-vm-swappiness-cache"><div class="progress-bar"><div class="progress-fill" id="progress-fill-vm-swappiness-cache"></div></div><div class="progress-text"><span class="status" id="progress-status-vm-swappiness-cache">⏳ Iniciando...</span><span class="percentage" id="progress-percent-vm-swappiness-cache">0%</span></div></div>
@@ -83,8 +83,8 @@ Substitui o controle de congestionamento padrão (<code>cubic</code>) pelo <stro
 Efeito imediato, sem reboot.
 </div>
 <div class="botoes-flex">
-<button class="btn-executar verde" onclick="executarTcpBbr()" data-comando="tcp-bbr" data-logbox="log-sessao-ajustes-manutencao" id="btn-tcp-bbr" data-i18n="sessoes.ajustes-manutencao.btn_tcp_bbr">⚙️ Aplicar Ajuste</button>
-<button class="btn-executar cinza" onclick="executarTcpBbrRemove()" data-comando="tcp-bbr-remove" data-logbox="log-sessao-ajustes-manutencao" id="btn-tcp-bbr-remove" data-i18n="sessoes.ajustes-manutencao.btn_tcp_bbr_remove">↩️ Reverter</button>
+<button class="btn-executar" onclick="executarTcpBbr()" data-comando="tcp-bbr" data-logbox="log-sessao-ajustes-manutencao" id="btn-tcp-bbr" data-i18n="sessoes.ajustes-manutencao.btn_tcp_bbr">⚙️ Aplicar Ajuste</button>
+<button class="btn-executar vermelho" onclick="executarTcpBbrRemove()" data-comando="tcp-bbr-remove" data-logbox="log-sessao-ajustes-manutencao" id="btn-tcp-bbr-remove" data-i18n="sessoes.ajustes-manutencao.btn_tcp_bbr_remove">↩️ Reverter</button>
 </div>
 </div>
 <div class="progress-container" id="progress-tcp-bbr"><div class="progress-bar"><div class="progress-fill" id="progress-fill-tcp-bbr"></div></div><div class="progress-text"><span class="status" id="progress-status-tcp-bbr">⏳ Iniciando...</span><span class="percentage" id="progress-percent-tcp-bbr">0%</span></div></div>
@@ -122,8 +122,8 @@ Configura o sistema para permitir que aplicativos de áudio tenham prioridade de
 ⚠️ <strong>Requer logout/login:</strong> o grupo <code>realtime</code> só entra em vigor depois que você sair e entrar novamente.
 </div>
 <div class="botoes-flex">
-<button class="btn-executar verde" onclick="executarRealtimeSetup()" data-comando="realtime-setup" data-logbox="log-sessao-ajustes-manutencao" id="btn-realtime-setup" data-i18n="sessoes.ajustes-manutencao.btn_realtime_setup">⚙️ Ativar Prioridade de Tempo Real</button>
-<button class="btn-executar cinza" onclick="executarRealtimeSetupRemove()" data-comando="realtime-setup-remove" data-logbox="log-sessao-ajustes-manutencao" id="btn-realtime-setup-remove" data-i18n="sessoes.ajustes-manutencao.btn_realtime_setup_remove">↩️ Reverter</button>
+<button class="btn-executar" onclick="executarRealtimeSetup()" data-comando="realtime-setup" data-logbox="log-sessao-ajustes-manutencao" id="btn-realtime-setup" data-i18n="sessoes.ajustes-manutencao.btn_realtime_setup">⚙️ Ativar Prioridade de Tempo Real</button>
+<button class="btn-executar vermelho" onclick="executarRealtimeSetupRemove()" data-comando="realtime-setup-remove" data-logbox="log-sessao-ajustes-manutencao" id="btn-realtime-setup-remove" data-i18n="sessoes.ajustes-manutencao.btn_realtime_setup_remove">↩️ Reverter</button>
 </div>
 </div>
 <div class="progress-container" id="progress-realtime-setup"><div class="progress-bar"><div class="progress-fill" id="progress-fill-realtime-setup"></div></div><div class="progress-text"><span class="status" id="progress-status-realtime-setup">⏳ Iniciando...</span><span class="percentage" id="progress-percent-realtime-setup">0%</span></div></div>
@@ -145,8 +145,8 @@ Reduz o <em>quantum</em> (tamanho do buffer de áudio) do PipeWire de 1024 para 
 • <strong>Trade-off:</strong> menor latência usa mais CPU. Em máquinas modestas, pode causar crackling.
 </div>
 <div class="botoes-flex">
-<button class="btn-executar verde" onclick="executarPipewireQuantumLow()" data-comando="pipewire-quantum-low" data-logbox="log-sessao-ajustes-manutencao" id="btn-pipewire-quantum-low" data-i18n="sessoes.ajustes-manutencao.btn_pipewire_quantum">⚙️ Ativar Baixa Latência</button>
-<button class="btn-executar cinza" onclick="executarPipewireQuantumLowRemove()" data-comando="pipewire-quantum-low-remove" data-logbox="log-sessao-ajustes-manutencao" id="btn-pipewire-quantum-low-remove" data-i18n="sessoes.ajustes-manutencao.btn_pipewire_quantum_remove">↩️ Reverter</button>
+<button class="btn-executar" onclick="executarPipewireQuantumLow()" data-comando="pipewire-quantum-low" data-logbox="log-sessao-ajustes-manutencao" id="btn-pipewire-quantum-low" data-i18n="sessoes.ajustes-manutencao.btn_pipewire_quantum">⚙️ Ativar Baixa Latência</button>
+<button class="btn-executar vermelho" onclick="executarPipewireQuantumLowRemove()" data-comando="pipewire-quantum-low-remove" data-logbox="log-sessao-ajustes-manutencao" id="btn-pipewire-quantum-low-remove" data-i18n="sessoes.ajustes-manutencao.btn_pipewire_quantum_remove">↩️ Reverter</button>
 </div>
 </div>
 <div class="progress-container" id="progress-pipewire-quantum-low"><div class="progress-bar"><div class="progress-fill" id="progress-fill-pipewire-quantum-low"></div></div><div class="progress-text"><span class="status" id="progress-status-pipewire-quantum-low">⏳ Iniciando...</span><span class="percentage" id="progress-percent-pipewire-quantum-low">0%</span></div></div>
@@ -216,8 +216,8 @@ ACORDEÃO 4: IDIOMA
 <div class="aviso-caixa" data-i18n="sessoes.ajustes-manutencao.idioma_aviso">⚠️ Aviso: Reinicie o computador após concluir o passo 3 para aplicar as alterações de idioma!</div>
 <div class="botoes-flex">
 <button class="btn-executar" onclick="executarComandoGenerico('idioma-packs', 'sudo dnf -y install langpacks-pt_BR', 'Instalando pacotes de tradução')" data-comando="idioma-packs" data-logbox="log-sessao-ajustes-manutencao" id="btn-idioma-packs" data-i18n="sessoes.ajustes-manutencao.btn_idioma_packs">1. Instalar Tradução</button>
-<button class="btn-executar cinza" onclick="executarComandoGenerico('idioma-hunspell', 'sudo dnf install hunspell-br -y', 'Instalando corretor ortográfico')" data-comando="idioma-hunspell" data-logbox="log-sessao-ajustes-manutencao" id="btn-idioma-hunspell" data-i18n="sessoes.ajustes-manutencao.btn_idioma_hunspell">2. Corretor Ortográfico</button>
-<button class="btn-executar verde" onclick="executarComandoGenerico('idioma-localectl', 'sudo localectl set-locale LANG=pt_BR.UTF-8', 'Configurando localidade PT-BR')" data-comando="idioma-localectl" data-logbox="log-sessao-ajustes-manutencao" id="btn-idioma-localectl" data-i18n="sessoes.ajustes-manutencao.btn_idioma_localectl">3. Localidade PT-BR</button>
+<button class="btn-executar" onclick="executarComandoGenerico('idioma-hunspell', 'sudo dnf install hunspell-br -y', 'Instalando corretor ortográfico')" data-comando="idioma-hunspell" data-logbox="log-sessao-ajustes-manutencao" id="btn-idioma-hunspell" data-i18n="sessoes.ajustes-manutencao.btn_idioma_hunspell">2. Corretor Ortográfico</button>
+<button class="btn-executar" onclick="executarComandoGenerico('idioma-localectl', 'sudo localectl set-locale LANG=pt_BR.UTF-8', 'Configurando localidade PT-BR')" data-comando="idioma-localectl" data-logbox="log-sessao-ajustes-manutencao" id="btn-idioma-localectl" data-i18n="sessoes.ajustes-manutencao.btn_idioma_localectl">3. Localidade PT-BR</button>
 </div>
 </div>
 <div class="progress-container" id="progress-idioma-packs"><div class="progress-bar"><div class="progress-fill" id="progress-fill-idioma-packs"></div></div><div class="progress-text"><span class="status" id="progress-status-idioma-packs">⏳ Iniciando...</span><span class="percentage" id="progress-percent-idioma-packs">0%</span></div></div>
@@ -242,7 +242,7 @@ ACORDEÃO 5: DUAL-BOOT
 💡 Por padrão, o Windows grava o relógio em <strong>horário local</strong>, enquanto o Linux grava em <strong>UTC</strong>. Este botão alinha o Fedora com o comportamento do Windows — você não precisa mexer em nada no Windows.
 </div>
 <div class="grupo-botoes">
-<button class="btn-executar laranja" onclick="executarDualBootTime()" data-comando="dual-boot-time" data-logbox="log-sessao-ajustes-manutencao" id="btn-dual-boot-time" data-i18n="sessoes.ajustes-manutencao.btn_dual_boot">Corrigir Relógio</button>
+<button class="btn-executar" onclick="executarDualBootTime()" data-comando="dual-boot-time" data-logbox="log-sessao-ajustes-manutencao" id="btn-dual-boot-time" data-i18n="sessoes.ajustes-manutencao.btn_dual_boot">Corrigir Relógio</button>
 </div>
 </div>
 <div class="progress-container" id="progress-dual-boot-time"><div class="progress-bar"><div class="progress-fill" id="progress-fill-dual-boot-time"></div></div><div class="progress-text"><span class="status" id="progress-status-dual-boot-time">⏳ Iniciando...</span><span class="percentage" id="progress-percent-dual-boot-time">0%</span></div></div>
@@ -289,7 +289,7 @@ Tarefas periódicas que mantêm o sistema limpo e controlável: limpeza de cache
 <option value="" data-i18n="sessoes.ajustes-manutencao.kernel_option_nenhum">Nenhum kernel detectado</option>
 </select>
 </div>
-<button class="btn-executar" style="background-color: #ef4444;" onclick="removerKernel()" data-comando="remover-kernel" data-logbox="log-sessao-ajustes-manutencao" id="btn-remover-kernel" disabled data-i18n="sessoes.ajustes-manutencao.btn_remover_kernel">🗑️ Remover</button>
+<button class="btn-executar vermelho" onclick="removerKernel()" data-comando="remover-kernel" data-logbox="log-sessao-ajustes-manutencao" id="btn-remover-kernel" disabled data-i18n="sessoes.ajustes-manutencao.btn_remover_kernel">🗑️ Remover</button>
 </div>
 </div>
 <div class="progress-container" id="progress-listar-kernels"><div class="progress-bar"><div class="progress-fill" id="progress-fill-listar-kernels"></div></div><div class="progress-text"><span class="status" id="progress-status-listar-kernels">⏳ Iniciando...</span><span class="percentage" id="progress-percent-listar-kernels">0%</span></div></div>
@@ -303,8 +303,8 @@ Tarefas periódicas que mantêm o sistema limpo e controlável: limpeza de cache
 <div class="aviso-caixa" data-i18n="sessoes.ajustes-manutencao.grub_aviso">⚠️ Esta alteração afeta o boot do sistema. Certifique-se de que o GRUB está instalado corretamente.</div>
 
 <div style="display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 0.5rem; align-items: center;">
-<button class="btn-executar laranja" onclick="executarConfigGrubRecomendado()" data-comando="grub-aplicar-recomendado" data-logbox="log-sessao-ajustes-manutencao" id="btn-grub-aplicar-recomendado" data-i18n="sessoes.ajustes-manutencao.btn_grub_recomendado">⚙️ Aplicar Configuração Recomendada</button>
-<button class="btn-executar" style="background-color: #6b7280;" onclick="executarConfigGrubPadrao()" data-comando="grub-restaurar-padrao" data-logbox="log-sessao-ajustes-manutencao" id="btn-grub-restaurar-padrao" data-i18n="sessoes.ajustes-manutencao.btn_grub_padrao">↩️ Restaurar Padrão do Sistema</button>
+<button class="btn-executar" onclick="executarConfigGrubRecomendado()" data-comando="grub-aplicar-recomendado" data-logbox="log-sessao-ajustes-manutencao" id="btn-grub-aplicar-recomendado" data-i18n="sessoes.ajustes-manutencao.btn_grub_recomendado">⚙️ Aplicar Configuração Recomendada</button>
+<button class="btn-executar" onclick="executarConfigGrubPadrao()" data-comando="grub-restaurar-padrao" data-logbox="log-sessao-ajustes-manutencao" id="btn-grub-restaurar-padrao" data-i18n="sessoes.ajustes-manutencao.btn_grub_padrao">↩️ Restaurar Padrão do Sistema</button>
 </div>
 
 <div id="grub-status" style="margin-top: 0.75rem; padding: 0.75rem; border-radius: 6px; display: none;"></div>
@@ -365,53 +365,6 @@ async function _resetarIrmao(idIrmao, fallbackText) {
     } catch (e) {
         console.error('Erro ao limpar estado do botão irmão ' + idIrmao + ':', e);
     }
-}
-
-async function _restaurarParToggle(idAplicar, idReverter, textoAplicar, textoReverter) {
-    var aplicarMarcado = isExecutado(idAplicar);
-    var reverterMarcado = isExecutado(idReverter);
-
-    if (aplicarMarcado && !reverterMarcado) {
-        // Install feito, nada revertido: install disabled, revert ativo.
-        _marcarBotaoConcluido(idAplicar);
-        _resetarBotao(idReverter, textoReverter);
-    } else if (reverterMarcado && !aplicarMarcado) {
-        // Revert feito, install desmarcado: revert disabled, install ativo.
-        _marcarBotaoConcluido(idReverter);
-        _resetarBotao(idAplicar, textoAplicar);
-    } else if (aplicarMarcado && reverterMarcado) {
-        // Estado ambíguo: limpa ambos.
-        _resetarBotao(idAplicar, textoAplicar);
-        _resetarBotao(idReverter, textoReverter);
-        try {
-            await desmarcarComoExecutado(idAplicar);
-            await desmarcarComoExecutado(idReverter);
-        } catch (e) {
-            console.error('Erro ao limpar estado ambíguo do toggle ' + idAplicar + ':', e);
-        }
-    } else {
-        // Nada marcado: install ativo, revert DESABILITADO
-        // (não há nada para reverter).
-        _resetarBotao(idAplicar, textoAplicar);
-        _desabilitarBotaoReverter(idReverter, textoReverter);
-    }
-}
-
-/**
- * Coloca um botão de reverter no estado inicial desabilitado.
- * Usado quando o comando de instalação correspondente não está
- * marcado — não há nada para reverter, então o botão não deve
- * estar clicável.
- */
-function _desabilitarBotaoReverter(idComando, fallbackText) {
-    var btn = document.getElementById('btn-' + idComando);
-    if (!btn) return;
-    var original = btn.getAttribute('data-texto-original') || fallbackText;
-    btn.textContent = original;
-    btn.style.backgroundColor = '';
-    btn.style.cursor = 'not-allowed';
-    btn.disabled = true;
-    btn.style.opacity = '0.5';
 }
 
 // ------------------------------------------------------------
@@ -604,7 +557,7 @@ async function executarAjusteDNF() {
                 btn.disabled = false;
                 btn.textContent = _t('sessoes.ajustes-manutencao.btn_aplicar_ajuste', 'Aplicar Ajuste');
                 btn.style.opacity = '1';
-                btn.style.backgroundColor = 'var(--accent, #3c67e3)';
+                btn.style.backgroundColor = '';
             }
         }, 3000);
     }
@@ -914,7 +867,6 @@ async function removerKernel() {
             btnRemover.disabled = false;
             btnRemover.textContent = textoOriginalBotao;
             btnRemover.style.opacity = '1';
-            btnRemover.style.backgroundColor = '#ef4444';
             btnRemover.style.cursor = 'pointer';
         }
         if (selectKernel) {
@@ -1127,7 +1079,7 @@ async function restaurarEstadoSessao() {
     if (btnDnf) {
         btnDnf.disabled = false;
         btnDnf.textContent = _t('sessoes.ajustes-manutencao.btn_aplicar_ajuste', 'Aplicar Ajuste');
-        btnDnf.style.backgroundColor = 'var(--accent, #3c67e3)';
+        btnDnf.style.backgroundColor = '';
         btnDnf.style.opacity = '1';
         btnDnf.style.cursor = 'pointer';
     }
@@ -1143,21 +1095,58 @@ async function restaurarEstadoSessao() {
     }
 
     // --- Toggles de tuning ---
-    await _restaurarParToggle('vm-max-map-count', 'vm-max-map-count-remove',
-        _t('sessoes.ajustes-manutencao.btn_vm_max_map_count', '⚙️ Aplicar Ajuste'),
-        _t('sessoes.ajustes-manutencao.btn_vm_max_map_count_remove', '↩️ Reverter'));
-    await _restaurarParToggle('vm-swappiness-cache', 'vm-swappiness-cache-remove',
-        _t('sessoes.ajustes-manutencao.btn_vm_swappiness_cache', '⚙️ Aplicar Ajuste'),
-        _t('sessoes.ajustes-manutencao.btn_vm_swappiness_cache_remove', '↩️ Reverter'));
-    await _restaurarParToggle('tcp-bbr', 'tcp-bbr-remove',
-        _t('sessoes.ajustes-manutencao.btn_tcp_bbr', '⚙️ Aplicar Ajuste'),
-        _t('sessoes.ajustes-manutencao.btn_tcp_bbr_remove', '↩️ Reverter'));
-    await _restaurarParToggle('realtime-setup', 'realtime-setup-remove',
-        _t('sessoes.ajustes-manutencao.btn_realtime_setup', '⚙️ Ativar Prioridade de Tempo Real'),
-        _t('sessoes.ajustes-manutencao.btn_realtime_setup_remove', '↩️ Reverter'));
-    await _restaurarParToggle('pipewire-quantum-low', 'pipewire-quantum-low-remove',
-        _t('sessoes.ajustes-manutencao.btn_pipewire_quantum', '⚙️ Ativar Baixa Latência'),
-        _t('sessoes.ajustes-manutencao.btn_pipewire_quantum_remove', '↩️ Reverter'));
+    var toggles = [
+        ['vm-max-map-count', 'vm-max-map-count-remove',
+            _t('sessoes.ajustes-manutencao.btn_vm_max_map_count', '⚙️ Aplicar Ajuste'),
+            _t('sessoes.ajustes-manutencao.btn_vm_max_map_count_remove', '↩️ Reverter')],
+        ['vm-swappiness-cache', 'vm-swappiness-cache-remove',
+            _t('sessoes.ajustes-manutencao.btn_vm_swappiness_cache', '⚙️ Aplicar Ajuste'),
+            _t('sessoes.ajustes-manutencao.btn_vm_swappiness_cache_remove', '↩️ Reverter')],
+        ['tcp-bbr', 'tcp-bbr-remove',
+            _t('sessoes.ajustes-manutencao.btn_tcp_bbr', '⚙️ Aplicar Ajuste'),
+            _t('sessoes.ajustes-manutencao.btn_tcp_bbr_remove', '↩️ Reverter')],
+        ['realtime-setup', 'realtime-setup-remove',
+            _t('sessoes.ajustes-manutencao.btn_realtime_setup', '⚙️ Ativar Prioridade de Tempo Real'),
+            _t('sessoes.ajustes-manutencao.btn_realtime_setup_remove', '↩️ Reverter')],
+        ['pipewire-quantum-low', 'pipewire-quantum-low-remove',
+            _t('sessoes.ajustes-manutencao.btn_pipewire_quantum', '⚙️ Ativar Baixa Latência'),
+            _t('sessoes.ajustes-manutencao.btn_pipewire_quantum_remove', '↩️ Reverter')]
+    ];
+
+    for (var i = 0; i < toggles.length; i++) {
+        var t = toggles[i];
+        var aplicarMarcado = isExecutado(t[0]);
+        var reverterMarcado = isExecutado(t[1]);
+
+        if (aplicarMarcado && !reverterMarcado) {
+            _marcarBotaoConcluido(t[0]);
+            _resetarBotao(t[1], t[3]);
+        } else if (reverterMarcado && !aplicarMarcado) {
+            _marcarBotaoConcluido(t[1]);
+            _resetarBotao(t[0], t[2]);
+        } else if (aplicarMarcado && reverterMarcado) {
+            _resetarBotao(t[0], t[2]);
+            _resetarBotao(t[1], t[3]);
+            try {
+                await desmarcarComoExecutado(t[0]);
+                await desmarcarComoExecutado(t[1]);
+            } catch (e) {
+                console.error('Erro ao limpar estado ambíguo do toggle ' + t[0] + ':', e);
+            }
+        } else {
+            _resetarBotao(t[0], t[2]);
+            _resetarBotao(t[1], t[3]);
+            // Estado inicial: reverter DESABILITADO (nada para reverter ainda)
+            var btnReverter = document.getElementById('btn-' + t[1]);
+            if (btnReverter) {
+                btnReverter.textContent = btnReverter.getAttribute('data-texto-original') || t[3];
+                btnReverter.style.backgroundColor = '';
+                btnReverter.style.cursor = 'not-allowed';
+                btnReverter.disabled = true;
+                btnReverter.style.opacity = '0.5';
+            }
+        }
+    }
 
     // --- Limpeza, kernels, GRUB: sempre clicáveis ---
     ['limpeza-sistema', 'listar-kernels', 'remover-kernel', 'grub-aplicar-recomendado', 'grub-restaurar-padrao'].forEach(function(id) {
@@ -1174,14 +1163,13 @@ async function restaurarEstadoSessao() {
         var textoOriginal = btnRemoverKernel.getAttribute('data-texto-original') || btnRemoverKernel.textContent;
         btnRemoverKernel.textContent = textoOriginal;
         btnRemoverKernel.style.opacity = '1';
-        btnRemoverKernel.style.backgroundColor = '#ef4444';
         btnRemoverKernel.style.cursor = 'pointer';
     }
 
     var btnLimpeza = document.getElementById('btn-limpeza-sistema');
     if (btnLimpeza) {
         btnLimpeza.textContent = _t('sessoes.ajustes-manutencao.btn_limpeza', 'Executar Limpeza');
-        btnLimpeza.style.backgroundColor = 'var(--accent, #3c67e3)';
+        btnLimpeza.style.backgroundColor = '';
     }
 }
 

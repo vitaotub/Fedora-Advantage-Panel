@@ -18,57 +18,92 @@ que exibe a seção da versão atual dentro do FOF, na sessão **Sobre o FOF**.
 
 ---
 
-## v1.0.0-10012026
+## v1.0.0-10012026.a
 
-### 🖥️ Nova sessão: Virtualização
+Atualização focada em **padronização visual**, **correções de bugs** e **segurança**.
+Nenhuma mudança quebra compatibilidade com a versão anterior.
 
-Nova sessão **Virtualização** (posição 10), entre Waydroid e Diagnóstico. Reúne as três principais ferramentas de virtualização para Fedora:
+### 🎨 Padronização visual dos botões
 
-- **QEMU/KVM + virt-manager** — stack nativa, mais performática. Instala QEMU, libvirt e virt-manager, habilita o serviço do sistema e adiciona o usuário ao grupo `libvirt`.
-- **VirtualBox** — interface familiar para quem vem do Windows. Instala `VirtualBox` e o módulo de kernel `akmod-VirtualBox`, que recompila automaticamente a cada kernel novo (requer RPM Fusion).
-- **GNOME Boxes** — interface simplificada para iniciantes. Usa QEMU/KVM por baixo.
+Todo o esquema de cores dos botões do FOF foi redesenhado para ter significado
+semântico consistente em todas as 14 sessões:
 
-Cada ferramenta tem três botões:
+- **Azul** — ação principal (instalar, aplicar, atualizar, detectar, configurar, ativar). É a cor da grande maioria dos botões.
+- **Verde** — abrir aplicativo (botões "Abrir X", que aparecem apenas após a instalação).
+- **Vermelho** — remover, reverter, desinstalar, desativar.
+- **Vermelho com borda tracejada** — ações irreversíveis (Desinstalar FOF, Remover repositório Fedora Flatpak, Remover Waydroid completamente).
 
-- **Instalar** — executa a instalação.
-- **Remover** — começa desabilitado, habilita após o install. Remove o software e suas dependências, mas **não toca nas VMs do usuário** (dados em `/var/lib/libvirt/images` e na pasta do VirtualBox permanecem intactos).
-- **Abrir** — aparece apenas após o install. Abre via `gtk-launch`, como se o usuário clicasse no atalho do menu do Fedora.
+Classes obsoletas removidas do CSS: `.ativo`, `.roxo`, `.laranja`, `.azul-claro`,
+`.verde-escuro`, `.cinza`. Botão cinza agora significa **exclusivamente** botão
+desabilitado (aplicado automaticamente por `:disabled`).
 
-### 🟩 NVIDIA — detecção de geração e painel informativo
+Corrige também a percepção de "cores trocadas" no toggle de Overclock (AMD): o
+botão **Desativar** agora fica vermelho quando habilitado (antes ficava cinza e
+se confundia com o estado desabilitado).
 
-A seção NVIDIA foi reformulada com foco em segurança e transparência:
+### 🐛 Correções
 
-- **Detecção de geração de GPU** — o FOF lê o modelo via `lspci` e escolhe automaticamente a série correta: `akmod-nvidia-390xx` (Fermi), `akmod-nvidia-470xx` (Kepler), `akmod-nvidia-580xx` (Maxwell/Pascal) ou `akmod-nvidia` (Turing+). Instalar a série errada resultava em tela preta após reboot — a detecção evita esse problema.
-- **Painel de detecção** — novo painel informativo mostra o modelo da GPU, o driver recomendado e a série. Se nenhuma GPU NVIDIA for detectada, o painel exibe um aviso e o botão de instalar fica desabilitado.
-- **Botões install/revert/open** — par consistente como nas outras sessões. O botão **Reverter pro nouveau** começa desabilitado e só habilita após o install. O botão **Abrir nvidia-settings** aparece apenas quando o driver está instalado.
-- **Modesetting também protegido** — os botões de ativar/desativar `nvidia-drm.modeset=1` ficam desabilitados quando não há GPU NVIDIA detectada (o parâmetro é exclusivo de GPU NVIDIA física).
-- **Abort claro quando não há GPU** — se o usuário clicar em Instalar mesmo assim, o comando shell aborta com mensagem clara antes de tocar no `dnf`.
+- **Badge de atualização** — o botão no canto superior direito do cartão de versão agora mostra apenas o ícone (uma seta de download dentro de um círculo), sem texto, sobreposto ao campo da versão. Antes, o texto "Atualizar" esticava o badge horizontalmente e quebrava o layout.
+- **Toast de notificação** — o toast que aparece no canto superior direito não empurra mais o conteúdo da página para a esquerda. Agora é um overlay full-viewport com `pointer-events: none` no container.
+- **Deep-link `guiado.html?session=X`** — abrir uma sessão específica via URL com query string funcionava apenas no primeiro carregamento. Agora qualquer `?session=<id>` abre a sessão correta.
+- **Crash ao clicar no badge de atualização** — o `POST /executar` chamava `_podeExecutar(idComando)` e `procederComExecucao(...)` **fora** do `req.on('end', ...)`. Sem o body lido, `idComando` era `undefined`, o Node lançava `ReferenceError` e o servidor morria. Corrigido — toda a lógica roda dentro do `req.on('end')`, depois do `JSON.parse`.
+- **`Ctrl+C` não matava processos filhos** — ao fechar o servidor durante um `dnf upgrade`, o processo continuava rodando como órfão. Agora o `server.js` rastreia os filhos com `_processosAtivos` e os mata em grupo no `SIGINT`, usando `detached: true` no `spawn`/`exec` + `process.kill(-pid, 'SIGTERM')`.
+- **Buffer SSE entre execuções** — uma segunda execução do mesmo `idComando` em menos de 10 segundos recebia o replay da primeira. Agora o buffer é limpo no início de cada `POST /executar`.
+- **Tela preta no carregamento de sessão** — quando `guiado.html` disparava dois carregamentos concorrentes, a race condition deixava o container em branco. Agora existe um token de geração que cancela carregamentos antigos.
+- **Notas de hardware não traduzidas** — os textos descritivos dos cartões de detecção (GPU, Wi-Fi, Ethernet) estavam hardcoded em pt-BR. Agora são lidos do `hardware_map.json` via `notesKey`, com traduções completas em EN e ES.
+- **POST duplicado em `/progress`** — cada comando bem-sucedido disparava dois POSTs para `/progress`. Agora dispara apenas um.
+- **"✅ Nada a remover" do Waydroid em pt-BR** — o texto agora é traduzido (EN: "Nothing to remove"; ES: "Nada que eliminar").
+- **Endpoint `/kernel-atual`** — a sessão de Ajustes e Manutenção parseava o log compartilhado para descobrir o kernel atual, o que era frágil se o usuário clicasse em outro botão ao mesmo tempo. Agora existe um endpoint dedicado.
 
-### 🐛 Corrigido
+### 🔒 Segurança
 
-- **Painel de detecção NVIDIA não traduzia.** Os textos do painel estavam hardcoded em pt-BR, sem passar por `tOr`. Agora usam as chaves i18n corretas (EN/ES).
-- **Botão de instalar driver NVIDIA aceitava instalação em máquinas sem GPU NVIDIA.** A versão anterior caía num `else` que instalava `akmod-nvidia` mesmo quando nenhuma GPU era detectada. Corrigido com abort explícito.
-- **Extras CUDA só são instalados na série principal.** As séries legadas (390xx, 470xx, 580xx) não têm pacotes `xorg-x11-drv-nvidia-XXX-cuda` no RPM Fusion. O driver base dessas séries já cobre NVENC/NVDEC.
+- **Regex de encadeamento de shell endurecida** — a validação `_CARACTERES_ENCADEAMENTO` agora cobre `&` como operador de background (sem afetar `2>&1`), quebras de linha e `<(…)` / `>(…)`. Sem isso, comandos como `rpm -q kernel\nrm -rf ~` passavam pela whitelist sem autenticação.
+- **Scripts temporários de autenticação com modo `0o700`** — antes eram criados com `0o755` (leitura por qualquer usuário em `/tmp`). `pkexec`/`kdesu` rodam como root e leem sem problema.
+- **`rpm -q` com nome de pacote quotado** — evita problemas caso o `hardware_map.json` seja editado manualmente.
 
-### 📝 Documentação
+### 🌐 i18n
 
-- READMEs atualizados para refletir as **14 sessões** (antes 13).
-- Nova seção **Virtualização** na tabela de sessões.
-- `iniciar_fof.sh --help` menciona 14 sessões.
-- `install.sh` verifica `virtualizacao.html` na instalação e no `--update`.
-- Log de boot do servidor menciona 14 sessões dinâmicas.
-- Placeholders "1 de 13" / "1/13" em `guiado.html` atualizados para "14".
+Novas chaves em `locales/en.json` e `locales/es.json`:
+- `comum.status_pacote` (barra de progresso real de pacotes do DNF)
+- `comum.badge_atualizar`, `comum.badge_atualizando`, `comum.badge_ja_atualizando`
+- `sessoes.dispositivos-perifericos.btn_driver_reverter`
+- `sessoes.dispositivos-perifericos.driver_atual`
+- `sessoes.dispositivos-perifericos.notes.*` (6 chaves)
+- `sessoes.waydroid.nada_remover`
+
+Removidas chaves mortas: `comum.loading_generico`, `comum.nao_configurado`.
+
+A versão do FOF agora é injetada no HTML pelo `server.js` no `<head>` — elimina
+a constante `FALLBACK_VERSION` hardcoded no `i18n.js`.
+
+### ⚡ Desempenho
+
+- **Leitor de saída da autenticação** lê apenas o delta do arquivo desde o último tick (antes lia o arquivo inteiro a cada 500ms).
+- **Contador global de sessões** é memoizado com invalidação explícita (antes re-varria as 14 sessões e ~300 comandos a cada atualização).
+- **`_construirIdsValidos`** memoizado (era reconstruído a cada limpeza de órfãos).
+- **Branch de "comando complexo" removido** de `executarComandoComStream`. O `spawn(..., { shell: '/bin/bash' })` já suportava `|`, `&&`, `;`, redirecionamentos e streaming — o `exec` buffereava tudo.
+
+### 🧹 Limpeza interna
+
+- Removidas 6 variantes de cor obsoletas do `style.css`.
+- Removido `SESSOES_ORDEM` do `script.js` (redundante com `SESSOES_PRINCIPAIS`).
+- Removida a branch morta `isPulado(sessaoId)` de `getStatusSessao`.
+- Helpers de toggle consolidados: `_marcarBotaoConcluido`, `_resetarBotao`, `_resetarIrmao` (antes duplicados em `hardware.html` e `dispositivos-perifericos.html`) agora vivem só em `script.js`.
+- `iniciar_fof.sh --help` menciona "14 sessões" (antes dizia 13).
+- `install.sh`: `git pull --ff-only` em vez de `git pull origin main`; `npm install --omit=dev`; remoção de logs em `/tmp` sem `sudo rm -f` global.
+- `producao-multimidia.html`: removido `2>/dev/null` do comando `akmod-v4l2loopback` (o erro agora fica visível no log).
 
 ---
 
-### Como adicionar uma versão nova
+## Como adicionar uma versão nova
 
 Ao lançar uma versão nova:
 
 1. Atualize o campo `version` no `package.json` (ex.: `"1.0.0-10022026"`).
-2. Atualize `FALLBACK_VERSION` no `i18n.js`.
-3. Substitua o conteúdo deste arquivo pela seção da nova versão, mantendo apenas ela. O histórico das versões anteriores fica disponível nas releases do GitHub.
-4. Use `###` (três hashes) para subseções dentro de uma versão. Um `##` no meio da seção encerra a captura do parser e o resto é descartado.
-5. Crie a tag/release no GitHub com o mesmo nome.
+2. Substitua o conteúdo deste arquivo pela seção da nova versão, mantendo apenas ela. O histórico das versões anteriores fica disponível nas releases do GitHub.
+3. Use `###` (três hashes) para subseções dentro de uma versão. Um `##` no meio da seção encerra a captura do parser e o resto é descartado.
+4. Crie a tag/release no GitHub com o mesmo nome.
 
-Se o cabeçalho não bater exatamente com o `version` do `package.json`, o FOF não encontrará a seção correspondente e mostrará apenas o link para o changelog completo no GitHub.
+Se o cabeçalho não bater exatamente com o `version` do `package.json`, o FOF não
+encontrará a seção correspondente e mostrará apenas o link para o changelog
+completo no GitHub.

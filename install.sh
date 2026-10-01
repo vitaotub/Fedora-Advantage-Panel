@@ -404,7 +404,7 @@ mkdir -p "$BIN_DIR"
 if [ -d "$INSTALL_DIR/.git" ]; then
 print_info "Atualizando repositório existente..."
 cd "$INSTALL_DIR"
-git pull origin main
+git pull --ff-only
 else
 print_info "Clonando repositório..."
 git clone "$REPO_URL" "$INSTALL_DIR"
@@ -412,7 +412,9 @@ cd "$INSTALL_DIR"
 fi
 
 print_step "Instalando dependências do Node.js..."
-if ! npm install --no-audit --no-fund --silent; then
+# --omit=dev evita instalar nodemon (devDependency), que o FOF
+# não usa em runtime.
+if ! npm install --omit=dev --no-audit --no-fund --silent; then
 print_error "Falha ao instalar dependências"
 exit 1
 fi
@@ -623,10 +625,6 @@ sudo rm -f /tmp/fof-out-*.log 2>/dev/null || true
 fi
 fi
 
-# Logs genéricos (rede de segurança)
-rm -f /tmp/fof-*.log 2>/dev/null || true
-sudo rm -f /tmp/fof-*.log 2>/dev/null || true
-
 print_success "Logs temporários removidos"
 
 # ─── 7. Limpeza de PATH nos rc files ────────────────────────
@@ -683,7 +681,10 @@ cd "$INSTALL_DIR"
 # comportamento do save.
 git stash push -m "Backup automático antes da atualização" 2>/dev/null || true
 
-if ! git pull origin main; then
+# --ff-only usa o upstream configurado (origin/main por padrão) e
+# recusa merge commits. Se o upstream não estiver setado, falha
+# com mensagem clara em vez de instalar uma versão quebrada.
+if ! git pull --ff-only; then
 print_error "Falha ao atualizar"
 exit 1
 fi
@@ -697,7 +698,7 @@ git stash pop 2>/dev/null || true
 limpar_arquivos_antigos
 
 print_step "Atualizando dependências do Node.js..."
-if ! npm install --no-audit --no-fund --silent; then
+if ! npm install --omit=dev --no-audit --no-fund --silent; then
 print_warning "Falha ao atualizar dependências, continuando..."
 fi
 

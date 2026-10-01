@@ -1,7 +1,7 @@
 {
     "_meta": {
         "description": "Mapa de hardware do FOF. Associa IDs de dispositivo (PCI/USB) a pacotes e repositórios. PRs bem-vindos em github.com/vitaotek/Fedora-Only-Fans.",
-        "format_version": "1.0",
+        "format_version": "1.1",
         "notes": "Este arquivo é lido em runtime pelo endpoint /hardware-scan do server.js. Alterações aqui afetam a sessão 'Dispositivos e Periféricos'."
     },
 
@@ -12,28 +12,32 @@
             "detection": "nvidia-detect",
             "packages": ["akmod-nvidia"],
             "repo_required": "rpmfusion-nonfree",
-            "notes": "Requer RPM Fusion nonfree. O FOF tenta usar nvidia-detect para identificar a geração exata e sugerir o pacote correto (akmod-nvidia, akmod-nvidia-470xx ou akmod-nvidia-390xx)."
+            "notes": "Requer RPM Fusion nonfree. O FOF tenta usar nvidia-detect para identificar a geração exata e sugerir o pacote correto (akmod-nvidia, akmod-nvidia-470xx ou akmod-nvidia-390xx).",
+            "notesKey": "sessoes.dispositivos-perifericos.notes.nvidia"
         },
         "1002": {
             "name": "AMD/ATI",
             "category": "gpu",
             "packages": ["mesa-va-drivers-freeworld"],
             "repo_required": "rpmfusion-free",
-            "notes": "Aceleração de vídeo por hardware (VA-API) em GPUs AMD. O Mesa padrão do Fedora tem esse suporte bloqueado por licenciamento."
+            "notes": "Aceleração de vídeo por hardware (VA-API) em GPUs AMD. O Mesa padrão do Fedora tem esse suporte bloqueado por licenciamento.",
+            "notesKey": "sessoes.dispositivos-perifericos.notes.amd_gpu"
         },
         "1022": {
             "name": "AMD (APU)",
             "category": "gpu",
             "packages": ["mesa-va-drivers-freeworld"],
             "repo_required": "rpmfusion-free",
-            "notes": "APUs AMD com gráficos integrados (Ryzen com Radeon Vega ou RDNA)."
+            "notes": "APUs AMD com gráficos integrados (Ryzen com Radeon Vega ou RDNA).",
+            "notesKey": "sessoes.dispositivos-perifericos.notes.amd_apu"
         },
         "8086": {
             "name": "Intel Corporation",
             "category": "gpu",
             "packages": ["intel-media-driver"],
             "repo_required": "fedora",
-            "notes": "Aceleração de vídeo em iGPUs Intel Skylake (6ª geração) ou mais recentes. Chips mais antigos (Haswell ou anteriores) usam o driver i965, já presente no Fedora."
+            "notes": "Aceleração de vídeo em iGPUs Intel Skylake (6ª geração) ou mais recentes. Chips mais antigos (Haswell ou anteriores) usam o driver i965, já presente no Fedora.",
+            "notesKey": "sessoes.dispositivos-perifericos.notes.intel_gpu"
         },
         "14e4": {
             "name": "Broadcom Inc.",
@@ -41,7 +45,8 @@
             "packages": ["akmod-wl"],
             "repo_required": "rpmfusion-nonfree",
             "conflict_check": ["brcmfmac", "b43", "bcma"],
-            "notes": "Só instale se o driver open-source (brcmfmac/b43) não funcionar. akmod-wl conflita com eles e pode derrubar o Wi-Fi que já funcionava."
+            "notes": "Só instale se o driver open-source (brcmfmac/b43) não funcionar. akmod-wl conflita com eles e pode derrubar o Wi-Fi que já funcionava.",
+            "notesKey": "sessoes.dispositivos-perifericos.notes.broadcom_wifi"
         },
         "10ec": {
             "name": "Realtek Semiconductor",
@@ -49,7 +54,8 @@
             "packages": ["akmod-r8168"],
             "repo_required": "rpmfusion-nonfree",
             "conflict_check": ["r8169"],
-            "notes": "Driver alternativo para placas Ethernet Realtek. O driver padrão (r8169) funciona na maioria dos casos — só instale akmod-r8168 se o cabo não for reconhecido."
+            "notes": "Driver alternativo para placas Ethernet Realtek. O driver padrão (r8169) funciona na maioria dos casos — só instale akmod-r8168 se o cabo não for reconhecido.",
+            "notesKey": "sessoes.dispositivos-perifericos.notes.realtek_ethernet"
         }
     },
 

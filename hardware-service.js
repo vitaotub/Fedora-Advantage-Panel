@@ -54,7 +54,10 @@ function _lerMapa() {
 
 async function _pacoteInstalado(pkg) {
     if (!pkg) return false;
-    var r = await _exec('rpm -q ' + pkg + ' 2>/dev/null');
+    // Defensivo: os nomes vêm de hardware_map.json (constantes),
+    // mas quotar evita problemas caso o JSON seja editado.
+    var pkgSeguro = String(pkg).replace(/'/g, "'\\''");
+    var r = await _exec("rpm -q '" + pkgSeguro + "' 2>/dev/null");
     if (!r.ok) return false;
     // rpm -q retorna exit 0 apenas se o pacote está instalado.
     // Se não estiver, r.ok é false. Redundância de segurança:
@@ -207,6 +210,7 @@ async function scanHardware() {
                 repo_required: vendor.repo_required || null,
                 copr: null,
                 notes: vendor.notes || null,
+                notes_key: vendor.notesKey || null,
                 needs_secure_boot_disabled: parsed.vendor_id === '10de'
             };
         }));
@@ -254,6 +258,7 @@ async function scanHardware() {
                 repo_required: null,
                 copr: dev.copr || null,
                 notes: dev.notes || null,
+                notes_key: dev.notesKey || null,
                 needs_secure_boot_disabled: false
             };
         }));

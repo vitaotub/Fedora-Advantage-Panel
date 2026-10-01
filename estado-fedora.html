@@ -168,7 +168,7 @@ data-i18n="sessoes.estado-fedora.btn_selinux_troubleshoot">
 </div>
 
 <div class="grupo-botoes">
-<button class="btn-executar verde"
+<button class="btn-executar"
 onclick="executarSetroubleshootInstall()"
 data-comando="selinux-setroubleshoot-install"
 data-logbox="log-sessao-estado-fedora"
@@ -262,11 +262,6 @@ data-i18n="sessoes.estado-fedora.btn_selinux_gui_open">
 // ============================================================
 // SESSÃO 12: FEDORA
 // ============================================================
-//
-// Sessão majoritariamente informativa. Todos os comandos de
-// leitura são executados como usuário (não exigem sudo) exceto
-// onde explicitamente indicado. A sessão é resiliente: se um
-// comando falhar, o painel mostra o erro e continua funcional.
 
 function _t(chave, fallback) {
 return (typeof tOr === 'function') ? tOr(chave, fallback) : fallback;
@@ -499,10 +494,6 @@ resultadoEl.innerHTML =
 // ============================================================
 // SELINUX — STATUS
 // ============================================================
-//
-// Usa o endpoint /system-info (que já retorna `selinux` e
-// `selinux_modo`) em vez de parsear o output do SSE. É mais
-// confiável e funciona mesmo se o SSE estiver lento.
 
 async function verificarSelinuxStatus() {
 var resultadoEl = document.getElementById('diag-selinux-status');
@@ -521,8 +512,6 @@ logBox.scrollTop = logBox.scrollHeight;
 
 var sys = await _fetchJSON('/system-info');
 
-// `selinux` = "Enforcing" | "Permissive" | "Disabled" | "Desconhecido"
-// `selinux_modo` = modo configurado em /etc/selinux/config
 var modo = (sys && sys.selinux) ? String(sys.selinux) : '—';
 var modoConfig = (sys && sys.selinux_modo) ? String(sys.selinux_modo) : '—';
 
@@ -623,11 +612,6 @@ await executarComandoGenerico(idComando, comando, _t('sessoes.estado-fedora.btn_
 // ============================================================
 // GERENCIADOR SELINUX (GUI)
 // ============================================================
-//
-// O pacote policycoreutils-gui instala o `system-config-selinux`,
-// que é a interface gráfica oficial do SELinux no Fedora. Ele
-// permite ver e alterar booleans, contextos de arquivo, portas,
-// usuários, etc.
 
 async function executarSelinuxGUIInstall() {
 var idComando = 'selinux-gui-install';
@@ -638,9 +622,6 @@ _atualizarBotaoAbrir('selinux-gui-install', 'btn-abrir-selinux-gui');
 }
 
 function abrirSelinuxGUI() {
-// system-config-selinux precisa de root para modificar; abrir
-// via gtk-launch funciona para visualizar. O app pedirá senha
-// se o usuário tentar alterar algo.
 abrirFerramentaExterna('gtk-launch system-config-selinux 2>/dev/null &', 'selinux-gui-install', 'Gerenciador SELinux');
 }
 

@@ -2,7 +2,7 @@
 
 **🌐 Idioma:** [Português (BR)](README.md) | [English](README.en.md) | Español
 
-![Versión](https://img.shields.io/badge/Versi%C3%B3n-v1.0.0--10012026-orange?style=flat-square)
+![Versión](https://img.shields.io/badge/Versi%C3%B3n-v1.0.0--10012026.a-orange?style=flat-square)
 ![Fedora](https://img.shields.io/badge/Fedora-44+-294172?style=flat-square&logo=fedora)
 ![Licencia](https://img.shields.io/badge/Licencia-GPL--3.0-green?style=flat-square)
 ![Idiomas](https://img.shields.io/badge/Idiomas-PT--BR%20%7C%20EN%20%7C%20ES-3c67e3?style=flat-square)
@@ -65,6 +65,7 @@ Cada botón recuerda su propio estado. Cerrar y reabrir FOF siempre muestra exac
 - **Multiidioma** — PT-BR, EN, ES con cambio en tiempo real
 - **Registros en tiempo real** vía SSE, expandidos por defecto
 - **Estructura visual consistente** — cada sesión comienza con una tarjeta de información, y los acordeones de contenido están colapsados por defecto
+- **Esquema de colores semántico** — azul para acción, verde para abrir app, rojo para revertir, rojo discontinuo para acciones irreversibles
 - **Icono de desinstalar** al lado de cada app Flatpak instalada
 - **Detección de Flatpak eliminado externamente**
 - **Detección automática de hardware** — endpoint `/hardware-scan` cruza IDs PCI/USB con `hardware_map.json`
@@ -178,7 +179,7 @@ FOF es agnóstico al escritorio — fue construido para funcionar en cualquier e
 
 - Autenticación vía **pkexec/kdesu**
 - **Whitelist** de comandos de solo lectura sin autenticación
-- **Rechazo de encadenamiento de shell** en comandos sin auth
+- **Rechazo de encadenamiento de shell** en comandos sin auth (`;`, `` ` ``, `|`, `$(`, `&&`, `&` aislado, saltos de línea, `<(`/`>(`)
 - **Sanitización** de entrada y validación de `idComando`
 - **Rate limiting** de 1.5s por `idComando`
 - **Rotación automática de registros** (7 días en `/tmp/fof-*.log`)
@@ -189,14 +190,18 @@ FOF es agnóstico al escritorio — fue construido para funcionar en cualquier e
 
 El historial completo está disponible en las [releases de GitHub](https://github.com/vitaotek/Fedora-Only-Fans/releases). FOF también muestra el changelog de la versión actual dentro de la sesión **Acerca de FOF**, cargado dinámicamente del `CHANGELOG.md`.
 
-### v1.0.0-10012026 (Actual) 🚧
+### v1.0.0-10012026.a (Actual) 🚧
 
-- **Nueva sesión Virtualización** (posición 10), entre Waydroid y Diagnóstico. Reúne QEMU/KVM + virt-manager, VirtualBox y GNOME Boxes. Cada herramienta tiene botones separados de Instalar, Eliminar (solo se habilita tras instalar) y Abrir (solo aparece tras instalar).
-- **NVIDIA con detección de generación** — FOF lee el modelo de la GPU vía `lspci` y elige automáticamente la serie correcta: `akmod-nvidia-390xx` (Fermi), `akmod-nvidia-470xx` (Kepler), `akmod-nvidia-580xx` (Maxwell/Pascal) o `akmod-nvidia` (Turing+).
-- **Panel de detección NVIDIA** — muestra el modelo de la GPU, el controlador recomendado y la serie. En máquinas sin GPU NVIDIA, muestra un aviso y deshabilita los botones.
-- **Modesetting NVIDIA protegido** — los botones de activar/desactivar `nvidia-drm.modeset=1` se deshabilitan cuando no se detecta ninguna GPU NVIDIA.
-- **Correcciones de i18n** — el panel de detección NVIDIA ahora traduce correctamente en EN/ES.
-- **Corrección de seguridad** — el comando de instalar el controlador NVIDIA ya no se instala en máquinas sin GPU NVIDIA (antes, caía en un `else` e instalaba el controlador por error).
+Actualización enfocada en estandarización visual, correcciones de errores y seguridad.
+
+- **Esquema de colores semántico en todos los botones** — azul para acción principal, verde para "abrir aplicación", rojo para eliminar/revertir, rojo con borde discontinuo para acciones irreversibles. Elimina la confusión previa entre "botón deshabilitado" (gris) y "botón de revertir" (también gris).
+- **Badge de actualización compacto** — muestra solo el icono (flecha de descarga), superpuesto a la tarjeta de versión, sin romper el diseño.
+- **Toast de notificación superpuesto** — ya no empuja el contenido de la página.
+- **Correcciones en `server.js`** — deep-link `guiado.html?session=X` ya no devuelve 404; `POST /executar` ya no derriba el servidor; `Ctrl+C` mata el árbol de procesos (`dnf` ya no queda huérfano); buffer SSE limpiado entre ejecuciones; scripts temporales con modo `0o700`; regex de encadenamiento endurecida.
+- **Race condition de pantalla negra** en `guiado.html` corregida con token de generación.
+- **Notas de las tarjetas de hardware ahora traducidas** en EN y ES.
+- **Nuevo endpoint `/kernel-atual`** — la eliminación de kernel ya no depende de parsear el log compartido.
+- **Logs internos leídos por delta** — menos I/O en comandos largos.
 
 ---
 
@@ -224,8 +229,8 @@ El orden de visualización viene de la posición de la entrada en el array `SESS
 ## 🏷️ Cómo publicar una versión
 
 1. Edita `package.json` → `"version": "1.0.0-<NUEVA>"`
-2. Edita `i18n.js` → `FALLBACK_VERSION = '1.0.0-<NUEVA>'`
-3. Reemplaza `CHANGELOG.md` con la sección de la nueva versión (el historial completo queda en las releases de GitHub)
+2. Reemplaza `CHANGELOG.md` con la sección de la nueva versión (el historial completo queda en las releases de GitHub)
+3. Actualiza el badge de versión en los tres READMEs (`README.md`, `README.en.md`, `README.es.md`)
 4. Crea el tag/release en GitHub con el mismo nombre
 
 ---

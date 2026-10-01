@@ -34,7 +34,7 @@ Stack de virtualização nativa do Linux. Roda máquinas virtuais com aceleraç�
 ℹ️ <strong>Sobre permissões:</strong> seu usuário é adicionado ao grupo <code>libvirt</code> para gerenciar VMs sem precisar de senha em cada ação. O grupo só entra em vigor após <strong>logout/login</strong> — até lá, o virt-manager vai pedir a senha de administrador ao abrir.
 </div>
 <div class="botoes-flex">
-<button class="btn-executar verde"
+<button class="btn-executar"
 onclick="executarQemuKvm()"
 data-comando="qemu-kvm-install"
 data-logbox="log-sessao-virtualizacao"
@@ -42,7 +42,7 @@ id="btn-qemu-kvm-install"
 data-i18n="sessoes.virtualizacao.btn_qemu">
 📦 Instalar QEMU/KVM
 </button>
-<button class="btn-executar cinza"
+<button class="btn-executar vermelho"
 onclick="executarQemuKvmRemove()"
 data-comando="qemu-kvm-remove"
 data-logbox="log-sessao-virtualizacao"
@@ -90,7 +90,7 @@ id="btn-virtualbox-install"
 data-i18n="sessoes.virtualizacao.btn_virtualbox">
 📦 Instalar VirtualBox
 </button>
-<button class="btn-executar cinza"
+<button class="btn-executar vermelho"
 onclick="executarVirtualBoxRemove()"
 data-comando="virtualbox-remove"
 data-logbox="log-sessao-virtualizacao"
@@ -138,7 +138,7 @@ id="btn-gnome-boxes-install"
 data-i18n="sessoes.virtualizacao.btn_boxes">
 📦 Instalar GNOME Boxes
 </button>
-<button class="btn-executar cinza"
+<button class="btn-executar vermelho"
 onclick="executarGnomeBoxesRemove()"
 data-comando="gnome-boxes-remove"
 data-logbox="log-sessao-virtualizacao"

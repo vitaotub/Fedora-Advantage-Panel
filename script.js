@@ -18,7 +18,9 @@
  *
  * VERIFICAÇÃO DE ATUALIZAÇÕES: no boot, o FOF consulta a API do GitHub
  * para saber se há uma versão mais recente publicada. Se houver, um
- * badge "⬆️" aparece ao lado do número da versão. Cache de 12h.
+ * badge "Atualizar" aparece ao lado do número da versão. O clique
+ * dispara a atualização direto (POST /executar), sem navegação. Cache
+ * de 12h.
  *
  * VERIFICAÇÃO DE FLATPAKS REMOVIDOS: no boot e a cada sessão carregada,
  * o FOF consulta /flatpak-installed e desmarca qualquer comando que
@@ -76,6 +78,12 @@ async function carregarVersaoServidor() {
             I18N.aplicarTraducoes();
         }
     }
+
+    // Notifica consumidores (sobre-fof.html) que a versão já está
+    // disponível. Substitui o polling de 100ms que existia antes.
+    document.dispatchEvent(new CustomEvent('fof-versao-pronta', {
+        detail: { versao: FOF_VERSION }
+    }));
 
     console.log('🚀 Fedora Only Fans v' + (FOF_VERSION || '?') + ' - Script compartilhado carregado!');
 }
@@ -153,6 +161,113 @@ function temAtualizacao(versaoLocal, versaoRemota) {
     return remota > local;
 }
 
+// ============================================================
+// DISPARO DIRETO DA ATUALIZAÇÃO (a partir do badge)
+// ============================================================
+//
+// O badge de "atualização disponível" antes navegava para
+// guiado.html?session=sobre-fof. Em alguns casos isso causava uma
+// tela preta (race entre dois carregamentos de sessão). Agora o
+// clique dispara o `POST /executar` direto, sem navegação.
+
+var _atualizacaoEmAndamento = false;
+
+async function _dispararAtualizacaoFOF() {
+    if (_atualizacaoEmAndamento) {
+        mostrarToast(
+            _t('comum.badge_ja_atualizando', '⏳ Atualização já em andamento...'),
+                     'info', 4000
+        );
+        return;
+    }
+
+    var confirmMsg = _t('sessoes.sobre-fof.atualizar_confirmar',
+                        '🔄 Deseja atualizar o Fedora Only Fans para a versão mais recente?\n\n' +
+                        'Isso irá baixar e instalar a última versão do GitHub.');
+    if (!confirm(confirmMsg)) return;
+
+    _atualizacaoEmAndamento = true;
+
+    mostrarToast(
+        _t('comum.badge_atualizando',
+           '🔄 Atualizando FOF... Acompanhe o progresso em Sobre o FOF.'),
+           'success', 8000
+    );
+
+    var es = null;
+    var finalizado = false;
+
+    function _finalizar(sucesso) {
+        if (finalizado) return;
+        finalizado = true;
+        _atualizacaoEmAndamento = false;
+        if (es) {
+            try { es.close(); } catch (e) {}
+            es = null;
+        }
+        if (sucesso === true) {
+            mostrarToast(
+                _t('sessoes.sobre-fof.atualizar_popup_concluido',
+                   '✅ Atualização concluída! Feche e reabra o FOF.').split('\n')[0],
+                         'success', 10000
+            );
+        } else if (sucesso === false) {
+            mostrarToast(
+                _t('comum.status_falha', '❌ Falha na execução'),
+                         'error', 8000
+            );
+        }
+        // sucesso === null → timeout silencioso, sem toast
+    }
+
+    try {
+        var r = await fetch(API_URL + '/executar', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                comando: 'bash <(curl -s https://raw.githubusercontent.com/vitaotek/Fedora-Only-Fans/main/install.sh) --update',
+                                 idComando: 'atualizar-fof'
+            })
+        });
+
+        if (!r.ok) {
+            mostrarToast(
+                _tVars('comum.erro_http', '❌ Erro HTTP: {status}', { status: r.status }),
+                         'error', 6000
+            );
+            _finalizar(null);
+            return;
+        }
+
+        // Conecta ao SSE para saber quando o comando termina.
+        es = new EventSource(API_URL + '/stream?id=atualizar-fof');
+        es.onmessage = function(event) {
+            try {
+                var dados = JSON.parse(event.data);
+                if (dados.tipo === 'end') {
+                    _finalizar(dados.sucesso !== false);
+                }
+            } catch (e) { /* ignora payload não-JSON */ }
+        };
+        es.onerror = function() {
+            // Se a conexão SSE cair (servidor reiniciando durante o
+            // próprio update), libera o flag. Não mostramos toast de
+            // erro porque o comando pode ter terminado com sucesso.
+            _finalizar(null);
+        };
+
+        // Rede de segurança: se em 5min nada aconteceu, destrava.
+        setTimeout(function() { _finalizar(null); }, 5 * 60 * 1000);
+
+    } catch (err) {
+        mostrarToast(
+            _tVars('comum.erro_conexao', '❌ Erro de conexão: {msg}', { msg: err.message }),
+                     'error', 6000
+        );
+        _atualizacaoEmAndamento = false;
+    }
+}
+
 async function mostrarBadgeSeHouverAtualizacao() {
     var versaoRemota = await verificarAtualizacoes();
     if (!versaoRemota) return;
@@ -175,20 +290,39 @@ async function mostrarBadgeSeHouverAtualizacao() {
         if (!parent) return;
         if (parent.querySelector('.badge-atualizacao')) return;
 
-        var badge = document.createElement('a');
+        var badgeTxt = _t('comum.atualizacao_disponivel_titulo',
+                          'Nova versão disponível! Clique para atualizar.');
+
+        var badge = document.createElement('button');
+        badge.type = 'button';
         badge.className = 'badge-atualizacao';
-        badge.href = 'guiado.html?session=sobre-fof';
+        badge.title = badgeTxt;
+        badge.setAttribute('aria-label', badgeTxt);
         badge.setAttribute('data-i18n-title', 'comum.atualizacao_disponivel_titulo');
         badge.setAttribute('data-i18n-aria-label', 'comum.atualizacao_disponivel_titulo');
-        badge.title = _t('comum.atualizacao_disponivel_titulo', 'Nova versão disponível! Clique para atualizar.');
-        badge.setAttribute('aria-label', badge.title);
-        badge.textContent = '⬆️';
+
+        badge.innerHTML =
+        '<svg class="badge-atualizacao-icon" viewBox="0 0 24 24" aria-hidden="true">' +
+        '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>' +
+        '<polyline points="7 10 12 15 17 10"/>' +
+        '<line x1="12" y1="15" x2="12" y2="3"/>' +
+        '</svg>';
+
+        badge.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            _dispararAtualizacaoFOF();
+        });
 
         parent.insertBefore(badge, el.nextSibling);
     });
 
     console.log('⬆️ Atualização disponível: ' + versaoLocal + ' → ' + versaoRemota);
 }
+
+// Expõe globalmente para o sobre-fof.html reutilizar a lógica de
+// atualização (mesma confirmação + toast + rate-limit).
+window._dispararAtualizacaoFOF = _dispararAtualizacaoFOF;
 
 // ============================================================
 // i18n HELPER LOCAL
@@ -313,17 +447,31 @@ function notificarNativo(titulo, corpo) {
 // ============================================================
 // BARRA DE PROGRESSO GLOBAL
 // ============================================================
+//
+// -1 significa "inválido, recalcular". Qualquer transição de estado
+// (marcar/desmarcar) chama _invalidarContadorSessoes().
+
+var _contadorSessoesConcluidas = -1;
+
+function _invalidarContadorSessoes() {
+    _contadorSessoesConcluidas = -1;
+}
 
 function _atualizarProgressoGlobal() {
     var el = document.getElementById('progresso-global');
     if (!el) return;
     var total = SESSOES_PRINCIPAIS.length;
-    var concluidas = 0;
-    for (var i = 0; i < SESSOES_PRINCIPAIS.length; i++) {
-        if (getStatusSessao(SESSOES_PRINCIPAIS[i]) === 'executado') concluidas++;
+
+    if (_contadorSessoesConcluidas < 0) {
+        var cont = 0;
+        for (var i = 0; i < SESSOES_PRINCIPAIS.length; i++) {
+            if (getStatusSessao(SESSOES_PRINCIPAIS[i]) === 'executado') cont++;
+        }
+        _contadorSessoesConcluidas = cont;
     }
-    el.innerHTML = '<span class="numero">' + concluidas + '</span>/' + total;
-    el.title = concluidas + ' de ' + total + ' sessões concluídas';
+
+    el.innerHTML = '<span class="numero">' + _contadorSessoesConcluidas + '</span>/' + total;
+    el.title = _contadorSessoesConcluidas + ' de ' + total + ' sessões concluídas';
 }
 
 // ============================================================
@@ -469,12 +617,6 @@ var SESSOES = [
         },
 
         // --- Drivers de hardware (estado real via rpm -q) ---
-        // NOTA: os drivers com repo separado (openrazer, xpadneo) NÃO ficam
-        // sempreClicavel — são gerenciados por aplicarEstadoItemCompleto.
-        // Só os drivers PCI sem repo (nvidia, amd-vaapi, intel-media,
-        // realtek-r8168) ficam sempreClicavel, porque a UI é re-construída
-        // a cada scan (os cards são gerados dinamicamente, com botões
-        // próprios, fora do registrarEstadoSessao).
         'driver-nvidia-install': { sempreClicavel: true, textoConcluido: '✅ Driver NVIDIA instalado' },
         'driver-nvidia-remove': { sempreClicavel: true },
         'driver-amd-vaapi-install': { sempreClicavel: true, textoConcluido: '✅ VA-API AMD instalado' },
@@ -485,10 +627,6 @@ var SESSOES = [
         'driver-realtek-r8168-remove': { sempreClicavel: true },
 
         // --- Drivers da comunidade (repo + pacote) ---
-        // Estes IDs formam o par principal de cada item. O "reverter"
-        // não tem estado próprio — é consequência do "instalar" e do
-        // "ativar repo". Ver aplicarEstadoItemCompleto() em
-        // dispositivos-perifericos.html.
         'copr-openrazer-enable': {
             textoConcluido: '✅ Repositório ativado',
             textoConcluidoKey: 'sessoes.dispositivos-perifericos.btn_repo_ativado'
@@ -497,10 +635,6 @@ var SESSOES = [
             textoConcluido: '✅ Pacote instalado',
             textoConcluidoKey: 'sessoes.dispositivos-perifericos.btn_pacote_instalado'
         },
-        // O remove é sempre clicável porque pode ser executado
-        // múltiplas vezes (reverter → reinstalar → reverter).
-        // aplicarEstadoItemCompleto() decide quando ele fica ativo
-        // baseado no estado do install, não do próprio remove.
         'driver-openrazer-remove': {
             sempreClicavel: true,
             textoConcluido: '✅ Removido',
@@ -924,7 +1058,6 @@ var SESSOES = [
 }
 ];
 
-var SESSOES_ORDEM = SESSOES.map(function(s) { return s.id; });
 var SESSOES_PRINCIPAIS = SESSOES.map(function(s) { return s.id; });
 
 // ============================================================
@@ -935,13 +1068,20 @@ var SESSOES_PRINCIPAIS = SESSOES.map(function(s) { return s.id; });
 // SESSOES. Usado por `_limparIdsOrfaos()` para remover do progresso
 // qualquer entrada que não exista mais (sessões renomeadas,
 // comandos removidos, etc.).
+//
+// Memoizado: SESSOES é constante em runtime, então o Set só é
+// construído uma vez por carregamento de página.
+
+var _idsValidosCache = null;
 
 function _construirIdsValidos() {
+    if (_idsValidosCache) return _idsValidosCache;
     var set = new Set();
     for (var i = 0; i < SESSOES.length; i++) {
         var comandos = SESSOES[i].comandos || {};
         Object.keys(comandos).forEach(function(id) { set.add(id); });
     }
+    _idsValidosCache = set;
     return set;
 }
 
@@ -1201,8 +1341,9 @@ var SESSAO_COMANDOS = SESSOES.reduce(function(mapa, sessao) {
     return mapa;
 }, {});
 
+// `pulados` guarda IDs de comando, não de sessão — nenhum ponto do
+// projeto grava o ID da sessão. A branch antiga era código morto.
 function getStatusSessao(sessaoId) {
-    if (isPulado(sessaoId)) return 'pulado';
     const comandos = SESSAO_COMANDOS[sessaoId] || [];
     if (comandos.length > 0 && comandos.every(id => isExecutado(id))) {
         return 'executado';
@@ -1215,6 +1356,7 @@ async function marcarComoExecutado(idComando) {
     if (!progress.executados.includes(idComando)) {
         progress.executados.push(idComando);
         await saveProgress(progress);
+        _invalidarContadorSessoes();
         _atualizarProgressoGlobal();
     }
 }
@@ -1224,6 +1366,7 @@ async function marcarComoPulado(idComando) {
     if (!progress.pulados.includes(idComando)) {
         progress.pulados.push(idComando);
         await saveProgress(progress);
+        _invalidarContadorSessoes();
         _atualizarProgressoGlobal();
     }
 }
@@ -1232,6 +1375,7 @@ async function desmarcarComoExecutado(idComando) {
     const progress = await getProgress();
     progress.executados = progress.executados.filter(id => id !== idComando);
     await saveProgress(progress);
+    _invalidarContadorSessoes();
     _atualizarProgressoGlobal();
 }
 
@@ -1239,6 +1383,7 @@ async function desmarcarComoPulado(idComando) {
     const progress = await getProgress();
     progress.pulados = progress.pulados.filter(id => id !== idComando);
     await saveProgress(progress);
+    _invalidarContadorSessoes();
     _atualizarProgressoGlobal();
 }
 
@@ -1573,6 +1718,24 @@ function aplicarEstadoToggle(idInstall, idRevert) {
     }
 }
 
+/**
+ * Marca um botão one-shot como concluído, reaplicando o estado
+ * persistido do progresso. Usado por restaurarEstadoSessao() de
+ * sessões que têm botões sem par "install/revert".
+ *
+ * Para pares install/revert, use aplicarEstadoToggle().
+ */
+function _marcarBotaoConcluido(idComando) {
+    var btn = document.getElementById('btn-' + idComando);
+    if (!btn) return;
+    _corOriginalDoBotao(btn);
+    btn.textContent = getTextoAposExecucao(idComando);
+    btn.style.backgroundColor = '#4b5563';
+    btn.style.cursor = 'default';
+    btn.disabled = true;
+    btn.style.opacity = '1';
+}
+
 function restaurarBotaoAposExecucao(idComando, sucesso) {
     const botoes = obterBotoesPorId(idComando);
     const btnExecutar = botoes.btnExecutar;
@@ -1604,7 +1767,9 @@ function restaurarBotaoAposExecucao(idComando, sucesso) {
             btnReverter.disabled = false;
         }
 
-        marcarComoExecutado(idComando);
+        // marcarComoExecutado() já foi chamado por completarProgresso()
+        // antes de restaurarBotaoAposExecucao(). Chamar aqui também
+        // fazia um POST /progress extra por comando.
     } else {
         btnExecutar.textContent = _textoOriginalTraduzido(btnExecutar);
         btnExecutar.style.backgroundColor = corOriginal || 'var(--accent, #3c67e3)';

@@ -2,7 +2,7 @@
 
 **🌐 Language:** [Português (BR)](README.md) | English | [Español](README.es.md)
 
-![Version](https://img.shields.io/badge/Version-v1.0.0--10012026-orange?style=flat-square)
+![Version](https://img.shields.io/badge/Version-v1.0.0--10012026.a-orange?style=flat-square)
 ![Fedora](https://img.shields.io/badge/Fedora-44+-294172?style=flat-square&logo=fedora)
 ![License](https://img.shields.io/badge/License-GPL--3.0-green?style=flat-square)
 ![Languages](https://img.shields.io/badge/Languages-PT--BR%20%7C%20EN%20%7C%20ES-3c67e3?style=flat-square)
@@ -65,6 +65,7 @@ Each button remembers its own state. Closing and reopening FOF (or rebooting) al
 - **Multilingual** — PT-BR, EN, ES with real-time switching
 - **Real-time logs** via SSE, expanded by default
 - **Consistent visual structure** — every session starts with a session info card, and content accordions are collapsed by default
+- **Semantic color scheme** — blue for action, green for open app, red for revert, dashed red for irreversible actions
 - **Uninstall icon** next to each installed Flatpak app
 - **External Flatpak removal detection** — if the user deletes the app outside FOF, the button reverts to its initial state
 - **Automatic hardware detection** — `/hardware-scan` endpoint cross-references PCI/USB IDs with `hardware_map.json` and suggests drivers
@@ -178,7 +179,7 @@ FOF is desktop-agnostic — it was built to run on any Linux environment that fo
 
 - **pkexec/kdesu** authentication (never exposes passwords)
 - **Whitelist** of read-only commands without authentication (`rpm -q`, `uname -r`, `flatpak`, `systemctl --user`, `gtk-launch`)
-- **Chain rejection** in no-auth commands (`;`, `` ` ``, `|`, `$(`, `&&`)
+- **Chain rejection** in no-auth commands (`;`, `` ` ``, `|`, `$(`, `&&`, isolated `&`, newlines, `<(`/`>(`)
 - **Input sanitization** and `idComando` validation
 - **Rate limiting** 1.5s per `idComando`
 - **Automatic log rotation** (7 days in `/tmp/fof-*.log`)
@@ -189,14 +190,18 @@ FOF is desktop-agnostic — it was built to run on any Linux environment that fo
 
 The full history is available in the [GitHub releases](https://github.com/vitaotek/Fedora-Only-Fans/releases). FOF also displays the changelog for the current version inside the **About FOF** session, loaded dynamically from `CHANGELOG.md`.
 
-### v1.0.0-10012026 (Current) 🚧
+### v1.0.0-10012026.a (Current) 🚧
 
-- **New Virtualization session** (position 10), between Waydroid and Diagnostics. Brings together QEMU/KVM + virt-manager, VirtualBox and GNOME Boxes. Each tool has separate Install, Remove (only enabled after install) and Open (only appears after install) buttons.
-- **NVIDIA with generation detection** — FOF reads the GPU model via `lspci` and automatically picks the correct series: `akmod-nvidia-390xx` (Fermi), `akmod-nvidia-470xx` (Kepler), `akmod-nvidia-580xx` (Maxwell/Pascal) or `akmod-nvidia` (Turing+).
-- **NVIDIA detection panel** — shows the GPU model, the recommended driver and the series. On machines without an NVIDIA GPU, it shows a warning and disables the buttons.
-- **NVIDIA modesetting protected** — the enable/disable buttons for `nvidia-drm.modeset=1` are disabled when no NVIDIA GPU is detected.
-- **i18n fixes** — the NVIDIA detection panel now translates correctly in EN/ES.
-- **Security fix** — the NVIDIA driver install command no longer installs on machines without an NVIDIA GPU (it used to fall into an `else` and install the driver by mistake).
+Update focused on visual standardization, bug fixes, and security.
+
+- **Semantic color scheme across all buttons** — blue for main action, green for "open app", red for remove/revert, dashed red for irreversible actions. Eliminates the previous confusion between "disabled button" (gray) and "revert button" (also gray).
+- **Compact update badge** — shows only the icon (download arrow), overlapping the version card, without breaking layout.
+- **Overlaid notification toast** — no longer pushes page content aside.
+- **`server.js` fixes** — `guiado.html?session=X` deep link no longer returns 404; `POST /executar` no longer crashes the server; `Ctrl+C` kills the process tree (`dnf` no longer orphaned); SSE buffer cleared between runs; temp scripts with `0o700` mode; hardened chain regex.
+- **Black screen race condition** in `guiado.html` fixed with a generation token.
+- **Hardware card notes now translated** into EN and ES.
+- **New `/kernel-atual` endpoint** — kernel removal no longer depends on shared log parsing.
+- **Internal logs read by delta** — less I/O on long commands.
 
 ---
 
@@ -224,8 +229,8 @@ Display order comes from the position of the entry in the `SESSOES` array.
 ## 🏷️ How to release a version
 
 1. Edit `package.json` → `"version": "1.0.0-<NEW>"`
-2. Edit `i18n.js` → `FALLBACK_VERSION = '1.0.0-<NEW>'`
-3. Replace `CHANGELOG.md` with the new version's section (full history stays on GitHub releases)
+2. Replace `CHANGELOG.md` with the new version's section (full history stays on GitHub releases)
+3. Update the version badge in all three READMEs (`README.md`, `README.en.md`, `README.es.md`)
 4. Create the tag/release on GitHub with the same name
 
 ---

@@ -31,7 +31,7 @@
 
 <div class="botoes-flex">
 <div class="btn-flatpak-wrapper" style="display: inline-block;">
-<button class="btn-executar verde-escuro"
+<button class="btn-executar"
 onclick="executarOBSStudio()"
 data-comando="instalar-obs-studio"
 data-logbox="log-sessao-producao-multimidia"
@@ -131,7 +131,9 @@ async function executarEasyEffects() {
 
 async function executarOBSCam() {
     const idComando = 'obs-cam';
-    const comando = 'sudo dnf install akmod-v4l2loopback v4l-utils -y 2>/dev/null || sudo dnf install v4l2loopback v4l-utils -y';
+    // Sem 2>/dev/null: se o akmod falhar, o motivo fica visível no
+    // log. O `||` já garante o fallback para o pacote tradicional.
+    const comando = 'sudo dnf install akmod-v4l2loopback v4l-utils -y || sudo dnf install v4l2loopback v4l-utils -y';
     await executarComandoGenerico(idComando, comando, _t('sessoes.producao-multimidia.btn_ativar_cam', '🎥 Ativar Câmera Virtual'), mostrarBotaoDesinstalar);
 }
 

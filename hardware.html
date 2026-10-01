@@ -62,7 +62,7 @@ id="btn-vaapi-amd"
 data-i18n="sessoes.hardware.btn_vaapi_padrao">
 🚀 Instalação Padrão
 </button>
-<button class="btn-executar cinza"
+<button class="btn-executar"
 onclick="executarVaapiSwap()"
 data-comando="vaapi-swap"
 data-logbox="log-sessao-hardware"
@@ -150,7 +150,7 @@ data-i18n="sessoes.hardware.btn_abrir_lact">
 ⚠️ Requer reinicialização. Só ative se você sabe o que está fazendo — overclock mal configurado pode causar instabilidade.
 </div>
 <div class="botoes-flex">
-<button class="btn-executar laranja"
+<button class="btn-executar"
 onclick="executarOverclockAMD()"
 data-comando="amdgpu-overclock"
 data-logbox="log-sessao-hardware"
@@ -158,7 +158,7 @@ id="btn-amdgpu-overclock"
 data-i18n="sessoes.hardware.btn_overclock_on">
 ⚙️ Ativar Overclock
 </button>
-<button class="btn-executar cinza"
+<button class="btn-executar vermelho"
 onclick="executarOverclockRemoveAMD()"
 data-comando="amdgpu-overclock-remove"
 data-logbox="log-sessao-hardware"
@@ -208,7 +208,7 @@ Detecta a geração da sua GPU NVIDIA e instala automaticamente a série de driv
 </div>
 
 <div class="botoes-flex">
-<button class="btn-executar verde"
+<button class="btn-executar"
 onclick="executarNvidiaDriver()"
 data-comando="nvidia-driver-install"
 data-logbox="log-sessao-hardware"
@@ -216,7 +216,7 @@ id="btn-nvidia-driver-install"
 data-i18n="sessoes.hardware.btn_nvidia_driver">
 📦 Instalar Driver Nvidia
 </button>
-<button class="btn-executar cinza"
+<button class="btn-executar vermelho"
 onclick="executarNvidiaDriverRemove()"
 data-comando="nvidia-driver-remove"
 data-logbox="log-sessao-hardware"
@@ -258,7 +258,7 @@ id="btn-nvidia-modeset-on"
 data-i18n="sessoes.hardware.btn_modeset_on">
 ⚙️ Ativar modesetting
 </button>
-<button class="btn-executar cinza"
+<button class="btn-executar vermelho"
 onclick="executarNvidiaModesetRemove()"
 data-comando="nvidia-modeset-off"
 data-logbox="log-sessao-hardware"
@@ -323,44 +323,15 @@ data-i18n="sessoes.hardware.btn_intel_media_instalar">
 // ============================================================
 // SESSÃO 3: HARDWARE
 // ============================================================
+//
+// NOTA: este arquivo NÃO define mais helpers locais de toggle
+// (_marcarBotaoConcluido, _resetarBotao, _resetarIrmao). Essas
+// funções agora são globais em script.js — _marcarBotaoConcluido
+// e aplicarEstadoToggle. A consolidação evita três implementações
+// divergentes da mesma regra ("install feito → revert ativo").
 
 function _t(chave, fallback) {
     return (typeof tOr === 'function') ? tOr(chave, fallback) : fallback;
-}
-
-// ------------------------------------------------------------
-// Helpers de UI para os toggles
-// ------------------------------------------------------------
-
-function _marcarBotaoConcluido(idComando) {
-    var btn = document.getElementById('btn-' + idComando);
-    if (!btn) return;
-    _corOriginalDoBotao(btn);
-    btn.textContent = getTextoAposExecucao(idComando);
-    btn.style.backgroundColor = '#4b5563';
-    btn.style.cursor = 'default';
-    btn.disabled = true;
-    btn.style.opacity = '1';
-}
-
-function _resetarBotao(idComando, fallbackText) {
-    var btn = document.getElementById('btn-' + idComando);
-    if (!btn) return;
-    var original = btn.getAttribute('data-texto-original') || fallbackText;
-    btn.textContent = original;
-    btn.style.backgroundColor = '';
-    btn.style.cursor = 'pointer';
-    btn.disabled = false;
-    btn.style.opacity = '1';
-}
-
-async function _resetarIrmao(idIrmao, fallbackText) {
-    try {
-        await desmarcarComoExecutado(idIrmao);
-        _resetarBotao(idIrmao, fallbackText);
-    } catch (e) {
-        console.error('Erro ao limpar estado do botão irmão ' + idIrmao + ':', e);
-    }
 }
 
 // ------------------------------------------------------------
@@ -741,6 +712,8 @@ async function executarIntelMedia() {
 
 async function restaurarEstadoSessao() {
 
+    // Botões one-shot: reaplica o estado persistido.
+    // O texto final ("✅ ...") só aparece se o comando já foi executado.
     if (isExecutado('vulkan-amd')) {
         _marcarBotaoConcluido('vulkan-amd');
     }
@@ -760,37 +733,10 @@ async function restaurarEstadoSessao() {
         _marcarBotaoConcluido('lact-install');
     }
 
-    // Overclock — TOGGLE
-    var overclockOn = isExecutado('amdgpu-overclock');
-    var overclockOff = isExecutado('amdgpu-overclock-remove');
-    if (overclockOn && !overclockOff) {
-        _marcarBotaoConcluido('amdgpu-overclock');
-        _resetarBotao('amdgpu-overclock-remove', _t('sessoes.hardware.btn_overclock_off', '↩️ Desativar'));
-    } else if (overclockOff && !overclockOn) {
-        _marcarBotaoConcluido('amdgpu-overclock-remove');
-        _resetarBotao('amdgpu-overclock', _t('sessoes.hardware.btn_overclock_on', '⚙️ Ativar Overclock'));
-    } else if (overclockOn && overclockOff) {
-        _resetarBotao('amdgpu-overclock-remove', _t('sessoes.hardware.btn_overclock_off', '↩️ Desativar'));
-        _resetarBotao('amdgpu-overclock', _t('sessoes.hardware.btn_overclock_on', '⚙️ Ativar Overclock'));
-        try {
-            await desmarcarComoExecutado('amdgpu-overclock');
-            await desmarcarComoExecutado('amdgpu-overclock-remove');
-        } catch (e) {
-            console.error('Erro ao limpar estado ambíguo do overclock:', e);
-        }
-    } else {
-        // Nada marcado: ativar ativo, desativar DESABILITADO.
-        _resetarBotao('amdgpu-overclock', _t('sessoes.hardware.btn_overclock_on', '⚙️ Ativar Overclock'));
-        var btnDesativar = document.getElementById('btn-amdgpu-overclock-remove');
-        if (btnDesativar) {
-            btnDesativar.textContent = btnDesativar.getAttribute('data-texto-original') ||
-                _t('sessoes.hardware.btn_overclock_off', '↩️ Desativar');
-            btnDesativar.style.backgroundColor = '';
-            btnDesativar.style.cursor = 'not-allowed';
-            btnDesativar.disabled = true;
-            btnDesativar.style.opacity = '0.5';
-        }
-    }
+    // Overclock — par install/revert. aplicarEstadoToggle() é a
+    // fonte única de verdade desse estado (mesma função global do
+    // script.js usada por todas as sessões).
+    aplicarEstadoToggle('amdgpu-overclock', 'amdgpu-overclock-remove');
 
     // NVIDIA — a seção tem detecção própria (painel + estado dos
     // botões). Aplicar via _atualizarSecaoNvidia() garante que a UI
