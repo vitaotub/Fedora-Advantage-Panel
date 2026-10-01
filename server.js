@@ -1883,7 +1883,7 @@ server.listen(PORT, HOST, () => {
     console.log(` 📡 SSE: Ativo (logs em tempo real, com buffer de replay)`);
     console.log(` 📁 Arquivos estáticos: Ativo (HTML, CSS, JS, ícone)`);
     console.log(` 🌐 i18n: Ativo (locales em /locales/<lang>.json)`);
-    console.log(` 📄 Páginas: index.html, guiado.html + 13 sessões dinâmicas`);
+    console.log(` 📄 Páginas: index.html, guiado.html + 14 sessões dinâmicas`);
     console.log(` 📝 Changelog: /changelog (lê CHANGELOG.md)`);
     console.log(` 🔧 Comandos SEM autenticação: rpm -q, uname -r, gtk-launch, flatpak, systemctl --user, etc`);
     console.log(` 🎯 Comandos USER-CONTEXT (env ajustado): ${COMANDOS_USER_CONTEXT.join(', ')}`);

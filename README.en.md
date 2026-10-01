@@ -2,7 +2,7 @@
 
 **🌐 Language:** [Português (BR)](README.md) | English | [Español](README.es.md)
 
-![Version](https://img.shields.io/badge/Version-v1.0.0--09302026-orange?style=flat-square)
+![Version](https://img.shields.io/badge/Version-v1.0.0--10012026-orange?style=flat-square)
 ![Fedora](https://img.shields.io/badge/Fedora-44+-294172?style=flat-square&logo=fedora)
 ![License](https://img.shields.io/badge/License-GPL--3.0-green?style=flat-square)
 ![Languages](https://img.shields.io/badge/Languages-PT--BR%20%7C%20EN%20%7C%20ES-3c67e3?style=flat-square)
@@ -32,7 +32,7 @@ fof-compat                          # Launch (compatibility mode — older GPUs)
 
 **Fedora Only Fans (FOF)** is a visual automation panel for Fedora Linux. It turns a clean installation into a complete system — codecs, drivers, repositories, tools — through clicks, without opening the terminal.
 
-FOF has a **single entry point**: the **"Start"** button, which takes you through the 13 sessions step by step, in logical order. Each session groups related tasks, and progress is saved automatically.
+FOF has a **single entry point**: the **"Start"** button, which takes you through the 14 sessions step by step, in logical order. Each session groups related tasks, and progress is saved automatically.
 
 Each button remembers its own state. Closing and reopening FOF (or rebooting) always shows exactly where you stopped.
 
@@ -44,17 +44,18 @@ Each button remembers its own state. Closing and reopening FOF (or rebooting) al
 |---|---|---|
 | 1 | 🚀 First Steps | Full system upgrade + RPM Fusion + Flathub + optional removal of the Fedora Flatpak repository |
 | 2 | 🔤 Codecs and Compatibility | Multimedia codecs, commercial DVD playback (tainted), Microsoft fonts |
-| 3 | 🖥️ Hardware | AMD (Vulkan/Mesa/RADV, VA-API, CoreCtrl, LACT, overclock), NVIDIA (proprietary driver, modeset), Intel (Intel Media Driver) |
+| 3 | 🖥️ Hardware | AMD (Vulkan/Mesa/RADV, VA-API, CoreCtrl, LACT, overclock), NVIDIA (generation detection + proprietary driver + modeset), Intel (Intel Media Driver) |
 | 4 | 🔌 Devices and Peripherals | Automatic hardware detection, additional firmware, community COPRs (Razer/OpenRazer, xpadneo, Broadcom), controllers (input group, udev rules) |
 | 5 | 🎬 Media Production | OBS Studio, virtual camera, EasyEffects |
 | 6 | 📦 Recommended Apps | ~45 apps via Flatpak (productivity, media, graphics, internet, video/audio editing, cloud) |
 | 7 | 🏠 Home and Office | CUPS, Samba/LocalSend/Warpinator, KeePassXC, Okular+Tesseract (PDF+OCR) |
 | 8 | 🎮 Gaming | Launchers, Wine/Proton/NTSYNC, GameMode/MangoHud/Gamescope, ProtonUp-Qt, vkBasalt, emulators, anti-cheat awareness |
 | 9 | 📱 Waydroid | Android on Linux via COPR, GApps, libndk/libhoudini, Magisk, Widevine, SmartDock |
-| 10 | 📊 Diagnostics | System panel, top processes, partitions, GSmartControl, CoolerControl, journal, tunings status |
-| 11 | 🛠️ Tunings and Maintenance | Performance tunings, audio adjustments, DNF, locale, dual-boot, cleanup, kernels, GRUB |
-| 12 | 🐧 Fedora Status | Version, Atomic/Silverblue detection, SELinux (status, AVCs, setroubleshoot, GUI) |
-| 13 | 📖 About FOF | About the project + update/uninstall FOF + dynamic changelog |
+| 10 | 🖥️ Virtualization | QEMU/KVM + virt-manager, VirtualBox (with akmod-VirtualBox) and GNOME Boxes |
+| 11 | 📊 Diagnostics | System panel, top processes, partitions, GSmartControl, CoolerControl, journal, tunings status |
+| 12 | 🛠️ Tunings and Maintenance | Performance tunings, audio adjustments, DNF, locale, dual-boot, cleanup, kernels, GRUB |
+| 13 | 🐧 Fedora Status | Version, Atomic/Silverblue detection, SELinux (status, AVCs, setroubleshoot, GUI) |
+| 14 | 📖 About FOF | About the project + update/uninstall FOF + dynamic changelog |
 
 ---
 
@@ -67,6 +68,7 @@ Each button remembers its own state. Closing and reopening FOF (or rebooting) al
 - **Uninstall icon** next to each installed Flatpak app
 - **External Flatpak removal detection** — if the user deletes the app outside FOF, the button reverts to its initial state
 - **Automatic hardware detection** — `/hardware-scan` endpoint cross-references PCI/USB IDs with `hardware_map.json` and suggests drivers
+- **NVIDIA GPU generation detection** — automatically picks the correct driver series (`akmod-nvidia`, `580xx`, `470xx` or `390xx`)
 - **Multi-desktop support** — works on GNOME, KDE, XFCE, Cinnamon, MATE, LXQt, LXDE, Budgie and tiling WMs. The startup terminal follows the detected desktop
 - **Consistent install/revert pairs** — the revert button starts disabled and only becomes clickable after the corresponding install runs
 - **Global progress bar** in the header (N/M sessions completed)
@@ -102,10 +104,11 @@ Fedora-Only-Fans/
 ├── casa-escritorio.html             # Session 7
 ├── gaming.html                      # Session 8
 ├── waydroid.html                    # Session 9
-├── diagnostico.html                 # Session 10
-├── ajustes-manutencao.html          # Session 11
-├── estado-fedora.html               # Session 12
-├── sobre-fof.html                   # Session 13
+├── virtualizacao.html               # Session 10
+├── diagnostico.html                 # Session 11
+├── ajustes-manutencao.html          # Session 12
+├── estado-fedora.html               # Session 13
+├── sobre-fof.html                   # Session 14
 ├── template-sessao.html             # Template for new sessions
 ├── CHANGELOG.md                     # Change history (read by FOF)
 ├── server.js                        # Node.js server + SSE + endpoints
@@ -186,17 +189,14 @@ FOF is desktop-agnostic — it was built to run on any Linux environment that fo
 
 The full history is available in the [GitHub releases](https://github.com/vitaotek/Fedora-Only-Fans/releases). FOF also displays the changelog for the current version inside the **About FOF** session, loaded dynamically from `CHANGELOG.md`.
 
-### v1.0.0-09302026 (Current) 🚧
+### v1.0.0-10012026 (Current) 🚧
 
-- **Visual standardization across sessions** — every session starts with a session info card (blue rectangle with ℹ️, always visible, no collapse toggle). All content accordions are collapsed by default.
-- **Session-wide notices** (affecting the whole session) now appear outside the accordions, prominently, right below the title.
-- **First Steps** — the three repository-related blocks (RPM Fusion, Flathub, Fedora Flatpak removal) were merged into a single accordion called **📦 Fedora Repositories**.
-- **Media Production** — the two blocks (OBS Studio and EasyEffects) were merged into a single thematic accordion.
-- **Waydroid** — the removal button was moved to the end of the session, renamed to "Undo Changes and Remove Completely", and now performs a complete cleanup (package, container, extras folder, venv, shortcuts, `/var/lib` data). Waydroid now survives closing FOF (started in its own session via `setsid -f`). The removal button is disabled when there's nothing to remove.
-- **Home and Office** — fixed the missing `.sessao-container` wrapper.
-- **Recommended Apps** — fixed six extra `</div>` tags that made the first block appear inside the session's main card.
-- **`python3-pyqt6` removed from `install.sh`** — now installed on demand by the Affinity Suite button.
-- **Removed `validar.sh`** and all references to it.
+- **New Virtualization session** (position 10), between Waydroid and Diagnostics. Brings together QEMU/KVM + virt-manager, VirtualBox and GNOME Boxes. Each tool has separate Install, Remove (only enabled after install) and Open (only appears after install) buttons.
+- **NVIDIA with generation detection** — FOF reads the GPU model via `lspci` and automatically picks the correct series: `akmod-nvidia-390xx` (Fermi), `akmod-nvidia-470xx` (Kepler), `akmod-nvidia-580xx` (Maxwell/Pascal) or `akmod-nvidia` (Turing+).
+- **NVIDIA detection panel** — shows the GPU model, the recommended driver and the series. On machines without an NVIDIA GPU, it shows a warning and disables the buttons.
+- **NVIDIA modesetting protected** — the enable/disable buttons for `nvidia-drm.modeset=1` are disabled when no NVIDIA GPU is detected.
+- **i18n fixes** — the NVIDIA detection panel now translates correctly in EN/ES.
+- **Security fix** — the NVIDIA driver install command no longer installs on machines without an NVIDIA GPU (it used to fall into an `else` and install the driver by mistake).
 
 ---
 

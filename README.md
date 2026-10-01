@@ -2,7 +2,7 @@
 
 **🌐 Idioma:** Português (BR) | [English](README.en.md) | [Español](README.es.md)
 
-![Versão](https://img.shields.io/badge/Vers%C3%A3o-v1.0.0--09302026-orange?style=flat-square)
+![Versão](https://img.shields.io/badge/Vers%C3%A3o-v1.0.0--10012026-orange?style=flat-square)
 ![Fedora](https://img.shields.io/badge/Fedora-44+-294172?style=flat-square&logo=fedora)
 ![Licença](https://img.shields.io/badge/Licen%C3%A7a-GPL--3.0-green?style=flat-square)
 ![Idiomas](https://img.shields.io/badge/Idiomas-PT--BR%20%7C%20EN%20%7C%20ES-3c67e3?style=flat-square)
@@ -32,7 +32,7 @@ fof-compat                          # Iniciar (modo compatibilidade — GPUs ant
 
 O **Fedora Only Fans (FOF)** é um painel de automação visual para o Fedora Linux. Transforma uma instalação limpa em um sistema completo — codecs, drivers, repositórios, ferramentas — através de cliques, sem abrir o terminal.
 
-O FOF tem **um único ponto de entrada**: o botão **"Iniciar"**, que leva você pelas 13 sessões passo a passo, na ordem lógica. Cada sessão agrupa tarefas relacionadas, e o progresso é salvo automaticamente.
+O FOF tem **um único ponto de entrada**: o botão **"Iniciar"**, que leva você pelas 14 sessões passo a passo, na ordem lógica. Cada sessão agrupa tarefas relacionadas, e o progresso é salvo automaticamente.
 
 Cada botão lembra seu próprio estado. Fechar e reabrir o FOF (ou reiniciar o computador) sempre mostra exatamente onde você parou.
 
@@ -44,17 +44,18 @@ Cada botão lembra seu próprio estado. Fechar e reabrir o FOF (ou reiniciar o c
 |---|---|---|
 | 1 | 🚀 Primeiros Passos | Atualização completa do sistema + RPM Fusion + Flathub + remoção opcional do repositório Fedora Flatpak |
 | 2 | 🔤 Codecs e Compatibilidade | Codecs multimídia, reprodução de DVD comercial (tainted), fontes Microsoft |
-| 3 | 🖥️ Hardware | AMD (Vulkan/Mesa/RADV, VA-API, CoreCtrl, LACT, overclock), NVIDIA (driver proprietário, modeset), Intel (Intel Media Driver) |
+| 3 | 🖥️ Hardware | AMD (Vulkan/Mesa/RADV, VA-API, CoreCtrl, LACT, overclock), NVIDIA (detecção de geração + driver proprietário + modeset), Intel (Intel Media Driver) |
 | 4 | 🔌 Dispositivos e Periféricos | Detecção automática de hardware, firmwares adicionais, COPRs de comunidade (Razer/OpenRazer, xpadneo, Broadcom), controles (grupo input, regras udev) |
 | 5 | 🎬 Produção Multimídia | OBS Studio, câmera virtual, EasyEffects |
 | 6 | 📦 Aplicativos Recomendados | ~45 apps via Flatpak (produtividade, mídia, gráficos, internet, edição de vídeo/áudio, nuvem) |
 | 7 | 🏠 Casa e Escritório | CUPS, Samba/LocalSend/Warpinator, KeePassXC, Okular+Tesseract (PDF+OCR) |
 | 8 | 🎮 Gaming | Launchers, Wine/Proton/NTSYNC, GameMode/MangoHud/Gamescope, ProtonUp-Qt, vkBasalt, emuladores, anti-cheat awareness |
 | 9 | 📱 Waydroid | Android no Linux via COPR, GApps, libndk/libhoudini, Magisk, Widevine, SmartDock |
-| 10 | 📊 Diagnóstico | Painel do sistema, top processos, partições, GSmartControl, CoolerControl, journal, status de otimizações |
-| 11 | 🛠️ Ajustes e Manutenção | Tunings de desempenho, ajustes de áudio, DNF, idioma, dual-boot, limpeza, kernels, GRUB |
-| 12 | 🐧 Estado do Fedora | Versão, detecção de Atomic/Silverblue, SELinux (status, AVCs, setroubleshoot, GUI) |
-| 13 | 📖 Sobre o FOF | Sobre o projeto + atualizar/desinstalar FOF + changelog dinâmico |
+| 10 | 🖥️ Virtualização | QEMU/KVM + virt-manager, VirtualBox (com akmod-VirtualBox) e GNOME Boxes |
+| 11 | 📊 Diagnóstico | Painel do sistema, top processos, partições, GSmartControl, CoolerControl, journal, status de otimizações |
+| 12 | 🛠️ Ajustes e Manutenção | Tunings de desempenho, ajustes de áudio, DNF, idioma, dual-boot, limpeza, kernels, GRUB |
+| 13 | 🐧 Estado do Fedora | Versão, detecção de Atomic/Silverblue, SELinux (status, AVCs, setroubleshoot, GUI) |
+| 14 | 📖 Sobre o FOF | Sobre o projeto + atualizar/desinstalar FOF + changelog dinâmico |
 
 ---
 
@@ -67,6 +68,7 @@ Cada botão lembra seu próprio estado. Fechar e reabrir o FOF (ou reiniciar o c
 - **Ícone de desinstalar** ao lado de cada app Flatpak instalado
 - **Detecção de Flatpak removido externamente** — se o usuário apagar o app por fora, o botão do FOF volta ao estado inicial
 - **Detecção automática de hardware** — endpoint `/hardware-scan` cruza IDs PCI/USB com `hardware_map.json` e sugere drivers
+- **Detecção de geração de GPU NVIDIA** — escolhe automaticamente a série correta (`akmod-nvidia`, `580xx`, `470xx` ou `390xx`)
 - **Suporte a múltiplos desktops** — funciona em GNOME, KDE, XFCE, Cinnamon, MATE, LXQt, LXDE, Budgie e tiling WMs. O terminal de inicialização segue o desktop detectado
 - **Pares install/revert consistentes** — o botão de reverter começa desabilitado e só fica clicável após o install correspondente
 - **Barra de progresso global** no header (N/M sessões concluídas)
@@ -102,10 +104,11 @@ Fedora-Only-Fans/
 ├── casa-escritorio.html             # Sessão 7
 ├── gaming.html                      # Sessão 8
 ├── waydroid.html                    # Sessão 9
-├── diagnostico.html                 # Sessão 10
-├── ajustes-manutencao.html          # Sessão 11
-├── estado-fedora.html               # Sessão 12
-├── sobre-fof.html                   # Sessão 13
+├── virtualizacao.html               # Sessão 10
+├── diagnostico.html                 # Sessão 11
+├── ajustes-manutencao.html          # Sessão 12
+├── estado-fedora.html               # Sessão 13
+├── sobre-fof.html                   # Sessão 14
 ├── template-sessao.html             # Molde para criar novas sessões
 ├── CHANGELOG.md                     # Histórico de mudanças (lido pelo FOF)
 ├── server.js                        # Servidor Node.js + SSE + endpoints
@@ -191,17 +194,14 @@ GNOME ou qualquer DE específico.
 
 O histórico completo das versões está nas [releases do GitHub](https://github.com/vitaotek/Fedora-Only-Fans/releases). O FOF também exibe o changelog da versão atual dentro da sessão **Sobre o FOF**, carregado dinamicamente do arquivo `CHANGELOG.md`.
 
-### v1.0.0-09302026 (Atual) 🚧
+### v1.0.0-10012026 (Atual) 🚧
 
-- **Padronização visual das sessões** — cada sessão começa com um card informativo contendo a descrição da sessão (retângulo azul com ℹ️, sempre visível, sem colapsar). Todos os acórdeãos de conteúdo ficam colapsados por padrão.
-- **Avisos de escopo amplo** (que afetam a sessão inteira) agora aparecem fora dos acórdeãos, em evidência, logo abaixo do título.
-- **Primeiros Passos** — os três blocos relacionados a repositórios (RPM Fusion, Flathub, remoção do Fedora Flatpak) foram unificados em um único acórdeão chamado **📦 Repositórios do Fedora**.
-- **Produção Multimídia** — os dois blocos (OBS Studio e EasyEffects) foram unificados em um acórdeão temático único.
-- **Waydroid** — botão de remoção movido para o fim da sessão, renomeado para "Desfazer Alterações e Remover Completamente", e agora faz limpeza completa (pacote, container, pasta de extras, venv, atalhos, dados em `/var/lib`). O Waydroid agora sobrevive ao fechamento do FOF (iniciado em sessão própria via `setsid -f`). O botão de remoção fica desabilitado quando não há nada a remover.
-- **Casa e Escritório** — corrigido o wrapper `.sessao-container` que estava faltando.
-- **Aplicativos Recomendados** — corrigidos seis `</div>` extras que faziam o primeiro bloco aparecer dentro do card principal.
-- **`python3-pyqt6` removido do `install.sh`** — agora é instalado sob demanda pelo botão da Suíte Affinity.
-- **Removido `validar.sh`** e todas as referências a ele.
+- **Nova sessão Virtualização** (posição 10), entre Waydroid e Diagnóstico. Reúne QEMU/KVM + virt-manager, VirtualBox e GNOME Boxes. Cada ferramenta tem botões separados de Instalar, Remover (habilita só após install) e Abrir (aparece só após install).
+- **NVIDIA com detecção de geração** — o FOF lê o modelo da GPU via `lspci` e escolhe automaticamente a série correta: `akmod-nvidia-390xx` (Fermi), `akmod-nvidia-470xx` (Kepler), `akmod-nvidia-580xx` (Maxwell/Pascal) ou `akmod-nvidia` (Turing+).
+- **Painel informativo de detecção NVIDIA** — mostra o modelo da GPU, o driver recomendado e a série. Em máquinas sem GPU NVIDIA, exibe aviso e desabilita os botões.
+- **Modesetting NVIDIA protegido** — os botões de ativar/desativar `nvidia-drm.modeset=1` ficam desabilitados quando não há GPU NVIDIA.
+- **Correções de i18n** — o painel de detecção NVIDIA agora traduz corretamente em EN/ES.
+- **Correção de segurança** — o comando de instalar o driver NVIDIA não instala mais em máquinas sem GPU NVIDIA (antes, caía num `else` e instalava o driver por engano).
 
 ---
 

@@ -451,6 +451,7 @@ verificar_arquivos() {
         "casa-escritorio.html"
         "gaming.html"
         "waydroid.html"
+        "virtualizacao.html"
         "diagnostico.html"
         "ajustes-manutencao.html"
         "estado-fedora.html"

@@ -18,51 +18,46 @@ que exibe a seção da versão atual dentro do FOF, na sessão **Sobre o FOF**.
 
 ---
 
-## v1.0.0-09302026
+## v1.0.0-10012026
 
-### 🎨 Padronização visual das sessões
+### 🖥️ Nova sessão: Virtualização
 
-Todas as 13 sessões agora seguem a mesma estrutura visual:
+Nova sessão **Virtualização** (posição 10), entre Waydroid e Diagnóstico. Reúne as três principais ferramentas de virtualização para Fedora:
 
-- Cada sessão começa com um **card principal** (retângulo azul com ícone ℹ️) contendo a descrição da sessão — sempre visível, sem seta de colapsar.
-- Todos os acórdeãos de conteúdo são exibidos **colapsados por padrão**, deixando ao usuário a decisão de expandir o que precisa.
-- Avisos que impactam a sessão inteira (ex.: Waydroid requer GPU AMD/Intel, painel do Diagnóstico é somente leitura) agora aparecem **fora** dos acórdeãos, em evidência, logo abaixo do título.
-- Avisos específicos a um elemento continuam dentro do respectivo acórdeão, próximos ao botão correspondente.
+- **QEMU/KVM + virt-manager** — stack nativa, mais performática. Instala QEMU, libvirt e virt-manager, habilita o serviço do sistema e adiciona o usuário ao grupo `libvirt`.
+- **VirtualBox** — interface familiar para quem vem do Windows. Instala `VirtualBox` e o módulo de kernel `akmod-VirtualBox`, que recompila automaticamente a cada kernel novo (requer RPM Fusion).
+- **GNOME Boxes** — interface simplificada para iniciantes. Usa QEMU/KVM por baixo.
 
-### 🚀 Primeiros Passos reorganizada
+Cada ferramenta tem três botões:
 
-- Os três blocos relacionados a repositórios (RPM Fusion, Flathub e remoção do repositório Fedora Flatpak) foram unificados em **um único acórdeão** chamado **📦 Repositórios do Fedora**.
-- O bloco de atualização do sistema permanece em acórdeão próprio.
+- **Instalar** — executa a instalação.
+- **Remover** — começa desabilitado, habilita após o install. Remove o software e suas dependências, mas **não toca nas VMs do usuário** (dados em `/var/lib/libvirt/images` e na pasta do VirtualBox permanecem intactos).
+- **Abrir** — aparece apenas após o install. Abre via `gtk-launch`, como se o usuário clicasse no atalho do menu do Fedora.
 
-### 🎬 Produção Multimídia reorganizada
+### 🟩 NVIDIA — detecção de geração e painel informativo
 
-- Os dois blocos (OBS Studio e EasyEffects) foram unificados em **um único acórdeão** temático chamado **🎬 Gravação, transmissão e áudio**.
+A seção NVIDIA foi reformulada com foco em segurança e transparência:
+
+- **Detecção de geração de GPU** — o FOF lê o modelo via `lspci` e escolhe automaticamente a série correta: `akmod-nvidia-390xx` (Fermi), `akmod-nvidia-470xx` (Kepler), `akmod-nvidia-580xx` (Maxwell/Pascal) ou `akmod-nvidia` (Turing+). Instalar a série errada resultava em tela preta após reboot — a detecção evita esse problema.
+- **Painel de detecção** — novo painel informativo mostra o modelo da GPU, o driver recomendado e a série. Se nenhuma GPU NVIDIA for detectada, o painel exibe um aviso e o botão de instalar fica desabilitado.
+- **Botões install/revert/open** — par consistente como nas outras sessões. O botão **Reverter pro nouveau** começa desabilitado e só habilita após o install. O botão **Abrir nvidia-settings** aparece apenas quando o driver está instalado.
+- **Modesetting também protegido** — os botões de ativar/desativar `nvidia-drm.modeset=1` ficam desabilitados quando não há GPU NVIDIA detectada (o parâmetro é exclusivo de GPU NVIDIA física).
+- **Abort claro quando não há GPU** — se o usuário clicar em Instalar mesmo assim, o comando shell aborta com mensagem clara antes de tocar no `dnf`.
 
 ### 🐛 Corrigido
 
-- **Sessão Casa e Escritório não tinha o wrapper `.sessao-container`.** Sem ele, o layout aparecia sem o card visual e o bloqueio de sessão durante execuções não funcionava. Corrigido.
-- **Sessão Aplicativos Recomendados tinha 6 `</div>` extras.** Um em cada bloco, o que fazia o primeiro bloco (Produtividade e Escritório) aparecer dentro do card principal da sessão. Corrigido.
-- **Log de boot do servidor dizia "12 sessões dinâmicas".** Corrigido para 13.
-- **Placeholders "1 de 12" / "1/12" em `guiado.html`.** Corrigidos para "1 de 13" / "1/13".
-
-### 📱 Waydroid — remoção completa e ciclo de vida independente
-
-- **Botão de remoção movido para o fim da sessão**, renomeado para **"Desfazer Alterações e Remover Completamente"**, dentro de um acórdeão dedicado.
-- **Remoção agora é completa:** remove o pacote, o container Android, a pasta de extras (`~/.local/share/fof-waydroid`), o venv Python, atalhos `.desktop` gerados pelo Waydroid e arquivos de dados em `/var/lib`.
-- **Correção de arquivos imutáveis:** antes de remover a pasta de extras, um `chattr -R -i` limpa atributos imutáveis que o `pip` ocasionalmente deixa em arquivos do venv — que faziam o `rm -rf` falhar silenciosamente.
-- **O Waydroid não fecha mais quando o FOF é fechado.** O comando de abertura agora usa `setsid -f`, que cria uma sessão independente para o Waydroid. Fechar a janela do FOF não dispara mais SIGHUP no Waydroid — mesmo comportamento de abrir pelo menu do Fedora.
-- **O botão de remoção agora reflete o estado real do sistema:** fica **desabilitado** ("✅ Nada a remover") quando não há pacote instalado nem resquícios no filesystem. O estado é consultado via novo campo `clean` do endpoint `/waydroid-status`.
-- **Detecção de "não instalado" agora é multilíngue.** Antes, o servidor só reconhecia a mensagem em inglês (`command not found`). Em Fedora com locale PT-BR, o bash responde `comando não encontrado`, o que fazia o servidor acreditar que o Waydroid ainda estava instalado. Corrigido — a detecção agora aceita ambas as mensagens e também o código de erro do processo.
-
-### 🧹 Outras correções
-
-- **`python3-pyqt6` removido do `install.sh`.** O pacote é dependência do instalador da Suíte Affinity, não do container nativo. Agora é instalado sob demanda pelo próprio botão "Abrir Instalador da Affinity", que verifica e instala antes de baixar o instalador.
-- **Removido `validar.sh`** (e todas as referências a ele no `Makefile` e nos READMEs). O alvo `make check` continua funcionando como alias de `make check-basico`.
+- **Painel de detecção NVIDIA não traduzia.** Os textos do painel estavam hardcoded em pt-BR, sem passar por `tOr`. Agora usam as chaves i18n corretas (EN/ES).
+- **Botão de instalar driver NVIDIA aceitava instalação em máquinas sem GPU NVIDIA.** A versão anterior caía num `else` que instalava `akmod-nvidia` mesmo quando nenhuma GPU era detectada. Corrigido com abort explícito.
+- **Extras CUDA só são instalados na série principal.** As séries legadas (390xx, 470xx, 580xx) não têm pacotes `xorg-x11-drv-nvidia-XXX-cuda` no RPM Fusion. O driver base dessas séries já cobre NVENC/NVDEC.
 
 ### 📝 Documentação
 
-- READMEs (PT, EN, ES) atualizados para refletir a versão atual e a estrutura de 13 sessões.
-- Cada README agora contém apenas a seção da versão atual — o histórico completo fica nas releases do GitHub.
+- READMEs atualizados para refletir as **14 sessões** (antes 13).
+- Nova seção **Virtualização** na tabela de sessões.
+- `iniciar_fof.sh --help` menciona 14 sessões.
+- `install.sh` verifica `virtualizacao.html` na instalação e no `--update`.
+- Log de boot do servidor menciona 14 sessões dinâmicas.
+- Placeholders "1 de 13" / "1/13" em `guiado.html` atualizados para "14".
 
 ---
 
@@ -70,7 +65,7 @@ Todas as 13 sessões agora seguem a mesma estrutura visual:
 
 Ao lançar uma versão nova:
 
-1. Atualize o campo `version` no `package.json` (ex.: `"1.0.0-10012026"`).
+1. Atualize o campo `version` no `package.json` (ex.: `"1.0.0-10022026"`).
 2. Atualize `FALLBACK_VERSION` no `i18n.js`.
 3. Substitua o conteúdo deste arquivo pela seção da nova versão, mantendo apenas ela. O histórico das versões anteriores fica disponível nas releases do GitHub.
 4. Use `###` (três hashes) para subseções dentro de uma versão. Um `##` no meio da seção encerra a captura do parser e o resto é descartado.

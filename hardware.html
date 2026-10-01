@@ -195,8 +195,19 @@ NVIDIA
 <div class="bloco-comando">
 <div class="comando-info">
 <h3 data-i18n="sessoes.hardware.nvidia_driver_titulo">Driver Proprietário Completo (CUDA + NVENC/NVDEC)</h3>
-<p data-i18n="sessoes.hardware.nvidia_driver_desc">Instala o akmod-nvidia (módulo recompilável a cada kernel novo) e os suplementos CUDA + bibliotecas NVENC/NVDEC para OBS, Kdenlive e encoding por hardware.</p>
-<div class="grupo-botoes">
+<p data-i18n-html="sessoes.hardware.nvidia_driver_desc">
+Detecta a geração da sua GPU NVIDIA e instala automaticamente a série de driver correta — <code>akmod-nvidia</code> para Turing e mais recentes, <code>akmod-nvidia-580xx</code> para Maxwell/Pascal, <code>akmod-nvidia-470xx</code> para Kepler e <code>akmod-nvidia-390xx</code> para Fermi. Inclui os suplementos CUDA + bibliotecas NVENC/NVDEC para OBS, Kdenlive e encoding por hardware.
+</p>
+<div class="info-extra" data-i18n-html="sessoes.hardware.nvidia_driver_info">
+ℹ️ <strong>Sobre a detecção:</strong> o FOF lê o modelo da GPU via <code>lspci</code> e escolhe o pacote correto. Instalar a série errada (por exemplo, <code>akmod-nvidia</code> numa GTX 750 Ti) resulta em tela preta após o reboot — esta detecção evita esse problema. Se nenhuma GPU NVIDIA for encontrada, o comando aborta com uma mensagem clara e nada é instalado.
+</div>
+
+<!-- Painel de detecção — preenchido por JS via /hardware-scan -->
+<div id="nvidia-detection-panel" class="bloco-info">
+<span style="color: var(--text-muted);">⏳ Detectando hardware...</span>
+</div>
+
+<div class="botoes-flex">
 <button class="btn-executar verde"
 onclick="executarNvidiaDriver()"
 data-comando="nvidia-driver-install"
@@ -205,18 +216,32 @@ id="btn-nvidia-driver-install"
 data-i18n="sessoes.hardware.btn_nvidia_driver">
 📦 Instalar Driver Nvidia
 </button>
-<button class="btn-reverter"
-onclick="reverterNvidiaDriver()"
-id="btn-reverter-nvidia-driver-install"
-style="display:none;"
+<button class="btn-executar cinza"
+onclick="executarNvidiaDriverRemove()"
+data-comando="nvidia-driver-remove"
+data-logbox="log-sessao-hardware"
+id="btn-nvidia-driver-remove"
 data-i18n="sessoes.hardware.btn_nvidia_reverter">
 ↩️ Reverter pro nouveau
+</button>
+<button class="btn-executar verde"
+style="display: none;"
+onclick="abrirNvidiaSettings()"
+data-comando="abrir-nvidia-settings"
+data-logbox="log-sessao-hardware"
+id="btn-abrir-nvidia-settings"
+data-i18n="sessoes.hardware.btn_abrir_nvidia_settings">
+🚀 Abrir nvidia-settings
 </button>
 </div>
 </div>
 <div class="progress-container" id="progress-nvidia-driver-install">
 <div class="progress-bar"><div class="progress-fill" id="progress-fill-nvidia-driver-install"></div></div>
 <div class="progress-text"><span class="status" id="progress-status-nvidia-driver-install">⏳ Iniciando...</span><span class="percentage" id="progress-percent-nvidia-driver-install">0%</span></div>
+</div>
+<div class="progress-container" id="progress-nvidia-driver-remove">
+<div class="progress-bar"><div class="progress-fill" id="progress-fill-nvidia-driver-remove"></div></div>
+<div class="progress-text"><span class="status" id="progress-status-nvidia-driver-remove">⏳ Iniciando...</span><span class="percentage" id="progress-percent-nvidia-driver-remove">0%</span></div>
 </div>
 </div>
 
@@ -441,21 +466,250 @@ async function executarOverclockRemoveAMD() {
 // NVIDIA
 // ------------------------------------------------------------
 
-async function executarNvidiaDriver() {
-    var idComando = 'nvidia-driver-install';
-    var comando = 'sudo dnf install -y akmod-nvidia xorg-x11-drv-nvidia-cuda xorg-x11-drv-nvidia-cuda-libs';
+// ------------------------------------------------------------
+// NVIDIA — detecção de GPU e escolha da série de driver
+// ------------------------------------------------------------
 
-    aguardarConclusaoReal(idComando, 1800000).then(function(sucesso) {
-        if (!sucesso) {
-            mostrarBotaoDesinstalar(idComando);
-        }
+function _escapeHTMLNvidia(s) {
+    if (s == null) return '';
+    return String(s).replace(/[&<>"']/g, function(c) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
     });
-
-    await executarComandoGenerico(idComando, comando, _t('sessoes.hardware.btn_nvidia_driver', '📦 Instalar Driver Nvidia'), mostrarBotaoDesinstalar);
 }
 
-function reverterNvidiaDriver() {
-    desinstalarPacote('nvidia-driver-install', 'sudo dnf remove -y akmod-nvidia xorg-x11-drv-nvidia* nvidia-settings xorg-x11-drv-nvidia-cuda && sudo dnf clean all && sudo dnf autoremove -y', 'Driver Nvidia');
+function _detectarSerieNvidia(modelo) {
+    // Mesma heurística do comando shell, mas em JS. As faixas:
+    //   - 390xx → Fermi (GeForce 400/500)
+    //   - 470xx → Kepler (GeForce 600/700, exceto GTX 750/750 Ti)
+    //   - 580xx → Maxwell/Pascal (GTX 750/750 Ti, GTX 9xx, GTX 10xx)
+    //   - akmod-nvidia → Turing+ (GTX 16xx, RTX 20xx+)
+    // O `\b` no fim evita que o regex case pedaços de números maiores
+    // (ex.: "650" dentro de "1650").
+    if (/\bgeforce\s+(gtx?\s*)?[45]\d{2}\b/i.test(modelo)) {
+        return { pkg: 'akmod-nvidia-390xx', serie: '390xx (Fermi)' };
+    }
+    if (/\bgtx\s*75\d\b/i.test(modelo)) {
+        return { pkg: 'akmod-nvidia-580xx', serie: '580xx (Maxwell)' };
+    }
+    if (/\bgeforce\s+(gtx?\s*)?[67]\d{2}\b/i.test(modelo)) {
+        return { pkg: 'akmod-nvidia-470xx', serie: '470xx (Kepler)' };
+    }
+    if (/\bgeforce\s+(gtx?\s*)?(9|10)\d{2}\b/i.test(modelo)) {
+        return { pkg: 'akmod-nvidia-580xx', serie: '580xx (Maxwell/Pascal)' };
+    }
+    return { pkg: 'akmod-nvidia', serie: '595+ (Turing ou mais recente)' };
+}
+
+async function _detectarGpuNvidia() {
+    try {
+        var r = await fetch(API_URL + '/hardware-scan', { cache: 'no-store' });
+        if (!r.ok) return { detected: false, rpmfusion: false };
+        var data = await r.json();
+
+        var rpmfusionOk = !!(data.repos && data.repos.rpmfusion_nonfree);
+        var gpus = (data.devices || []).filter(function(d) {
+            return d.device_id && d.device_id.indexOf('10de:') === 0;
+        });
+
+        if (gpus.length === 0) {
+            return { detected: false, rpmfusion: rpmfusionOk };
+        }
+
+        var gpu = gpus[0];
+        var modelo = (gpu.name || 'GPU NVIDIA').trim();
+        var info = _detectarSerieNvidia(modelo);
+
+        return {
+            detected: true,
+            rpmfusion: rpmfusionOk,
+            modelo: modelo,
+            pkg: info.pkg,
+            serie: info.serie
+        };
+    } catch (e) {
+        console.warn('[NVIDIA] Erro ao detectar GPU:', e.message);
+        return { detected: false, rpmfusion: false, error: e.message };
+    }
+}
+
+function _renderizarPanelNvidia(info) {
+    var panel = document.getElementById('nvidia-detection-panel');
+    if (!panel) return;
+
+    var installFeito = isExecutado('nvidia-driver-install');
+
+    if (!info.detected) {
+        var msgInstalado = installFeito
+            ? '<p style="margin-top: 0.5rem;">' + _t('sessoes.hardware.nvidia_panel_instalado_sem_gpu',
+                'Como o driver está marcado como instalado mas nenhuma GPU NVIDIA foi detectada, use o botão <strong>Reverter pro nouveau</strong> abaixo para limpar o sistema.') + '</p>'
+            : '';
+        panel.className = 'aviso-caixa';
+        panel.innerHTML =
+            '<strong>' + _t('sessoes.hardware.nvidia_panel_sem_gpu_titulo',
+                '⚠️ Nenhuma GPU NVIDIA detectada') + '</strong>' +
+            '<p style="margin-top: 0.4rem;">' + _t('sessoes.hardware.nvidia_panel_sem_gpu_desc',
+                'Este sistema não possui uma GPU física NVIDIA, então o driver proprietário não faz sentido aqui. O botão <strong>Instalar Driver Nvidia</strong> fica desabilitado.') + '</p>' +
+            msgInstalado;
+        return;
+    }
+
+    var rpmfusionAviso = info.rpmfusion
+        ? ''
+        : '<div class="aviso-caixa" style="margin-top: 0.75rem; font-size: 0.85rem;">' +
+          _t('sessoes.hardware.nvidia_panel_rpmfusion_aviso',
+            '⚠️ <strong>RPM Fusion Nonfree não está ativo.</strong> Ative-o na sessão <strong>Primeiros Passos</strong> antes de instalar o driver.') +
+          '</div>';
+
+    panel.className = 'bloco-info';
+    panel.innerHTML =
+        '<strong>' + _t('sessoes.hardware.nvidia_panel_titulo',
+            '🔍 Hardware detectado') + '</strong>' +
+        '<ul class="lista-info" style="margin-top: 0.5rem;">' +
+        '<li><span class="label">' + _t('sessoes.hardware.nvidia_panel_label_gpu',
+            'GPU') + '</span><span class="valor">' + _escapeHTMLNvidia(info.modelo) + '</span></li>' +
+        '<li><span class="label">' + _t('sessoes.hardware.nvidia_panel_label_driver',
+            'Driver recomendado') + '</span><span class="valor"><code>' + _escapeHTMLNvidia(info.pkg) + '</code></span></li>' +
+        '<li><span class="label">' + _t('sessoes.hardware.nvidia_panel_label_serie',
+            'Série') + '</span><span class="valor">' + _escapeHTMLNvidia(info.serie) + '</span></li>' +
+        '</ul>' +
+        rpmfusionAviso;
+}
+
+function _aplicarEstadoNvidia(info) {
+    // Toggle padrão install/revert
+    aplicarEstadoToggle('nvidia-driver-install', 'nvidia-driver-remove');
+
+    var installBtn = document.getElementById('btn-nvidia-driver-install');
+    var installFeito = isExecutado('nvidia-driver-install');
+
+    // Instalar desabilitado se não há GPU NVIDIA E o driver não foi
+    // instalado ainda (senão, o usuário precisa poder remover).
+    if (installBtn && !info.detected && !installFeito) {
+        installBtn.disabled = true;
+        installBtn.style.cursor = 'not-allowed';
+        installBtn.style.opacity = '0.5';
+        installBtn.title = 'Nenhuma GPU NVIDIA detectada neste sistema';
+    } else if (installBtn) {
+        installBtn.title = '';
+    }
+
+    // Botão "Abrir nvidia-settings": aparece apenas quando há GPU
+    // NVIDIA detectada E o driver está instalado.
+    var openBtn = document.getElementById('btn-abrir-nvidia-settings');
+    if (openBtn) {
+        openBtn.style.display = (installFeito && info.detected) ? '' : 'none';
+    }
+
+    // Modesetting (nvidia-drm.modeset=1): só faz sentido em sistemas
+    // com GPU NVIDIA. Em máquinas AMD/Intel, o parâmetro é inútil e
+    // só poluiria a linha de comando do kernel. Desabilita os dois
+    // botões quando não há GPU — mesma lógica do botão de instalar.
+    var modesetOn = document.getElementById('btn-nvidia-modeset-on');
+    var modesetOff = document.getElementById('btn-nvidia-modeset-off');
+
+    [modesetOn, modesetOff].forEach(function(btn) {
+        if (!btn) return;
+        if (!info.detected) {
+            btn.disabled = true;
+            btn.style.cursor = 'not-allowed';
+            btn.style.opacity = '0.5';
+            btn.title = 'Nenhuma GPU NVIDIA detectada neste sistema';
+        } else {
+            btn.disabled = false;
+            btn.style.cursor = 'pointer';
+            btn.style.opacity = '1';
+            btn.title = '';
+        }
+    });
+}
+
+async function _atualizarSecaoNvidia() {
+    var info = await _detectarGpuNvidia();
+    _renderizarPanelNvidia(info);
+    _aplicarEstadoNvidia(info);
+}
+
+// ------------------------------------------------------------
+// NVIDIA — instalar / remover / abrir
+// ------------------------------------------------------------
+
+async function executarNvidiaDriver() {
+    var idComando = 'nvidia-driver-install';
+
+    // Detecção em JS apenas para validar antes de executar. O
+    // comando shell detecta novamente por conta própria — a
+    // detecção em JS é a UX, o shell é a fonte da verdade.
+    var info = await _detectarGpuNvidia();
+    if (!info.detected) {
+        alert(_t('sessoes.hardware.nvidia_sem_gpu',
+            'Nenhuma GPU NVIDIA foi detectada neste sistema. O driver proprietário só é aplicável a GPUs NVIDIA físicas.'));
+        await _atualizarSecaoNvidia();
+        return;
+    }
+    if (!info.rpmfusion) {
+        alert(_t('sessoes.hardware.nvidia_sem_rpmfusion',
+            'RPM Fusion Nonfree não está ativo. Ative-o na sessão Primeiros Passos antes de instalar o driver.'));
+        return;
+    }
+
+    var comando =
+        'GPU_MODEL=$(lspci 2>/dev/null | grep -iE "nvidia.*(vga|3d|display)" | head -1); ' +
+        'if [ -z "$GPU_MODEL" ]; then ' +
+        '  echo "❌ Nenhuma GPU NVIDIA detectada. Abortando."; ' +
+        '  exit 1; ' +
+        'fi; ' +
+        'echo "🔍 GPU NVIDIA detectada: $GPU_MODEL"; ' +
+        'if echo "$GPU_MODEL" | grep -qiE "geforce (gtx? )?[45][0-9]{2}"; then GPU_PKG="akmod-nvidia-390xx"; SERIE="390xx (Fermi)"; ' +
+        'elif echo "$GPU_MODEL" | grep -qiE "gtx 75[0-9]"; then GPU_PKG="akmod-nvidia-580xx"; SERIE="580xx (Maxwell)"; ' +
+        'elif echo "$GPU_MODEL" | grep -qiE "geforce (gtx? )?[67][0-9]{2}"; then GPU_PKG="akmod-nvidia-470xx"; SERIE="470xx (Kepler)"; ' +
+        'elif echo "$GPU_MODEL" | grep -qiE "geforce (gtx? )?(9|10)[0-9]{2}"; then GPU_PKG="akmod-nvidia-580xx"; SERIE="580xx (Maxwell/Pascal)"; ' +
+        'else GPU_PKG="akmod-nvidia"; SERIE="595+ (Turing ou mais recente)"; fi; ' +
+        'echo "📦 Série de driver selecionada: $SERIE"; ' +
+        'if [ "$GPU_PKG" = "akmod-nvidia" ]; then ' +
+        '  sudo dnf install -y "$GPU_PKG" xorg-x11-drv-nvidia-cuda xorg-x11-drv-nvidia-cuda-libs; ' +
+        'else ' +
+        '  sudo dnf install -y "$GPU_PKG"; ' +
+        'fi';
+
+    await executarComandoGenerico(idComando, comando,
+        _t('sessoes.hardware.btn_nvidia_driver', '📦 Instalar Driver Nvidia'),
+        async function() {
+            await _atualizarSecaoNvidia();
+        });
+}
+
+async function executarNvidiaDriverRemove() {
+    if (!isExecutado('nvidia-driver-install')) {
+        alert(_t('comum.nao_instalado', 'O driver NVIDIA não está instalado.'));
+        return;
+    }
+
+    var confirmado = confirm(_t('sessoes.hardware.nvidia_confirmar_reverter',
+        '⚠️ Reverter o driver NVIDIA?\n\n' +
+        'O sistema voltará a usar o driver nouveau (código aberto, incluído no Fedora por padrão).\n\n' +
+        'O desempenho em jogos e aplicações 3D será reduzido até você reinstalar o driver proprietário.\n\n' +
+        'Continuar?'));
+    if (!confirmado) return;
+
+    var idComando = 'nvidia-driver-remove';
+    var comando =
+        'sudo dnf remove -y akmod-nvidia akmod-nvidia-580xx akmod-nvidia-470xx akmod-nvidia-390xx xorg-x11-drv-nvidia* nvidia-settings && ' +
+        'sudo dnf clean all && sudo dnf autoremove -y';
+
+    await executarComandoGenerico(idComando, comando,
+        _t('sessoes.hardware.btn_nvidia_reverter', '↩️ Reverter pro nouveau'),
+        function() {
+            desmarcarComoExecutado('nvidia-driver-install').then(function() {
+                _atualizarSecaoNvidia();
+            }).catch(function(e) {
+                console.warn('[toggle] Erro ao limpar estado do install:', e);
+                _atualizarSecaoNvidia();
+            });
+        });
+}
+
+function abrirNvidiaSettings() {
+    abrirFerramentaExterna('gtk-launch nvidia-settings 2>/dev/null &', 'nvidia-driver-install', 'NVIDIA Settings');
 }
 
 async function executarNvidiaModeset() {
@@ -538,10 +792,10 @@ async function restaurarEstadoSessao() {
         }
     }
 
-    if (isExecutado('nvidia-driver-install')) {
-        _marcarBotaoConcluido('nvidia-driver-install');
-        mostrarBotaoDesinstalar('nvidia-driver-install');
-    }
+    // NVIDIA — a seção tem detecção própria (painel + estado dos
+    // botões). Aplicar via _atualizarSecaoNvidia() garante que a UI
+    // reflita o hardware real, não só o .progresso.json.
+    await _atualizarSecaoNvidia();
 
     // Intel — one-shot
     if (isExecutado('intel-media-install')) {

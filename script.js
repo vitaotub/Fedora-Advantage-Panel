@@ -773,7 +773,43 @@ var SESSOES = [
 },
 
 // ============================================================
-// SESSÃO 10 — DIAGNÓSTICO
+// SESSÃO 10 — VIRTUALIZAÇÃO
+// QEMU/KVM, VirtualBox e GNOME Boxes.
+// ============================================================
+{
+    id: 'virtualizacao',
+    nome: 'Virtualização',
+    nomeKey: 'sessoes.virtualizacao.nome',
+    comandos: {
+        'qemu-kvm-install': {
+            textoConcluido: '✅ QEMU/KVM instalado',
+            textoConcluidoKey: 'sessoes.virtualizacao.texto_concluido_qemu'
+        },
+        'qemu-kvm-remove': {
+            textoConcluido: '✅ QEMU/KVM removido',
+            textoConcluidoKey: 'sessoes.virtualizacao.texto_concluido_qemu_remove'
+        },
+        'virtualbox-install': {
+            textoConcluido: '✅ VirtualBox instalado',
+            textoConcluidoKey: 'sessoes.virtualizacao.texto_concluido_virtualbox'
+        },
+        'virtualbox-remove': {
+            textoConcluido: '✅ VirtualBox removido',
+            textoConcluidoKey: 'sessoes.virtualizacao.texto_concluido_virtualbox_remove'
+        },
+        'gnome-boxes-install': {
+            textoConcluido: '✅ GNOME Boxes instalado',
+            textoConcluidoKey: 'sessoes.virtualizacao.texto_concluido_boxes'
+        },
+        'gnome-boxes-remove': {
+            textoConcluido: '✅ GNOME Boxes removido',
+            textoConcluidoKey: 'sessoes.virtualizacao.texto_concluido_boxes_remove'
+        }
+    }
+},
+
+// ============================================================
+// SESSÃO 11 — DIAGNÓSTICO
 // Baobab removido nesta versão.
 // ============================================================
 {
@@ -795,7 +831,7 @@ var SESSOES = [
 },
 
 // ============================================================
-// SESSÃO 11 — AJUSTES E MANUTENÇÃO
+// SESSÃO 12 — AJUSTES E MANUTENÇÃO
 // Fusão da antiga 02-otimizacao + ajustes de áudio da 07-loja
 // + acórdeão "Manutenção do Fedora" da antiga manutencao.html.
 // ============================================================
@@ -844,7 +880,7 @@ var SESSOES = [
 },
 
 // ============================================================
-// SESSÃO 12 — ESTADO DO FEDORA
+// SESSÃO 13 — ESTADO DO FEDORA
 // ============================================================
 {
     id: 'estado-fedora',
@@ -867,7 +903,7 @@ var SESSOES = [
 },
 
 // ============================================================
-// SESSÃO 13 — SOBRE O FOF
+// SESSÃO 14 — SOBRE O FOF
 // Sobre do FOF + Manutenção do FOF (atualizar, desinstalar, changelog).
 // ============================================================
 {
