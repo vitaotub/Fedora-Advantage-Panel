@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ============================================================
-# Fedora Only Fans (FOF) - Script de Instalação
+# Fedora Advantage Panel (FAP) - Script de Instalação
 # ============================================================
 
 set -e
@@ -117,7 +117,7 @@ ARQUIVOS_PRINCIPAIS=(
 print_header() {
 echo ""
 echo "============================================================"
-echo " 🐧 Fedora Only Fans (FOF) - Instalador v$VERSION"
+echo " 🐧 Fedora Advantage Panel (FAP) - Instalador v$VERSION"
 echo "============================================================"
 echo ""
 }
@@ -396,7 +396,7 @@ fi
 }
 
 instalar_fof() {
-print_step "Instalando Fedora Only Fans..."
+print_step "Instalando Fedora Advantage Panel..."
 
 mkdir -p "$INSTALL_DIR"
 mkdir -p "$BIN_DIR"
@@ -445,7 +445,7 @@ print_step "Criando atalhos no menu de aplicativos..."
 # .desktop com a janela do container e mostra o ícone genérico do
 # WebKitGTK (o "W" amarelo).
 #
-# O nome exibido no menu (Name=Fedora Only Fans) não depende do
+# O nome exibido no menu (Name=Fedora Advantage Panel) não depende do
 # nome do arquivo — pode ser qualquer coisa.
 #
 # O Exec aponta para o caminho REAL do script (dentro do
@@ -475,7 +475,7 @@ cat > "$DESKTOP_FILE" <<EOF
 [Desktop Entry]
 Version=1.0
 Type=Application
-Name=Fedora Only Fans
+Name=Fedora Advantage Panel
 Comment=Painel de Automação do Fedora
 Exec=$INSTALL_DIR/iniciar_fof.sh
 Icon=fof-container
@@ -494,7 +494,7 @@ cat > "$DESKTOP_FILE_COMPAT" <<EOF
 [Desktop Entry]
 Version=1.0
 Type=Application
-Name=Fedora Only Fans (Modo Compatibilidade)
+Name=Fedora Advantage Panel (Modo Compatibilidade)
 Comment=Painel de Automação do Fedora - Modo compatível com GPUs antigas
 Exec=$INSTALL_DIR/iniciar_fof_compat.sh
 Icon=fof-container
@@ -536,7 +536,7 @@ fi
 
 desinstalar() {
 print_header
-print_warning "Desinstalando Fedora Only Fans..."
+print_warning "Desinstalando Fedora Advantage Panel..."
 
 read -p "Tem certeza? (s/N): " -n 1 -r
 echo
@@ -673,7 +673,7 @@ print_info "Execute a instalação primeiro: ./install.sh"
 exit 1
 fi
 
-print_step "Atualizando Fedora Only Fans..."
+print_step "Atualizando Fedora Advantage Panel..."
 cd "$INSTALL_DIR"
 
 # git stash push -m é o substituto moderno do git stash save (que foi
@@ -751,7 +751,7 @@ fi
 
 mostrar_ajuda() {
 cat <<EOF
-🐧 Fedora Only Fans (FOF) - Instalador v$VERSION
+🐧 Fedora Advantage Panel (FAP) - Instalador v$VERSION
 
 Uso: $(basename "$0") [opções]
 
@@ -806,13 +806,13 @@ configurar_path
 reaplicar_permissoes
 
 echo ""
-print_success "🎉 Fedora Only Fans instalado com sucesso!"
+print_success "🎉 Fedora Advantage Panel instalado com sucesso!"
 echo ""
 print_info "📁 Instalado em: $INSTALL_DIR"
 print_info ""
 print_info "Para iniciar o FOF:"
 echo " - Terminal: digite 'fof' ou 'fof-compat'"
-echo " - Menu: procure por 'Fedora Only Fans'"
+echo " - Menu: procure por 'Fedora Advantage Panel'"
 echo ""
 print_info "💡 Para fixar na barra de tarefas, use o menu do seu desktop"
 print_info "   (botão direito no ícone do FOF → 'Adicionar ao Painel' ou similar)"
