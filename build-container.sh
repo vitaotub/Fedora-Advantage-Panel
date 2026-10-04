@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ============================================================
-# Build do Container FOF
+# Build do Container FAP
 # ============================================================
 
 set -e
@@ -20,7 +20,7 @@ FOF_VERSION="$(grep -oP '"version"\s*:\s*"\K[^"]+' "$DIR/package.json" 2>/dev/nu
 [ -z "$FOF_VERSION" ] && FOF_VERSION="unknown"
 
 echo "============================================================"
-echo " 🏗️ Fedora Only Fans - Build do Container"
+echo " 🏗️ Fedora Advantage Panel - Build do Container"
 echo "============================================================"
 echo ""
 
