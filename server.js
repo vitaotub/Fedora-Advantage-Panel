@@ -1936,7 +1936,7 @@ server.listen(PORT, HOST, () => {
     _limparLogsAntigos();
 
     console.log(`====================================================`);
-    console.log(` 🐧 Fedora Only Fans - Servidor de Automação v${FOF_VERSION}`);
+    console.log(` 🐧 Fedora Advantage Panel - Servidor de Automação v${FOF_VERSION}`);
     console.log(` 🌐 http://localhost:${PORT} (somente local — 127.0.0.1)`);
     console.log(` 🖥️ Desktop: ${desktop}`);
     console.log(` 🔐 Autenticação: ${metodo.descricao}`);
