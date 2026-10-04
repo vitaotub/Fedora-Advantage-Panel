@@ -1,6 +1,6 @@
 {
     "_meta": {
-        "description": "Mapa de hardware do FOF. Associa IDs de dispositivo (PCI/USB) a pacotes e repositórios. PRs bem-vindos em github.com/vitaotek/Fedora-Only-Fans.",
+        "description": "Mapa de hardware do FAP. Associa IDs de dispositivo (PCI/USB) a pacotes e repositórios. PRs bem-vindos em github.com/vitaotub/Fedora-Advantage-Panel.",
         "format_version": "1.1",
         "notes": "Este arquivo é lido em runtime pelo endpoint /hardware-scan do server.js. Alterações aqui afetam a sessão 'Dispositivos e Periféricos'."
     },
