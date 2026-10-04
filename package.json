@@ -1,7 +1,7 @@
 {
 "name": "fedora-only-fans",
-"version": "1.0.0-10012026.a",
-"description": "Painel de Vantagens para Fedora Linux - Facilite a configuração do seu sistema",
+"version": "1.0.0-10012026.b",
+"description": "Painel de automação visual para Fedora Linux - Facilite a configuração do seu sistema (Fedora Advantage Panel)",
 "main": "server.js",
 "scripts": {
 "start": "node server.js",
@@ -17,7 +17,8 @@
 "automation",
 "configuration",
 "dnf",
-"flatpak"
+"flatpak",
+"fedora-advantage-panel"
 ],
 "author": "VitãoTub",
 "license": "GPL-3.0",
