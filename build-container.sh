@@ -9,7 +9,7 @@ DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$DIR"
 
 # ============================================================
-# VERSÃO DO FOF — fonte única: package.json
+# VERSÃO DO FAP — fonte única: package.json
 # ============================================================
 #
 # O C não lê arquivos em runtime. Injetamos a versão via macro
