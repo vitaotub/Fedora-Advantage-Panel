@@ -1,4 +1,4 @@
-# Changelog — Fedora Only Fans (FOF)
+# Changelog — Fedora Advantage Panel (FAP)
 
 Todas as mudanças notáveis deste projeto estão documentadas aqui.
 O formato segue [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/),
@@ -15,6 +15,21 @@ que exibe a seção da versão atual dentro do FOF, na sessão **Sobre o FOF**.
 > **Sobre versões antigas:** este arquivo guarda apenas a seção da versão
 > atual. O histórico completo fica disponível nas
 > [releases do GitHub](https://github.com/vitaotek/Fedora-Only-Fans/releases).
+
+---
+
+## v1.0.0-10012026.b
+
+### 🎨 Renomeação do projeto
+
+O projeto passa a se chamar **Fedora Advantage Panel (FAP)**. O identificador
+técnico (`fof`, `fof-container`, comando `fof`) permanece o mesmo por
+compatibilidade com instalações existentes. Um novo logo substitui o anterior.
+
+- Todos os textos visíveis ao usuário atualizados nos três idiomas.
+- Repositório renomeado no GitHub para `vitaotek/Fedora-Advantage-Panel`.
+- URLs internas (`GITHUB_REPO`, `REPO_URL`, links de changelog e issues) atualizadas.
+- Nenhuma mudança de comportamento — a atualização preserva progresso, tema e idioma.
 
 ---
 
