@@ -1,5 +1,5 @@
 // ============================================================
-// FOF — Detecção de hardware e sugestão de drivers
+// FAP — Detecção de hardware e sugestão de drivers
 // ============================================================
 //
 // Este módulo é usado pelo server.js para o endpoint /hardware-scan.
