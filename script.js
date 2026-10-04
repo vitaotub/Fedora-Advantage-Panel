@@ -1,5 +1,5 @@
 /**
- * Fedora Only Fans (FOF) - Script Compartilhado
+ * Fedora Advantage Panel (FAP) - Script Compartilhado
  *
  * Este arquivo contém as funções GLOBAIS compartilhadas entre todas as sessões.
  * Cada sessão (*.html) tem seu próprio JS específico que usa estas funções.
@@ -92,7 +92,7 @@ async function carregarVersaoServidor() {
 // VERIFICAÇÃO DE ATUALIZAÇÕES (GitHub Releases API)
 // ============================================================
 
-var GITHUB_REPO = 'vitaotek/Fedora-Only-Fans';
+var GITHUB_REPO = 'vitaotub/Fedora-Advantage-Panel';
 var ULTIMA_VERIFICACAO_KEY = 'fof_ultima_verificacao';
 var VERSAO_REMOTA_KEY = 'fof_versao_remota';
 var TTL_VERIFICACAO_MS = 12 * 60 * 60 * 1000; // 12 horas
