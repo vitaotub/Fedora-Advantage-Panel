@@ -9,17 +9,17 @@ const ARQUIVO_PROGRESSO = path.join(__dirname, '.progresso.json');
 const ARQUIVO_CHANGELOG = path.join(__dirname, 'CHANGELOG.md');
 
 // ============================================================
-// VERSÃO DO FOF — fonte única: package.json
+// VERSÃO DO FAP — fonte única: package.json
 // ============================================================
 //
-// A versão do FOF é definida em UM lugar só: o campo "version" do
+// A versão do FAP é definida em UM lugar só: o campo "version" do
 // package.json. O Node resolve `require('./package.json')` relativo
 // ao arquivo que faz o require, então funciona independente do CWD
 // do processo.
 //
 // Se por algum motivo o package.json estiver ausente ou corrompido,
 // caímos em 'unknown' — o endpoint /info continua respondendo, e o
-// botão "Atualizar FOF" mostra o badge de forma conservadora (com
+// botão "Atualizar FAP" mostra o badge de forma conservadora (com
 // 'unknown' em vez da versão local, `temAtualizacao()` retorna
 // false e nenhum badge aparece). Isso evita falsos positivos.
 let FOF_VERSION = 'unknown';
