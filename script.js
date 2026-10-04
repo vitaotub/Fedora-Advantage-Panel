@@ -16,19 +16,19 @@
  * cada sessão já nasce expandido. O usuário pode clicar no toggle para
  * recolher (o clique remove a classe 'expandido').
  *
- * VERIFICAÇÃO DE ATUALIZAÇÕES: no boot, o FOF consulta a API do GitHub
+ * VERIFICAÇÃO DE ATUALIZAÇÕES: no boot, o FAP consulta a API do GitHub
  * para saber se há uma versão mais recente publicada. Se houver, um
  * badge "Atualizar" aparece ao lado do número da versão. O clique
  * dispara a atualização direto (POST /executar), sem navegação. Cache
  * de 12h.
  *
  * VERIFICAÇÃO DE FLATPAKS REMOVIDOS: no boot e a cada sessão carregada,
- * o FOF consulta /flatpak-installed e desmarca qualquer comando que
+ * o FAP consulta /flatpak-installed e desmarca qualquer comando que
  * tenha sido marcado como executado mas cujo Flatpak não esteja mais
  * instalado (o usuário removeu via GNOME Software, linha de comando,
  * etc.). O botão volta ao estado original para reinstalar.
  *
- * LIMPEZA DE IDs ÓRFÃOS: no boot e a cada sessão carregada, o FOF remove
+ * LIMPEZA DE IDs ÓRFÃOS: no boot e a cada sessão carregada, o FAP remove
  * do progresso persistido qualquer idComando que não exista mais no
  * registro SESSOES. Isso evita que renomeações/remoções de sessão
  * deixem IDs "fantasmas" poluindo o .progresso.json para sempre.
@@ -190,7 +190,7 @@ async function _dispararAtualizacaoFOF() {
 
     mostrarToast(
         _t('comum.badge_atualizando',
-           '🔄 Atualizando FOF... Acompanhe o progresso em Sobre o FOF.'),
+           '🔄 Atualizando FAP... Acompanhe o progresso em Sobre o FAP.'),
            'success', 8000
     );
 
@@ -208,7 +208,7 @@ async function _dispararAtualizacaoFOF() {
         if (sucesso === true) {
             mostrarToast(
                 _t('sessoes.sobre-fof.atualizar_popup_concluido',
-                   '✅ Atualização concluída! Feche e reabra o FOF.').split('\n')[0],
+                   '✅ Atualização concluída! Feche e reabra o FAP.').split('\n')[0],
                          'success', 10000
             );
         } else if (sucesso === false) {
@@ -1037,21 +1037,21 @@ var SESSOES = [
 },
 
 // ============================================================
-// SESSÃO 14 — SOBRE O FOF
-// Sobre do FOF + Manutenção do FOF (atualizar, desinstalar, changelog).
+// SESSÃO 14 — SOBRE O FAP
+// Sobre do FAP + Manutenção do FAP (atualizar, desinstalar, changelog).
 // ============================================================
 {
     id: 'sobre-fof',
-    nome: 'Sobre o FOF',
+    nome: 'Sobre o FAP',
     nomeKey: 'sessoes.sobre-fof.nome',
     comandos: {
         'atualizar-fof': {
             sempreClicavel: true,
-            textoConcluido: '✅ FOF atualizado',
+            textoConcluido: '✅ FAP atualizado',
             textoConcluidoKey: 'sessoes.sobre-fof.texto_concluido_fof_atualizar'
         },
         'desinstalar-fof': {
-            textoConcluido: '✅ FOF desinstalado',
+            textoConcluido: '✅ FAP desinstalado',
             textoConcluidoKey: 'sessoes.sobre-fof.texto_concluido_fof_desinstalar'
         }
     }
@@ -1392,7 +1392,7 @@ async function desmarcarComoPulado(idComando) {
 // ============================================================
 //
 // O usuário pode remover um Flatpak via GNOME Software, linha de
-// comando, ou qualquer outro gerenciador. Nesse caso, o FOF ainda
+// comando, ou qualquer outro gerenciador. Nesse caso, o FAP ainda
 // tem o comando marcado como "executado" no progresso — o botão
 // fica cinza/disabled mesmo com o app ausente.
 //
@@ -1605,7 +1605,7 @@ function completarProgresso(idComando, sucesso) {
             : _t('comum.status_falha', '❌ Falha na execução');
             mostrarToast(msg, sucesso ? 'success' : 'error', 6000);
             if (sucesso) {
-                var tituloNotif = _t('comum.notif_tarefa_concluida_titulo', 'FOF — Tarefa concluída');
+                var tituloNotif = _t('comum.notif_tarefa_concluida_titulo', 'FAP — Tarefa concluída');
                 var corpoNotif = _t('comum.notif_tarefa_concluida_corpo', 'A tarefa terminou. Veja o log para detalhes.');
                 notificarNativo(tituloNotif, corpoNotif);
             }
@@ -2295,7 +2295,7 @@ function initCustomSelects() {
 // Ctrl+Enter: dispara o botão que está em foco, se for um .btn-executar
 // habilitado. Antes havia um fallback que clicava no primeiro botão
 // visível — mas isso podia acionar acidentalmente botões destrutivos
-// (ex.: "Remover repositório Fedora Flatpak" ou "Desinstalar FOF") sem
+// (ex.: "Remover repositório Fedora Flatpak" ou "Desinstalar FAP") sem
 // o usuário perceber. Agora exige foco explícito.
 document.addEventListener('keydown', function(e) {
     if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
