@@ -1,8 +1,8 @@
-# <img src="icone_app.png" width="55" align="center"> Fedora Only Fans (FOF)
+# <img src="icone_app.png" width="55" align="center"> Fedora Advantage Panel (FAP)
 
 **🌐 Idioma:** Português (BR) | [English](README.en.md) | [Español](README.es.md)
 
-![Versão](https://img.shields.io/badge/Vers%C3%A3o-v1.0.0--10012026.a-orange?style=flat-square)
+![Versão](https://img.shields.io/badge/Vers%C3%A3o-v1.0.0--10012026.b-orange?style=flat-square)
 ![Fedora](https://img.shields.io/badge/Fedora-44+-294172?style=flat-square&logo=fedora)
 ![Licença](https://img.shields.io/badge/Licen%C3%A7a-GPL--3.0-green?style=flat-square)
 ![Idiomas](https://img.shields.io/badge/Idiomas-PT--BR%20%7C%20EN%20%7C%20ES-3c67e3?style=flat-square)
@@ -14,7 +14,7 @@
 ## 🚀 Instalação
 
 ```bash
-bash <(curl -s https://raw.githubusercontent.com/vitaotek/Fedora-Only-Fans/main/install.sh)
+bash <(curl -s https://raw.githubusercontent.com/vitaotub/Fedora-Advantage-Panel/main/install.sh)
 ```
 
 ## 📦 Comandos
@@ -30,11 +30,11 @@ fof-compat                          # Iniciar (modo compatibilidade — GPUs ant
 
 ## 📖 Sobre
 
-O **Fedora Only Fans (FOF)** é um painel de automação visual para o Fedora Linux. Transforma uma instalação limpa em um sistema completo — codecs, drivers, repositórios, ferramentas — através de cliques, sem abrir o terminal.
+O **Fedora Advantage Panel (FAP)** é um painel de automação visual para o Fedora Linux. Transforma uma instalação limpa em um sistema completo — codecs, drivers, repositórios, ferramentas — através de cliques, sem abrir o terminal.
 
-O FOF tem **um único ponto de entrada**: o botão **"Iniciar"**, que leva você pelas 14 sessões passo a passo, na ordem lógica. Cada sessão agrupa tarefas relacionadas, e o progresso é salvo automaticamente.
+O FAP tem **um único ponto de entrada**: o botão **"Iniciar"**, que leva você pelas 14 sessões passo a passo, na ordem lógica. Cada sessão agrupa tarefas relacionadas, e o progresso é salvo automaticamente.
 
-Cada botão lembra seu próprio estado. Fechar e reabrir o FOF (ou reiniciar o computador) sempre mostra exatamente onde você parou.
+Cada botão lembra seu próprio estado. Fechar e reabrir o FAP (ou reiniciar o computador) sempre mostra exatamente onde você parou.
 
 ---
 
@@ -55,7 +55,7 @@ Cada botão lembra seu próprio estado. Fechar e reabrir o FOF (ou reiniciar o c
 | 11 | 📊 Diagnóstico | Painel do sistema, top processos, partições, GSmartControl, CoolerControl, journal, status de otimizações |
 | 12 | 🛠️ Ajustes e Manutenção | Tunings de desempenho, ajustes de áudio, DNF, idioma, dual-boot, limpeza, kernels, GRUB |
 | 13 | 🐧 Estado do Fedora | Versão, detecção de Atomic/Silverblue, SELinux (status, AVCs, setroubleshoot, GUI) |
-| 14 | 📖 Sobre o FOF | Sobre o projeto + atualizar/desinstalar FOF + changelog dinâmico |
+| 14 | 📖 Sobre o FAP | Sobre o projeto + atualizar/desinstalar FAP + changelog dinâmico |
 
 ---
 
@@ -67,7 +67,7 @@ Cada botão lembra seu próprio estado. Fechar e reabrir o FOF (ou reiniciar o c
 - **Estrutura visual consistente** — todas as sessões começam com um card informativo da sessão, e os acórdeãos de conteúdo ficam colapsados por padrão
 - **Esquema de cores semântico** — azul para ação, verde para abrir app, vermelho para reverter, vermelho tracejado para ações irreversíveis
 - **Ícone de desinstalar** ao lado de cada app Flatpak instalado
-- **Detecção de Flatpak removido externamente** — se o usuário apagar o app por fora, o botão do FOF volta ao estado inicial
+- **Detecção de Flatpak removido externamente** — se o usuário apagar o app por fora, o botão do FAP volta ao estado inicial
 - **Detecção automática de hardware** — endpoint `/hardware-scan` cruza IDs PCI/USB com `hardware_map.json` e sugere drivers
 - **Detecção de geração de GPU NVIDIA** — escolhe automaticamente a série correta (`akmod-nvidia`, `580xx`, `470xx` ou `390xx`)
 - **Suporte a múltiplos desktops** — funciona em GNOME, KDE, XFCE, Cinnamon, MATE, LXQt, LXDE, Budgie e tiling WMs. O terminal de inicialização segue o desktop detectado
@@ -86,7 +86,7 @@ Cada botão lembra seu próprio estado. Fechar e reabrir o FOF (ou reiniciar o c
 ## 📂 Estrutura
 
 ```
-Fedora-Only-Fans/
+Fedora-Advantage-Panel/
 ├── index.html                       # Landing page (entrada única)
 ├── guiado.html                      # Configuração passo a passo
 ├── style.css                        # CSS compartilhado
@@ -109,9 +109,9 @@ Fedora-Only-Fans/
 ├── diagnostico.html                 # Sessão 11
 ├── ajustes-manutencao.html          # Sessão 12
 ├── estado-fedora.html               # Sessão 13
-├── sobre-fof.html                   # Sessão 14
+├── sobre-fof.html                   # Sessão 14 (arquivo mantém o nome por compatibilidade)
 ├── template-sessao.html             # Molde para criar novas sessões
-├── CHANGELOG.md                     # Histórico de mudanças (lido pelo FOF)
+├── CHANGELOG.md                     # Histórico de mudanças (lido pelo FAP)
 ├── server.js                        # Servidor Node.js + SSE + endpoints
 ├── hardware-service.js              # Detecção de hardware (lspci/lsusb + rpm)
 ├── hardware_map.json                # Mapa de vendors PCI/USB → pacotes
@@ -120,16 +120,18 @@ Fedora-Only-Fans/
 ├── install.sh                       # Instalador / desinstalador / updater
 ├── build-container.sh / Makefile    # Build do container nativo
 ├── src/fof-container.c              # Container WebKitGTK (C + GTK3)
-├── package.json                     # Deps Node + versão do FOF
+├── package.json                     # Deps Node + versão do FAP
 ├── icone_app.png                    # Ícone do app
 └── LICENSE                          # GPL-3.0
 ```
+
+**Nota:** os nomes dos arquivos (`fof-container`, `iniciar_fof.sh`, `sobre-fof.html`, etc.) mantêm o identificador técnico `fof` para preservar instalações existentes. O comando do terminal continua sendo `fof`. Um script de migração para identificadores `fap` fica planejado para uma release futura.
 
 ---
 
 ## 🖥️ Desktops suportados
 
-O FOF é desktop-agnóstico — foi construído para rodar em qualquer
+O FAP é desktop-agnóstico — foi construído para rodar em qualquer
 ambiente Linux que use a stack XDG padrão. Não depende de KDE,
 GNOME ou qualquer DE específico.
 
@@ -154,9 +156,9 @@ GNOME ou qualquer DE específico.
 
 ### O que NÃO é automático
 
-- **Fixar na barra de tarefas.** O FOF **não** fixa atalhos na barra automaticamente. Fixe manualmente pelo menu do seu desktop:
-  - **KDE:** botão direito no ícone do FOF no menu → *Fixar no painel*
-  - **GNOME:** abrir o FOF uma vez, depois *botão direito no ícone no dock → Add to Favorites*
+- **Fixar na barra de tarefas.** O FAP **não** fixa atalhos na barra automaticamente. Fixe manualmente pelo menu do seu desktop:
+  - **KDE:** botão direito no ícone do FAP no menu → *Fixar no painel*
+  - **GNOME:** abrir o FAP uma vez, depois *botão direito no ícone no dock → Add to Favorites*
   - **XFCE/Cinnamon/MATE:** arrastar o ícone do menu para a barra
 
 ### Requisitos mínimos
@@ -193,9 +195,19 @@ GNOME ou qualquer DE específico.
 
 ## 🎯 Changelog
 
-O histórico completo das versões está nas [releases do GitHub](https://github.com/vitaotek/Fedora-Only-Fans/releases). O FOF também exibe o changelog da versão atual dentro da sessão **Sobre o FOF**, carregado dinamicamente do arquivo `CHANGELOG.md`.
+O histórico completo das versões está nas [releases do GitHub](https://github.com/vitaotub/Fedora-Advantage-Panel/releases). O FAP também exibe o changelog da versão atual dentro da sessão **Sobre o FAP**, carregado dinamicamente do arquivo `CHANGELOG.md`.
 
-### v1.0.0-10012026.a (Atual) 🚧
+### v1.0.0-10012026.b (Atual) 🚧
+
+Renomeação do projeto para **Fedora Advantage Panel (FAP)**, com novo logo.
+
+- **Novo nome de exibição**: "Fedora Only Fans" → "Fedora Advantage Panel". Todos os textos visíveis nos três idiomas foram atualizados.
+- **Novo logo**: substitui o anterior em toda a aplicação (app, atalho do menu, container nativo).
+- **Repositório renomeado no GitHub** para `vitaotub/Fedora-Advantage-Panel`.
+- **URLs internas atualizadas** — `GITHUB_REPO`, `REPO_URL`, links de issues/documentação/changelog.
+- **Nenhuma mudança de comportamento**: comando `fof`, pasta de instalação e identificadores técnicos internos permanecem os mesmos para preservar instalações existentes.
+
+### v1.0.0-10012026.a
 
 Atualização focada em padronização visual, correções de bugs e segurança.
 
@@ -250,7 +262,7 @@ A ordem de exibição vem da posição da entrada no array `SESSOES`, não do no
 
 ## 🐛 Reportar Bugs
 
-Abra uma issue em [github.com/vitaotek/Fedora-Only-Fans/issues](https://github.com/vitaotek/Fedora-Only-Fans/issues) incluindo:
+Abra uma issue em [github.com/vitaotub/Fedora-Advantage-Panel/issues](https://github.com/vitaotub/Fedora-Advantage-Panel/issues) incluindo:
 - Versão do Fedora
 - Desktop environment
 - Logs (`/tmp/fof-*.log`)
