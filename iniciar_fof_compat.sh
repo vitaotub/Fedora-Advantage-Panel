@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ============================================================
-# Fedora Only Fans (FOF) - Modo Compatibilidade
+# Fedora Advantage Panel (FAP) - Modo Compatibilidade
 # ============================================================
 #
 # Este script força renderização por software para GPUs
@@ -83,7 +83,7 @@ fi
 for arg in "$@"; do
     case $arg in
         --help|-h)
-            echo "🐧 Fedora Only Fans (FOF) - Modo Compatibilidade"
+            echo "🐧 Fedora Advantage Panel (FAP) - Modo Compatibilidade"
             echo ""
             echo "Uso: ./iniciar_fof_compat.sh [opções]"
             echo ""
@@ -105,7 +105,7 @@ done
 
 echo ""
 echo "============================================================"
-echo " 🐧 Fedora Only Fans (FOF) - Modo Compatibilidade"
+echo " 🐧 Fedora Advantage Panel (FAP) - Modo Compatibilidade"
 echo "============================================================"
 echo ""
 echo "ℹ️ Renderização por software ativada"
