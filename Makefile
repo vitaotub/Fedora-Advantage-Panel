@@ -1,5 +1,5 @@
 # ============================================================
-# Fedora Only Fans (FOF) - Makefile
+# Fedora Advantage Panel (FAP) - Makefile
 # Versão lida dinamicamente do package.json (alvo: make version)
 # ============================================================
 
@@ -12,7 +12,7 @@ CFLAGS = -Wall -O2
 LDFLAGS = -lm
 
 # ============================================================
-# VERSÃO DO FOF — fonte única: package.json
+# VERSÃO DO FAP — fonte única: package.json
 # ============================================================
 #
 # Definida ANTES de ser usada em CPPFLAGS. Isto é obrigatório:
