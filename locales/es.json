@@ -916,7 +916,7 @@
             "selinux_desabilitar_info": "ℹ️ <strong>Si necesitas cambiar el modo:</strong> la herramienta oficial es <code>setenforce</code>. Ejecutar <code>sudo setenforce 0</code> lo pone en permissive hasta el próximo arranque. Para hacerlo permanente, edita <code>/etc/selinux/config</code> (no lo hacemos automáticamente — es tu decisión)."
         },
 
-        "sobre-FAP": {
+        "sobre-fof": {
             "nome": "Acerca de FAP",
             "titulo": "📖 Acerca de FAP",
 
@@ -934,7 +934,7 @@
             "sobre_nao_faz_4": "No está afiliado a Red Hat — es un proyecto independiente, mantenido por la comunidad.",
             "sobre_nao_faz_5": "No es un instalador de sistema operativo — FAP configura un Fedora ya instalado, no instala Fedora desde cero.",
 
-            "acordeao_FAP_titulo": "🔧 Mantenimiento del FAP",
+            "acordeao_fof_titulo": "🔧 Mantenimiento del FAP",
 
             "atualizacao_disponivel": "⬆️ Una nueva versión de FAP está disponible. Haz clic en \"Actualizar FAP\" abajo para instalar.",
 
@@ -945,7 +945,7 @@
             "atualizar_confirmar": "🔄 ¿Actualizar Fedora Advantage Panel a la versión más reciente?\n\nEsto descargará e instalará la última versión desde GitHub.",
             "atualizar_popup_concluido": "✅ ¡Actualización completada con éxito!\n\nCierra y reabre FAP para que los nuevos cambios entren en vigor.",
             "atualizar_aviso_reiniciar": "Cierra y reabre FAP para usar la nueva versión del contenedor.",
-            "texto_concluido_FAP_atualizar": "✅ FAP actualizado",
+            "texto_concluido_fof_atualizar": "✅ FAP actualizado",
 
             "desinstalar_titulo": "🗑️ Desinstalar Fedora Advantage Panel",
             "desinstalar_desc": "Elimina completamente FAP de su sistema, incluyendo todos los archivos, configuraciones y accesos directos.",
@@ -956,7 +956,7 @@
             "desinstalar_log_iniciando": "🗑️ Desinstalando FAP...",
             "desinstalar_log_sucesso": "✅ ¡FAP desinstalado con éxito!",
             "desinstalar_msg_final": "✅ Fedora Advantage Panel fue desinstalado completamente de su ordenador.\n\nPuede cerrar esta ventana ahora.",
-            "texto_concluido_FAP_desinstalar": "✅ FAP desinstalado",
+            "texto_concluido_fof_desinstalar": "✅ FAP desinstalado",
 
             "changelog_titulo": "📝 Changelog del FAP",
             "changelog_desc": "Historial de cambios de Fedora Advantage Panel. Cargado automáticamente desde el repositorio oficial en GitHub.",
