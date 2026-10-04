@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # ============================================================
-# Fedora Only Fans (FOF) - Script de Inicialização
+# Fedora Advantage Panel (FAP) - Script de Inicialização
 # ============================================================
 #
-# Este script inicia o servidor e abre a interface do FOF.
+# Este script inicia o servidor e abre a interface do FAP.
 #
 # Uso: ./iniciar_fof.sh [opções]
 #
@@ -121,7 +121,7 @@ log_error() {
 log_header() {
     echo ""
     echo "============================================================"
-    echo " 🐧 Fedora Only Fans (FOF) v$VERSION"
+    echo " 🐧 Fedora Advantage Panel (FAP) v$VERSION"
     echo "============================================================"
     echo ""
 }
@@ -198,7 +198,7 @@ _terminais_para_desktop() {
 
 abrir_no_terminal_nativo() {
     local script_path="$1"
-    local titulo="Fedora Only Fans - Servidor"
+    local titulo="Fedora Advantage Panel - Servidor"
 
     log_debug "Tentando abrir no terminal nativo..."
     log_debug "Desktop detectado: ${DESKTOP_ATUAL:-(desconhecido)}"
@@ -348,13 +348,13 @@ abrir_container() {
 
     if [ -f "$DIR/fof-container" ]; then
         log_info "📦 Abrindo no container nativo (WebKitGTK)..."
-        "$DIR/fof-container" --url "$url" --icon "$icone" --name "Fedora Only Fans" $extra_args
+        "$DIR/fof-container" --url "$url" --icon "$icone" --name "Fedora Advantage Panel" $extra_args
         exit 0
     fi
 
     if command -v fof-container &> /dev/null; then
         log_info "📦 Abrindo no container nativo (WebKitGTK)..."
-        fof-container --url "$url" --icon "$icone" --name "Fedora Only Fans" $extra_args
+        fof-container --url "$url" --icon "$icone" --name "Fedora Advantage Panel" $extra_args
         exit 0
     fi
 
@@ -790,7 +790,7 @@ criar_atalho() {
 [Desktop Entry]
 Version=1.0
 Type=Application
-Name=Fedora Only Fans
+Name=Fedora Advantage Panel
 Comment=Painel de Automação do Fedora
 Exec=$DIR/iniciar_fof.sh
 Icon=fof-container
@@ -812,7 +812,7 @@ EOF
 
 mostrar_ajuda() {
     cat <<EOF
-🐧 Fedora Only Fans (FOF) v$VERSION
+🐧 Fedora Advantage Panel (FAP) v$VERSION
 
 Uso: $(basename "$0") [opções]
 
@@ -900,7 +900,7 @@ main() {
     criar_atalho
 
     echo ""
-    log_success "🎉 Fedora Only Fans está rodando!"
+    log_success "🎉 Fedora Advantage Panel está rodando!"
     log_info "🌐 http://localhost:3000"
     log_info "📋 Log: $LOG_FILE"
     echo ""
