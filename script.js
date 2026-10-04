@@ -85,7 +85,7 @@ async function carregarVersaoServidor() {
         detail: { versao: FOF_VERSION }
     }));
 
-    console.log('🚀 Fedora Only Fans v' + (FOF_VERSION || '?') + ' - Script compartilhado carregado!');
+    console.log('🚀 Fedora Advantage Panel v' + (FOF_VERSION || '?') + ' - Script compartilhado carregado!');
 }
 
 // ============================================================
@@ -182,7 +182,7 @@ async function _dispararAtualizacaoFOF() {
     }
 
     var confirmMsg = _t('sessoes.sobre-fof.atualizar_confirmar',
-                        '🔄 Deseja atualizar o Fedora Only Fans para a versão mais recente?\n\n' +
+                        '🔄 Deseja atualizar o Fedora Advantage Panel para a versão mais recente?\n\n' +
                         'Isso irá baixar e instalar a última versão do GitHub.');
     if (!confirm(confirmMsg)) return;
 
@@ -225,7 +225,7 @@ async function _dispararAtualizacaoFOF() {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                comando: 'bash <(curl -s https://raw.githubusercontent.com/vitaotek/Fedora-Only-Fans/main/install.sh) --update',
+                comando: 'bash <(curl -s https://raw.githubusercontent.com/vitaotub/Fedora-Advantage-Panel/main/install.sh) --update',
                                  idComando: 'atualizar-fof'
             })
         });

@@ -847,7 +847,7 @@ function _construirScripts(timestamp, random, comandoCorrigido, descricao, outpu
 
     const scriptContent = [
         '#!/bin/bash',
-        '# Fedora Only Fans - ' + descricao,
+        '# Fedora Advantage Panel - ' + descricao,
         '# Executado em: ' + new Date().toLocaleString('pt-BR'),
                                                        '',
                                                        '# Exports obrigatórios quando roda via pkexec/kdesu (root).',
@@ -1047,11 +1047,11 @@ function executarComAutenticacaoSegura(comandoOriginal, idComando, isReversao, c
 
     let promptSenha;
     if (hasKdialog && (desktop === 'KDE' || desktop === 'LXQT')) {
-        promptSenha = `kdialog --password "Digite sua senha de administrador:" --title "Fedora Only Fans - ${descricao}" 2>/dev/null`;
+        promptSenha = `kdialog --password "Digite sua senha de administrador:" --title "Fedora Advantage Panel - ${descricao}" 2>/dev/null`;
     } else if (hasZenity) {
-        promptSenha = `zenity --password --title="Fedora Only Fans" --text="🔐 ${descricao}" 2>/dev/null`;
+        promptSenha = `zenity --password --title="Fedora Advantage Panel" --text="🔐 ${descricao}" 2>/dev/null`;
     } else {
-        promptSenha = `kdialog --password "Digite sua senha de administrador:" --title "Fedora Only Fans - ${descricao}" 2>/dev/null || zenity --password --title="Fedora Only Fans" --text="🔐 ${descricao}" 2>/dev/null`;
+        promptSenha = `kdialog --password "Digite sua senha de administrador:" --title "Fedora Advantage Panel - ${descricao}" 2>/dev/null || zenity --password --title="Fedora Advantage Panel" --text="🔐 ${descricao}" 2>/dev/null`;
     }
 
     exec(promptSenha, {

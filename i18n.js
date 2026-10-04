@@ -1,5 +1,5 @@
 /**
- * Fedora Only Fans (FOF) - Módulo de Internacionalização (i18n)
+ * Fedora Advantage Panel (FAP) - Módulo de Internacionalização (i18n)
  *
  * Suporta: pt-BR (padrão), en, es
  *
