@@ -1,7 +1,7 @@
 {
 "name": "fedora-only-fans",
 "version": "1.0.0-10012026.a",
-"description": "Painel de automação para Fedora Linux - Facilite a configuração do seu sistema",
+"description": "Painel de Vantagens para Fedora Linux - Facilite a configuração do seu sistema",
 "main": "server.js",
 "scripts": {
 "start": "node server.js",
@@ -23,10 +23,10 @@
 "license": "GPL-3.0",
 "repository": {
 "type": "git",
-"url": "https://github.com/vitaotek/Fedora-Only-Fans"
+"url": "https://github.com/vitaotub/Fedora-Advantage-Panel"
 },
 "bugs": {
-"url": "https://github.com/vitaotek/Fedora-Only-Fans/issues"
+"url": "https://github.com/vitaotub/Fedora-Advantage-Panel/issues"
 },
-"homepage": "https://github.com/vitaotek/Fedora-Only-Fans#readme"
+"homepage": "https://github.com/vitaotub/Fedora-Advantage-Panel#readme"
 }
