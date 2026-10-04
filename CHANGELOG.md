@@ -2,10 +2,10 @@
 
 Todas as mudanças notáveis deste projeto estão documentadas aqui.
 O formato segue [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/),
-e o FOF usa versionamento baseado em data: `v1.0.0-MMDDAAAA`.
+e o FAP usa versionamento baseado em data: `v1.0.0-MMDDAAAA`.
 
 Este arquivo é lido em runtime pelo endpoint `GET /changelog` do `server.js`,
-que exibe a seção da versão atual dentro do FOF, na sessão **Sobre o FOF**.
+que exibe a seção da versão atual dentro do FAP, na sessão **Sobre o FAP**.
 
 > **Regra importante para quem for editar:** use apenas `## vX.Y.Z-...` para os
 > cabeçalhos de versão. Dentro de uma seção, use `###` (três hashes) para
@@ -14,7 +14,7 @@ que exibe a seção da versão atual dentro do FOF, na sessão **Sobre o FOF**.
 >
 > **Sobre versões antigas:** este arquivo guarda apenas a seção da versão
 > atual. O histórico completo fica disponível nas
-> [releases do GitHub](https://github.com/vitaotek/Fedora-Only-Fans/releases).
+> [releases do GitHub](https://github.com/vitaotub/Fedora-Advantage-Panel/releases).
 
 ---
 
@@ -23,13 +23,15 @@ que exibe a seção da versão atual dentro do FOF, na sessão **Sobre o FOF**.
 ### 🎨 Renomeação do projeto
 
 O projeto passa a se chamar **Fedora Advantage Panel (FAP)**. O identificador
-técnico (`fof`, `fof-container`, comando `fof`) permanece o mesmo por
-compatibilidade com instalações existentes. Um novo logo substitui o anterior.
+técnico (`fof`, `fof-container`, comando `fof`, pasta `~/.local/share/fedora-only-fans`)
+permanece o mesmo por compatibilidade com instalações existentes — um script de
+migração de identificadores fica para uma release futura.
 
-- Todos os textos visíveis ao usuário atualizados nos três idiomas.
-- Repositório renomeado no GitHub para `vitaotek/Fedora-Advantage-Panel`.
-- URLs internas (`GITHUB_REPO`, `REPO_URL`, links de changelog e issues) atualizadas.
-- Nenhuma mudança de comportamento — a atualização preserva progresso, tema e idioma.
+- **Novo logo** substitui o anterior. Aplicado ao app, ao atalho do menu e ao container nativo.
+- **Todos os textos visíveis ao usuário** atualizados nos três idiomas (PT-BR, EN, ES).
+- **Repositório renomeado no GitHub** para [`vitaotub/Fedora-Advantage-Panel`](https://github.com/vitaotub/Fedora-Advantage-Panel).
+- **URLs internas atualizadas**: `GITHUB_REPO` no `script.js`, `REPO_URL` no `install.sh`, links de issues/documentação/changelog nos três READMEs e nos rodapés das páginas.
+- **Nenhuma mudança de comportamento** — a atualização preserva progresso, tema e idioma. Nenhuma das 14 sessões teve a lógica alterada.
 
 ---
 
@@ -40,13 +42,13 @@ Nenhuma mudança quebra compatibilidade com a versão anterior.
 
 ### 🎨 Padronização visual dos botões
 
-Todo o esquema de cores dos botões do FOF foi redesenhado para ter significado
+Todo o esquema de cores dos botões do FAP foi redesenhado para ter significado
 semântico consistente em todas as 14 sessões:
 
 - **Azul** — ação principal (instalar, aplicar, atualizar, detectar, configurar, ativar). É a cor da grande maioria dos botões.
 - **Verde** — abrir aplicativo (botões "Abrir X", que aparecem apenas após a instalação).
 - **Vermelho** — remover, reverter, desinstalar, desativar.
-- **Vermelho com borda tracejada** — ações irreversíveis (Desinstalar FOF, Remover repositório Fedora Flatpak, Remover Waydroid completamente).
+- **Vermelho com borda tracejada** — ações irreversíveis (Desinstalar FAP, Remover repositório Fedora Flatpak, Remover Waydroid completamente).
 
 Classes obsoletas removidas do CSS: `.ativo`, `.roxo`, `.laranja`, `.azul-claro`,
 `.verde-escuro`, `.cinza`. Botão cinza agora significa **exclusivamente** botão
@@ -88,7 +90,7 @@ Novas chaves em `locales/en.json` e `locales/es.json`:
 
 Removidas chaves mortas: `comum.loading_generico`, `comum.nao_configurado`.
 
-A versão do FOF agora é injetada no HTML pelo `server.js` no `<head>` — elimina
+A versão do FAP agora é injetada no HTML pelo `server.js` no `<head>` — elimina
 a constante `FALLBACK_VERSION` hardcoded no `i18n.js`.
 
 ### ⚡ Desempenho
@@ -119,6 +121,6 @@ Ao lançar uma versão nova:
 3. Use `###` (três hashes) para subseções dentro de uma versão. Um `##` no meio da seção encerra a captura do parser e o resto é descartado.
 4. Crie a tag/release no GitHub com o mesmo nome.
 
-Se o cabeçalho não bater exatamente com o `version` do `package.json`, o FOF não
+Se o cabeçalho não bater exatamente com o `version` do `package.json`, o FAP não
 encontrará a seção correspondente e mostrará apenas o link para o changelog
 completo no GitHub.
