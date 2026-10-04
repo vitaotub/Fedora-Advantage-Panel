@@ -1,5 +1,5 @@
 // ============================================================
-// Fedora Only Fans (FOF) - Container WebKitGTK
+// Fedora Advantage Panel (FAP) - Container WebKitGTK
 // ============================================================
 
 #include <gtk/gtk.h>
@@ -24,7 +24,7 @@
 
 #define WINDOW_WIDTH 980
 #define WINDOW_HEIGHT 880
-#define APP_NAME "Fedora Only Fans"
+#define APP_NAME "Fedora Advantage Panel"
 #define DEFAULT_URL "http://localhost:3000"
 
 typedef struct {
@@ -321,12 +321,12 @@ window_height = atoi(argv[++i]);
 } else if (strcmp(argv[i], "--debug") == 0) {
 debug_mode = 1;
 } else if (strcmp(argv[i], "--help") == 0 || strcmp(argv[i], "-h") == 0) {
-printf("🐧 Fedora Only Fans - Container WebKitGTK v%s\n", FOF_VERSION);
+printf("🐧 Fedora Advantage Panel - Container WebKitGTK v%s\n", FOF_VERSION);
 printf("\nUso: %s [opções]\n", argv[0]);
 printf("\nOpções:\n");
 printf(" --url URL URL do servidor (padrão: http://localhost:3000)\n");
 printf(" --icon CAMINHO Caminho do ícone da aplicação\n");
-printf(" --name NOME Nome da aplicação (padrão: Fedora Only Fans)\n");
+printf(" --name NOME Nome da aplicação (padrão: Fedora Fedora Advantage Panel)\n");
 printf(" --width N Largura da janela (padrão: 980)\n");
 printf(" --height N Altura da janela (padrão: 880)\n");
 printf(" --debug Modo debug\n");
@@ -397,7 +397,7 @@ webkit_settings_set_enable_page_cache(settings, TRUE);
 webkit_settings_set_enable_smooth_scrolling(settings, TRUE);
 webkit_settings_set_enable_back_forward_navigation_gestures(settings, FALSE);
 webkit_settings_set_user_agent(settings,
-"Mozilla/5.0 (Fedora Only Fans; Linux) AppleWebKit/605.1.15 (KHTML, like Gecko)");
+"Mozilla/5.0 (Fedora Advantage Panel; Linux) AppleWebKit/605.1.15 (KHTML, like Gecko)");
 
 data.webview = webkit_web_view_new_with_settings(settings);
 g_object_unref(settings);
@@ -436,7 +436,7 @@ sigaction(SIGINT, &sa, NULL);
 sigaction(SIGTERM, &sa, NULL);
 
 g_print("============================================================\n");
-g_print(" 🐧 Fedora Only Fans - Container WebKitGTK %s\n", FOF_VERSION);
+g_print(" 🐧 Fedora Advantage Panel - Container WebKitGTK %s\n", FOF_VERSION);
 g_print("============================================================\n");
 g_print(" 🌐 URL: %s\n", url);
 g_print(" 📐 Janela: %dx%d\n", window_width, window_height);
