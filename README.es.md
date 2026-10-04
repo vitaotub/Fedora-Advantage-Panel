@@ -1,8 +1,8 @@
-# <img src="icone_app.png" width="55" align="center"> Fedora Only Fans (FOF)
+# <img src="icone_app.png" width="55" align="center"> Fedora Advantage Panel (FAP)
 
 **🌐 Idioma:** [Português (BR)](README.md) | [English](README.en.md) | Español
 
-![Versión](https://img.shields.io/badge/Versi%C3%B3n-v1.0.0--10012026.a-orange?style=flat-square)
+![Versión](https://img.shields.io/badge/Versi%C3%B3n-v1.0.0--10012026.b-orange?style=flat-square)
 ![Fedora](https://img.shields.io/badge/Fedora-44+-294172?style=flat-square&logo=fedora)
 ![Licencia](https://img.shields.io/badge/Licencia-GPL--3.0-green?style=flat-square)
 ![Idiomas](https://img.shields.io/badge/Idiomas-PT--BR%20%7C%20EN%20%7C%20ES-3c67e3?style=flat-square)
@@ -14,7 +14,7 @@
 ## 🚀 Instalación
 
 ```bash
-bash <(curl -s https://raw.githubusercontent.com/vitaotek/Fedora-Only-Fans/main/install.sh)
+bash <(curl -s https://raw.githubusercontent.com/vitaotub/Fedora-Advantage-Panel/main/install.sh)
 ```
 
 ## 📦 Comandos
@@ -30,11 +30,11 @@ fof-compat                          # Iniciar (modo compatibilidad — GPUs anti
 
 ## 📖 Sobre
 
-**Fedora Only Fans (FOF)** es un panel de automatización visual para Fedora Linux. Transforma una instalación limpia en un sistema completo — códecs, controladores, repositorios, herramientas — a través de clics, sin abrir la terminal.
+**Fedora Advantage Panel (FAP)** es un panel de automatización visual para Fedora Linux. Transforma una instalación limpia en un sistema completo — códecs, controladores, repositorios, herramientas — a través de clics, sin abrir la terminal.
 
-FOF tiene **un único punto de entrada**: el botón **"Iniciar"**, que te lleva por las 14 sesiones paso a paso, en orden lógico. Cada sesión agrupa tareas relacionadas, y el progreso se guarda automáticamente.
+FAP tiene **un único punto de entrada**: el botón **"Iniciar"**, que te lleva por las 14 sesiones paso a paso, en orden lógico. Cada sesión agrupa tareas relacionadas, y el progreso se guarda automáticamente.
 
-Cada botón recuerda su propio estado. Cerrar y reabrir FOF siempre muestra exactamente dónde te detuviste.
+Cada botón recuerda su propio estado. Cerrar y reabrir FAP siempre muestra exactamente dónde te detuviste.
 
 ---
 
@@ -55,7 +55,7 @@ Cada botón recuerda su propio estado. Cerrar y reabrir FOF siempre muestra exac
 | 11 | 📊 Diagnóstico | Panel del sistema, top procesos, particiones, GSmartControl, CoolerControl, journal, estado de optimizaciones |
 | 12 | 🛠️ Ajustes y Mantenimiento | Ajustes de rendimiento, audio, DNF, idioma, dual-boot, limpieza, kernels, GRUB |
 | 13 | 🐧 Estado de Fedora | Versión, detección de Atomic/Silverblue, SELinux (estado, AVCs, setroubleshoot, GUI) |
-| 14 | 📖 Acerca de FOF | Sobre el proyecto + actualizar/desinstalar FOF + changelog dinámico |
+| 14 | 📖 Acerca de FAP | Sobre el proyecto + actualizar/desinstalar FAP + changelog dinámico |
 
 ---
 
@@ -86,7 +86,7 @@ Cada botón recuerda su propio estado. Cerrar y reabrir FOF siempre muestra exac
 ## 📂 Estructura
 
 ```
-Fedora-Only-Fans/
+Fedora-Advantage-Panel/
 ├── index.html                       # Landing page (entrada única)
 ├── guiado.html                      # Configuración paso a paso
 ├── style.css                        # CSS compartido
@@ -109,9 +109,9 @@ Fedora-Only-Fans/
 ├── diagnostico.html                 # Sesión 11
 ├── ajustes-manutencao.html          # Sesión 12
 ├── estado-fedora.html               # Sesión 13
-├── sobre-fof.html                   # Sesión 14
+├── sobre-fof.html                   # Sesión 14 (el archivo conserva el nombre por compatibilidad)
 ├── template-sessao.html             # Plantilla para nuevas sesiones
-├── CHANGELOG.md                     # Historial de cambios (leído por FOF)
+├── CHANGELOG.md                     # Historial de cambios (leído por FAP)
 ├── server.js                        # Servidor Node.js + SSE + endpoints
 ├── hardware-service.js              # Detección de hardware (lspci/lsusb + rpm)
 ├── hardware_map.json                # Mapa de vendors PCI/USB → paquetes
@@ -120,16 +120,18 @@ Fedora-Only-Fans/
 ├── install.sh                       # Instalador / desinstalador / updater
 ├── build-container.sh / Makefile    # Build del contenedor nativo
 ├── src/fof-container.c              # Contenedor WebKitGTK (C + GTK3)
-├── package.json                     # Deps Node + versión del FOF
+├── package.json                     # Deps Node + versión del FAP
 ├── icone_app.png                    # Icono de la app
 └── LICENSE                          # GPL-3.0
 ```
+
+**Nota:** los nombres de archivo (`fof-container`, `iniciar_fof.sh`, `sobre-fof.html`, etc.) conservan el identificador técnico `fof` para preservar instalaciones existentes. El comando de terminal sigue siendo `fof`. Un script de migración para identificadores `fap` está planeado para una futura release.
 
 ---
 
 ## 🖥️ Escritorios soportados
 
-FOF es agnóstico al escritorio — fue construido para funcionar en cualquier entorno Linux que siga el stack XDG estándar.
+FAP es agnóstico al escritorio — fue construido para funcionar en cualquier entorno Linux que siga el stack XDG estándar.
 
 | Escritorio | Estado | Notas |
 |---|---|---|
@@ -152,7 +154,7 @@ FOF es agnóstico al escritorio — fue construido para funcionar en cualquier e
 
 ### Qué NO es automático
 
-- **Fijar en la barra de tareas.** FOF **no** fija accesos directos automáticamente. Fija manualmente por el menú de tu escritorio.
+- **Fijar en la barra de tareas.** FAP **no** fija accesos directos automáticamente. Fija manualmente por el menú de tu escritorio.
 
 ### Requisitos mínimos
 
@@ -188,9 +190,19 @@ FOF es agnóstico al escritorio — fue construido para funcionar en cualquier e
 
 ## 🎯 Changelog
 
-El historial completo está disponible en las [releases de GitHub](https://github.com/vitaotek/Fedora-Only-Fans/releases). FOF también muestra el changelog de la versión actual dentro de la sesión **Acerca de FOF**, cargado dinámicamente del `CHANGELOG.md`.
+El historial completo está disponible en las [releases de GitHub](https://github.com/vitaotub/Fedora-Advantage-Panel/releases). FAP también muestra el changelog de la versión actual dentro de la sesión **Acerca de FAP**, cargado dinámicamente del `CHANGELOG.md`.
 
-### v1.0.0-10012026.a (Actual) 🚧
+### v1.0.0-10012026.b (Actual) 🚧
+
+Renombrado del proyecto a **Fedora Advantage Panel (FAP)**, con nuevo logo.
+
+- **Nuevo nombre de visualización**: "Fedora Only Fans" → "Fedora Advantage Panel". Todos los textos visibles en los tres idiomas fueron actualizados.
+- **Nuevo logo**: reemplaza al anterior en toda la aplicación (app, acceso directo del menú, contenedor nativo).
+- **Repositorio renombrado en GitHub** a `vitaotub/Fedora-Advantage-Panel`.
+- **URLs internas actualizadas** — `GITHUB_REPO`, `REPO_URL`, enlaces de issues/documentación/changelog.
+- **Ningún cambio de comportamiento**: comando `fof`, carpeta de instalación e identificadores técnicos internos se mantienen iguales para preservar instalaciones existentes.
+
+### v1.0.0-10012026.a
 
 Actualización enfocada en estandarización visual, correcciones de errores y seguridad.
 
@@ -241,7 +253,7 @@ El orden de visualización viene de la posición de la entrada en el array `SESS
 
 ## 🐛 Reportar errores
 
-Abre un issue en [github.com/vitaotek/Fedora-Only-Fans/issues](https://github.com/vitaotek/Fedora-Only-Fans/issues)
+Abre un issue en [github.com/vitaotub/Fedora-Advantage-Panel/issues](https://github.com/vitaotub/Fedora-Advantage-Panel/issues)
 
 ## ⚠️ Aviso legal
 
