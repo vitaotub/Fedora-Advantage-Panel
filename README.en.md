@@ -1,8 +1,8 @@
-# <img src="icone_app.png" width="55" align="center"> Fedora Only Fans (FOF)
+# <img src="icone_app.png" width="55" align="center"> Fedora Advantage Panel (FAP)
 
 **🌐 Language:** [Português (BR)](README.md) | English | [Español](README.es.md)
 
-![Version](https://img.shields.io/badge/Version-v1.0.0--10012026.a-orange?style=flat-square)
+![Version](https://img.shields.io/badge/Version-v1.0.0--10012026.b-orange?style=flat-square)
 ![Fedora](https://img.shields.io/badge/Fedora-44+-294172?style=flat-square&logo=fedora)
 ![License](https://img.shields.io/badge/License-GPL--3.0-green?style=flat-square)
 ![Languages](https://img.shields.io/badge/Languages-PT--BR%20%7C%20EN%20%7C%20ES-3c67e3?style=flat-square)
@@ -14,7 +14,7 @@
 ## 🚀 Installation
 
 ```bash
-bash <(curl -s https://raw.githubusercontent.com/vitaotek/Fedora-Only-Fans/main/install.sh)
+bash <(curl -s https://raw.githubusercontent.com/vitaotub/Fedora-Advantage-Panel/main/install.sh)
 ```
 
 ## 📦 Commands
@@ -30,11 +30,11 @@ fof-compat                          # Launch (compatibility mode — older GPUs)
 
 ## 📖 About
 
-**Fedora Only Fans (FOF)** is a visual automation panel for Fedora Linux. It turns a clean installation into a complete system — codecs, drivers, repositories, tools — through clicks, without opening the terminal.
+**Fedora Advantage Panel (FAP)** is a visual automation panel for Fedora Linux. It turns a clean installation into a complete system — codecs, drivers, repositories, tools — through clicks, without opening the terminal.
 
-FOF has a **single entry point**: the **"Start"** button, which takes you through the 14 sessions step by step, in logical order. Each session groups related tasks, and progress is saved automatically.
+FAP has a **single entry point**: the **"Start"** button, which takes you through the 14 sessions step by step, in logical order. Each session groups related tasks, and progress is saved automatically.
 
-Each button remembers its own state. Closing and reopening FOF (or rebooting) always shows exactly where you stopped.
+Each button remembers its own state. Closing and reopening FAP (or rebooting) always shows exactly where you stopped.
 
 ---
 
@@ -55,7 +55,7 @@ Each button remembers its own state. Closing and reopening FOF (or rebooting) al
 | 11 | 📊 Diagnostics | System panel, top processes, partitions, GSmartControl, CoolerControl, journal, tunings status |
 | 12 | 🛠️ Tunings and Maintenance | Performance tunings, audio adjustments, DNF, locale, dual-boot, cleanup, kernels, GRUB |
 | 13 | 🐧 Fedora Status | Version, Atomic/Silverblue detection, SELinux (status, AVCs, setroubleshoot, GUI) |
-| 14 | 📖 About FOF | About the project + update/uninstall FOF + dynamic changelog |
+| 14 | 📖 About FAP | About the project + update/uninstall FAP + dynamic changelog |
 
 ---
 
@@ -67,7 +67,7 @@ Each button remembers its own state. Closing and reopening FOF (or rebooting) al
 - **Consistent visual structure** — every session starts with a session info card, and content accordions are collapsed by default
 - **Semantic color scheme** — blue for action, green for open app, red for revert, dashed red for irreversible actions
 - **Uninstall icon** next to each installed Flatpak app
-- **External Flatpak removal detection** — if the user deletes the app outside FOF, the button reverts to its initial state
+- **External Flatpak removal detection** — if the user deletes the app outside FAP, the button reverts to its initial state
 - **Automatic hardware detection** — `/hardware-scan` endpoint cross-references PCI/USB IDs with `hardware_map.json` and suggests drivers
 - **NVIDIA GPU generation detection** — automatically picks the correct driver series (`akmod-nvidia`, `580xx`, `470xx` or `390xx`)
 - **Multi-desktop support** — works on GNOME, KDE, XFCE, Cinnamon, MATE, LXQt, LXDE, Budgie and tiling WMs. The startup terminal follows the detected desktop
@@ -86,7 +86,7 @@ Each button remembers its own state. Closing and reopening FOF (or rebooting) al
 ## 📂 Structure
 
 ```
-Fedora-Only-Fans/
+Fedora-Advantage-Panel/
 ├── index.html                       # Landing page (single entry)
 ├── guiado.html                      # Step-by-step setup
 ├── style.css                        # Shared CSS
@@ -109,9 +109,9 @@ Fedora-Only-Fans/
 ├── diagnostico.html                 # Session 11
 ├── ajustes-manutencao.html          # Session 12
 ├── estado-fedora.html               # Session 13
-├── sobre-fof.html                   # Session 14
+├── sobre-fof.html                   # Session 14 (file keeps its name for compatibility)
 ├── template-sessao.html             # Template for new sessions
-├── CHANGELOG.md                     # Change history (read by FOF)
+├── CHANGELOG.md                     # Change history (read by FAP)
 ├── server.js                        # Node.js server + SSE + endpoints
 ├── hardware-service.js              # Hardware detection (lspci/lsusb + rpm)
 ├── hardware_map.json                # Vendor map PCI/USB → packages
@@ -120,16 +120,18 @@ Fedora-Only-Fans/
 ├── install.sh                       # Installer / uninstaller / updater
 ├── build-container.sh / Makefile    # Native container build
 ├── src/fof-container.c              # WebKitGTK container (C + GTK3)
-├── package.json                     # Node deps + FOF version
+├── package.json                     # Node deps + FAP version
 ├── icone_app.png                    # App icon
 └── LICENSE                          # GPL-3.0
 ```
+
+**Note:** the file names (`fof-container`, `iniciar_fof.sh`, `sobre-fof.html`, etc.) keep the `fof` technical identifier to preserve existing installations. The terminal command is still `fof`. A migration script for `fap` identifiers is planned for a future release.
 
 ---
 
 ## 🖥️ Supported Desktops
 
-FOF is desktop-agnostic — it was built to run on any Linux environment that follows the standard XDG stack.
+FAP is desktop-agnostic — it was built to run on any Linux environment that follows the standard XDG stack.
 
 | Desktop | Status | Notes |
 |---|---|---|
@@ -152,7 +154,7 @@ FOF is desktop-agnostic — it was built to run on any Linux environment that fo
 
 ### What's NOT automatic
 
-- **Pinning to the taskbar.** FOF does **not** pin shortcuts automatically. Pin manually through your desktop's menu.
+- **Pinning to the taskbar.** FAP does **not** pin shortcuts automatically. Pin manually through your desktop's menu.
 
 ### Minimum requirements
 
@@ -188,9 +190,19 @@ FOF is desktop-agnostic — it was built to run on any Linux environment that fo
 
 ## 🎯 Changelog
 
-The full history is available in the [GitHub releases](https://github.com/vitaotek/Fedora-Only-Fans/releases). FOF also displays the changelog for the current version inside the **About FOF** session, loaded dynamically from `CHANGELOG.md`.
+The full history is available in the [GitHub releases](https://github.com/vitaotub/Fedora-Advantage-Panel/releases). FAP also displays the changelog for the current version inside the **About FAP** session, loaded dynamically from `CHANGELOG.md`.
 
-### v1.0.0-10012026.a (Current) 🚧
+### v1.0.0-10012026.b (Current) 🚧
+
+Project renamed to **Fedora Advantage Panel (FAP)**, with a new logo.
+
+- **New display name**: "Fedora Only Fans" → "Fedora Advantage Panel". All user-visible texts in all three languages have been updated.
+- **New logo**: replaces the previous one across the application (app, menu shortcut, native container).
+- **Repository renamed on GitHub** to `vitaotub/Fedora-Advantage-Panel`.
+- **Internal URLs updated** — `GITHUB_REPO`, `REPO_URL`, issues/documentation/changelog links.
+- **No behavior change**: `fof` command, install folder, and internal technical identifiers stay the same to preserve existing installations.
+
+### v1.0.0-10012026.a
 
 Update focused on visual standardization, bug fixes, and security.
 
@@ -241,7 +253,7 @@ Display order comes from the position of the entry in the `SESSOES` array.
 
 ## 🐛 Bug reports
 
-Open an issue at [github.com/vitaotek/Fedora-Only-Fans/issues](https://github.com/vitaotek/Fedora-Only-Fans/issues)
+Open an issue at [github.com/vitaotub/Fedora-Advantage-Panel/issues](https://github.com/vitaotub/Fedora-Advantage-Panel/issues)
 
 ## ⚠️ Legal notice
 
