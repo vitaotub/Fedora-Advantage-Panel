@@ -65,7 +65,7 @@ DESKTOP_FILE_COMPAT="$HOME/.local/share/applications/fof-container-compat.deskto
 DESKTOP_FILE_OLD="$HOME/.local/share/applications/fedora-only-fans.desktop"
 DESKTOP_FILE_COMPAT_OLD="$HOME/.local/share/applications/fedora-only-fans-compat.desktop"
 
-REPO_URL="https://github.com/vitaotek/Fedora-Only-Fans.git"
+REPO_URL="https://github.com/vitaotub/Fedora-Advantage-Panel.git"
 LOG_FILE="/tmp/fof-install-$(date +%Y%m%d-%H%M%S).log"
 
 # ============================================================
