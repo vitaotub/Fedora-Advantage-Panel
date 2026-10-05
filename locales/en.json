@@ -47,7 +47,8 @@
         "status_pacote": "Package {atual} of {total}",
         "badge_atualizar": "Update",
         "badge_atualizando": "🔄 Updating FAP... Follow progress in About FAP.",
-        "badge_ja_atualizando": "⏳ Update already in progress..."
+        "badge_ja_atualizando": "⏳ Update already in progress...",
+        "navegacao_bloqueada": "Wait for this session's commands to finish before switching sessions."
     },
 
     "index": {

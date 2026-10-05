@@ -47,7 +47,8 @@
         "status_pacote": "Paquete {atual} de {total}",
         "badge_atualizar": "Actualizar",
         "badge_atualizando": "🔄 Actualizando FAP... Sigue el progreso en Acerca de FAP.",
-        "badge_ja_atualizando": "⏳ Actualización ya en curso..."
+        "badge_ja_atualizando": "⏳ Actualización ya en curso...",
+        "navegacao_bloqueada": "Espera a que terminen los comandos de esta sesión antes de cambiar de sesión."
     },
 
     "index": {
