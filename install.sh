@@ -236,36 +236,13 @@ fi
 # diretório de instalação, symlinks, atalhos .desktop, ícone no
 # hicolor, logs em /tmp, dados do WebKitGTK.
 #
-# ANTES de apagar o diretório antigo, preservamos o arquivo
-# .progresso.json (que guarda o estado de cada botão das 14
-# sessões) num local temporário. Após instalar o FAP, esse
-# arquivo é restaurado dentro de $INSTALL_DIR.
-#
-# O localStorage do WebKitGTK (tema, idioma) NÃO é preservado:
-# o diretório de dados do WebKit muda com o app_id da janela
-# (fof-container → fap-container) e migrar isso envolveria
-# manipular arquivos internos do WebKit. O usuário terá que
-# reconfigurar tema e idioma — apenas uma vez.
-#
-# Progresso: preservado.
-# Tema e idioma: resetados.
-
-_MIGRACAO_PROGRESSO_TEMP="$HOME/.local/share/fap-migracao-progresso.json"
+# É uma migração limpa — nenhum dado do usuário (progresso, tema,
+# idioma) é preservado.
 
 migrar_esquema_antigo() {
     print_step "Verificando instalação antiga do FOF..."
 
     local migrou=0
-
-    # ─── 0. Preservar .progresso.json ANTES de apagar qualquer coisa ───
-    # Só faz sentido preservar se o diretório antigo existe E
-    # contém o arquivo. Se não existir, seguimos em frente.
-    if [ -f "$OLD_INSTALL_DIR/.progresso.json" ]; then
-        mkdir -p "$(dirname "$_MIGRACAO_PROGRESSO_TEMP")"
-        cp "$OLD_INSTALL_DIR/.progresso.json" "$_MIGRACAO_PROGRESSO_TEMP" 2>/dev/null || true
-        print_info "Progresso do FOF preservado temporariamente"
-        migrou=1
-    fi
 
     # ─── 1. Diretório de instalação antigo ─────────────────────
     if [ -d "$OLD_INSTALL_DIR" ]; then
@@ -343,42 +320,9 @@ migrar_esquema_antigo() {
 
     if [ $migrou -eq 1 ]; then
         print_success "Migração do esquema antigo concluída"
-        [ -f "$_MIGRACAO_PROGRESSO_TEMP" ] && \
-            print_info "Progresso do FOF será restaurado após a instalação do FAP"
     else
         print_info "Nenhuma instalação antiga do FOF encontrada"
     fi
-}
-
-# ============================================================
-# RESTAURAR PROGRESSO MIGRADO (FOF → FAP)
-# ============================================================
-#
-# Se _MIGRACAO_PROGRESSO_TEMP existe, significa que
-# migrar_esquema_antigo() rodou e preservou o .progresso.json
-# do FOF. Depois de instalar o FAP, movemos esse arquivo para
-# dentro de $INSTALL_DIR, onde o server.js vai lê-lo como se
-# fosse o progresso do próprio FAP.
-#
-# O formato do .progresso.json é o mesmo (executados + pulados),
-# então o FAP interpreta corretamente. As chaves que não existirem
-# mais em SESSOES são limpas automaticamente pelo próprio
-# script.js na primeira carga (função _limparIdsOrfaos).
-
-_restaurar_progresso_migrado() {
-    if [ ! -f "$_MIGRACAO_PROGRESSO_TEMP" ]; then
-        return 0
-    fi
-
-    if [ ! -d "$INSTALL_DIR" ]; then
-        print_warning "Diretório de instalação não existe; não foi possível restaurar o progresso"
-        rm -f "$_MIGRACAO_PROGRESSO_TEMP"
-        return 1
-    fi
-
-    mv "$_MIGRACAO_PROGRESSO_TEMP" "$INSTALL_DIR/.progresso.json"
-    print_success "Progresso do FOF restaurado no FAP"
-    return 0
 }
 
 # ============================================================
@@ -396,11 +340,10 @@ _restaurar_progresso_migrado() {
 # $OLD_INSTALL_DIR (~/.local/share/fedora-only-fans) existe.
 #
 # Em vez de retornar "FAP não está instalado" e travar, caímos
-# aqui e fazemos a instalação completa com migração.
+# aqui e fazemos a instalação completa com migração limpa.
 #
 # Após o término, o processo do FOF antigo (que ainda está
-# rodando com o server.js antigo) continua até ser fechado, mas
-# todas as suas referências a arquivos foram removidas. Na
+# rodando com o server.js antigo) continua até ser fechado. Na
 # próxima abertura, o usuário já estará no FAP.
 
 _migrar_via_update() {
@@ -409,12 +352,13 @@ _migrar_via_update() {
     print_info "Migrando automaticamente para o Fedora Advantage Panel (FAP)..."
     echo ""
 
-    # Reaproveita a migração, a instalação e a restauração de
-    # progresso — na ordem correta.
+    # Reaproveita a migração e a instalação completa. A ordem é
+    # importante: primeiro remove TUDO do FOF, depois instala o
+    # FAP do zero (clone + npm install + symlinks), depois
+    # recompila o container e cria os atalhos.
     migrar_esquema_antigo
 
     instalar_fap
-    _restaurar_progresso_migrado
     verificar_arquivos_instalados
     instalar_dependencias_container
     compilar_container_install
@@ -432,9 +376,6 @@ _migrar_via_update() {
     print_info "Para abrir o FAP:"
     echo " - Terminal: digite 'fap' ou 'fap-compat'"
     echo " - Menu: procure por 'Fedora Advantage Panel'"
-    echo ""
-    print_info "💡 Seu progresso anterior foi preservado."
-    print_info "   Tema e idioma precisarão ser reconfigurados (uma única vez)."
     echo ""
     print_info "📋 Log da migração: $LOG_FILE"
     echo ""
@@ -665,11 +606,6 @@ chmod +x "$INSTALL_DIR/iniciar_fap_compat.sh"
 chmod +x "$BIN_DIR/fap-compat"
 fi
 
-# Restaura o progresso preservado por migrar_esquema_antigo(),
-# se houver. Se não houver (instalação limpa num sistema sem
-# FOF), é no-op.
-_restaurar_progresso_migrado
-
 print_success "FAP instalado em: $INSTALL_DIR"
 print_success "Comando 'fap' disponível em: $BIN_DIR"
 print_success "Comando 'fap-compat' disponível em: $BIN_DIR"
@@ -849,8 +785,7 @@ fi
 # ─── 6. Logs temporários ────────────────────────────────────
 # Os arquivos /tmp/fap-out-*.log são criados pelo kdesu/pkexec
 # (que rodam como root) e ficam com owner root. O `rm -f` como
-# usuário comum falha com "Operação não permitida", o que faz o
-# `set -e` abortar o script inteiro. Solução: tentar como user
+# usuário comum falha com "Operação não permitida", o que faz o# `set -e` abortar o script inteiro. Solução: tentar como user
 # primeiro, e escalar para sudo apenas se sobrar algo.
 print_step "Removendo logs temporários..."
 
@@ -916,7 +851,8 @@ print_header
 # existe o FOF antigo ($OLD_INSTALL_DIR presente), estamos num
 # cenário de migração via botão "Atualizar" do próprio FOF.
 # Delegamos para _migrar_via_update(), que faz a instalação
-# completa com migração e preservação de progresso.
+# completa com migração limpa (remove FOF, clona FAP, compila,
+# cria atalhos).
 if [ ! -d "$INSTALL_DIR/.git" ] && [ -d "$OLD_INSTALL_DIR" ]; then
     _migrar_via_update
     exit 0
