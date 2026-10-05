@@ -12,6 +12,11 @@
         "btn_remover": "↩️ Remove",
         "btn_concluido": "✅ Done",
         "btn_abrir": "🚀 Open",
+        "desinstalar_app": "Remove {nome}",
+        "desinstalar_app_generico": "🗑️ Remove application",
+        "btn_desfazer_tudo": "🗑️ Completely remove {nome}",
+        "desfazer_tudo_confirm1": "⚠️ Completely remove {nome}?\n\nThis button removes EVERYTHING that FAP installed:\n• System packages\n• Configuration files created\n• User groups and services\n\nIrreversible action.",
+        "desfazer_tudo_confirm2": "🔄 Final confirmation!\n\nAll traces of {nome} will be removed.\n\nAre you absolutely sure?",
         "confirmar_desinstalar": "Uninstall {nome}?",
         "desinstalar_flatpak": "Uninstall {nome}",
         "erro_conexao": "❌ Connection error: {msg}",
@@ -297,7 +302,9 @@
             "easyeffects_titulo": "🎵 Audio Enhancement with EasyEffects",
             "easyeffects_desc": "Sound effects processor for PipeWire to apply noise reduction and equalization.",
             "btn_instalar_easyeffects": "Install EasyEffects (Flatpak)",
-            "texto_concluido_easyeffects": "✅ EasyEffects installed"
+            "texto_concluido_easyeffects": "✅ EasyEffects installed",
+            "btn_abrir_obs": "🚀 Open OBS Studio",
+            "btn_abrir_easyeffects": "🚀 Open EasyEffects"
         },
 
         "aplicativos": {
@@ -415,12 +422,14 @@
             "texto_concluido_lmms": "✅ LMMS installed",
             "btn_audacity": "🎙️ Audacity",
             "texto_concluido_audacity": "✅ Audacity installed",
-            "rclone_aviso": "ℹ️ <strong>Cloud account setup:</strong> Rclone Manager is a graphical interface for Rclone. It lets you configure access to Google Drive, OneDrive, Dropbox, S3, and dozens of other cloud storage services. After installing both apps, open Rclone Manager and follow the guide inside its interface to add your accounts. FAP only installs the tools — setting up the accounts is done by you, inside Rclone Manager.",
+            "rclone_aviso": "ℹ️ <strong>Cloud account setup:</strong> Rclone Manager is a graphical interface for Rclone. It lets you configure access to Google Drive, OneDrive, Dropbox, S3, and dozens of other cloud storage services. After installing, open Rclone Manager and follow the guide inside its interface to add your accounts. <strong>If you need the Rclone CLI, Rclone Manager itself offers an option to install it.</strong> Setting up the accounts is done by you, inside Rclone Manager.",
             "btn_rclone": "☁️ Install Rclone",
             "texto_concluido_rclone": "✅ Rclone installed",
             "btn_rclone_manager": "🎛️ Install Rclone Manager",
             "texto_concluido_rclone_manager": "✅ Rclone Manager installed",
-            "btn_abrir_rclone_manager": "🚀 Open Rclone Manager"
+            "btn_abrir_rclone_manager": "🚀 Open Rclone Manager",
+            "rclone_uninstall_aviso": "⚠️ <strong>Completely remove Rclone Manager?</strong> This button removes the packages <code>rclone-manager</code> and <code>rclone</code> from the system, including any version of Rclone that Rclone Manager itself installed. <strong>Your cloud accounts are stored in <code>~/.config/rclone</code> and are NOT deleted</strong> — if you reinstall later, your accounts will still be there. Irreversible action regarding the packages.",
+            "btn_desfazer_rclone_manager": "🗑️ Completely remove Rclone Manager"
         },
 
         "casa-escritorio": {
@@ -464,7 +473,11 @@
             "okular_tesseract_info": "ℹ️ <strong>What is OCR:</strong> Optical Character Recognition — converts text images (scanned, photographed) into searchable and copyable text. Tesseract supports Portuguese, English and 100+ languages. In Okular, use <strong>Tools → Text Selection</strong> on scanned PDFs (with Tesseract installed, it recognizes automatically).",
             "okular_tesseract_info_lang": "ℹ️ <strong>Additional OCR languages:</strong> we install the base package with Portuguese and English. If you need another language, look for <code>tesseract-langpack-XX</code> in Discover/GNOME Software.",
             "btn_okular_tesseract": "📦 Install Okular + Tesseract",
-            "texto_concluido_okular_tesseract": "✅ PDF+OCR installed"
+            "texto_concluido_okular_tesseract": "✅ PDF+OCR installed",
+            "btn_abrir_localsend": "🚀 Open LocalSend",
+            "btn_abrir_warpinator": "🚀 Open Warpinator",
+            "btn_abrir_keepassxc": "🚀 Open KeePassXC",
+            "btn_abrir_okular": "🚀 Open Okular"
         },
 
         "gaming": {
@@ -473,13 +486,18 @@
             "descricao": "Installs the main launchers, Windows compatibility tools (Wine/Proton), performance and monitoring utilities, and provides ready-to-use tips to optimize the gaming experience on Fedora.",
             "launchers_titulo": "🎮 Launchers",
             "launchers_desc": "Install the main game launchers for Fedora.",
-            "launchers_info": "ℹ️ All launchers are installed via Flatpak.",
+            "launchers_info": "ℹ️ Steam is installed natively via RPM Fusion (required for the Gamescope session). Heroic and Lutris via Flatpak.",
+            "steam_nativo_info": "ℹ️ <strong>Native Steam:</strong> requires RPM Fusion active (Session 1). If you had Steam via Flatpak in previous FAP versions, remove it manually with <code>flatpak uninstall -y com.valvesoftware.Steam</code> to avoid duplication. Your games live in <code>~/.steam/</code> and are preserved.",
             "btn_steam": "🎮 Steam",
             "btn_heroic": "⚡ Heroic Games",
             "btn_lutris": "🎯 Lutris",
             "texto_concluido_steam": "✅ Steam installed",
             "texto_concluido_heroic": "✅ Heroic installed",
             "texto_concluido_lutris": "✅ Lutris installed",
+            "btn_abrir_steam": "🚀 Open Steam",
+            "btn_abrir_heroic": "🚀 Open Heroic",
+            "btn_abrir_lutris": "🚀 Open Lutris",
+            "btn_abrir_bottles": "🚀 Open Bottles",
             "compat_titulo": "🍷 Compatibility (Wine/Proton)",
             "compat_desc": "Tools to run Windows games and programs outside of Steam, and resources that help with compatibility.",
             "btn_wine": "🍷 Wine",
@@ -490,6 +508,7 @@
             "texto_concluido_winetricks": "✅ Winetricks installed",
             "texto_concluido_bottles": "✅ Bottles installed",
             "texto_concluido_ntsync": "✅ NTSYNC installed",
+            "btn_desfazer_ntsync": "🗑️ Completely remove NTSYNC",
             "compat_info_extra": "ℹ️ <strong>Winetricks</strong> installs extra components (fonts, libraries) inside a Wine prefix. <strong>Bottles</strong> is a modern alternative to plain Wine, with visual management of \"bottles\" (prefixes) and support for Proton-GE runners. <strong>NTSYNC</strong> is a kernel module that brings significant performance and compatibility improvements for Windows games via Wine/Proton.",
             "ntsync_aviso": "⚠️ <strong>What is NTSYNC?</strong> It's a Linux kernel module that implements Windows thread synchronization natively in the kernel, reducing CPU overhead and improving game smoothness (fewer micro-stutters and more stable frame times). It's safe to enable — Fedora 44 already enables it by default for Wine/Steam. <strong>Recommended for GE-Proton users</strong>, where NTSYNC support is already native. The default Wine from repositories does not benefit from NTSYNC yet — in that case, the real gain comes when running games via Proton/GE-Proton. <strong>The module will be loaded automatically</strong> and will persist between reboots. If a game still doesn't recognize it, restart your computer.",
             "performance_titulo": "⚡ Performance and Monitoring",
@@ -523,7 +542,7 @@
             "btn_gamemode_presets": "⚙️ Apply Presets",
             "gamescope_session_titulo": "Gamescope Session — Gaming mode on boot",
             "gamescope_session_desc": "Installs an alternative login session that boots the computer directly into Gamescope (the same mode Steam Deck uses). Ideal for HTPCs and TV-connected machines.",
-            "gamescope_session_aviso": "⚠️ <strong>Note:</strong> this is an alternative session — it appears on your display manager's login screen (GDM, SDDM, etc). Your normal session (KDE/GNOME) stays intact. You choose which one to enter at each boot.",
+            "gamescope_session_aviso": "⚠️ <strong>Prerequisites for the Gamescope session:</strong><br>• <strong>Steam installed and configured</strong> — the session boots directly into Steam Big Picture. Install Steam via RPM Fusion (not Flatpak), launch it once to apply updates and log in with your account before proceeding.<br>• <strong>Compatible hardware</strong> — AMD and Intel work natively. NVIDIA requires the <code>nvidia-drm.modeset=1</code> kernel parameter (enable via the <strong>Hardware → NVIDIA</strong> session).<br>• <strong>Logout to test</strong> — the session cannot be tested inside FAP. After installing, reboot, log out and select <strong>\"Steam Big Picture\"</strong> in the login screen's session selector.",
             "btn_gamescope_session": "📦 Install Gamescope Session",
             "texto_concluido_gamescope_session": "✅ Gamescope session installed",
             "controller_test_titulo": "Controller Test",
