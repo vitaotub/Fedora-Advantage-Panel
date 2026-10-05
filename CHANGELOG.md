@@ -18,7 +18,7 @@ que exibe a seção da versão atual dentro do FAP, na sessão **Sobre o FAP**.
 
 ---
 
-## v1.0-10042026
+## 1.0.0-10042026
 
 ### 🎨 Renomeação completa do projeto: FOF → FAP
 
