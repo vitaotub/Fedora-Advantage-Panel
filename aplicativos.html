@@ -345,7 +345,9 @@ data-i18n="sessoes.aplicativos.btn_abrir_instalador">
 </div>
 </div>
 <div class="launcher-item">
+<div class="btn-flatpak-wrapper">
 <button class="btn-executar" onclick="instalarLightworks()" data-comando="instalar-lightworks" data-logbox="log-sessao-aplicativos" id="btn-instalar-lightworks" data-i18n="sessoes.aplicativos.btn_lightworks">🎞️ Lightworks</button>
+</div>
 </div>
 <div class="launcher-item">
 <div class="btn-flatpak-wrapper">
@@ -396,18 +398,11 @@ data-i18n="sessoes.aplicativos.btn_abrir_instalador">
 <p data-i18n="sessoes.aplicativos.bloco6_desc">Ferramentas para sincronizar arquivos com Google Drive, OneDrive, Dropbox e outros serviços.</p>
 
 <div class="aviso-caixa" data-i18n-html="sessoes.aplicativos.rclone_aviso">
-ℹ️ <strong>Configuração das contas de nuvem:</strong> o Rclone Manager é uma interface gráfica para o Rclone. Ele permite configurar acesso a Google Drive, OneDrive, Dropbox, S3, e dezenas de outros serviços de armazenamento em nuvem. Após instalar os dois aplicativos, abra o Rclone Manager e siga o guia interno da própria interface para adicionar suas contas. O FAP apenas instala as ferramentas — a configuração das contas é feita por você, dentro do Rclone Manager.
+ℹ️ <strong>Configuração das contas de nuvem:</strong> o Rclone Manager é uma interface gráfica para o Rclone. Ele permite configurar acesso a Google Drive, OneDrive, Dropbox, S3, e dezenas de outros serviços de armazenamento em nuvem. Após instalar, abra o Rclone Manager e siga o guia interno da própria interface para adicionar suas contas. <strong>Se você precisar do Rclone CLI, o próprio Rclone Manager oferece a opção de instalá-lo.</strong> A configuração das contas é feita por você, dentro do Rclone Manager.
 </div>
 
 <div class="botoes-flex">
-<button class="btn-executar"
-onclick="instalarRclone()"
-data-comando="instalar-rclone"
-data-logbox="log-sessao-aplicativos"
-id="btn-instalar-rclone"
-data-i18n="sessoes.aplicativos.btn_rclone">
-☁️ Instalar Rclone
-</button>
+<div class="btn-flatpak-wrapper">
 <button class="btn-executar"
 onclick="instalarRcloneManager()"
 data-comando="instalar-rclone-manager"
@@ -416,6 +411,7 @@ id="btn-instalar-rclone-manager"
 data-i18n="sessoes.aplicativos.btn_rclone_manager">
 🎛️ Instalar Rclone Manager
 </button>
+</div>
 <button class="btn-executar verde"
 style="display: none;"
 onclick="abrirRcloneManager()"
@@ -426,10 +422,27 @@ data-i18n="sessoes.aplicativos.btn_abrir_rclone_manager">
 🚀 Abrir Rclone Manager
 </button>
 </div>
+
+<!-- Botão "Desfazer tudo" — remove rclone-manager + rclone + resíduos -->
+<div class="aviso-caixa" style="margin-top: 1rem;" data-i18n-html="sessoes.aplicativos.rclone_uninstall_aviso">
+⚠️ <strong>Remover completamente o Rclone Manager?</strong> Este botão remove os pacotes <code>rclone-manager</code> e <code>rclone</code> do sistema, incluindo qualquer versão do Rclone que o próprio Rclone Manager tenha instalado. <strong>Suas contas de nuvem ficam salvas em <code>~/.config/rclone</code> e NÃO são apagadas</strong> — se reinstalar depois, suas contas continuam lá. Ação irreversível em relação aos pacotes.
 </div>
 
-<div class="progress-container" id="progress-instalar-rclone"><div class="progress-bar"><div class="progress-fill" id="progress-fill-instalar-rclone"></div></div><div class="progress-text"><span class="status" id="progress-status-instalar-rclone">⏳ Iniciando...</span><span class="percentage" id="progress-percent-instalar-rclone">0%</span></div></div>
+<div class="botoes-flex">
+<button class="btn-executar destrutivo"
+onclick="desfazerRcloneManager()"
+data-comando="desfazer-rclone-manager"
+data-logbox="log-sessao-aplicativos"
+id="btn-desfazer-rclone-manager"
+data-i18n="sessoes.aplicativos.btn_desfazer_rclone_manager"
+disabled>
+🗑️ Remover completamente o Rclone Manager
+</button>
+</div>
+</div>
+
 <div class="progress-container" id="progress-instalar-rclone-manager"><div class="progress-bar"><div class="progress-fill" id="progress-fill-instalar-rclone-manager"></div></div><div class="progress-text"><span class="status" id="progress-status-instalar-rclone-manager">⏳ Iniciando...</span><span class="percentage" id="progress-percent-instalar-rclone-manager">0%</span></div></div>
+<div class="progress-container" id="progress-desfazer-rclone-manager"><div class="progress-bar"><div class="progress-fill" id="progress-fill-desfazer-rclone-manager"></div></div><div class="progress-text"><span class="status" id="progress-status-desfazer-rclone-manager">⏳ Iniciando...</span><span class="percentage" id="progress-percent-desfazer-rclone-manager">0%</span></div></div>
 </details>
 
 <!-- Log único da sessão -->
@@ -444,6 +457,9 @@ data-i18n="sessoes.aplicativos.btn_abrir_rclone_manager">
 
 function _t(chave, fallback) {
     return (typeof tOr === 'function') ? tOr(chave, fallback) : fallback;
+}
+function _tVars(chave, fallback, vars) {
+    return (typeof tOr === 'function') ? tOr(chave, fallback, vars) : fallback;
 }
 
 var APPS_FLATPAK = {
@@ -492,10 +508,50 @@ var APPS_FLATPAK = {
     'instalar-audacity': { appId: 'org.audacityteam.Audacity', fallback: '🎙️ Audacity' }
 };
 
+// ============================================================
+// REGISTRO DE APPS REMOVÍVEIS (não-Flatpak)
+// ============================================================
+//
+// Lightworks baixa um RPM do site oficial. A lixeira remove o
+// pacote via dnf. NÃO removemos nada além do que este botão
+// instalou — regra do projeto para não quebrar pacotes do Fedora.
+//
+// Rclone Manager usa "Desfazer tudo" porque remove DOIS pacotes
+// (rclone-manager + rclone). Suas contas de nuvem em
+// ~/.config/rclone NÃO são tocadas.
+
+registrarAppRemovivel('instalar-lightworks', {
+    tipo: 'dnf',
+    pacotes: ['lightworks'],
+    nome: 'Lightworks'
+});
+
+registrarAppRemovivel('instalar-rclone-manager', {
+    modo: 'desfazerTudo',
+    idDesfazer: 'desfazer-rclone-manager',
+    // Pattern match via rpm -qa para pegar qualquer variação do nome
+    // (rclone-manager, rclone-manager-bin, RcloneManager, etc). O RPM
+    // do Zarestia é gerado por ferramenta que pode nomear o pacote
+    // de forma diferente do esperado.
+    comandoDesfazer:
+        'PKGS=$(rpm -qa | grep -i "^rclone"); ' +
+        'if [ -n "$PKGS" ]; then ' +
+        '  sudo dnf remove -y $PKGS; ' +
+        'else ' +
+        '  echo "ℹ️ Nenhum pacote rclone* encontrado para remover."; ' +
+        'fi; ' +
+        'sudo dnf clean all && sudo dnf autoremove -y',
+    nome: 'Rclone Manager'
+});
+
+// ============================================================
+// FLATPAKS — INSTALAÇÃO VIA FILA
+// ============================================================
+
 async function instalarFlatpak(idComando) {
     var info = APPS_FLATPAK[idComando];
     if (!info) {
-        console.error('[softwares-uteis] App não mapeado:', idComando);
+        console.error('[aplicativos] App não mapeado:', idComando);
         return;
     }
     var comando = 'flatpak install flathub ' + info.appId + ' -y';
@@ -510,6 +566,10 @@ async function instalarFlatpak(idComando) {
         _atualizarIconeDesinstalar(idComando);
     });
 }
+
+// ============================================================
+// DESINSTALAÇÃO DE FLATPAKS
+// ============================================================
 
 async function desinstalarAppFlatpak(idComando, appId, nomeExibicao) {
     if (!isExecutado(idComando)) {
@@ -571,6 +631,7 @@ async function desinstalarAppFlatpak(idComando, appId, nomeExibicao) {
         }
 
         _esconderIconeDesinstalar(idComando);
+        esconderBotoesAbrirDe(idComando);
 
         if (logBox) {
             var successLine = document.createElement('div');
@@ -590,6 +651,10 @@ async function desinstalarAppFlatpak(idComando, appId, nomeExibicao) {
         }
     }
 }
+
+// ------------------------------------------------------------
+// ÍCONES DE DESINSTALAR — FLATPAK (local desta sessão)
+// ------------------------------------------------------------
 
 var _svgLixeira = '<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>';
 
@@ -648,21 +713,30 @@ function _restaurarIconesFlatpak() {
     });
 }
 
+// ============================================================
+// LIGHTWORKS (RPM do site oficial)
+// ============================================================
+
 async function instalarLightworks() {
     var comando =
         'sudo dnf install -y https://cdn.lwks.com/releases/latest/lightworks_linux_rpm.rpm ' +
         '|| sudo dnf install --setopt=localpkg_gpgcheck=0 -y https://cdn.lwks.com/releases/latest/lightworks_linux_rpm.rpm';
     var nomeAcao = _t('sessoes.aplicativos.btn_lightworks', '🎞️ Lightworks');
-    await executarComandoGenerico('instalar-lightworks', comando, nomeAcao, mostrarBotaoDesinstalar);
-}
-
-async function instalarRclone() {
-    var comando = 'sudo dnf install -y rclone';
-    var nomeAcao = _t('sessoes.aplicativos.btn_rclone', '☁️ Instalar Rclone');
-    await executarComandoGenerico('instalar-rclone', comando, nomeAcao, function() {
-        atualizarBotaoAbrirRclone();
+    await executarComandoGenerico('instalar-lightworks', comando, nomeAcao, function() {
+        atualizarIconeRemover('instalar-lightworks');
     });
 }
+
+// ============================================================
+// RCLONE MANAGER
+// ============================================================
+//
+// O Rclone Manager instala o Rclone internamente (via interface
+// gráfica própria). Por isso removemos o botão "Instalar Rclone"
+// do FAP — não faz sentido manter dois caminhos.
+//
+// A remoção usa "Desfazer tudo" (não a lixeira) porque precisa
+// remover DOIS pacotes: rclone-manager + rclone.
 
 async function instalarRcloneManager() {
     var comando =
@@ -680,22 +754,30 @@ async function instalarRcloneManager() {
     var nomeAcao = _t('sessoes.aplicativos.btn_rclone_manager', '🎛️ Instalar Rclone Manager');
     await executarComandoGenerico('instalar-rclone-manager', comando, nomeAcao, function() {
         atualizarBotaoAbrirRclone();
+        aplicarEstadoToggle('instalar-rclone-manager', 'desfazer-rclone-manager');
     });
 }
 
+function desfazerRcloneManager() {
+    _executarDesfazerTudo('instalar-rclone-manager');
+}
+
 function abrirRcloneManager() {
-    abrirFerramentaExterna('rclone-manager > /dev/null 2>&1 &', 'instalar-rclone-manager', 'RClone Manager');
+    // Usa o binário direto em vez de gtk-launch — o .desktop do RPM
+    // do Zarestia usa reverse-DNS (não é 'rclone-manager.desktop'),
+    // então 'gtk-launch rclone-manager' falha silenciosamente.
+    abrirFerramentaExterna('rclone-manager', 'instalar-rclone-manager', 'Rclone Manager');
 }
 
 function atualizarBotaoAbrirRclone() {
     var btn = document.getElementById('btn-abrir-rclone-manager');
     if (!btn) return;
-    if (isExecutado('instalar-rclone') && isExecutado('instalar-rclone-manager')) {
-        btn.style.display = '';
-    } else {
-        btn.style.display = 'none';
-    }
+    btn.style.display = isExecutado('instalar-rclone-manager') ? '' : 'none';
 }
+
+// ============================================================
+// AFFINITY
+// ============================================================
 
 function abrirGitHubAffinity() {
     window.location.href = 'https://github.com/ryzendew/Linux-Affinity-Installer';
@@ -762,13 +844,16 @@ async function abrirInstaladorAffinity() {
     }
 }
 
+// ============================================================
+// RESTAURAR ESTADO DA SESSÃO
+// ============================================================
+
 function restaurarEstadoSessao() {
     Object.keys(APPS_FLATPAK).forEach(function(idComando) {
         if (isExecutado(idComando)) {
             var btn = document.getElementById('btn-' + idComando);
             if (btn) {
-                var textoFinal = getTextoAposExecucao(idComando);
-                btn.textContent = textoFinal;
+                btn.textContent = getTextoAposExecucao(idComando);
                 btn.style.backgroundColor = '#4b5563';
                 btn.style.cursor = 'default';
                 btn.disabled = true;
@@ -776,6 +861,7 @@ function restaurarEstadoSessao() {
         }
     });
 
+    // Lightworks (não-flatpak, lixeira)
     if (isExecutado('instalar-lightworks')) {
         var btnLw = document.getElementById('btn-instalar-lightworks');
         if (btnLw) {
@@ -784,18 +870,10 @@ function restaurarEstadoSessao() {
             btnLw.style.cursor = 'default';
             btnLw.disabled = true;
         }
+        atualizarIconeRemover('instalar-lightworks');
     }
 
-    if (isExecutado('instalar-rclone')) {
-        var btnRclone = document.getElementById('btn-instalar-rclone');
-        if (btnRclone) {
-            btnRclone.textContent = getTextoAposExecucao('instalar-rclone');
-            btnRclone.style.backgroundColor = '#4b5563';
-            btnRclone.style.cursor = 'default';
-            btnRclone.disabled = true;
-        }
-    }
-
+    // Rclone Manager (não-flatpak, "desfazer tudo")
     if (isExecutado('instalar-rclone-manager')) {
         var btnRcloneMgr = document.getElementById('btn-instalar-rclone-manager');
         if (btnRcloneMgr) {
@@ -807,6 +885,7 @@ function restaurarEstadoSessao() {
     }
 
     atualizarBotaoAbrirRclone();
+    aplicarEstadoToggle('instalar-rclone-manager', 'desfazer-rclone-manager');
 
     _restaurarIconesFlatpak();
 }

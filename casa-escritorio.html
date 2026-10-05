@@ -85,6 +85,7 @@ Ferramentas para transferir e compartilhar arquivos entre o Fedora e outros disp
 </div>
 
 <div class="grupo-botoes">
+<div class="btn-flatpak-wrapper">
 <button class="btn-executar"
 onclick="executarSamba()"
 data-comando="samba-install"
@@ -93,6 +94,7 @@ id="btn-samba-install"
 data-i18n="sessoes.casa-escritorio.btn_samba">
 📦 Instalar Samba
 </button>
+</div>
 </div>
 </div>
 <div class="progress-container" id="progress-samba-install">
@@ -111,8 +113,8 @@ data-i18n="sessoes.casa-escritorio.btn_samba">
 ℹ️ <strong>Como usar:</strong> instale o LocalSend no Fedora (via FAP) e no celular (via loja de apps). Abra os dois na mesma rede Wi-Fi, e os dispositivos se encontram automaticamente. Sem conta, sem nuvem, sem anúncios.
 </div>
 
-<div class="grupo-botoes">
-<div class="btn-flatpak-wrapper" style="display: inline-block;">
+<div class="botoes-flex">
+<div class="btn-flatpak-wrapper">
 <button class="btn-executar"
 onclick="executarLocalSend()"
 data-comando="localsend-install"
@@ -122,6 +124,15 @@ data-i18n="sessoes.casa-escritorio.btn_localsend">
 📦 Instalar LocalSend
 </button>
 </div>
+<button class="btn-executar verde"
+style="display: none;"
+onclick="abrirLocalSend()"
+data-comando="abrir-localsend"
+data-logbox="log-sessao-casa-escritorio"
+id="btn-abrir-localsend"
+data-i18n="sessoes.casa-escritorio.btn_abrir_localsend">
+🚀 Abrir LocalSend
+</button>
 </div>
 </div>
 <div class="progress-container" id="progress-localsend-install">
@@ -140,8 +151,8 @@ data-i18n="sessoes.casa-escritorio.btn_localsend">
 ℹ️ <strong>Quando usar:</strong> se o destino também é Linux, Warpinator costuma ser mais rápido que LocalSend (menos overhead). Se for celular, use LocalSend.
 </div>
 
-<div class="grupo-botoes">
-<div class="btn-flatpak-wrapper" style="display: inline-block;">
+<div class="botoes-flex">
+<div class="btn-flatpak-wrapper">
 <button class="btn-executar"
 onclick="executarWarpinator()"
 data-comando="warpinator-install"
@@ -151,6 +162,15 @@ data-i18n="sessoes.casa-escritorio.btn_warpinator">
 📦 Instalar Warpinator
 </button>
 </div>
+<button class="btn-executar verde"
+style="display: none;"
+onclick="abrirWarpinator()"
+data-comando="abrir-warpinator"
+data-logbox="log-sessao-casa-escritorio"
+id="btn-abrir-warpinator"
+data-i18n="sessoes.casa-escritorio.btn_abrir_warpinator">
+🚀 Abrir Warpinator
+</button>
 </div>
 </div>
 <div class="progress-container" id="progress-warpinator-install">
@@ -178,7 +198,8 @@ GERENCIADOR DE SENHAS
 ℹ️ <strong>Por que KeePassXC em vez de Bitwarden?</strong> KeePassXC é 100% offline e local — nada sai do seu computador. Ideal para quem prefere não depender de nenhum serviço. Se preferir a conveniência da nuvem, o Bitwarden também é uma boa opção (mas o FAP instala o KeePassXC, que é o mais alinhado com a filosofia local-first).
 </div>
 
-<div class="grupo-botoes">
+<div class="botoes-flex">
+<div class="btn-flatpak-wrapper">
 <button class="btn-executar"
 onclick="executarKeePassXC()"
 data-comando="keepassxc-install"
@@ -186,6 +207,16 @@ data-logbox="log-sessao-casa-escritorio"
 id="btn-keepassxc-install"
 data-i18n="sessoes.casa-escritorio.btn_keepassxc">
 📦 Instalar KeePassXC
+</button>
+</div>
+<button class="btn-executar verde"
+style="display: none;"
+onclick="abrirKeePassXC()"
+data-comando="abrir-keepassxc"
+data-logbox="log-sessao-casa-escritorio"
+id="btn-abrir-keepassxc"
+data-i18n="sessoes.casa-escritorio.btn_abrir_keepassxc">
+🚀 Abrir KeePassXC
 </button>
 </div>
 </div>
@@ -218,7 +249,8 @@ PDF E OCR
 ℹ️ <strong>Idiomas adicionais do OCR:</strong> instalamos o pacote base com português e inglês. Se precisar de outro idioma, procure por <code>tesseract-langpack-XX</code> no Discover/GNOME Software.
 </div>
 
-<div class="grupo-botoes">
+<div class="botoes-flex">
+<div class="btn-flatpak-wrapper">
 <button class="btn-executar"
 onclick="executarOkularTesseract()"
 data-comando="okular-tesseract-install"
@@ -226,6 +258,16 @@ data-logbox="log-sessao-casa-escritorio"
 id="btn-okular-tesseract-install"
 data-i18n="sessoes.casa-escritorio.btn_okular_tesseract">
 📦 Instalar Okular + Tesseract
+</button>
+</div>
+<button class="btn-executar verde"
+style="display: none;"
+onclick="abrirOkular()"
+data-comando="abrir-okular"
+data-logbox="log-sessao-casa-escritorio"
+id="btn-abrir-okular"
+data-i18n="sessoes.casa-escritorio.btn_abrir_okular">
+🚀 Abrir Okular
 </button>
 </div>
 </div>
@@ -251,19 +293,40 @@ data-i18n="sessoes.casa-escritorio.btn_okular_tesseract">
 function _t(chave, fallback) {
     return (typeof tOr === 'function') ? tOr(chave, fallback) : fallback;
 }
+function _tVars(chave, fallback, vars) {
+    return (typeof tOr === 'function') ? tOr(chave, fallback, vars) : fallback;
+}
 
 // ------------------------------------------------------------
-// Mapeamento de Flatpaks desta sessão
+// Flatpaks desta sessão (LocalSend, Warpinator)
 // ------------------------------------------------------------
-//
-// Apenas dois apps desta sessão são Flatpak: LocalSend e
-// Warpinator. Os demais (CUPS, Samba, KeePassXC, Okular+Tesseract)
-// são pacotes dnf e não têm ícone de desinstalar.
 
 var APPS_FLATPAK = {
     'localsend-install': { appId: 'org.localsend.localsend_app', fallback: '📦 LocalSend' },
     'warpinator-install': { appId: 'org.x.Warpinator', fallback: '📦 Warpinator' }
 };
+
+// ------------------------------------------------------------
+// Registro de apps não-Flatpak removíveis (lixeira)
+// ------------------------------------------------------------
+
+registrarAppRemovivel('samba-install', {
+    tipo: 'dnf',
+    pacotes: ['samba', 'samba-client', 'cifs-utils'],
+    nome: 'Samba'
+});
+
+registrarAppRemovivel('keepassxc-install', {
+    tipo: 'dnf',
+    pacotes: ['keepassxc'],
+    nome: 'KeePassXC'
+});
+
+registrarAppRemovivel('okular-tesseract-install', {
+    tipo: 'dnf',
+    pacotes: ['okular', 'tesseract', 'tesseract-langpack-por', 'tesseract-langpack-eng', 'ocrmypdf'],
+    nome: 'Okular + Tesseract'
+});
 
 // ------------------------------------------------------------
 // IMPRESSORA
@@ -275,7 +338,9 @@ async function executarCups() {
         'sudo dnf install -y cups cups-filters avahi avahi-tools system-config-printer ghostscript && ' +
         'sudo systemctl enable --now cups && ' +
         'sudo systemctl enable --now avahi-daemon';
-    await executarComandoGenerico(idComando, comando, _t('sessoes.casa-escritorio.btn_cups', '📦 Instalar Suporte a Impressão'), mostrarBotaoDesinstalar);
+    await executarComandoGenerico(idComando, comando,
+        _t('sessoes.casa-escritorio.btn_cups', '📦 Instalar Suporte a Impressão'),
+        mostrarBotaoDesinstalar);
 }
 
 // ------------------------------------------------------------
@@ -288,23 +353,49 @@ async function executarSamba() {
         'sudo dnf install -y samba samba-client cifs-utils && ' +
         'sudo systemctl enable --now smb && ' +
         'sudo systemctl enable --now nmb';
-    await executarComandoGenerico(idComando, comando, _t('sessoes.casa-escritorio.btn_samba', '📦 Instalar Samba'), mostrarBotaoDesinstalar);
+    await executarComandoGenerico(idComando, comando,
+        _t('sessoes.casa-escritorio.btn_samba', '📦 Instalar Samba'),
+        function() { atualizarIconeRemover(idComando); });
+}
+
+// ------------------------------------------------------------
+// Helper: visibilidade dos botões "Abrir X"
+// ------------------------------------------------------------
+
+function _atualizarBotaoAbrir(idInstalacao, idBotaoAbrir) {
+    var btn = document.getElementById(idBotaoAbrir);
+    if (!btn) return;
+    btn.style.display = isExecutado(idInstalacao) ? '' : 'none';
 }
 
 async function executarLocalSend() {
     const idComando = 'localsend-install';
     const comando = 'flatpak install flathub org.localsend.localsend_app -y';
-    await executarComandoGenerico(idComando, comando, _t('sessoes.casa-escritorio.btn_localsend', '📦 Instalar LocalSend'), function() {
-        _atualizarIconeDesinstalar(idComando);
-    });
+    await executarComandoGenerico(idComando, comando,
+        _t('sessoes.casa-escritorio.btn_localsend', '📦 Instalar LocalSend'),
+        function() {
+            _atualizarIconeDesinstalar(idComando);
+            _atualizarBotaoAbrir('localsend-install', 'btn-abrir-localsend');
+        });
+}
+
+function abrirLocalSend() {
+    abrirFerramentaExterna('gtk-launch org.localsend.localsend_app', 'localsend-install', 'LocalSend');
 }
 
 async function executarWarpinator() {
     const idComando = 'warpinator-install';
     const comando = 'flatpak install flathub org.x.Warpinator -y';
-    await executarComandoGenerico(idComando, comando, _t('sessoes.casa-escritorio.btn_warpinator', '📦 Instalar Warpinator'), function() {
-        _atualizarIconeDesinstalar(idComando);
-    });
+    await executarComandoGenerico(idComando, comando,
+        _t('sessoes.casa-escritorio.btn_warpinator', '📦 Instalar Warpinator'),
+        function() {
+            _atualizarIconeDesinstalar(idComando);
+            _atualizarBotaoAbrir('warpinator-install', 'btn-abrir-warpinator');
+        });
+}
+
+function abrirWarpinator() {
+    abrirFerramentaExterna('gtk-launch org.x.Warpinator', 'warpinator-install', 'Warpinator');
 }
 
 // ------------------------------------------------------------
@@ -314,7 +405,16 @@ async function executarWarpinator() {
 async function executarKeePassXC() {
     const idComando = 'keepassxc-install';
     const comando = 'sudo dnf install -y keepassxc';
-    await executarComandoGenerico(idComando, comando, _t('sessoes.casa-escritorio.btn_keepassxc', '📦 Instalar KeePassXC'), mostrarBotaoDesinstalar);
+    await executarComandoGenerico(idComando, comando,
+        _t('sessoes.casa-escritorio.btn_keepassxc', '📦 Instalar KeePassXC'),
+        function() {
+            atualizarIconeRemover(idComando);
+            _atualizarBotaoAbrir('keepassxc-install', 'btn-abrir-keepassxc');
+        });
+}
+
+function abrirKeePassXC() {
+    abrirFerramentaExterna('keepassxc', 'keepassxc-install', 'KeePassXC');
 }
 
 // ------------------------------------------------------------
@@ -325,7 +425,16 @@ async function executarOkularTesseract() {
     const idComando = 'okular-tesseract-install';
     const comando =
         'sudo dnf install -y okular tesseract tesseract-langpack-por tesseract-langpack-eng ocrmypdf';
-    await executarComandoGenerico(idComando, comando, _t('sessoes.casa-escritorio.btn_okular_tesseract', '📦 Instalar Okular + Tesseract'), mostrarBotaoDesinstalar);
+    await executarComandoGenerico(idComando, comando,
+        _t('sessoes.casa-escritorio.btn_okular_tesseract', '📦 Instalar Okular + Tesseract'),
+        function() {
+            atualizarIconeRemover(idComando);
+            _atualizarBotaoAbrir('okular-tesseract-install', 'btn-abrir-okular');
+        });
+}
+
+function abrirOkular() {
+    abrirFerramentaExterna('okular', 'okular-tesseract-install', 'Okular');
 }
 
 // ------------------------------------------------------------
@@ -392,6 +501,7 @@ async function desinstalarAppFlatpak(idComando, appId, nomeExibicao) {
         }
 
         _esconderIconeDesinstalar(idComando);
+        esconderBotoesAbrirDe(idComando);
 
         if (logBox) {
             var successLine = document.createElement('div');
@@ -413,7 +523,7 @@ async function desinstalarAppFlatpak(idComando, appId, nomeExibicao) {
 }
 
 // ------------------------------------------------------------
-// ÍCONES DE DESINSTALAR
+// ÍCONES DE DESINSTALAR — FLATPAK (locais desta sessão)
 // ------------------------------------------------------------
 
 var _svgLixeira = '<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>';
@@ -491,14 +601,24 @@ function restaurarEstadoSessao() {
         if (isExecutado(id)) {
             const btn = document.getElementById('btn-' + id);
             if (btn) {
-                const textoFinal = getTextoAposExecucao(id);
-                btn.textContent = textoFinal;
+                btn.textContent = getTextoAposExecucao(id);
                 btn.style.backgroundColor = '#4b5563';
                 btn.style.cursor = 'default';
                 btn.disabled = true;
             }
         }
     });
+
+    // Lixeiras dos não-flatpaks
+    if (isExecutado('samba-install')) atualizarIconeRemover('samba-install');
+    if (isExecutado('keepassxc-install')) atualizarIconeRemover('keepassxc-install');
+    if (isExecutado('okular-tesseract-install')) atualizarIconeRemover('okular-tesseract-install');
+
+    // Botões "Abrir" (só aparecem se o install está marcado como executado)
+    _atualizarBotaoAbrir('localsend-install', 'btn-abrir-localsend');
+    _atualizarBotaoAbrir('warpinator-install', 'btn-abrir-warpinator');
+    _atualizarBotaoAbrir('keepassxc-install', 'btn-abrir-keepassxc');
+    _atualizarBotaoAbrir('okular-tesseract-install', 'btn-abrir-okular');
 
     _restaurarIconesFlatpak();
 }

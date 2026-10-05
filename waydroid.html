@@ -574,37 +574,102 @@ await _atualizarBloqueioExtrasWaydroid();
 }
 
 async function executarWaydroidUninstall() {
-if (!confirm(_t('sessoes.waydroid.confirmar_uninstall',
-'Isso irá remover o Waydroid e TODOS os dados do container Android (apps instalados, configurações). Continuar?'))) return;
-var idComando = 'waydroid-uninstall';
+    if (!confirm(_t('sessoes.waydroid.confirmar_uninstall',
+    'Isso irá remover o Waydroid e TODOS os dados do container Android (apps instalados, configurações). Continuar?'))) return;
+    var idComando = 'waydroid-uninstall';
 
-var comando =
-'systemctl stop waydroid-container 2>/dev/null || true; ' +
-'waydroid container stop 2>/dev/null || true; ' +
-'pkill -f "waydroid show-full-ui" 2>/dev/null || true; ' +
-'pkill -f "waydroid session" 2>/dev/null || true; ' +
-'dnf remove -y waydroid 2>/dev/null || true; ' +
-'dnf remove -y waydroid-script 2>/dev/null || true; ' +
-'if [ -d $HOME/.local/share/fap-waydroid ]; then ' +
-'  chattr -R -i $HOME/.local/share/fap-waydroid 2>/dev/null || true; ' +
-'  rm -rf $HOME/.local/share/fap-waydroid; ' +
-'fi; ' +
-'rm -rf $HOME/.local/share/waydroid; ' +
-'rm -f $HOME/.local/share/applications/Waydroid.desktop 2>/dev/null; ' +
-'rm -f $HOME/.local/share/applications/waydroid-helper.desktop 2>/dev/null; ' +
-'rm -rf /var/lib/waydroid; ' +
-'rm -rf /var/lib/waydroid-data; ' +
-'rm -rf /etc/waydroid 2>/dev/null; ' +
-'echo ""; ' +
-'echo "════════════════════════════════════════════════════════════"; ' +
-'echo "✅ Waydroid e TODOS os dados associados foram removidos."; ' +
-'echo "════════════════════════════════════════════════════════════"; ';
+    var comando =
+        'systemctl stop waydroid-container 2>/dev/null || true; ' +
+        'waydroid container stop 2>/dev/null || true; ' +
+        'pkill -f "waydroid show-full-ui" 2>/dev/null || true; ' +
+        'pkill -f "waydroid session" 2>/dev/null || true; ' +
+        'dnf remove -y waydroid 2>/dev/null || true; ' +
+        'dnf remove -y waydroid-script 2>/dev/null || true; ' +
+        'if [ -d $HOME/.local/share/fap-waydroid ]; then ' +
+        '  chattr -R -i $HOME/.local/share/fap-waydroid 2>/dev/null || true; ' +
+        '  rm -rf $HOME/.local/share/fap-waydroid; ' +
+        'fi; ' +
+        'rm -rf $HOME/.local/share/waydroid; ' +
+        'rm -f $HOME/.local/share/applications/Waydroid.desktop 2>/dev/null; ' +
+        'rm -f $HOME/.local/share/applications/waydroid-helper.desktop 2>/dev/null; ' +
+        'rm -rf /var/lib/waydroid; ' +
+        'rm -rf /var/lib/waydroid-data; ' +
+        'rm -rf /etc/waydroid 2>/dev/null; ' +
+        'echo ""; ' +
+        'echo "════════════════════════════════════════════════════════════"; ' +
+        'echo "✅ Waydroid e TODOS os dados associados foram removidos."; ' +
+        'echo "════════════════════════════════════════════════════════════"; ';
 
-await executarComandoGenerico(idComando, comando,
-_t('sessoes.waydroid.btn_uninstall_waydroid', '🗑️ Desfazer Alterações e Remover Completamente'),
-async function() {
-await _atualizarBotaoUninstallWaydroid();
-});
+    await executarComandoGenerico(idComando, comando,
+        _t('sessoes.waydroid.btn_uninstall_waydroid', '🗑️ Desfazer Alterações e Remover Completamente'),
+        async function() {
+            await _atualizarBotaoUninstallWaydroid();
+
+            // ============================================================
+            // RESET DA SESSÃO
+            // ============================================================
+            //
+            // O waydroid-uninstall remove TUDO: pacote, container,
+            // dados, extras, venv, atalhos. Depois dessa limpeza, o
+            // estado persistido (waydroid-install, waydroid-init,
+            // waydroid-gapps, etc.) fica mentindo — todos os botões
+            // mostram "✅ concluído" mas nada existe mais no sistema.
+            //
+            // Aqui desmarcamos todos os IDs do Waydroid, o que faz a
+            // sessão voltar ao estado inicial. O usuário pode refazer
+            // o fluxo do zero.
+
+            var idsWaydroid = [
+                'waydroid-install',
+                'waydroid-init',
+                'waydroid-extras-prep',
+                'waydroid-gapps',
+                'waydroid-libndk',
+                'waydroid-libhoudini',
+                'waydroid-magisk',
+                'waydroid-widevine',
+                'waydroid-smartdock',
+                'waydroid-prefs',
+                'waydroid-helper-install'
+            ];
+
+            for (var i = 0; i < idsWaydroid.length; i++) {
+                try {
+                    await desmarcarComoExecutado(idsWaydroid[i]);
+                    var btn = document.getElementById('btn-' + idsWaydroid[i]);
+                    if (btn) {
+                        btn.textContent = btn.getAttribute('data-texto-original') || btn.textContent;
+                        btn.style.backgroundColor = '';
+                        btn.style.cursor = 'pointer';
+                        btn.disabled = false;
+                        btn.style.opacity = '1';
+                    }
+                } catch (e) {
+                    console.warn('[waydroid-uninstall] Erro ao limpar', idsWaydroid[i], ':', e);
+                }
+            }
+
+            // Esconde os botões "Abrir" que dependem do Waydroid.
+            // - btn-abrir-waydroid: não é irmão de nenhum install
+            //   (está em seção diferente), então escondemos direto.
+            // - btn-waydroid-helper-open: usa o helper DOM (é irmão
+            //   do waydroid-helper-install em .botoes-flex).
+            var btnAbrirWaydroid = document.getElementById('btn-abrir-waydroid');
+            if (btnAbrirWaydroid) btnAbrirWaydroid.style.display = 'none';
+
+            esconderBotoesAbrirDe('waydroid-helper-install');
+
+            // O botão "Instalar Waydroid" já foi reabilitado no loop
+            // acima. Esconde o próprio botão de uninstall também.
+            var btnUninstall = document.getElementById('btn-waydroid-uninstall');
+            if (btnUninstall) {
+                btnUninstall.textContent = _t('sessoes.waydroid.nada_remover', '✅ Nada a remover');
+                btnUninstall.disabled = true;
+                btnUninstall.style.opacity = '0.5';
+                btnUninstall.style.cursor = 'not-allowed';
+                btnUninstall.style.backgroundColor = '#4b5563';
+            }
+        });
 }
 
 // ============================================================

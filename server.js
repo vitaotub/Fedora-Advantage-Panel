@@ -92,7 +92,27 @@ const COMANDOS_SEM_AUTENTICACAO = [
 'lact',
 'waydroid status',
 'waydroid show-full-ui',
+// ============================================================
+// `setsid -f` — lançar apps GUI em nova sessão
+// ============================================================
+//
+// Desde v1.0.0-10052026, TODOS os botões "Abrir X" usam
+// `setsid -f <comando>` para que o app ganhe uma sessão própria,
+// desacoplada do FAP. Isso resolve o bug em que o app era morto
+// junto quando o usuário fechava o FAP (mesmo PGID).
+//
+// Estes comandos são read-only do ponto de vista do sistema —
+// apenas abrem GUIs já instaladas, como se o usuário clicasse
+// no atalho do menu. Whitelist explícita para não permitir
+// `setsid -f rm -rf ~` ou similar.
+'setsid -f gtk-launch',
+'setsid -f corectrl',
+'setsid -f lact',
+'setsid -f rclone-manager',
+'setsid -f steam',
 'setsid -f waydroid show-full-ui',
+'setsid -f keepassxc',
+'setsid -f okular',,
 // Flatpak roda como usuário; a autenticação (quando necessária)
 // é resolvida pelo Polkit do sistema, não pelo FAP.
 'flatpak install',

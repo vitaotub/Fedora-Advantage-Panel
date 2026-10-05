@@ -34,6 +34,7 @@ Stack de virtualização nativa do Linux. Roda máquinas virtuais com aceleraç�
 ℹ️ <strong>Sobre permissões:</strong> seu usuário é adicionado ao grupo <code>libvirt</code> para gerenciar VMs sem precisar de senha em cada ação. O grupo só entra em vigor após <strong>logout/login</strong> — até lá, o virt-manager vai pedir a senha de administrador ao abrir.
 </div>
 <div class="botoes-flex">
+<div class="btn-flatpak-wrapper">
 <button class="btn-executar"
 onclick="executarQemuKvm()"
 data-comando="qemu-kvm-install"
@@ -42,14 +43,7 @@ id="btn-qemu-kvm-install"
 data-i18n="sessoes.virtualizacao.btn_qemu">
 📦 Instalar QEMU/KVM
 </button>
-<button class="btn-executar vermelho"
-onclick="executarQemuKvmRemove()"
-data-comando="qemu-kvm-remove"
-data-logbox="log-sessao-virtualizacao"
-id="btn-qemu-kvm-remove"
-data-i18n="sessoes.virtualizacao.btn_qemu_remove">
-🗑️ Remover
-</button>
+</div>
 <button class="btn-executar verde"
 style="display: none;"
 onclick="abrirVirtManager()"
@@ -65,10 +59,6 @@ data-i18n="sessoes.virtualizacao.btn_abrir_virt_manager">
 <div class="progress-bar"><div class="progress-fill" id="progress-fill-qemu-kvm-install"></div></div>
 <div class="progress-text"><span class="status" id="progress-status-qemu-kvm-install">⏳ Iniciando...</span><span class="percentage" id="progress-percent-qemu-kvm-install">0%</span></div>
 </div>
-<div class="progress-container" id="progress-qemu-kvm-remove">
-<div class="progress-bar"><div class="progress-fill" id="progress-fill-qemu-kvm-remove"></div></div>
-<div class="progress-text"><span class="status" id="progress-status-qemu-kvm-remove">⏳ Iniciando...</span><span class="percentage" id="progress-percent-qemu-kvm-remove">0%</span></div>
-</div>
 </div>
 
 <!-- VirtualBox -->
@@ -82,6 +72,7 @@ Software de virtualização multiplataforma da Oracle. Boa opção para quem já
 ℹ️ <strong>QEMU/KVM vs VirtualBox:</strong> ambos rodam máquinas virtuais, mas QEMU/KVM é mais performático no Linux (integração nativa com o kernel). VirtualBox é preferível quando você já tem discos virtuais no formato <code>.vdi</code> ou depende de recursos específicos dele.
 </div>
 <div class="botoes-flex">
+<div class="btn-flatpak-wrapper">
 <button class="btn-executar"
 onclick="executarVirtualBox()"
 data-comando="virtualbox-install"
@@ -90,14 +81,7 @@ id="btn-virtualbox-install"
 data-i18n="sessoes.virtualizacao.btn_virtualbox">
 📦 Instalar VirtualBox
 </button>
-<button class="btn-executar vermelho"
-onclick="executarVirtualBoxRemove()"
-data-comando="virtualbox-remove"
-data-logbox="log-sessao-virtualizacao"
-id="btn-virtualbox-remove"
-data-i18n="sessoes.virtualizacao.btn_virtualbox_remove">
-🗑️ Remover
-</button>
+</div>
 <button class="btn-executar verde"
 style="display: none;"
 onclick="abrirVirtualBox()"
@@ -113,10 +97,6 @@ data-i18n="sessoes.virtualizacao.btn_abrir_virtualbox">
 <div class="progress-bar"><div class="progress-fill" id="progress-fill-virtualbox-install"></div></div>
 <div class="progress-text"><span class="status" id="progress-status-virtualbox-install">⏳ Iniciando...</span><span class="percentage" id="progress-percent-virtualbox-install">0%</span></div>
 </div>
-<div class="progress-container" id="progress-virtualbox-remove">
-<div class="progress-bar"><div class="progress-fill" id="progress-fill-virtualbox-remove"></div></div>
-<div class="progress-text"><span class="status" id="progress-status-virtualbox-remove">⏳ Iniciando...</span><span class="percentage" id="progress-percent-virtualbox-remove">0%</span></div>
-</div>
 </div>
 
 <!-- GNOME Boxes -->
@@ -130,6 +110,7 @@ Interface gráfica simplificada para criar e gerenciar máquinas virtuais. Usa Q
 ℹ️ <strong>Recomendado para:</strong> quem está começando com virtualização e quer testar uma distribuição Linux ou o Windows sem configurar nada manualmente. Se você já tem experiência, prefira o virt-manager — oferece mais controle sobre a VM.
 </div>
 <div class="botoes-flex">
+<div class="btn-flatpak-wrapper">
 <button class="btn-executar"
 onclick="executarGnomeBoxes()"
 data-comando="gnome-boxes-install"
@@ -138,14 +119,7 @@ id="btn-gnome-boxes-install"
 data-i18n="sessoes.virtualizacao.btn_boxes">
 📦 Instalar GNOME Boxes
 </button>
-<button class="btn-executar vermelho"
-onclick="executarGnomeBoxesRemove()"
-data-comando="gnome-boxes-remove"
-data-logbox="log-sessao-virtualizacao"
-id="btn-gnome-boxes-remove"
-data-i18n="sessoes.virtualizacao.btn_boxes_remove">
-🗑️ Remover
-</button>
+</div>
 <button class="btn-executar verde"
 style="display: none;"
 onclick="abrirGnomeBoxes()"
@@ -160,10 +134,6 @@ data-i18n="sessoes.virtualizacao.btn_abrir_boxes">
 <div class="progress-container" id="progress-gnome-boxes-install">
 <div class="progress-bar"><div class="progress-fill" id="progress-fill-gnome-boxes-install"></div></div>
 <div class="progress-text"><span class="status" id="progress-status-gnome-boxes-install">⏳ Iniciando...</span><span class="percentage" id="progress-percent-gnome-boxes-install">0%</span></div>
-</div>
-<div class="progress-container" id="progress-gnome-boxes-remove">
-<div class="progress-bar"><div class="progress-fill" id="progress-fill-gnome-boxes-remove"></div></div>
-<div class="progress-text"><span class="status" id="progress-status-gnome-boxes-remove">⏳ Iniciando...</span><span class="percentage" id="progress-percent-gnome-boxes-remove">0%</span></div>
 </div>
 </div>
 
@@ -182,55 +152,47 @@ data-i18n="sessoes.virtualizacao.btn_abrir_boxes">
 function _t(chave, fallback) {
     return (typeof tOr === 'function') ? tOr(chave, fallback) : fallback;
 }
-function _tVars(chave, fallback, vars) {
-    return (typeof tOr === 'function') ? tOr(chave, fallback, vars) : fallback;
-}
 
 // ------------------------------------------------------------
-// Helper comum de remoção
+// Registro de apps removíveis (lixeira)
 // ------------------------------------------------------------
 //
-// Centraliza o fluxo de remoção: confirma com o usuário, executa o
-// comando via executarComandoGenerico, e ao sucesso limpa o estado
-// do install correspondente (via desmarcarComoExecutado) e reaplica
-// o toggle. Usa .then()/.catch() como em outros pares do projeto.
-
-async function _removerFerramentaVirtual(idInstall, idRemove, comando, nomeAcao, nomeApp) {
-    var confirmMsg = _tVars('sessoes.virtualizacao.confirmar_remover',
-        '⚠️ Tem certeza que deseja remover ' + nomeApp + '?\n\n' +
-        'As máquinas virtuais que você criou NÃO serão apagadas — apenas o software será removido do sistema.',
-        { nome: nomeApp });
-
-    if (!confirm(confirmMsg)) return;
-
-    await executarComandoGenerico(idRemove, comando, nomeAcao, function() {
-        desmarcarComoExecutado(idInstall).then(function() {
-            aplicarEstadoToggle(idInstall, idRemove);
-            _atualizarTodosBotoesAbrirVirtual();
-        }).catch(function(e) {
-            console.warn('[toggle] Erro ao limpar estado do install:', e);
-            aplicarEstadoToggle(idInstall, idRemove);
-            _atualizarTodosBotoesAbrirVirtual();
-        });
-    });
-}
-
-// Reúne os três "atualizarBotaoAbrirX" para simplificar as chamadas
-// de restauração após qualquer operação que mude o estado do install.
-function _atualizarTodosBotoesAbrirVirtual() {
-    atualizarBotaoAbrirVirtManager();
-    atualizarBotaoAbrirVirtualBox();
-    atualizarBotaoAbrirGnomeBoxes();
-}
-
-// ------------------------------------------------------------
-// QEMU/KVM + virt-manager
-// ------------------------------------------------------------
+// QEMU/KVM, VirtualBox e GNOME Boxes agora usam a lixeira global
+// (helper registrarAppRemovivel + atualizarIconeRemover).
 //
-// QEMU/KVM é a stack nativa. O libvirt é o daemon que gerencia as
-// VMs; o virt-manager é a interface gráfica. Adicionar o usuário ao
-// grupo `libvirt` permite gerenciar VMs sem senha a cada ação — mas
-// o grupo só entra em vigor depois de logout/login.
+// As VMs em /var/lib/libvirt/images e ~/.local/share/gnome-boxes
+// NÃO são tocadas pela remoção — são dados do usuário.
+
+registrarAppRemovivel('qemu-kvm-install', {
+    tipo: 'dnf',
+    pacotes: ['qemu-kvm', 'libvirt', 'virt-manager', 'virt-install', 'libvirt-daemon-config-network'],
+    nome: 'QEMU/KVM',
+    confirmMsg: '⚠️ Tem certeza que deseja remover QEMU/KVM?\n\n' +
+                'As máquinas virtuais que você criou NÃO serão apagadas — apenas o software será removido do sistema.\n\n' +
+                'Continuar?'
+});
+
+registrarAppRemovivel('virtualbox-install', {
+    tipo: 'dnf',
+    pacotes: ['VirtualBox', 'akmod-VirtualBox', 'VirtualBox-kmod'],
+    nome: 'VirtualBox',
+    confirmMsg: '⚠️ Tem certeza que deseja remover VirtualBox?\n\n' +
+                'As máquinas virtuais que você criou NÃO serão apagadas — apenas o software será removido do sistema.\n\n' +
+                'Continuar?'
+});
+
+registrarAppRemovivel('gnome-boxes-install', {
+    tipo: 'dnf',
+    pacotes: ['gnome-boxes'],
+    nome: 'GNOME Boxes',
+    confirmMsg: '⚠️ Tem certeza que deseja remover GNOME Boxes?\n\n' +
+                'As máquinas virtuais que você criou NÃO serão apagadas — apenas o software será removido do sistema.\n\n' +
+                'Continuar?'
+});
+
+// ------------------------------------------------------------
+// INSTALADORES
+// ------------------------------------------------------------
 
 async function executarQemuKvm() {
     var idComando = 'qemu-kvm-install';
@@ -241,35 +203,47 @@ async function executarQemuKvm() {
     await executarComandoGenerico(idComando, comando,
         _t('sessoes.virtualizacao.btn_qemu', '📦 Instalar QEMU/KVM'),
         function() {
-            aplicarEstadoToggle('qemu-kvm-install', 'qemu-kvm-remove');
+            atualizarIconeRemover(idComando);
             atualizarBotaoAbrirVirtManager();
         });
 }
 
-async function executarQemuKvmRemove() {
-    // O `dnf remove` já remove dependências via autoremove. As VMs
-    // em /var/lib/libvirt/images não são tocadas — são dados do
-    // usuário. O `gpasswd -d` remove do grupo libvirt, revertendo o
-    // `usermod -aG` feito no install.
-    var comando =
-        'sudo systemctl disable --now libvirtd 2>/dev/null || true; ' +
-        'sudo dnf remove -y qemu-kvm libvirt virt-manager virt-install libvirt-daemon-config-network && ' +
-        'sudo dnf clean all && sudo dnf autoremove -y && ' +
-        'sudo gpasswd -d $USER libvirt 2>/dev/null || true';
-    await _removerFerramentaVirtual(
-        'qemu-kvm-install',
-        'qemu-kvm-remove',
-        comando,
-        _t('sessoes.virtualizacao.btn_qemu_remove', '🗑️ Remover'),
-        'QEMU/KVM'
-    );
+async function executarVirtualBox() {
+    var idComando = 'virtualbox-install';
+    var comando = 'sudo dnf install -y akmod-VirtualBox VirtualBox';
+    await executarComandoGenerico(idComando, comando,
+        _t('sessoes.virtualizacao.btn_virtualbox', '📦 Instalar VirtualBox'),
+        function() {
+            atualizarIconeRemover(idComando);
+            atualizarBotaoAbrirVirtualBox();
+        });
 }
 
+async function executarGnomeBoxes() {
+    var idComando = 'gnome-boxes-install';
+    var comando = 'sudo dnf install -y gnome-boxes';
+    await executarComandoGenerico(idComando, comando,
+        _t('sessoes.virtualizacao.btn_boxes', '📦 Instalar GNOME Boxes'),
+        function() {
+            atualizarIconeRemover(idComando);
+            atualizarBotaoAbrirGnomeBoxes();
+        });
+}
+
+// ------------------------------------------------------------
+// ABRIR APPS
+// ------------------------------------------------------------
+
 function abrirVirtManager() {
-    // gtk-launch usa o nome base do .desktop (sem .desktop), abrindo
-    // o software exatamente como se o usuário clicasse no atalho do
-    // menu do Fedora.
-    abrirFerramentaExterna('gtk-launch virt-manager 2>/dev/null &', 'qemu-kvm-install', 'virt-manager');
+    abrirFerramentaExterna('gtk-launch virt-manager', 'qemu-kvm-install', 'virt-manager');
+}
+
+function abrirVirtualBox() {
+    abrirFerramentaExterna('gtk-launch virtualbox', 'virtualbox-install', 'VirtualBox');
+}
+
+function abrirGnomeBoxes() {
+    abrirFerramentaExterna('gtk-launch org.gnome.Boxes', 'gnome-boxes-install', 'GNOME Boxes');
 }
 
 function atualizarBotaoAbrirVirtManager() {
@@ -278,83 +252,10 @@ function atualizarBotaoAbrirVirtManager() {
     btn.style.display = isExecutado('qemu-kvm-install') ? '' : 'none';
 }
 
-// ------------------------------------------------------------
-// VirtualBox
-// ------------------------------------------------------------
-//
-// `akmod-VirtualBox` puxa o VirtualBox-kmod e o próprio VirtualBox
-// como dependências. Instalar só o akmod cobre o ciclo completo —
-// inclusive rebuilds automáticos em kernel novo.
-
-async function executarVirtualBox() {
-    var idComando = 'virtualbox-install';
-    var comando = 'sudo dnf install -y akmod-VirtualBox VirtualBox';
-    await executarComandoGenerico(idComando, comando,
-        _t('sessoes.virtualizacao.btn_virtualbox', '📦 Instalar VirtualBox'),
-        function() {
-            aplicarEstadoToggle('virtualbox-install', 'virtualbox-remove');
-            atualizarBotaoAbrirVirtualBox();
-        });
-}
-
-async function executarVirtualBoxRemove() {
-    var comando =
-        'sudo dnf remove -y VirtualBox akmod-VirtualBox VirtualBox-kmod && ' +
-        'sudo dnf clean all && sudo dnf autoremove -y';
-    await _removerFerramentaVirtual(
-        'virtualbox-install',
-        'virtualbox-remove',
-        comando,
-        _t('sessoes.virtualizacao.btn_virtualbox_remove', '🗑️ Remover'),
-        'VirtualBox'
-    );
-}
-
-function abrirVirtualBox() {
-    abrirFerramentaExterna('gtk-launch virtualbox 2>/dev/null &', 'virtualbox-install', 'VirtualBox');
-}
-
 function atualizarBotaoAbrirVirtualBox() {
     var btn = document.getElementById('btn-abrir-virtualbox');
     if (!btn) return;
     btn.style.display = isExecutado('virtualbox-install') ? '' : 'none';
-}
-
-// ------------------------------------------------------------
-// GNOME Boxes
-// ------------------------------------------------------------
-//
-// Usa o pacote dnf (não Flatpak) porque o GNOME Boxes precisa
-// acesso direto ao libvirt e às ISOs do usuário — o sandbox do
-// Flatpak exige configuração extra e às vezes falha em ler arquivos
-// fora do diretório padrão.
-
-async function executarGnomeBoxes() {
-    var idComando = 'gnome-boxes-install';
-    var comando = 'sudo dnf install -y gnome-boxes';
-    await executarComandoGenerico(idComando, comando,
-        _t('sessoes.virtualizacao.btn_boxes', '📦 Instalar GNOME Boxes'),
-        function() {
-            aplicarEstadoToggle('gnome-boxes-install', 'gnome-boxes-remove');
-            atualizarBotaoAbrirGnomeBoxes();
-        });
-}
-
-async function executarGnomeBoxesRemove() {
-    var comando =
-        'sudo dnf remove -y gnome-boxes && ' +
-        'sudo dnf clean all && sudo dnf autoremove -y';
-    await _removerFerramentaVirtual(
-        'gnome-boxes-install',
-        'gnome-boxes-remove',
-        comando,
-        _t('sessoes.virtualizacao.btn_boxes_remove', '🗑️ Remover'),
-        'GNOME Boxes'
-    );
-}
-
-function abrirGnomeBoxes() {
-    abrirFerramentaExterna('gtk-launch org.gnome.Boxes 2>/dev/null &', 'gnome-boxes-install', 'GNOME Boxes');
 }
 
 function atualizarBotaoAbrirGnomeBoxes() {
@@ -363,34 +264,32 @@ function atualizarBotaoAbrirGnomeBoxes() {
     btn.style.display = isExecutado('gnome-boxes-install') ? '' : 'none';
 }
 
-// ============================================================
+// ------------------------------------------------------------
 // RESTAURAR ESTADO DA SESSÃO
-// ============================================================
+// ------------------------------------------------------------
 
 function restaurarEstadoSessao() {
-    // Os três pares install/revert: aplicarEstadoToggle decide o
-    // estado visual de cada par a partir do isExecutado(idInstall).
-    // Na primeira sessão (nada instalado), o install fica ativo e o
-    // remove fica desabilitado (cinza, opacidade 0.5, cursor not-allowed).
-    aplicarEstadoToggle('qemu-kvm-install', 'qemu-kvm-remove');
-    aplicarEstadoToggle('virtualbox-install', 'virtualbox-remove');
-    aplicarEstadoToggle('gnome-boxes-install', 'gnome-boxes-remove');
+    ['qemu-kvm-install', 'virtualbox-install', 'gnome-boxes-install'].forEach(function(id) {
+        if (isExecutado(id)) {
+            var btn = document.getElementById('btn-' + id);
+            if (btn) {
+                btn.textContent = getTextoAposExecucao(id);
+                btn.style.backgroundColor = '#4b5563';
+                btn.style.cursor = 'default';
+                btn.disabled = true;
+            }
+            atualizarIconeRemover(id);
+        }
+    });
 
-    // Os três botões "Abrir X" começam ocultos e só aparecem quando
-    // o install correspondente está marcado como executado.
-    _atualizarTodosBotoesAbrirVirtual();
+    atualizarBotaoAbrirVirtManager();
+    atualizarBotaoAbrirVirtualBox();
+    atualizarBotaoAbrirGnomeBoxes();
 }
 
-// ============================================================
+// ------------------------------------------------------------
 // INICIALIZAÇÃO
-// ============================================================
-//
-// IMPORTANTE: NÃO usamos DOMContentLoaded aqui. Esta sessão é
-// carregada dinamicamente pelo guiado.html via eval(), e nesse
-// momento o DOMContentLoaded da página principal já disparou — o
-// listener nunca seria executado. A inicialização fica em
-// restaurarEstadoSessao(), que o guiado.html chama explicitamente
-// logo após o eval.
+// ------------------------------------------------------------
 
 (function() {
     document.querySelectorAll('.btn-executar').forEach(function(btn) {

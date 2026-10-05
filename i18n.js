@@ -254,10 +254,18 @@
     /**
      * Igual a t(), mas retorna um fallback explícito se não houver tradução.
      * Útil para strings construídas dinamicamente em JS.
+     *
+     * IMPORTANTE: o fallback também passa por interpolar() — antes,
+     * em PT-BR (que retorna null de t()), o fallback era devolvido
+     * cru. Isso fazia strings como '✅ {nome} desinstalado!' mostrarem
+     * o placeholder literal em vez do valor real. Em EN/ES o
+     * placeholder era interpolado (por t()), então o bug só aparecia
+     * em PT-BR.
      */
     function tOr(chave, fallback, vars) {
         var r = t(chave, vars);
-        return r !== null ? r : fallback;
+        if (r !== null) return r;
+        return interpolar(fallback, vars);
     }
 
     // ============================================================

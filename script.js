@@ -761,8 +761,12 @@ var SESSOES = [
         'instalar-ardour': { textoConcluido: '✅ Ardour instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_ardour', flatpakId: 'org.ardour.Ardour' },
         'instalar-lmms': { textoConcluido: '✅ LMMS instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_lmms', flatpakId: 'io.lmms.LMMS' },
         'instalar-audacity': { textoConcluido: '✅ Audacity instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_audacity', flatpakId: 'org.audacityteam.Audacity' },
-        'instalar-rclone': { textoConcluido: '✅ Rclone instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_rclone' },
-        'instalar-rclone-manager': { textoConcluido: '✅ Rclone Manager instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_rclone_manager' }
+        'instalar-rclone-manager': {
+            textoConcluido: '✅ Rclone Manager instalado',
+            textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_rclone_manager'
+        },
+        'desfazer-rclone-manager': { sempreClicavel: true },
+        'instalar-lightworks-remove': { sempreClicavel: true }
     }
 },
 
@@ -800,7 +804,10 @@ var SESSOES = [
         'okular-tesseract-install': {
             textoConcluido: '✅ PDF+OCR instalado',
             textoConcluidoKey: 'sessoes.casa-escritorio.texto_concluido_okular_tesseract'
-        }
+        },
+        'samba-remove': { sempreClicavel: true },
+        'keepassxc-remove': { sempreClicavel: true },
+        'okular-tesseract-remove': { sempreClicavel: true }
     }
 },
 
@@ -816,8 +823,7 @@ var SESSOES = [
         // --- Launchers ---
         'steam-install': {
             textoConcluido: '✅ Steam instalado',
-            textoConcluidoKey: 'sessoes.gaming.texto_concluido_steam',
-            flatpakId: 'com.valvesoftware.Steam'
+            textoConcluidoKey: 'sessoes.gaming.texto_concluido_steam'
         },
         'heroic-install': {
             textoConcluido: '✅ Heroic instalado',
@@ -850,7 +856,7 @@ var SESSOES = [
             flatpakId: 'net.davidotek.pupgui2'
         },
         'vkbasalt-install': { textoConcluido: '✅ vkBasalt instalado', textoConcluidoKey: 'sessoes.gaming.texto_concluido_vkbasalt' },
-        'gamemode-presets-apply': { sempreClicavel: true, textoConcluido: '✅ Presets aplicados' },
+        'gamemode-presets-apply': { textoConcluido: '✅ Presets aplicados' },
         'gamescope-session-install': { textoConcluido: '✅ Gamescope session instalado', textoConcluidoKey: 'sessoes.gaming.texto_concluido_gamescope_session' },
         'controller-test-install': { textoConcluido: '✅ Ferramenta instalada', textoConcluidoKey: 'sessoes.gaming.texto_concluido_controller_test' },
         // --- Emuladores ---
@@ -878,7 +884,17 @@ var SESSOES = [
             textoConcluido: '✅ Duckstation instalado',
             textoConcluidoKey: 'sessoes.gaming.texto_concluido_duckstation',
             flatpakId: 'org.duckstation.DuckStation'
-        }
+        },
+        'wine-remove': { sempreClicavel: true },
+        'winetricks-remove': { sempreClicavel: true },
+        'gamemode-remove': { sempreClicavel: true },
+        'mangohud-remove': { sempreClicavel: true },
+        'goverlay-remove': { sempreClicavel: true },
+        'gamescope-remove': { sempreClicavel: true },
+        'vkbasalt-remove': { sempreClicavel: true },
+        'gamescope-session-remove': { sempreClicavel: true },
+        'controller-test-remove': { sempreClicavel: true },
+        'desfazer-ntsync': { sempreClicavel: true }
     }
 },
 
@@ -909,6 +925,7 @@ var SESSOES = [
 // ============================================================
 // SESSÃO 10 — VIRTUALIZAÇÃO
 // QEMU/KVM, VirtualBox e GNOME Boxes.
+// As remoções agora usam lixeiras (helper global em script.js).
 // ============================================================
 {
     id: 'virtualizacao',
@@ -919,26 +936,17 @@ var SESSOES = [
             textoConcluido: '✅ QEMU/KVM instalado',
             textoConcluidoKey: 'sessoes.virtualizacao.texto_concluido_qemu'
         },
-        'qemu-kvm-remove': {
-            textoConcluido: '✅ QEMU/KVM removido',
-            textoConcluidoKey: 'sessoes.virtualizacao.texto_concluido_qemu_remove'
-        },
+        'qemu-kvm-remove': { sempreClicavel: true },
         'virtualbox-install': {
             textoConcluido: '✅ VirtualBox instalado',
             textoConcluidoKey: 'sessoes.virtualizacao.texto_concluido_virtualbox'
         },
-        'virtualbox-remove': {
-            textoConcluido: '✅ VirtualBox removido',
-            textoConcluidoKey: 'sessoes.virtualizacao.texto_concluido_virtualbox_remove'
-        },
+        'virtualbox-remove': { sempreClicavel: true },
         'gnome-boxes-install': {
             textoConcluido: '✅ GNOME Boxes instalado',
             textoConcluidoKey: 'sessoes.virtualizacao.texto_concluido_boxes'
         },
-        'gnome-boxes-remove': {
-            textoConcluido: '✅ GNOME Boxes removido',
-            textoConcluidoKey: 'sessoes.virtualizacao.texto_concluido_boxes_remove'
-        }
+        'gnome-boxes-remove': { sempreClicavel: true }
     }
 },
 
@@ -1653,25 +1661,33 @@ async function desmarcarComoPulado(idComando) {
 }
 
 // ============================================================
-// VERIFICAÇÃO DE FLATPAKS REMOVIDOS EXTERNAMENTE
+// SINCRONIZAÇÃO DE ESTADO DE FLATPAKS (removidos + instalados)
 // ============================================================
 //
-// O usuário pode remover um Flatpak via GNOME Software, linha de
-// comando, ou qualquer outro gerenciador. Nesse caso, o FAP ainda
-// tem o comando marcado como "executado" no progresso — o botão
-// fica cinza/disabled mesmo com o app ausente.
+// Esta função faz DUAS coisas numa única passada:
 //
-// Esta função consulta /flatpak-installed, compara com os comandos
-// marcados como executados que tenham `flatpakId`, e desmarca +
-// restaura o botão para qualquer app que tenha sido removido.
+//   1. DESMARCA comandos Flatpak cujo app foi removido por fora
+//      (via GNOME Software, linha de comando, etc.). Sem isso, o
+//      botão fica cinza mesmo com o app ausente.
 //
-// Throttle de 30s evita consultas repetidas quando o usuário
-// navega entre sessões rapidamente.
+//   2. MARCA comandos Flatpak cujo app JÁ ESTÁ instalado no
+//      sistema, mas o comando não estava marcado como executado.
+//      Cobre o caso do usuário que já tinha o app antes do FAP.
+//
+// Antes, isso era feito por duas funções separadas
+// (`verificarFlatpaksRemovidos` e `marcarFlatpaksJaInstalados`)
+// que compartilhavam o mesmo throttle. Isso causava um bug: no
+// boot, `verificarFlatpaksRemovidos` era chamada primeiro (via
+// DOMContentLoaded), setava o throttle, e `marcarFlatpaksJaInstalados`
+// era bloqueada quando rodava em `sessao-carregada` — então
+// apps instalados por fora do FAP nunca eram detectados no boot.
+//
+// Unificar resolve o bug e evita duas requisições ao mesmo endpoint.
 
 const FLATPAK_VERIFY_TTL_MS = 30000;
 let _ultimaVerificacaoFlatpak = 0;
 
-async function verificarFlatpaksRemovidos() {
+async function _sincronizarEstadoFlatpaks() {
     var agora = Date.now();
     if (agora - _ultimaVerificacaoFlatpak < FLATPAK_VERIFY_TTL_MS) {
         return;
@@ -1690,24 +1706,42 @@ async function verificarFlatpaksRemovidos() {
         var progress = await getProgress();
         var executados = progress.executados || [];
 
-        var removidos = [];
+        var marcados = [];    // app instalado por fora, comando não marcado
+        var removidos = [];   // comando marcado, mas app não está instalado
+
         for (var i = 0; i < SESSOES.length; i++) {
             var sessao = SESSOES[i];
             var comandos = sessao.comandos || {};
             for (var idComando in comandos) {
                 var info = comandos[idComando];
                 if (!info.flatpakId) continue;
-                if (!executados.includes(idComando)) continue;
-                if (instalados.includes(info.flatpakId)) continue;
 
-                removidos.push({ id: idComando, appId: info.flatpakId });
+                var estaMarcado = executados.includes(idComando);
+                var estaInstalado = instalados.includes(info.flatpakId);
+
+                if (!estaMarcado && estaInstalado) {
+                    marcados.push(idComando);
+                } else if (estaMarcado && !estaInstalado) {
+                    removidos.push({ id: idComando, appId: info.flatpakId });
+                }
             }
         }
 
-        if (removidos.length === 0) return;
+        // Etapa 1: marca os que já estão instalados no sistema.
+        for (var j = 0; j < marcados.length; j++) {
+            console.log('[Flatpak] Já instalado, marcando como executado:', marcados[j]);
+            await marcarComoExecutado(marcados[j]);
+        }
+        for (var k = 0; k < marcados.length; k++) {
+            try {
+                restaurarBotaoAposExecucao(marcados[k], true);
+                _atualizarIconeDesinstalarSeExistir(marcados[k]);
+            } catch (e) { /* ignora */ }
+        }
 
-        for (var j = 0; j < removidos.length; j++) {
-            var item = removidos[j];
+        // Etapa 2: desmarca os que foram removidos por fora.
+        for (var l = 0; l < removidos.length; l++) {
+            var item = removidos[l];
             console.log('[Flatpak] Removido externamente:', item.id, '→', item.appId);
             await desmarcarComoExecutado(item.id);
             try {
@@ -1717,84 +1751,23 @@ async function verificarFlatpaksRemovidos() {
             }
         }
 
-        _atualizarProgressoGlobal();
-
+        if (marcados.length > 0 || removidos.length > 0) {
+            _atualizarProgressoGlobal();
+        }
     } catch (e) {
-        console.warn('[Flatpak] Não foi possível verificar:', e.message);
+        console.warn('[Flatpak] Falha ao sincronizar estado:', e.message);
     }
 }
 
-// ============================================================
-// DETECÇÃO DE FLATPAKS JÁ INSTALADOS
-// ============================================================
-//
-// verificarFlatpaksRemovidos() só DESMARCA comandos Flatpak
-// quando o app correspondente deixa de existir. Falta o inverso:
-// quando o app já está instalado no sistema (via loja, terminal,
-// ou porque o usuário já tinha o app antes de instalar o FAP), o
-// botão precisa aparecer como "✅ instalado".
-//
-// Sem isso, um usuário com Haruna instalado via GNOME Software
-// veria o botão "📦 Instalar Haruna" ativo — e clicaria nele sem
-// sentido.
-//
-// Esta função roda uma vez por sessão carregada. Faz uma única
-// chamada a /flatpak-installed e marca todos os comandos Flatpak
-// que correspondem a apps já instalados. O `marcarComoExecutado`
-// é idempotente — não faz POST se o idComando já estiver na lista.
-//
-// Throttle de 30s é compartilhado com verificarFlatpaksRemovidos(),
-// para não fazer duas chamadas seguidas ao mesmo endpoint.
+// Aliases mantidos por compatibilidade — ambas chamam a função
+// unificada. Como o throttle é compartilhado, chamar as duas em
+// sequência só executa um fetch.
+function verificarFlatpaksRemovidos() {
+    return _sincronizarEstadoFlatpaks();
+}
 
-async function marcarFlatpaksJaInstalados() {
-    // Reaproveita o throttle do verificarFlatpaksRemovidos.
-    var agora = Date.now();
-    if (agora - _ultimaVerificacaoFlatpak < FLATPAK_VERIFY_TTL_MS) {
-        return;
-    }
-    _ultimaVerificacaoFlatpak = agora;
-
-    try {
-        var r = await fetch(API_URL + '/flatpak-installed', { cache: 'no-store' });
-        if (!r.ok) return;
-        var data = await r.json();
-        var instalados = Array.isArray(data.apps) ? data.apps : [];
-
-        var progress = await getProgress();
-        var executados = progress.executados || [];
-
-        var marcados = [];
-        for (var i = 0; i < SESSOES.length; i++) {
-            var sessao = SESSOES[i];
-            var comandos = sessao.comandos || {};
-            for (var idComando in comandos) {
-                var info = comandos[idComando];
-                if (!info.flatpakId) continue;
-                if (executados.includes(idComando)) continue;
-                if (!instalados.includes(info.flatpakId)) continue;
-
-                marcados.push(idComando);
-            }
-        }
-
-        if (marcados.length === 0) return;
-
-        for (var j = 0; j < marcados.length; j++) {
-            console.log('[Flatpak] Já instalado, marcando como executado:', marcados[j]);
-            await marcarComoExecutado(marcados[j]);
-        }
-
-        // Repinta os botões que ficaram na tela, se algum deles
-        // pertence ao conjunto marcado.
-        for (var k = 0; k < marcados.length; k++) {
-            try {
-                restaurarBotaoAposExecucao(marcados[k], true);
-                _atualizarIconeDesinstalarSeExistir(marcados[k]);
-            } catch (e) { /* ignora */ }
-        }
-    } catch (e) {
-        console.warn('[Flatpak] Falha ao detectar instalados:', e.message);
-    }
+function marcarFlatpaksJaInstalados() {
+    return _sincronizarEstadoFlatpaks();
 }
 
 // Helper que tenta chamar _atualizarIconeDesinstalar se ele
@@ -2764,12 +2737,37 @@ async function desinstalarPacote(idComando, comandoRemover, nomeExibicao) {
 // ============================================================
 // ABRIR FERRAMENTA EXTERNA
 // ============================================================
+//
+// Todos os botões "Abrir X" usam `setsid -f` para que o app ganhe
+// uma SESSÃO PRÓPRIA, desacoplada do FAP. Sem isso, o app morre
+// quando o FAP é fechado — porque o processo compartilha o mesmo
+// PGID do bash spawnado pelo server.js (que tem `detached: true`).
+//
+// Com `setsid -f`, o comportamento é idêntico a clicar no atalho
+// do menu do Fedora: o app sobrevive ao fechamento do FAP.
+//
+// Os redirecionamentos `> /dev/null 2>&1 < /dev/null` desacoplam
+// stdin/stdout/stderr do terminal do FAP — sem isso, o Node ficaria
+// preso ao buffer do app e o bash só sairia quando o app fechasse.
 
 function abrirFerramentaExterna(comando, idLog, nomeExibicao) {
+    var cmdFinal = (comando || '').trim();
+
+    cmdFinal = cmdFinal.replace(/\s*&\s*$/, '').trim();
+
+    if (!/^setsid\s/.test(cmdFinal)) {
+        cmdFinal = 'setsid -f ' + cmdFinal;
+    }
+
+    if (cmdFinal.indexOf('> /dev/null') === -1 && cmdFinal.indexOf('> /tmp/') === -1) {
+        var logFile = '/tmp/fap-open-' + (idLog || 'app') + '.log';
+        cmdFinal += ' > ' + logFile + ' 2>&1 < /dev/null';
+    }
+
     fetch(API_URL + '/executar', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ comando: comando, idComando: idLog + '-open' })
+        body: JSON.stringify({ comando: cmdFinal, idComando: idLog + '-open' })
     });
 
     var logBox = _getLogBox(idLog);
@@ -2782,6 +2780,334 @@ function abrirFerramentaExterna(comando, idLog, nomeExibicao) {
         logBox.appendChild(infoLine);
         logBox.scrollTop = logBox.scrollHeight;
     }
+}
+
+// ============================================================
+// HELPER GLOBAL — ÍCONE DE REMOVER UNIFICADO
+// ============================================================
+//
+// Este helper cria o ícone de lixeira ao lado de QUALQUER botão
+// de instalação (Flatpak ou não-Flatpak), seguindo o mesmo padrão
+// visual dos Flatpaks em aplicativos.html:
+//
+//   - O botão install ganha um wrapper `.btn-flatpak-wrapper`
+//   - A lixeira só é exibida quando o idComando está marcado como
+//     executado no progresso
+//   - Clicar na lixeira remove o app
+//   - Após remoção, o botão install volta ao estado original
+//
+// Config:
+//   {
+//     tipo: 'flatpak' | 'dnf',
+//     appId: 'org.exemplo.App',       // obrigatório se tipo='flatpak'
+//     pacotes: ['pkg1', 'pkg2'],       // obrigatório se tipo='dnf'
+//     nome: 'Nome do App',
+//     confirmMsg: 'texto'              // opcional
+//   }
+//
+// O ID do idComando de remoção é derivado do ID de install:
+//   '<nome>-install' → '<nome>-remove'
+//   'instalar-<nome>' → 'instalar-<nome>-remove' (mantém prefixo)
+//
+// Exemplo: 'samba-install' → 'samba-remove'
+//          'instalar-lightworks' → 'instalar-lightworks-remove'
+
+var APPS_REMOVIVEIS = {};
+var FAP_SVG_LIXEIRA = '<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>';
+
+function registrarAppRemovivel(idComando, config) {
+    APPS_REMOVIVEIS[idComando] = config;
+}
+
+function _idRemocaoDe(idComando) {
+    return idComando + '-remove';
+}
+
+function atualizarIconeRemover(idComando) {
+    var btn = document.getElementById('btn-' + idComando);
+    if (!btn) return;
+
+    var wrapper = btn.closest('.btn-flatpak-wrapper');
+    if (!wrapper) {
+        console.warn('[remove-icon] Botão sem wrapper .btn-flatpak-wrapper:', idComando);
+        return;
+    }
+
+    var info = APPS_REMOVIVEIS[idComando];
+    if (!info) {
+        console.warn('[remove-icon] App não registrado:', idComando);
+        return;
+    }
+
+    var nomeExibicao = info.nome || idComando;
+
+    var icone = wrapper.querySelector('.btn-flatpak-uninstall');
+    if (!icone) {
+        icone = document.createElement('button');
+        icone.type = 'button';
+        icone.className = 'btn-flatpak-uninstall';
+        icone.setAttribute('data-comando-alvo', idComando);
+        icone.innerHTML = FAP_SVG_LIXEIRA;
+        icone.title = _tVars('comum.desinstalar_app', 'Remover ' + nomeExibicao, { nome: nomeExibicao });
+        icone.setAttribute('aria-label', icone.title);
+
+        icone.addEventListener('click', function(e) {
+            e.stopPropagation();
+            _executarRemocaoApp(this.getAttribute('data-comando-alvo'));
+        });
+
+        wrapper.appendChild(icone);
+    }
+
+    icone.style.display = '';
+}
+
+function esconderIconeRemover(idComando) {
+    var btn = document.getElementById('btn-' + idComando);
+    if (!btn) return;
+    var wrapper = btn.closest('.btn-flatpak-wrapper');
+    if (!wrapper) return;
+    var icone = wrapper.querySelector('.btn-flatpak-uninstall');
+    if (icone) icone.style.display = 'none';
+}
+
+// ============================================================
+// ESCONDER BOTÃO "ABRIR" APÓS REMOÇÃO
+// ============================================================
+//
+// Quando um app é removido (via lixeira ou "desfazer tudo"), o
+// botão "🚀 Abrir X" precisa sumir imediatamente — senão o
+// usuário vê um botão que abriria um app já removido.
+//
+// Este helper localiza o botão "Abrir" no DOM como IRMÃO do
+// wrapper de instalação. NÃO usa heurística de id porque o
+// mapeamento install → abrir NÃO é 1:1 (ex.: o install
+// 'okular-tesseract-install' tem o botão 'btn-abrir-okular').
+//
+// Estrutura típica em todas as sessões:
+//   <div class="botoes-flex|launcher-item">
+//     <div class="btn-flatpak-wrapper">
+//       <button class="btn-executar" id="btn-<install>">…</button>
+//     </div>
+//     <button class="btn-executar verde" id="btn-abrir-<x>">…</button>
+//   </div>
+//
+// Basta subir até o pai do wrapper e esconder todo
+// `.btn-executar.verde` com `data-comando` começando em "abrir-".
+
+function esconderBotoesAbrirDe(idInstall) {
+    var btn = document.getElementById('btn-' + idInstall);
+    if (!btn) return;
+
+    var wrapper = btn.closest('.btn-flatpak-wrapper');
+    var container = wrapper ? wrapper.parentElement : btn.parentElement;
+    if (!container) return;
+
+    var botoes = container.querySelectorAll('.btn-executar.verde[data-comando^="abrir-"]');
+    botoes.forEach(function(b) {
+        b.style.display = 'none';
+    });
+}
+
+// ============================================================
+// REMOÇÃO DE APP (LIXEIRA) — FLUXO PRÓPRIO
+// ============================================================
+//
+// IMPORTANTE: este fluxo NÃO usa executarComandoGenerico().
+//
+// Motivo: executarComandoGenerico faz `_getLogBox(idComando)` e
+// retorna cedo se não encontrar o logBox. O id de remoção
+// (`<install>-remove` ou `<install>-revert`) é dinâmico — não
+// existe como botão no HTML — então _getLogBox(idRemocao) sempre
+// retornava null, e a lixeira ficava silenciosa.
+//
+// Solução: reaproveita o logBox do botão INSTALL (que existe no
+// DOM) para o log, e usa um idRemocao separado para a stream SSE
+// (assim o servidor sabe que é uma execução distinta).
+//
+// Este é o mesmo padrão já usado por `desinstalarAppFlatpak` nas
+// sessões de aplicativos/casa-escritorio/gaming — que funciona
+// justamente porque não passa pelo executarComandoGenerico.
+
+async function _executarRemocaoApp(idComando) {
+    var info = APPS_REMOVIVEIS[idComando];
+    if (!info) return;
+
+    if (!isExecutado(idComando)) {
+        alert(_tVars('comum.nao_instalado',
+                     (info.nome || idComando) + ' não está instalado.',
+                     { nome: info.nome || idComando }));
+        return;
+    }
+
+    var msg = info.confirmMsg || _tVars('comum.confirmar_desinstalar',
+                                        'Deseja desinstalar o ' + (info.nome || idComando) + '?',
+                                        { nome: info.nome || idComando });
+    if (!confirm(msg)) return;
+
+    var comando, idRemocao;
+    if (info.tipo === 'flatpak') {
+        comando = 'flatpak uninstall -y ' + info.appId;
+        idRemocao = idComando + '-revert';
+    } else if (info.tipo === 'dnf') {
+        comando = 'sudo dnf remove -y ' + info.pacotes.join(' ');
+        idRemocao = _idRemocaoDe(idComando);
+    } else {
+        console.warn('[remove-icon] tipo inválido:', info.tipo);
+        return;
+    }
+
+    // Reaproveita o logBox do botão INSTALL (o único que existe
+    // no DOM para este app).
+    var logBox = _getLogBox(idComando);
+    var btn = document.getElementById('btn-' + idComando);
+
+    if (logBox) {
+        logBox.style.display = 'block';
+        _separadorLog(logBox, '🗑️ Remover ' + (info.nome || idComando));
+        var infoLine = document.createElement('div');
+        infoLine.className = 'log-line info';
+        infoLine.textContent = '🗑️ Removendo ' + (info.nome || idComando) + '...';
+        logBox.appendChild(infoLine);
+        logBox.scrollTop = logBox.scrollHeight;
+    }
+
+    conectarSSE(idRemocao, logBox);
+
+    _bloquearSessao(idComando);
+    _bloquearOutrasSessoes(idComando);
+    _atualizarBloqueioNavegacao();
+
+    try {
+        var response = await fetch(API_URL + '/executar', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ comando: comando, idComando: idRemocao })
+        });
+
+        if (!response.ok) {
+            if (logBox) {
+                var errorLine = document.createElement('div');
+                errorLine.className = 'log-line error';
+                errorLine.textContent = _tVars('comum.erro_http', '❌ Erro HTTP: {status}', { status: response.status });
+                logBox.appendChild(errorLine);
+                logBox.scrollTop = logBox.scrollHeight;
+            }
+            _liberarSessao(idComando);
+            _liberarOutrasSessoes();
+            _atualizarBloqueioNavegacao();
+            return;
+        }
+
+        var sucesso = await aguardarConclusaoReal(idRemocao, 180000);
+
+        _liberarSessao(idComando);
+        _liberarOutrasSessoes();
+        _atualizarBloqueioNavegacao();
+
+        if (!sucesso) {
+            if (logBox) {
+                var errorLine2 = document.createElement('div');
+                errorLine2.className = 'log-line error';
+                errorLine2.textContent = sucesso === null
+                ? _t('comum.erro_timeout_desinstalar', '❌ Tempo esgotado esperando a desinstalação.')
+                : _tVars('comum.erro_falha_desinstalar', '❌ Falha ao desinstalar {nome}.', { nome: info.nome || idComando });
+                logBox.appendChild(errorLine2);
+                logBox.scrollTop = logBox.scrollHeight;
+            }
+            return;
+        }
+
+        // Sucesso: desmarca o install, esconde a lixeira, restaura o botão.
+        await desmarcarComoExecutado(idComando);
+        esconderIconeRemover(idComando);
+
+        if (btn) {
+            btn.textContent = _textoOriginalTraduzido(btn) || (info.nome || idComando);
+            btn.style.backgroundColor = _corOriginalDoBotao(btn);
+            btn.style.cursor = 'pointer';
+            btn.disabled = false;
+            btn.style.opacity = '1';
+        }
+
+        // Esconde o botão "Abrir X" associado (se existir).
+        esconderBotoesAbrirDe(idComando);
+
+        if (logBox) {
+            var successLine = document.createElement('div');
+            successLine.className = 'log-line success';
+            successLine.textContent = _tVars('comum.sucesso_desinstalar', '✅ {nome} desinstalado com sucesso!', { nome: info.nome || idComando });
+            logBox.appendChild(successLine);
+            logBox.scrollTop = logBox.scrollHeight;
+        }
+    } catch (e) {
+        _liberarSessao(idComando);
+        _liberarOutrasSessoes();
+        _atualizarBloqueioNavegacao();
+        if (logBox) {
+            var errorLine3 = document.createElement('div');
+            errorLine3.className = 'log-line error';
+            errorLine3.textContent = _tVars('comum.erro_desinstalar', '❌ Erro ao desinstalar: {msg}', { msg: e.message });
+            logBox.appendChild(errorLine3);
+            logBox.scrollTop = logBox.scrollHeight;
+        }
+    }
+}
+
+// ============================================================
+// HELPER GLOBAL — "DESFAZER TUDO"
+// ============================================================
+//
+// Botão de TEXTO EXPLÍCITO abaixo do botão de instalar. Remove
+// pacote + resíduos (configs em /etc, grupos, módulos do kernel).
+// Diferente da lixeira (que remove só os pacotes), este botão é
+// usado apenas quando o install deixa resíduo que atrapalharia o
+// sistema se ficar órfão.
+//
+// Config (adiciona campos ao registrarAppRemovivel):
+//   {
+//     modo: 'desfazerTudo',
+//     idDesfazer: 'desfazer-rclone-manager',
+//     comandoDesfazer: 'sudo dnf remove -y ... && ...',
+//     nome: 'Rclone Manager'
+//   }
+
+async function _executarDesfazerTudo(idInstall) {
+    var info = APPS_REMOVIVEIS[idInstall];
+    if (!info || info.modo !== 'desfazerTudo') return;
+    if (!isExecutado(idInstall)) return;
+
+    var nome = info.nome || idInstall;
+    var idDesfazer = info.idDesfazer;
+
+    var msg1 = _tVars('comum.desfazer_tudo_confirm1',
+                      '⚠️ Remover completamente o ' + nome + '?\n\n' +
+                      'Este botão remove TUDO que o FAP instalou:\n' +
+                      '• Pacotes do sistema\n' +
+                      '• Arquivos de configuração criados\n' +
+                      '• Grupos de usuário e serviços\n\n' +
+                      'Ação irreversível.',
+                      { nome: nome });
+    if (!confirm(msg1)) return;
+
+    var msg2 = _tVars('comum.desfazer_tudo_confirm2',
+                      '🔄 Última confirmação!\n\n' +
+                      'Todos os resquícios do ' + nome + ' serão removidos.\n\n' +
+                      'Tem certeza absoluta?',
+                      { nome: nome });
+    if (!confirm(msg2)) return;
+
+    var nomeAcao = _tVars('comum.btn_desfazer_tudo',
+                          '🗑️ Remover completamente o ' + nome,
+                          { nome: nome });
+
+    await executarComandoGenerico(idDesfazer, info.comandoDesfazer, nomeAcao,
+                                  async function() {
+                                      await desmarcarComoExecutado(idInstall);
+                                      aplicarEstadoToggle(idInstall, idDesfazer);
+
+                                      esconderBotoesAbrirDe(idInstall);
+                                  });
 }
 
 function mostrarBotaoDesinstalar(idComando) {

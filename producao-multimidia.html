@@ -30,7 +30,7 @@
 <p data-i18n="sessoes.producao-multimidia.obs_desc">Instale o OBS Studio para gravação/streaming e ative a câmera virtual para chamadas de vídeo.</p>
 
 <div class="botoes-flex">
-<div class="btn-flatpak-wrapper" style="display: inline-block;">
+<div class="btn-flatpak-wrapper">
 <button class="btn-executar"
 onclick="executarOBSStudio()"
 data-comando="instalar-obs-studio"
@@ -40,6 +40,16 @@ data-i18n="sessoes.producao-multimidia.btn_instalar_obs">
 📹 Instalar OBS Studio
 </button>
 </div>
+
+<button class="btn-executar verde"
+style="display: none;"
+onclick="abrirOBSStudio()"
+data-comando="abrir-obs-studio"
+data-logbox="log-sessao-producao-multimidia"
+id="btn-abrir-obs-studio"
+data-i18n="sessoes.producao-multimidia.btn_abrir_obs">
+🚀 Abrir OBS Studio
+</button>
 
 <button class="btn-executar"
 onclick="executarOBSCam()"
@@ -72,8 +82,8 @@ data-i18n="sessoes.producao-multimidia.btn_ativar_cam">
 <div class="comando-info">
 <h3 data-i18n="sessoes.producao-multimidia.easyeffects_titulo">🎵 Melhoria de Áudio com EasyEffects</h3>
 <p data-i18n="sessoes.producao-multimidia.easyeffects_desc">Processador de efeitos de som para PipeWire para aplicar redução de ruídos e equalizações.</p>
-<div class="grupo-botoes">
-<div class="btn-flatpak-wrapper" style="display: inline-block;">
+<div class="botoes-flex">
+<div class="btn-flatpak-wrapper">
 <button class="btn-executar"
 onclick="executarEasyEffects()"
 data-comando="instalar-easyeffects"
@@ -83,6 +93,15 @@ data-i18n="sessoes.producao-multimidia.btn_instalar_easyeffects">
 Instalar EasyEffects (Flatpak)
 </button>
 </div>
+<button class="btn-executar verde"
+style="display: none;"
+onclick="abrirEasyEffects()"
+data-comando="abrir-easyeffects"
+data-logbox="log-sessao-producao-multimidia"
+id="btn-abrir-easyeffects"
+data-i18n="sessoes.producao-multimidia.btn_abrir_easyeffects">
+🚀 Abrir EasyEffects
+</button>
 </div>
 </div>
 
@@ -113,20 +132,44 @@ var APPS_FLATPAK = {
     'instalar-easyeffects': { appId: 'com.github.wwmm.easyeffects', fallback: 'Instalar EasyEffects (Flatpak)' }
 };
 
+// ------------------------------------------------------------
+// Helper: visibilidade dos botões "Abrir X"
+// ------------------------------------------------------------
+
+function _atualizarBotaoAbrir(idInstalacao, idBotaoAbrir) {
+    var btn = document.getElementById(idBotaoAbrir);
+    if (!btn) return;
+    btn.style.display = isExecutado(idInstalacao) ? '' : 'none';
+}
+
 async function executarOBSStudio() {
     const idComando = 'instalar-obs-studio';
     const comando = 'flatpak install flathub com.obsproject.Studio -y';
-    await executarComandoGenerico(idComando, comando, _t('sessoes.producao-multimidia.btn_instalar_obs', '📹 Instalar OBS Studio'), function() {
-        _atualizarIconeDesinstalar(idComando);
-    });
+    await executarComandoGenerico(idComando, comando,
+        _t('sessoes.producao-multimidia.btn_instalar_obs', '📹 Instalar OBS Studio'),
+        function() {
+            _atualizarIconeDesinstalar(idComando);
+            _atualizarBotaoAbrir('instalar-obs-studio', 'btn-abrir-obs-studio');
+        });
+}
+
+function abrirOBSStudio() {
+    abrirFerramentaExterna('gtk-launch com.obsproject.Studio', 'instalar-obs-studio', 'OBS Studio');
 }
 
 async function executarEasyEffects() {
     const idComando = 'instalar-easyeffects';
     const comando = 'flatpak install flathub com.github.wwmm.easyeffects -y';
-    await executarComandoGenerico(idComando, comando, _t('sessoes.producao-multimidia.btn_instalar_easyeffects', 'Instalar EasyEffects (Flatpak)'), function() {
-        _atualizarIconeDesinstalar(idComando);
-    });
+    await executarComandoGenerico(idComando, comando,
+        _t('sessoes.producao-multimidia.btn_instalar_easyeffects', 'Instalar EasyEffects (Flatpak)'),
+        function() {
+            _atualizarIconeDesinstalar(idComando);
+            _atualizarBotaoAbrir('instalar-easyeffects', 'btn-abrir-easyeffects');
+        });
+}
+
+function abrirEasyEffects() {
+    abrirFerramentaExterna('gtk-launch com.github.wwmm.easyeffects', 'instalar-easyeffects', 'EasyEffects');
 }
 
 async function executarOBSCam() {
@@ -201,6 +244,7 @@ async function desinstalarAppFlatpak(idComando, appId, nomeExibicao) {
         }
 
         _esconderIconeDesinstalar(idComando);
+        esconderBotoesAbrirDe(idComando);
 
         if (logBox) {
             var successLine = document.createElement('div');
@@ -294,6 +338,10 @@ function restaurarEstadoSessao() {
             }
         }
     });
+
+    // Botões "Abrir"
+    _atualizarBotaoAbrir('instalar-obs-studio', 'btn-abrir-obs-studio');
+    _atualizarBotaoAbrir('instalar-easyeffects', 'btn-abrir-easyeffects');
 
     _restaurarIconesFlatpak();
 }
