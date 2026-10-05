@@ -51,8 +51,7 @@
     },
 
     "index": {
-        "badge_versao": "🚀 v<span class=\"FAP-version\">{versao}</span>",
-        "titulo": "Fedora Advantage Panel",
+        "badge_versao": "🚀 v<span class=\"fap-version\">{versao}</span>",
         "subtitulo": "Panel de automatización para configurar, optimizar y personalizar tu Fedora Linux de forma rápida y segura.",
         "btn_github": "🐙 GitHub",
         "btn_criador": "👤 Creado por: <strong>VitãoTub</strong>",
@@ -369,7 +368,7 @@
             "btn_abrir_instalador": "🎨 Abrir Instalador de Affinity",
             "btn_github_projeto": "🐙 GitHub del Proyecto",
             "log_instalador_iniciado": "🚀 ¡Instalador de Affinity iniciado!",
-            "log_instalador_local": "📋 Registro: /tmp/FAP-affinity/installer.log",
+            "log_instalador_local": "📋 Registro: /tmp/fap-affinity/installer.log",
             "log_preparando": "⏳ Preparando...",
             "texto_concluido_affinity": "✅ Affinity preparado",
             "btn_opera": "🌐 Opera",
@@ -594,7 +593,7 @@
             "open_desc": "Abre la interfaz de Android. Inicia el contenedor si no está en ejecución. El contenedor debe estar en ejecución para instalar extras (GApps, Magisk, etc.). Haz clic aquí una vez antes de usar los extras.",
             "btn_open_waydroid": "🚀 Abrir Waydroid",
             "uninstall_titulo": "Desinstalar Waydroid",
-            "uninstall_desc": "Elimina <strong>absolutamente todo</strong> lo que instala esta sesión: el paquete Waydroid, el contenedor Android (imágenes, apps, datos), el repositorio de extras (<code>~/.local/share/FAP-waydroid</code>), el venv de Python y el acceso directo creado por Waydroid. <strong>Acción irreversible.</strong>",
+            "uninstall_desc": "Elimina <strong>absolutamente todo</strong> lo que instala esta sesión: el paquete Waydroid, el contenedor Android (imágenes, apps, datos), el repositorio de extras (<code>~/.local/share/fap-waydroid</code>), el venv de Python y el acceso directo creado por Waydroid. <strong>Acción irreversible.</strong>",
             "confirmar_uninstall": "Esto eliminará Waydroid y TODOS los datos del contenedor Android (apps instaladas, configuraciones). ¿Continuar?",
             "btn_uninstall_waydroid": "🗑️ Deshacer Cambios y Eliminar Completamente",
             "extras_titulo": "🧩 Extras y Recursos",
@@ -641,7 +640,7 @@
             "container_not_ready": "Waydroid aún no está instalado o inicializado. Sigue los pasos de la sección anterior primero.",
             "container_waiting": "Esperando a que el contenedor se inicie (hasta 3 minutos)...",
             "container_ready": "¡El contenedor de Waydroid está en ejecución!",
-            "container_timeout": "El contenedor no respondió en 3 minutos. Verifica /tmp/FAP-waydroid-ui.log para más detalles.",
+            "container_timeout": "El contenedor no respondió en 3 minutos. Verifica /tmp/fap-waydroid-ui.log para más detalles.",
             "container_dispatching": "Enviando comando para abrir Waydroid...",
             "container_dispatch_error": "Error al enviar el comando: {msg}",
             "container_guard_alert": "El contenedor de Waydroid no está en ejecución. Haz clic en \"Abrir Waydroid\" primero.",
@@ -792,7 +791,7 @@
 
             "pipewire_quantum_titulo": "Baja Latencia en PipeWire",
             "pipewire_quantum_desc": "Reduce el <em>quantum</em> de PipeWire (tamaño del búfer de audio) de 1024 a 256 muestras. Reduce la latencia de audio de ~21ms a ~5ms — esencial para grabación y juegos con audio posicional.",
-            "pipewire_quantum_info": "ℹ️ <strong>Qué cambia:</strong><br>• Crea <code>~/.config/pipewire/pipewire.conf.d/99-FAP-quantum.conf</code>.<br>• Reinicia <code>pipewire</code>, <code>pipewire-pulse</code> y <code>wireplumber</code>.<br>• Se aplica inmediatamente — sin reiniciar.<br>• <strong>Compromiso:</strong> menor latencia usa un poco más de CPU. En equipos modestos, puede causar crackling.",
+            "pipewire_quantum_info": "ℹ️ <strong>Qué cambia:</strong><br>• Crea <code>~/.config/pipewire/pipewire.conf.d/99-fap-quantum.conf</code>.<br>• Reinicia <code>pipewire</code>, <code>pipewire-pulse</code> y <code>wireplumber</code>.<br>• Se aplica inmediatamente — sin reiniciar.<br>• <strong>Compromiso:</strong> menor latencia usa un poco más de CPU. En equipos modestos, puede causar crackling.",
             "btn_pipewire_quantum": "⚙️ Activar Baja Latencia",
             "btn_pipewire_quantum_remove": "↩️ Revertir",
             "texto_concluido_pipewire_quantum": "✅ Baja latencia activada",
@@ -916,11 +915,11 @@
             "selinux_desabilitar_info": "ℹ️ <strong>Si necesitas cambiar el modo:</strong> la herramienta oficial es <code>setenforce</code>. Ejecutar <code>sudo setenforce 0</code> lo pone en permissive hasta el próximo arranque. Para hacerlo permanente, edita <code>/etc/selinux/config</code> (no lo hacemos automáticamente — es tu decisión)."
         },
 
-        "sobre-fof": {
+        "sobre-fap": {
             "nome": "Acerca de FAP",
             "titulo": "📖 Acerca de FAP",
 
-            "sobre_titulo": "👋 Acerca de Fedora Advantage Panel",
+            "sobre_titulo_prefixo": "👋 Acerca de",
             "sobre_o_que_titulo": "📌 Qué es FAP",
             "sobre_o_que": "<strong>Fedora Advantage Panel (FAP)</strong> es un panel de automatización visual para configurar Fedora Linux. Reúne, en una interfaz amigable, los pasos que normalmente requerirían comandos en la terminal — desde el ajuste inicial del sistema hasta dejarlo todo listo para el uso diario y para juegos.",
             "sobre_porque_titulo": "🎯 Por qué fue creado",
@@ -934,7 +933,7 @@
             "sobre_nao_faz_4": "No está afiliado a Red Hat — es un proyecto independiente, mantenido por la comunidad.",
             "sobre_nao_faz_5": "No es un instalador de sistema operativo — FAP configura un Fedora ya instalado, no instala Fedora desde cero.",
 
-            "acordeao_fof_titulo": "🔧 Mantenimiento del FAP",
+            "acordeao_fap_titulo": "🔧 Mantenimiento del FAP",
 
             "atualizacao_disponivel": "⬆️ Una nueva versión de FAP está disponible. Haz clic en \"Actualizar FAP\" abajo para instalar.",
 
@@ -945,18 +944,18 @@
             "atualizar_confirmar": "🔄 ¿Actualizar Fedora Advantage Panel a la versión más reciente?\n\nEsto descargará e instalará la última versión desde GitHub.",
             "atualizar_popup_concluido": "✅ ¡Actualización completada con éxito!\n\nCierra y reabre FAP para que los nuevos cambios entren en vigor.",
             "atualizar_aviso_reiniciar": "Cierra y reabre FAP para usar la nueva versión del contenedor.",
-            "texto_concluido_fof_atualizar": "✅ FAP actualizado",
+            "texto_concluido_fap_atualizar": "✅ FAP actualizado",
 
             "desinstalar_titulo": "🗑️ Desinstalar Fedora Advantage Panel",
             "desinstalar_desc": "Elimina completamente FAP de su sistema, incluyendo todos los archivos, configuraciones y accesos directos.",
             "desinstalar_aviso": "⚠️ ATENCIÓN: ¡Esta acción es irreversible! Todos los datos del FAP serán eliminados.",
             "btn_desinstalar": "🗑️ Desinstalar FAP",
-            "desinstalar_confirmar1": "⚠️ ¡ATENCIÓN!\n\nEstá a punto de DESINSTALAR completamente Fedora Advantage Panel.\n\nEsto eliminará:\n• Todos los archivos del FAP\n• Accesos directos del menú\n• El comando \"FAP\" del terminal\n\n¡Esta acción es IRREVERSIBLE!\n\n¿Está seguro de que desea continuar?",
+            "desinstalar_confirmar1": "⚠️ ¡ATENCIÓN!\n\nEstá a punto de DESINSTALAR completamente Fedora Advantage Panel.\n\nEsto eliminará:\n• Todos los archivos del FAP\n• Accesos directos del menú\n• El comando \"fap\" del terminal\n\n¡Esta acción es IRREVERSIBLE!\n\n¿Está seguro de que desea continuar?",
             "desinstalar_confirmar2": "🔄 ¡Última confirmación!\n\nTodos los datos del FAP se perderán.\n\n¿Realmente desea desinstalar Fedora Advantage Panel?",
             "desinstalar_log_iniciando": "🗑️ Desinstalando FAP...",
             "desinstalar_log_sucesso": "✅ ¡FAP desinstalado con éxito!",
             "desinstalar_msg_final": "✅ Fedora Advantage Panel fue desinstalado completamente de su ordenador.\n\nPuede cerrar esta ventana ahora.",
-            "texto_concluido_fof_desinstalar": "✅ FAP desinstalado",
+            "texto_concluido_fap_desinstalar": "✅ FAP desinstalado",
 
             "changelog_titulo": "📝 Changelog del FAP",
             "changelog_desc": "Historial de cambios de Fedora Advantage Panel. Cargado automáticamente desde el repositorio oficial en GitHub.",

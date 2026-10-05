@@ -51,8 +51,7 @@
     },
 
     "index": {
-        "badge_versao": "🚀 v<span class=\"FAP-version\">{versao}</span>",
-        "titulo": "Fedora Advantage Panel",
+        "badge_versao": "🚀 v<span class=\"fap-version\">{versao}</span>",
         "subtitulo": "Automation panel to configure, optimize and customize your Fedora Linux quickly and safely.",
         "btn_github": "🐙 GitHub",
         "btn_criador": "👤 Created by: <strong>VitãoTub</strong>",
@@ -369,7 +368,7 @@
             "btn_abrir_instalador": "🎨 Open Affinity Installer",
             "btn_github_projeto": "🐙 Project GitHub",
             "log_instalador_iniciado": "🚀 Affinity installer started!",
-            "log_instalador_local": "📋 Log: /tmp/FAP-affinity/installer.log",
+            "log_instalador_local": "📋 Log: /tmp/fap-affinity/installer.log",
             "log_preparando": "⏳ Preparing...",
             "texto_concluido_affinity": "✅ Affinity prepared",
             "btn_opera": "🌐 Opera",
@@ -594,7 +593,7 @@
             "open_desc": "Opens the Android interface. Starts the container if it's not running. The container must be running to install extras (GApps, Magisk, etc.). Click here once before using the extras.",
             "btn_open_waydroid": "🚀 Open Waydroid",
             "uninstall_titulo": "Uninstall Waydroid",
-            "uninstall_desc": "Removes <strong>absolutely everything</strong> this session installs: the Waydroid package, the Android container (images, apps, data), the extras repository (<code>~/.local/share/FAP-waydroid</code>), the Python venv, and the menu shortcut created by Waydroid. <strong>Irreversible action.</strong>",
+            "uninstall_desc": "Removes <strong>absolutely everything</strong> this session installs: the Waydroid package, the Android container (images, apps, data), the extras repository (<code>~/.local/share/fap-waydroid</code>), the Python venv, and the menu shortcut created by Waydroid. <strong>Irreversible action.</strong>",
             "confirmar_uninstall": "This will remove Waydroid and ALL Android container data (installed apps, settings). Continue?",
             "btn_uninstall_waydroid": "🗑️ Undo Changes and Remove Completely",
             "extras_titulo": "🧩 Extras and Features",
@@ -641,7 +640,7 @@
             "container_not_ready": "Waydroid is not installed or initialized yet. Follow the steps in the section above first.",
             "container_waiting": "Waiting for the container to come up (up to 3 minutes)...",
             "container_ready": "Waydroid container is running!",
-            "container_timeout": "Container did not respond within 3 minutes. Check /tmp/FAP-waydroid-ui.log for details.",
+            "container_timeout": "Container did not respond within 3 minutes. Check /tmp/fap-waydroid-ui.log for details.",
             "container_dispatching": "Sending command to open Waydroid...",
             "container_dispatch_error": "Error dispatching command: {msg}",
             "container_guard_alert": "Waydroid container is not running. Click \"Open Waydroid\" first.",
@@ -792,7 +791,7 @@
 
             "pipewire_quantum_titulo": "Low Latency in PipeWire",
             "pipewire_quantum_desc": "Reduces the PipeWire <em>quantum</em> (audio buffer size) from 1024 to 256 samples. Reduces audio latency from ~21ms to ~5ms — essential for recording and games with positional audio.",
-            "pipewire_quantum_info": "ℹ️ <strong>What changes:</strong><br>• Creates <code>~/.config/pipewire/pipewire.conf.d/99-FAP-quantum.conf</code>.<br>• Restarts <code>pipewire</code>, <code>pipewire-pulse</code> and <code>wireplumber</code>.<br>• Applies immediately — no reboot.<br>• <strong>Trade-off:</strong> lower latency uses slightly more CPU. On modest machines, it can cause crackling.",
+            "pipewire_quantum_info": "ℹ️ <strong>What changes:</strong><br>• Creates <code>~/.config/pipewire/pipewire.conf.d/99-fap-quantum.conf</code>.<br>• Restarts <code>pipewire</code>, <code>pipewire-pulse</code> and <code>wireplumber</code>.<br>• Applies immediately — no reboot.<br>• <strong>Trade-off:</strong> lower latency uses slightly more CPU. On modest machines, it can cause crackling.",
             "btn_pipewire_quantum": "⚙️ Enable Low Latency",
             "btn_pipewire_quantum_remove": "↩️ Revert",
             "texto_concluido_pipewire_quantum": "✅ Low latency enabled",
@@ -916,11 +915,11 @@
             "selinux_desabilitar_info": "ℹ️ <strong>If you need to change the mode:</strong> the official tool is <code>setenforce</code>. Running <code>sudo setenforce 0</code> sets it to permissive until the next boot. To make it permanent, edit <code>/etc/selinux/config</code> (we don't do this automatically — it's your decision)."
         },
 
-        "sobre-fof": {
+        "sobre-fap": {
             "nome": "About FAP",
             "titulo": "📖 About FAP",
 
-            "sobre_titulo": "👋 About Fedora Advantage Panel",
+            "sobre_titulo_prefixo": "👋 About",
             "sobre_o_que_titulo": "📌 What FAP is",
             "sobre_o_que": "<strong>Fedora Advantage Panel (FAP)</strong> is a visual automation panel for setting up Fedora Linux. It brings together, in a friendly interface, the steps that would normally require terminal commands — from the initial system tuning to getting everything ready for daily use and gaming.",
             "sobre_porque_titulo": "🎯 Why it was created",
@@ -934,7 +933,7 @@
             "sobre_nao_faz_4": "It is not affiliated with Red Hat — it is an independent project maintained by the community.",
             "sobre_nao_faz_5": "It is not an operating system installer — FAP configures an already-installed Fedora, it does not install Fedora from scratch.",
 
-            "acordeao_fof_titulo": "🔧 FAP Maintenance",
+            "acordeao_fap_titulo": "🔧 FAP Maintenance",
 
             "atualizacao_disponivel": "⬆️ A new version of FAP is available. Click \"Update FAP\" below to install.",
 
@@ -945,18 +944,18 @@
             "atualizar_confirmar": "🔄 Update Fedora Advantage Panel to the latest version?\n\nThis will download and install the latest version from GitHub.",
             "atualizar_popup_concluido": "✅ Update completed successfully!\n\nPlease close and reopen FAP for the new changes to take effect.",
             "atualizar_aviso_reiniciar": "Close and reopen FAP to use the new container version.",
-            "texto_concluido_fof_atualizar": "✅ FAP updated",
+            "texto_concluido_fap_atualizar": "✅ FAP updated",
 
             "desinstalar_titulo": "🗑️ Uninstall Fedora Advantage Panel",
             "desinstalar_desc": "Completely removes FAP from your system, including all files, settings and shortcuts.",
             "desinstalar_aviso": "⚠️ WARNING: This action is irreversible! All FAP data will be removed.",
             "btn_desinstalar": "🗑️ Uninstall FAP",
-            "desinstalar_confirmar1": "⚠️ WARNING!\n\nYou are about to COMPLETELY UNINSTALL Fedora Advantage Panel.\n\nThis will remove:\n• All FAP files\n• Menu shortcuts\n• The \"FAP\" terminal command\n\nThis action is IRREVERSIBLE!\n\nAre you sure you want to continue?",
+            "desinstalar_confirmar1": "⚠️ WARNING!\n\nYou are about to COMPLETELY UNINSTALL Fedora Advantage Panel.\n\nThis will remove:\n• All FAP files\n• Menu shortcuts\n• The \"fap\" terminal command\n\nThis action is IRREVERSIBLE!\n\nAre you sure you want to continue?",
             "desinstalar_confirmar2": "🔄 Final confirmation!\n\nAll FAP data will be lost.\n\nDo you really want to uninstall Fedora Advantage Panel?",
             "desinstalar_log_iniciando": "🗑️ Uninstalling FAP...",
             "desinstalar_log_sucesso": "✅ FAP uninstalled successfully!",
             "desinstalar_msg_final": "✅ Fedora Advantage Panel was completely uninstalled from your computer.\n\nYou can close this window now.",
-            "texto_concluido_fof_desinstalar": "✅ FAP uninstalled",
+            "texto_concluido_fap_desinstalar": "✅ FAP uninstalled",
 
             "changelog_titulo": "📝 FAP Changelog",
             "changelog_desc": "History of changes to Fedora Advantage Panel. Loaded automatically from the official repository on GitHub.",
