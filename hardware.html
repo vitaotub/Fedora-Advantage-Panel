@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>FOF - Hardware</title>
+<title>FAP - Hardware</title>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -199,7 +199,7 @@ NVIDIA
 Detecta a geração da sua GPU NVIDIA e instala automaticamente a série de driver correta — <code>akmod-nvidia</code> para Turing e mais recentes, <code>akmod-nvidia-580xx</code> para Maxwell/Pascal, <code>akmod-nvidia-470xx</code> para Kepler e <code>akmod-nvidia-390xx</code> para Fermi. Inclui os suplementos CUDA + bibliotecas NVENC/NVDEC para OBS, Kdenlive e encoding por hardware.
 </p>
 <div class="info-extra" data-i18n-html="sessoes.hardware.nvidia_driver_info">
-ℹ️ <strong>Sobre a detecção:</strong> o FOF lê o modelo da GPU via <code>lspci</code> e escolhe o pacote correto. Instalar a série errada (por exemplo, <code>akmod-nvidia</code> numa GTX 750 Ti) resulta em tela preta após o reboot — esta detecção evita esse problema. Se nenhuma GPU NVIDIA for encontrada, o comando aborta com uma mensagem clara e nada é instalado.
+ℹ️ <strong>Sobre a detecção:</strong> o FAP lê o modelo da GPU via <code>lspci</code> e escolhe o pacote correto. Instalar a série errada (por exemplo, <code>akmod-nvidia</code> numa GTX 750 Ti) resulta em tela preta após o reboot — esta detecção evita esse problema. Se nenhuma GPU NVIDIA for encontrada, o comando aborta com uma mensagem clara e nada é instalado.
 </div>
 
 <!-- Painel de detecção — preenchido por JS via /hardware-scan -->

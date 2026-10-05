@@ -33,10 +33,10 @@
 
     var LANGS_DISPONIVEIS = ['pt-BR', 'en', 'es'];
     var LANG_PADRAO = 'pt-BR';
-    var STORAGE_KEY = 'fof_lang';
-    var CACHE_PREFIX = 'fof_lang_data_';
+    var STORAGE_KEY = 'fap_lang';
+    var CACHE_PREFIX = 'fap_lang_data_';
 
-    // A versão do FOF é injetada em window.FOF_VERSION_UI18N pelo
+    // A versão do FAP é injetada em window.FAP_VERSION_UI18N pelo
     // server.js, no <head> de cada HTML servido. Sem essa injeção
     // (ex.: abertura via file://), caímos num timestamp, que
     // sempre dribla o cache — ao custo de uma request a mais.
@@ -79,16 +79,16 @@
     }
 
     // ============================================================
-    // VERSÃO DO FOF (para cache-busting e invalidação de cache)
+    // VERSÃO DO FAP (para cache-busting e invalidação de cache)
     // ============================================================
     //
-    // `window.FOF_VERSION_UI18N` é populado por carregarVersaoServidor()
+    // `window.FAP_VERSION_UI18N` é populado por carregarVersaoServidor()
     // do script.js, que roda DEPOIS do i18n.js na primeira carga. Por
     // isso não podemos depender dele para o cache-buster. Usamos como
     // fallback um timestamp atual — que sempre dribla o cache HTTP,
     // ao custo de uma requisição a mais na primeira carga.
     function _versaoParaCacheBuster() {
-        var v = window.FOF_VERSION_UI18N;
+        var v = window.FAP_VERSION_UI18N;
         if (v && typeof v === 'string' && v.length > 0) {
             return v;
         }
@@ -96,15 +96,15 @@
     }
 
     function _chaveCache(lang) {
-        // A versão faz parte da chave do cache: quando o FOF é
+        // A versão faz parte da chave do cache: quando o FAP é
         // atualizado, a chave muda e o cache antigo é descartado
         // automaticamente por _limparCachesAntigos().
-        var v = window.FOF_VERSION_UI18N || 'unknown';
+        var v = window.FAP_VERSION_UI18N || 'unknown';
         return CACHE_PREFIX + lang + '_' + v;
     }
 
     // Remove do localStorage todas as chaves de cache do idioma
-    // informado que NÃO sejam a chave atual (versões antigas do FOF).
+    // informado que NÃO sejam a chave atual (versões antigas do FAP).
     // Chamado no boot, depois que _chaveCache() está estável.
     function _limparCachesAntigos(lang) {
         try {
@@ -145,7 +145,7 @@
     }
 
     function carregarDoServidor(lang) {
-        // Versão do FOF (ou timestamp de fallback) como cache-buster.
+        // Versão do FAP (ou timestamp de fallback) como cache-buster.
         var versao = _versaoParaCacheBuster();
         var url = '/locales/' + encodeURIComponent(lang) + '.json?v=' + encodeURIComponent(versao);
 
@@ -223,10 +223,10 @@
 
     function interpolar(str, vars) {
         // Variáveis globais disponíveis para qualquer interpolação:
-        // - {versao} → window.FOF_VERSION_UI18N (definido por script.js)
+        // - {versao} → window.FAP_VERSION_UI18N (definido por script.js)
         // Variáveis locais passadas via `vars` têm precedência.
         var globais = {
-            versao: (typeof window.FOF_VERSION_UI18N !== 'undefined' && window.FOF_VERSION_UI18N) || '?'
+            versao: (typeof window.FAP_VERSION_UI18N !== 'undefined' && window.FAP_VERSION_UI18N) || '?'
         };
         var todas = Object.assign({}, globais, vars || {});
 
@@ -402,7 +402,7 @@
     function initI18n() {
         estado.lang = detectarIdiomaInicial();
 
-        // Remove caches de versões anteriores do FOF assim que
+        // Remove caches de versões anteriores do FAP assim que
         // sabemos o idioma atual. Faz isso antes de qualquer load
         // para não competir com o carregamento do JSON.
         _limparCachesAntigos(estado.lang);

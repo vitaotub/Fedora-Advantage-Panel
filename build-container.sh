@@ -13,11 +13,11 @@ cd "$DIR"
 # ============================================================
 #
 # O C não lê arquivos em runtime. Injetamos a versão via macro
-# `-DFOF_VERSION="..."` no gcc, lendo do package.json com o mesmo
+# `-DFAP_VERSION="..."` no gcc, lendo do package.json com o mesmo
 # `grep -oP` dos outros scripts. Fallback "unknown" — o binário
 # continua compilando mesmo sem o arquivo.
-FOF_VERSION="$(grep -oP '"version"\s*:\s*"\K[^"]+' "$DIR/package.json" 2>/dev/null | head -1)"
-[ -z "$FOF_VERSION" ] && FOF_VERSION="unknown"
+FAP_VERSION="$(grep -oP '"version"\s*:\s*"\K[^"]+' "$DIR/package.json" 2>/dev/null | head -1)"
+[ -z "$FAP_VERSION" ] && FAP_VERSION="unknown"
 
 echo "============================================================"
 echo " 🏗️ Fedora Advantage Panel - Build do Container"
@@ -85,8 +85,8 @@ echo "✅ Dependências OK"
 
 mkdir -p src
 
-if [ ! -f "src/fof-container.c" ]; then
-echo "❌ Arquivo src/fof-container.c não encontrado!"
+if [ ! -f "src/fap-container.c" ]; then
+echo "❌ Arquivo src/fap-container.c não encontrado!"
 echo ""
 echo " Certifique-se de que o arquivo existe."
 exit 1
@@ -96,28 +96,28 @@ echo ""
 echo "📦 Compilando container com WebKitGTK-$WEBKIT_VERSION..."
 
 # Compila usando o pacote WebKitGTK detectado, passando a versão do
-# FOF como macro C (-DFOF_VERSION=...). O .c tem um #ifndef que cai
+# FAP como macro C (-DFAP_VERSION=...). O .c tem um #ifndef que cai
 # em "unknown" se a macro não for passada.
 if gcc -Wall -O2 \
--DFOF_VERSION="\"$FOF_VERSION\"" \
+-DFAP_VERSION="\"$FAP_VERSION\"" \
 $(pkg-config --cflags $WEBKIT_PKG gtk+-3.0) \
--o fof-container src/fof-container.c \
+-o fap-container src/fap-container.c \
 $(pkg-config --libs $WEBKIT_PKG gtk+-3.0) -lm; then
 echo ""
 echo "============================================================"
 echo " ✅ Container compilado com sucesso!"
 echo "============================================================"
 echo ""
-echo "📁 Arquivo: $DIR/fof-container"
-echo "📦 Tamanho: $(du -h fof-container | cut -f1)"
+echo "📁 Arquivo: $DIR/fap-container"
+echo "📦 Tamanho: $(du -h fap-container | cut -f1)"
 echo "🔧 WebKitGTK: $WEBKIT_VERSION"
-echo "🏷️ Versão do FOF: $FOF_VERSION"
+echo "🏷️ Versão do FAP: $FAP_VERSION"
 echo ""
 echo "Para executar:"
-echo " ./fof-container"
+echo " ./fap-container"
 echo ""
 echo "Com opções:"
-echo " ./fof-container --url http://localhost:3000 --icon icone_app.png"
+echo " ./fap-container --url http://localhost:3000 --icon icone_app.png"
 echo ""
 echo "Para instalar no sistema:"
 echo " sudo make install"

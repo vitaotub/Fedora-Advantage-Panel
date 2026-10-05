@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>FOF - Ajustes e Manutenção</title>
+<title>FAP - Ajustes e Manutenção</title>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -139,7 +139,7 @@ Reduz o <em>quantum</em> (tamanho do buffer de áudio) do PipeWire de 1024 para 
 </p>
 <div class="info-extra" data-i18n-html="sessoes.ajustes-manutencao.pipewire_quantum_info">
 ℹ️ <strong>O que muda:</strong><br>
-• Cria <code>~/.config/pipewire/pipewire.conf.d/99-fof-quantum.conf</code>.<br>
+• Cria <code>~/.config/pipewire/pipewire.conf.d/99-fap-quantum.conf</code>.<br>
 • Reinicia <code>pipewire</code>, <code>pipewire-pulse</code> e <code>wireplumber</code>.<br>
 • Aplica imediatamente — sem reboot.<br>
 • <strong>Trade-off:</strong> menor latência usa mais CPU. Em máquinas modestas, pode causar crackling.
@@ -373,7 +373,7 @@ async function _resetarIrmao(idIrmao, fallbackText) {
 
 async function executarVmMaxMapCount() {
     var idComando = 'vm-max-map-count';
-    var comando = 'echo "vm.max_map_count=2147483642" | sudo tee /etc/sysctl.d/99-fof-vm-max-map-count.conf > /dev/null && sudo sysctl --system';
+    var comando = 'echo "vm.max_map_count=2147483642" | sudo tee /etc/sysctl.d/99-fap-vm-max-map-count.conf > /dev/null && sudo sysctl --system';
     await executarComandoGenerico(idComando, comando,
         _t('sessoes.ajustes-manutencao.btn_vm_max_map_count', '⚙️ Aplicar Ajuste'),
         function() {
@@ -383,7 +383,7 @@ async function executarVmMaxMapCount() {
 
 async function executarVmMaxMapCountRemove() {
     var idComando = 'vm-max-map-count-remove';
-    var comando = 'sudo rm -f /etc/sysctl.d/99-fof-vm-max-map-count.conf && sudo sysctl --system';
+    var comando = 'sudo rm -f /etc/sysctl.d/99-fap-vm-max-map-count.conf && sudo sysctl --system';
     await executarComandoGenerico(idComando, comando,
         _t('sessoes.ajustes-manutencao.btn_vm_max_map_count_remove', '↩️ Reverter'),
         function() {
@@ -397,7 +397,7 @@ async function executarVmMaxMapCountRemove() {
 
 async function executarVmSwappinessCache() {
     var idComando = 'vm-swappiness-cache';
-    var comando = 'printf "vm.swappiness=150\\nvm.vfs_cache_pressure=50\\n" | sudo tee /etc/sysctl.d/99-fof-vm-swappiness.conf > /dev/null && sudo sysctl --system';
+    var comando = 'printf "vm.swappiness=150\\nvm.vfs_cache_pressure=50\\n" | sudo tee /etc/sysctl.d/99-fap-vm-swappiness.conf > /dev/null && sudo sysctl --system';
     await executarComandoGenerico(idComando, comando,
         _t('sessoes.ajustes-manutencao.btn_vm_swappiness_cache', '⚙️ Aplicar Ajuste'),
         function() {
@@ -407,7 +407,7 @@ async function executarVmSwappinessCache() {
 
 async function executarVmSwappinessCacheRemove() {
     var idComando = 'vm-swappiness-cache-remove';
-    var comando = 'sudo rm -f /etc/sysctl.d/99-fof-vm-swappiness.conf && sudo sysctl --system';
+    var comando = 'sudo rm -f /etc/sysctl.d/99-fap-vm-swappiness.conf && sudo sysctl --system';
     await executarComandoGenerico(idComando, comando,
         _t('sessoes.ajustes-manutencao.btn_vm_swappiness_cache_remove', '↩️ Reverter'),
         function() {
@@ -421,7 +421,7 @@ async function executarVmSwappinessCacheRemove() {
 
 async function executarTcpBbr() {
     var idComando = 'tcp-bbr';
-    var comando = 'printf "net.core.default_qdisc=fq\\nnet.ipv4.tcp_congestion_control=bbr\\n" | sudo tee /etc/sysctl.d/99-fof-tcp-bbr.conf > /dev/null && sudo sysctl --system';
+    var comando = 'printf "net.core.default_qdisc=fq\\nnet.ipv4.tcp_congestion_control=bbr\\n" | sudo tee /etc/sysctl.d/99-fap-tcp-bbr.conf > /dev/null && sudo sysctl --system';
     await executarComandoGenerico(idComando, comando,
         _t('sessoes.ajustes-manutencao.btn_tcp_bbr', '⚙️ Aplicar Ajuste'),
         function() {
@@ -431,7 +431,7 @@ async function executarTcpBbr() {
 
 async function executarTcpBbrRemove() {
     var idComando = 'tcp-bbr-remove';
-    var comando = 'sudo rm -f /etc/sysctl.d/99-fof-tcp-bbr.conf && sudo sysctl --system';
+    var comando = 'sudo rm -f /etc/sysctl.d/99-fap-tcp-bbr.conf && sudo sysctl --system';
     await executarComandoGenerico(idComando, comando,
         _t('sessoes.ajustes-manutencao.btn_tcp_bbr_remove', '↩️ Reverter'),
         function() {
@@ -472,7 +472,7 @@ async function executarPipewireQuantumLow() {
     var comando =
         'systemctl --user is-system-running >/dev/null 2>&1; ' +
         'mkdir -p "$HOME/.config/pipewire/pipewire.conf.d" && ' +
-        'echo \'context.properties = {\n    default.clock.quantum = 256\n    default.clock.min-quantum = 32\n    default.clock.max-quantum = 2048\n}\' > "$HOME/.config/pipewire/pipewire.conf.d/99-fof-quantum.conf" && ' +
+        'echo \'context.properties = {\n    default.clock.quantum = 256\n    default.clock.min-quantum = 32\n    default.clock.max-quantum = 2048\n}\' > "$HOME/.config/pipewire/pipewire.conf.d/99-fap-quantum.conf" && ' +
         'systemctl --user restart pipewire pipewire-pulse wireplumber';
     await executarComandoGenerico(idComando, comando,
         _t('sessoes.ajustes-manutencao.btn_pipewire_quantum', '⚙️ Ativar Baixa Latência'),
@@ -485,7 +485,7 @@ async function executarPipewireQuantumLowRemove() {
     var idComando = 'pipewire-quantum-low-remove';
     var comando =
         'systemctl --user is-system-running >/dev/null 2>&1; ' +
-        'rm -f "$HOME/.config/pipewire/pipewire.conf.d/99-fof-quantum.conf" && ' +
+        'rm -f "$HOME/.config/pipewire/pipewire.conf.d/99-fap-quantum.conf" && ' +
         'systemctl --user restart pipewire pipewire-pulse wireplumber';
     await executarComandoGenerico(idComando, comando,
         _t('sessoes.ajustes-manutencao.btn_pipewire_quantum_remove', '↩️ Reverter'),

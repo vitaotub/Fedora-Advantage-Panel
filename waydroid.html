@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>FOF - Waydroid</title>
+<title>FAP - Waydroid</title>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -15,7 +15,7 @@
 
 <!-- Aviso de escopo amplo: bloqueia a sessão inteira em GPUs NVIDIA -->
 <div class="aviso-caixa" data-i18n="sessoes.waydroid.aviso_nvidia">
-⚠️ O Waydroid requer GPU AMD ou Intel. Usuários com GPU Nvidia não podem usar esta sessão (o driver proprietário não expõe o Mesa necessário). Há um projeto experimental (waydroid-nvidia) que tenta contornar via proxy Vulkan, mas não é suportado pelo FOF.
+⚠️ O Waydroid requer GPU AMD ou Intel. Usuários com GPU Nvidia não podem usar esta sessão (o driver proprietário não expõe o Mesa necessário). Há um projeto experimental (waydroid-nvidia) que tenta contornar via proxy Vulkan, mas não é suportado pelo FAP.
 </div>
 
 <!-- Acórdeão principal — descrição da sessão -->
@@ -77,7 +77,7 @@ data-i18n="sessoes.waydroid.btn_init">
 <h3 data-i18n="sessoes.waydroid.open_titulo">Abrir Waydroid (iniciar o container)</h3>
 <p data-i18n="sessoes.waydroid.open_desc">Abre a interface do Android. Inicia o container se ele não estiver rodando. O container precisa estar rodando para instalar extras (GApps, Magisk, etc.). Clique aqui uma vez antes de usar os extras.</p>
 <div class="info-extra">
-ℹ️ <strong>Sobre o ciclo de vida:</strong> o Waydroid é iniciado numa sessão própria, independente do FOF. Fechar a janela do FOF <strong>não fecha o Waydroid</strong> — ele continua rodando normalmente. Para encerrá-lo, use o botão de remoção no final desta sessão, ou rode <code>waydroid session stop</code> no terminal.
+ℹ️ <strong>Sobre o ciclo de vida:</strong> o Waydroid é iniciado numa sessão própria, independente do FAP. Fechar a janela do FAP <strong>não fecha o Waydroid</strong> — ele continua rodando normalmente. Para encerrá-lo, use o botão de remoção no final desta sessão, ou rode <code>waydroid session stop</code> no terminal.
 </div>
 <div class="grupo-botoes">
 <button class="btn-executar verde"
@@ -325,7 +325,7 @@ ZONA DE PERIGO — remoção completa
 <div class="comando-info">
 <h3 data-i18n="sessoes.waydroid.uninstall_titulo">Desfazer Alterações e Remover Completamente o Waydroid</h3>
 <p data-i18n-html="sessoes.waydroid.uninstall_desc">
-Remove <strong>absolutamente tudo</strong> que esta sessão instala: o pacote Waydroid, o container Android (imagens, apps, dados), o repositório de extras (<code>~/.local/share/fof-waydroid</code>), o venv Python, e o atalho de menu criado pelo Waydroid. <strong>Ação irreversível.</strong>
+Remove <strong>absolutamente tudo</strong> que esta sessão instala: o pacote Waydroid, o container Android (imagens, apps, dados), o repositório de extras (<code>~/.local/share/fap-waydroid</code>), o venv Python, e o atalho de menu criado pelo Waydroid. <strong>Ação irreversível.</strong>
 </p>
 <div class="aviso-caixa">
 ⚠️ <strong>Atenção:</strong> se você instalou GApps, Magisk, Widevine ou qualquer extra, os dados associados (contas Google, apps Android, configurações) <strong>serão perdidos permanentemente</strong>. Só use este botão se tiver certeza de que não precisa mais do Waydroid neste sistema.
@@ -526,7 +526,7 @@ await fetch(API_URL + '/executar', {
 method: 'POST',
 headers: { 'Content-Type': 'application/json' },
 body: JSON.stringify({
-comando: 'setsid -f waydroid show-full-ui >/tmp/fof-waydroid-ui.log 2>&1 < /dev/null',
+comando: 'setsid -f waydroid show-full-ui >/tmp/fap-waydroid-ui.log 2>&1 < /dev/null',
 idComando: idComando + '-open'
 })
 });
@@ -561,7 +561,7 @@ adicionarLinha('✅ ' + _t('sessoes.waydroid.container_ready',
 'Container do Waydroid está rodando!'), 'success');
 } else {
 adicionarLinha('⚠️ ' + _t('sessoes.waydroid.container_timeout',
-'Container não respondeu em 3 minutos. Verifique /tmp/fof-waydroid-ui.log para mais detalhes.'), 'warning');
+'Container não respondeu em 3 minutos. Verifique /tmp/fap-waydroid-ui.log para mais detalhes.'), 'warning');
 }
 
 if (btn) {
@@ -585,9 +585,9 @@ var comando =
 'pkill -f "waydroid session" 2>/dev/null || true; ' +
 'dnf remove -y waydroid 2>/dev/null || true; ' +
 'dnf remove -y waydroid-script 2>/dev/null || true; ' +
-'if [ -d $HOME/.local/share/fof-waydroid ]; then ' +
-'  chattr -R -i $HOME/.local/share/fof-waydroid 2>/dev/null || true; ' +
-'  rm -rf $HOME/.local/share/fof-waydroid; ' +
+'if [ -d $HOME/.local/share/fap-waydroid ]; then ' +
+'  chattr -R -i $HOME/.local/share/fap-waydroid 2>/dev/null || true; ' +
+'  rm -rf $HOME/.local/share/fap-waydroid; ' +
 'fi; ' +
 'rm -rf $HOME/.local/share/waydroid; ' +
 'rm -f $HOME/.local/share/applications/Waydroid.desktop 2>/dev/null; ' +
@@ -613,10 +613,10 @@ await _atualizarBotaoUninstallWaydroid();
 
 async function executarWaydroidPrep() {
 var idComando = 'waydroid-extras-prep';
-var comando = 'mkdir -p $HOME/.local/share/fof-waydroid && cd $HOME/.local/share/fof-waydroid && ' +
+var comando = 'mkdir -p $HOME/.local/share/fap-waydroid && cd $HOME/.local/share/fap-waydroid && ' +
 '(test -d waydroid_script || git clone https://github.com/casualsnek/waydroid_script.git) && ' +
 'cd waydroid_script && python3 -m venv venv && ./venv/bin/pip install --upgrade pip && ./venv/bin/pip install -r requirements.txt && ' +
-'chown -R $USER:$USER $HOME/.local/share/fof-waydroid';
+'chown -R $USER:$USER $HOME/.local/share/fap-waydroid';
 await executarComandoGenerico(idComando, comando, _t('sessoes.waydroid.btn_prep', '⚙️ Preparar Ambiente de Extras'));
 }
 
@@ -628,7 +628,7 @@ alert(_t('sessoes.waydroid.container_guard_alert',
 await _atualizarBloqueioExtrasWaydroid();
 return;
 }
-var comando = 'cd $HOME/.local/share/fof-waydroid/waydroid_script && ./venv/bin/python3 main.py install ' + componente;
+var comando = 'cd $HOME/.local/share/fap-waydroid/waydroid_script && ./venv/bin/python3 main.py install ' + componente;
 await executarComandoGenerico(idComando, comando, nomeBotao);
 }
 

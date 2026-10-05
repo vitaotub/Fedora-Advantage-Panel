@@ -7,7 +7,7 @@
 <script>
 (function() {
     try {
-        var t = localStorage.getItem('fof_tema') || 'escuro';
+        var t = localStorage.getItem('fap_tema') || 'escuro';
         document.documentElement.setAttribute('data-tema', t === 'claro' ? 'claro' : 'escuro');
     } catch (e) {
         document.documentElement.setAttribute('data-tema', 'escuro');
@@ -26,7 +26,7 @@
         <h1 data-i18n="guiado.titulo">Configuração do Fedora</h1>
         <span class="badge-modo" data-i18n="guiado.badge_modo">🧭 Passo a Passo</span>
         <span class="progresso-global" id="progresso-global" title="—">0/0</span>
-        <span style="color: var(--text-muted); font-size: 0.8rem; white-space: nowrap;">v<span class="fof-version"></span></span>
+        <span style="color: var(--text-muted); font-size: 0.8rem; white-space: nowrap;">v<span class="fap-version"></span></span>
     </div>
     <div class="header-direita">
         <div class="header-controles">
@@ -102,7 +102,7 @@ var sessoesCarregadas = {};
 // este contador. Se outra chamada começar antes desta terminar,
 // a mais antiga percebe que foi cancelada e não escreve no DOM.
 // Sem isso, o carregamento da sessão 0 (disparado no boot) e o
-// da sessão 13 (via ?session=sobre-fof) podiam competir e deixar
+// da sessão 13 (via ?session=sobre-fap) podiam competir e deixar
 // a tela em branco.
 var _geracaoCarregamento = 0;
 
@@ -134,7 +134,7 @@ var ICONES_SESSOES = {
     'diagnostico': '📊',
     'ajustes-manutencao': '🛠️',
     'estado-fedora': '🐧',
-    'sobre-fof': '📖'
+    'sobre-fap': '📖'
 };
 
 // ------------------------------------------------------------

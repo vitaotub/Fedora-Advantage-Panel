@@ -2,7 +2,7 @@
 
 **🌐 Idioma:** Português (BR) | [English](README.en.md) | [Español](README.es.md)
 
-![Versão](https://img.shields.io/badge/Vers%C3%A3o-v1.0.0--10012026.b-orange?style=flat-square)
+![Versão](https://img.shields.io/badge/Vers%C3%A3o-v1.0--10042026-orange?style=flat-square)
 ![Fedora](https://img.shields.io/badge/Fedora-44+-294172?style=flat-square&logo=fedora)
 ![Licença](https://img.shields.io/badge/Licen%C3%A7a-GPL--3.0-green?style=flat-square)
 ![Idiomas](https://img.shields.io/badge/Idiomas-PT--BR%20%7C%20EN%20%7C%20ES-3c67e3?style=flat-square)
@@ -20,8 +20,8 @@ bash <(curl -s https://raw.githubusercontent.com/vitaotub/Fedora-Advantage-Panel
 ## 📦 Comandos
 
 ```bash
-fof                                 # Iniciar (modo normal)
-fof-compat                          # Iniciar (modo compatibilidade — GPUs antigas)
+fap                                 # Iniciar (modo normal)
+fap-compat                          # Iniciar (modo compatibilidade — GPUs antigas)
 # Atualizar:    passe --update ao install.sh
 # Desinstalar:  passe --uninstall ao install.sh
 ```
@@ -109,23 +109,21 @@ Fedora-Advantage-Panel/
 ├── diagnostico.html                 # Sessão 11
 ├── ajustes-manutencao.html          # Sessão 12
 ├── estado-fedora.html               # Sessão 13
-├── sobre-fof.html                   # Sessão 14 (arquivo mantém o nome por compatibilidade)
+├── sobre-fap.html                   # Sessão 14
 ├── template-sessao.html             # Molde para criar novas sessões
 ├── CHANGELOG.md                     # Histórico de mudanças (lido pelo FAP)
 ├── server.js                        # Servidor Node.js + SSE + endpoints
 ├── hardware-service.js              # Detecção de hardware (lspci/lsusb + rpm)
 ├── hardware_map.json                # Mapa de vendors PCI/USB → pacotes
-├── iniciar_fof.sh                   # Inicializador
-├── iniciar_fof_compat.sh            # Modo compatibilidade
+├── iniciar_fap.sh                   # Inicializador
+├── iniciar_fap_compat.sh            # Modo compatibilidade
 ├── install.sh                       # Instalador / desinstalador / updater
 ├── build-container.sh / Makefile    # Build do container nativo
-├── src/fof-container.c              # Container WebKitGTK (C + GTK3)
+├── src/fap-container.c              # Container WebKitGTK (C + GTK3)
 ├── package.json                     # Deps Node + versão do FAP
 ├── icone_app.png                    # Ícone do app
 └── LICENSE                          # GPL-3.0
 ```
-
-**Nota:** os nomes dos arquivos (`fof-container`, `iniciar_fof.sh`, `sobre-fof.html`, etc.) mantêm o identificador técnico `fof` para preservar instalações existentes. O comando do terminal continua sendo `fof`. Um script de migração para identificadores `fap` fica planejado para uma release futura.
 
 ---
 
@@ -149,10 +147,10 @@ GNOME ou qualquer DE específico.
 
 ### O que é automático
 
-- **Terminal de inicialização** — o `iniciar_fof.sh` detecta seu desktop via `XDG_CURRENT_DESKTOP` e prefere o terminal nativo dele.
+- **Terminal de inicialização** — o `iniciar_fap.sh` detecta seu desktop via `XDG_CURRENT_DESKTOP` e prefere o terminal nativo dele.
 - **Autenticação** — o `install.sh` instala `zenity` automaticamente se você não tiver `kdialog` nem `zenity` (necessário para autenticação gráfica em DEs não-KDE).
 - **Atalho no menu** — criado em `~/.local/share/applications/`.
-- **Ícone** — instalado em `hicolor/256x256/apps/` com o nome `fof-container`, casando com o `StartupWMClass` do `.desktop`.
+- **Ícone** — instalado em `hicolor/256x256/apps/` com o nome `fap-container`, casando com o `StartupWMClass` do `.desktop`.
 
 ### O que NÃO é automático
 
@@ -165,7 +163,7 @@ GNOME ou qualquer DE específico.
 
 - Fedora 43, 44 ou 45 (testado em 44)
 - Kernel com WebKitGTK 4.1 (todo Fedora 40+ tem)
-- `nodejs` >= 18 (o `iniciar_fof.sh` instala se faltar)
+- `nodejs` >= 18 (o `iniciar_fap.sh` instala se faltar)
 - `zenity` **ou** `kdialog` (para autenticação gráfica)
 
 ---
@@ -189,7 +187,7 @@ GNOME ou qualquer DE específico.
 - **Rejeição de encadeamento de shell** em comandos sem auth (`;`, `` ` ``, `|`, `$(`, `&&`, `&` isolado, quebras de linha, `<(`/`>(`)
 - **Sanitização** de entrada e validação de `idComando`
 - **Rate limiting** de 1.5s por `idComando`
-- **Log rotation** automática (7 dias em `/tmp/fof-*.log`)
+- **Log rotation** automática (7 dias em `/tmp/fap-*.log`)
 
 ---
 
@@ -197,28 +195,31 @@ GNOME ou qualquer DE específico.
 
 O histórico completo das versões está nas [releases do GitHub](https://github.com/vitaotub/Fedora-Advantage-Panel/releases). O FAP também exibe o changelog da versão atual dentro da sessão **Sobre o FAP**, carregado dinamicamente do arquivo `CHANGELOG.md`.
 
-### v1.0.0-10012026.b (Atual) 🚧
+### v1.0-10042026 (Atual) 🚧
 
-Renomeação do projeto para **Fedora Advantage Panel (FAP)**, com novo logo.
+**Renomeação completa do projeto: FOF → FAP.** O identificador técnico agora é `fap` em todos os níveis — comando do terminal, pasta de instalação, binário do container, arquivos `.desktop`, ícones, arquivos temporários e chaves internas.
 
-- **Novo nome de exibição**: "Fedora Only Fans" → "Fedora Advantage Panel". Todos os textos visíveis nos três idiomas foram atualizados.
+- **Novo nome de exibição:** "Fedora Only Fans" → "Fedora Advantage Panel". Todos os textos visíveis nos três idiomas foram atualizados.
 - **Novo logo**: substitui o anterior em toda a aplicação (app, atalho do menu, container nativo).
 - **Repositório renomeado no GitHub** para `vitaotub/Fedora-Advantage-Panel`.
-- **URLs internas atualizadas** — `GITHUB_REPO`, `REPO_URL`, links de issues/documentação/changelog.
-- **Nenhuma mudança de comportamento**: comando `fof`, pasta de instalação e identificadores técnicos internos permanecem os mesmos para preservar instalações existentes.
-
-### v1.0.0-10012026.a
-
-Atualização focada em padronização visual, correções de bugs e segurança.
-
-- **Esquema de cores semântico em todos os botões** — azul para ação principal, verde para "abrir aplicativo", vermelho para remover/reverter, vermelho com borda tracejada para ações irreversíveis. Elimina a confusão anterior entre "botão desabilitado" (cinza) e "botão de reverter" (também cinza).
-- **Badge de atualização compacto** — mostra só o ícone (seta de download), sobreposto ao cartão de versão, sem quebrar layout.
-- **Toast de notificação sobreposto** — não empurra mais o conteúdo da página.
-- **Correções no `server.js`** — deep-link `guiado.html?session=X` não retorna mais 404; `POST /executar` não derruba mais o servidor; `Ctrl+C` mata a árvore de processos (`dnf` não fica órfão); buffer SSE limpo entre execuções; scripts temporários com modo `0o700`; regex de encadeamento endurecida.
-- **Race condition da tela preta** em `guiado.html` corrigida com token de geração.
-- **Notas dos cartões de hardware agora traduzidas** em EN e ES.
-- **Novo endpoint `/kernel-atual`** — remoção de kernel não depende mais de parsing de log compartilhado.
-- **Logs internos lidos por delta** — menos I/O em comandos longos.
+- **Identificadores técnicos renomeados por completo:**
+  - Comando do terminal: `fof` → `fap`, `fof-compat` → `fap-compat`.
+  - Pasta de instalação: `~/.local/share/fedora-only-fans` → `~/.local/share/fedora-advantage-panel`.
+  - Binário do container: `fof-container` → `fap-container`.
+  - Arquivo-fonte: `src/fof-container.c` → `src/fap-container.c`.
+  - Scripts de inicialização: `iniciar_fof.sh` → `iniciar_fap.sh`, `iniciar_fof_compat.sh` → `iniciar_fap_compat.sh`.
+  - Atalhos `.desktop`: `fof-container.desktop` → `fap-container.desktop`.
+  - Ícone no hicolor: `fof-container.png` → `fap-container.png`.
+  - Dados do WebKitGTK: `~/.local/share/fof-container` → `~/.local/share/fap-container`.
+  - Cache do WebKitGTK: `~/.cache/fof-container` → `~/.cache/fap-container`.
+  - Configurações: `~/.config/fof-container` → `~/.config/fap-container`.
+  - Extras do Waydroid: `~/.local/share/fof-waydroid` → `~/.local/share/fap-waydroid`.
+  - Prefixo dos temporários: `/tmp/fof-*` → `/tmp/fap-*`.
+  - Chaves de armazenamento: `fof_*` → `fap_*` (tema, idioma, progresso, versão remota).
+  - Variável de versão: `FOF_VERSION` → `FAP_VERSION` (em `.c`, `Makefile`, `build-container.sh`).
+  - Arquivo de PID do servidor: `.fof.pid` → `.fap.pid`.
+- **`install.sh` faz migração limpa:** se um FOF antigo estiver instalado, o `install.sh` detecta e remove **tudo** do esquema antigo antes de instalar o FAP — diretório, symlinks, atalhos, ícone, dados do WebKitGTK e logs órfãos em `/tmp`. Sem preservação de dados (reset completo).
+- **Nenhuma mudança de comportamento** nas 14 sessões — toda a lógica de tarefas, progresso, i18n e temas continua funcionando igual.
 
 ---
 
@@ -249,7 +250,7 @@ A ordem de exibição vem da posição da entrada no array `SESSOES`, não do no
 
 ## 🏷️ Como lançar uma versão
 
-1. Edite `package.json` → `"version": "1.0.0-<NOVA>"`
+1. Edite `package.json` → `"version": "1.0-<NOVA_DATA>"`
 2. Substitua o `CHANGELOG.md` pela seção da versão nova (o histórico completo fica nas releases do GitHub)
 3. Atualize o badge de versão nos três READMEs (`README.md`, `README.en.md`, `README.es.md`)
 4. Crie a tag/release no GitHub com o mesmo nome
@@ -265,7 +266,7 @@ A ordem de exibição vem da posição da entrada no array `SESSOES`, não do no
 Abra uma issue em [github.com/vitaotub/Fedora-Advantage-Panel/issues](https://github.com/vitaotub/Fedora-Advantage-Panel/issues) incluindo:
 - Versão do Fedora
 - Desktop environment
-- Logs (`/tmp/fof-*.log`)
+- Logs (`/tmp/fap-*.log`)
 - Passos para reproduzir
 
 ## ⚠️ Aviso Legal

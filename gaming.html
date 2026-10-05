@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>FOF - Gaming</title>
+<title>FAP - Gaming</title>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -348,7 +348,7 @@ Emuladores de consoles clássicos e modernos para Fedora. Todos disponíveis via
 </div>
 
 <div class="aviso-caixa" data-i18n-html="sessoes.gaming.emuladores_aviso_geral">
-⚠️ <strong>Aviso importante:</strong> alguns emuladores exigem <strong>BIOS, firmware ou arquivos do sistema</strong> dumpados do console original para funcionar. O FOF <strong>não disponibiliza</strong> esses arquivos por questões legais. Consulte a documentação oficial de cada emulador para saber como obtê-los do seu próprio console.
+⚠️ <strong>Aviso importante:</strong> alguns emuladores exigem <strong>BIOS, firmware ou arquivos do sistema</strong> dumpados do console original para funcionar. O FAP <strong>não disponibiliza</strong> esses arquivos por questões legais. Consulte a documentação oficial de cada emulador para saber como obtê-los do seu próprio console.
 </div>
 
 <!-- RetroArch -->
@@ -404,7 +404,7 @@ Emuladores de consoles clássicos e modernos para Fedora. Todos disponíveis via
 <h3 data-i18n="sessoes.gaming.pcsx2_titulo">PCSX2 — PlayStation 2</h3>
 <p data-i18n="sessoes.gaming.pcsx2_desc">Emulador de PlayStation 2 com suporte a upscaling, patches de widescreen e compatibilidade alta com o catálogo do console.</p>
 <div class="aviso-caixa" data-i18n-html="sessoes.gaming.pcsx2_aviso">
-⚠️ <strong>Requer BIOS do PlayStation 2.</strong> A BIOS precisa ser dumpada do seu próprio console. O FOF não disponibiliza esse arquivo. Após instalar, consulte a documentação do PCSX2 para saber onde colocar a BIOS.
+⚠️ <strong>Requer BIOS do PlayStation 2.</strong> A BIOS precisa ser dumpada do seu próprio console. O FAP não disponibiliza esse arquivo. Após instalar, consulte a documentação do PCSX2 para saber onde colocar a BIOS.
 </div>
 <div class="grupo-botoes">
 <div class="btn-flatpak-wrapper">
@@ -429,7 +429,7 @@ Emuladores de consoles clássicos e modernos para Fedora. Todos disponíveis via
 <h3 data-i18n="sessoes.gaming.rpcs3_titulo">RPCS3 — PlayStation 3</h3>
 <p data-i18n="sessoes.gaming.rpcs3_desc">Emulador de PlayStation 3 em desenvolvimento ativo. Compatibilidade varia por jogo — alguns rodam perfeitamente, outros ainda têm problemas. Verifique a lista de compatibilidade oficial antes de instalar.</p>
 <div class="aviso-caixa" data-i18n-html="sessoes.gaming.rpcs3_aviso">
-⚠️ <strong>Requer firmware do PlayStation 3.</strong> O firmware precisa ser baixado do site oficial da Sony (a Sony disponibiliza o firmware publicamente para atualização de consoles) e instalado pelo próprio RPCS3. O FOF não baixa nem instala esse arquivo.
+⚠️ <strong>Requer firmware do PlayStation 3.</strong> O firmware precisa ser baixado do site oficial da Sony (a Sony disponibiliza o firmware publicamente para atualização de consoles) e instalado pelo próprio RPCS3. O FAP não baixa nem instala esse arquivo.
 </div>
 <div class="info-extra" data-i18n-html="sessoes.gaming.rpcs3_info_extra">
 ℹ️ <strong>Sobre o aviso "build não oficial":</strong> o RPCS3 pode exibir uma mensagem na primeira execução indicando que foi instalado de um pacote não oficial. Isso é um aviso interno do próprio emulador — o Flatpak do Flathub é o canal oficial de distribuição do RPCS3 para Linux, e o aviso não impede o funcionamento.
@@ -508,8 +508,8 @@ Consulte o <a href="https://www.protondb.com" target="_blank">ProtonDB</a> — �
 </div>
 
 <div class="aviso-caixa">
-<strong>Por que o FOF não faz nada aqui?</strong><br>
-Não há comando que "ative" um anti-cheat no Linux. Ou o jogo tem suporte nativo via Proton (e já funciona sozinho), ou não tem (e nada que o FOF faça vai contornar). Este painel é puramente educativo — para você economizar tempo e dinheiro antes de comprar um jogo.
+<strong>Por que o FAP não faz nada aqui?</strong><br>
+Não há comando que "ative" um anti-cheat no Linux. Ou o jogo tem suporte nativo via Proton (e já funciona sozinho), ou não tem (e nada que o FAP faça vai contornar). Este painel é puramente educativo — para você economizar tempo e dinheiro antes de comprar um jogo.
 </div>
 
 </div>
@@ -694,7 +694,7 @@ async function executarGameModePresets() {
     const comando =
         'mkdir -p $HOME/.config/MangoHud && ' +
         'cat > $HOME/.config/MangoHud/MangoHud.conf << \'MANGOHUDEOF\'\n' +
-        '# Preset FOF - overlay limpo, canto superior esquerdo\n' +
+        '# Preset FAP - overlay limpo, canto superior esquerdo\n' +
         'position=top-left\n' +
         'font_size=24\n' +
         'background_alpha=0.5\n' +

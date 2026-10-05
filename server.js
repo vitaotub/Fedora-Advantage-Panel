@@ -22,11 +22,11 @@ const ARQUIVO_CHANGELOG = path.join(__dirname, 'CHANGELOG.md');
 // botão "Atualizar FAP" mostra o badge de forma conservadora (com
 // 'unknown' em vez da versão local, `temAtualizacao()` retorna
 // false e nenhum badge aparece). Isso evita falsos positivos.
-let FOF_VERSION = 'unknown';
+let FAP_VERSION = 'unknown';
 try {
-    FOF_VERSION = require('./package.json').version || 'unknown';
+    FAP_VERSION = require('./package.json').version || 'unknown';
 } catch (e) {
-    console.error('[FOF] Não foi possível ler a versão do package.json:', e.message);
+    console.error('[FAP] Não foi possível ler a versão do package.json:', e.message);
 }
 
 const LANGS_SUPORTADOS = ['pt-BR', 'en', 'es'];
@@ -57,7 +57,7 @@ const LOCALES_DIR = path.join(__dirname, 'locales');
 //   DBUS_SESSION_BUS_ADDRESS para o bus do root, não do usuário.
 // - O Polkit do Fedora já resolve a autenticação automaticamente
 //   quando o usuário está no grupo wheel (o caso comum). Não há
-//   necessidade de o FOF intermediar.
+//   necessidade de o FAP intermediar.
 // - O tratamento especial em `executarComandoComStream` já seta
 //   XDG_RUNTIME_DIR e DBUS_SESSION_BUS_ADDRESS corretos.
 //
@@ -71,10 +71,10 @@ const LOCALES_DIR = path.join(__dirname, 'locales');
 //
 // SOBRE `setsid -f waydroid show-full-ui`:
 // - O Waydroid iniciado via `waydroid show-full-ui` herda a sessão
-//   de terminal do FOF. Quando o FOF fecha, o kernel envia SIGHUP
+//   de terminal do FAP. Quando o FAP fecha, o kernel envia SIGHUP
 //   para toda a sessão, e o Waydroid (que não está em nohup) morre.
 // - `setsid -f` força o Waydroid a criar uma nova sessão própria,
-//   desatada do terminal do FOF. Fechar o FOF NÃO fecha mais o
+//   desatada do terminal do FAP. Fechar o FAP NÃO fecha mais o
 //   Waydroid — mesmo comportamento de abrir pelo menu do Fedora.
 // - O comando entra na whitelist para não exigir senha a cada
 //   abertura do Waydroid (é uma ação de usuário, não administrativa).
@@ -94,7 +94,7 @@ const COMANDOS_SEM_AUTENTICACAO = [
 'waydroid show-full-ui',
 'setsid -f waydroid show-full-ui',
 // Flatpak roda como usuário; a autenticação (quando necessária)
-// é resolvida pelo Polkit do sistema, não pelo FOF.
+// é resolvida pelo Polkit do sistema, não pelo FAP.
 'flatpak install',
 'flatpak uninstall',
 'flatpak update',
@@ -200,7 +200,7 @@ const SSE_BUFFER_TTL_MS = 10000;
 // RASTREAMENTO DE PROCESSOS FILHOS
 // ============================================================
 //
-// Todo comando disparado pelo FOF é registrado neste Set. No SIGINT
+// Todo comando disparado pelo FAP é registrado neste Set. No SIGINT
 // (Ctrl+C no terminal), o handler percorre o Set e mata a árvore de
 // cada processo — não só o pai direto.
 //
@@ -325,7 +325,7 @@ function _parseChaveValor(texto) {
 //   ## v1.0.0-09232026
 //   - Item C
 //
-// O endpoint /changelog recebe a versão atual (FOF_VERSION) e
+// O endpoint /changelog recebe a versão atual (FAP_VERSION) e
 // devolve {versao, corpo}, onde `corpo` já vem em HTML pronto.
 // Cache em memória por 12h — o CHANGELOG.md não muda entre
 // releases.
@@ -499,7 +499,7 @@ function resetarProgresso() {
 // LIMPEZA DE LOGS ANTIGOS
 // ============================================================
 //
-// O iniciar_fof.sh cria um /tmp/fof-YYYYMMDD-HHMMSS.log por
+// O iniciar_fap.sh cria um /tmp/fap-YYYYMMDD-HHMMSS.log por
 // sessão. Sem limpeza, /tmp acumula centenas de arquivos ao
 // longo do tempo. Remove os com mais de 7 dias.
 
@@ -510,7 +510,7 @@ function _limparLogsAntigos() {
         const arquivos = fs.readdirSync('/tmp');
         let removidos = 0;
         arquivos.forEach(function(nome) {
-            if (!nome.startsWith('fof-') || !nome.endsWith('.log')) return;
+            if (!nome.startsWith('fap-') || !nome.endsWith('.log')) return;
             const caminho = path.join('/tmp', nome);
             try {
                 const stat = fs.statSync(caminho);
@@ -838,7 +838,7 @@ function executarComandoComStream(comandoFinal, idComando, isReversao, callback)
 // ============================================================
 
 function _construirScripts(timestamp, random, comandoCorrigido, descricao, outputTemp) {
-    const scriptTemp = `/tmp/fof-cmd-${timestamp}-${random}.sh`;
+    const scriptTemp = `/tmp/fap-cmd-${timestamp}-${random}.sh`;
     const homeDir = HOME_DIR_USUARIO;
 
     const comandoLimpo = (comandoCorrigido || '')
@@ -852,7 +852,7 @@ function _construirScripts(timestamp, random, comandoCorrigido, descricao, outpu
                                                        '',
                                                        '# Exports obrigatórios quando roda via pkexec/kdesu (root).',
                                                        '# Sem HOME/USER corretos, scripts como install.sh --uninstall',
-                                                       '# procurariam o FOF em /root/.local/share em vez de',
+                                                       '# procurariam o FAP em /root/.local/share em vez de',
                                                        '# /home/<user>/.local/share.',
                                                        'export DISPLAY=' + (process.env.DISPLAY || ':0'),
                                                        'export XAUTHORITY=' + (process.env.XAUTHORITY || homeDir + '/.Xauthority'),
@@ -980,7 +980,7 @@ function executarComAutenticacaoSegura(comandoOriginal, idComando, isReversao, c
 
         const timestamp = Date.now();
         const random = Math.random().toString(36).substring(7);
-        const outputTemp = `/tmp/fof-out-${timestamp}-${random}.log`;
+        const outputTemp = `/tmp/fap-out-${timestamp}-${random}.log`;
         const { scriptTemp, scriptContent } = _construirScripts(timestamp, random, comandoCorrigido, descricao, outputTemp);
 
         try {
@@ -1013,7 +1013,7 @@ function executarComAutenticacaoSegura(comandoOriginal, idComando, isReversao, c
 
         const timestamp = Date.now();
         const random = Math.random().toString(36).substring(7);
-        const outputTemp = `/tmp/fof-out-${timestamp}-${random}.log`;
+        const outputTemp = `/tmp/fap-out-${timestamp}-${random}.log`;
         const { scriptTemp, scriptContent } = _construirScripts(timestamp, random, comandoCorrigido, descricao, outputTemp);
 
         try {
@@ -1361,8 +1361,8 @@ const server = http.createServer((req, res) => {
     // SESSÕES — IDs semânticos (sem número)
     // ----------------------------------------------------------
     //
-    // O FOF usa IDs semânticos desde a v1.0.0-09282026: os arquivos
-    // são 'codecs.html', 'gaming.html', 'sobre-fof.html' etc, sem
+    // O FAP usa IDs semânticos desde a v1.0.0-09282026: os arquivos
+    // são 'codecs.html', 'gaming.html', 'sobre-fap.html' etc, sem
     // prefixo numérico. Este regex casa qualquer arquivo .html cujo
     // nome comece com letra minúscula e contenha apenas letras,
     // dígitos e hífen. Também impede path traversal (não aceita
@@ -1406,7 +1406,7 @@ const server = http.createServer((req, res) => {
             executados: progresso.executados,
             pulados: progresso.pulados,
             uptime: Math.floor(process.uptime()),
-                               versao: FOF_VERSION,
+                               versao: FAP_VERSION,
                                sseConexoes: sseClients.size,
                                memoriaMB: Math.floor(process.memoryUsage().rss / 1024 / 1024)
         }));
@@ -1428,7 +1428,7 @@ const server = http.createServer((req, res) => {
             autenticacao: metodo.descricao,
             nodeVersion: process.version,
             platform: process.platform,
-            version: FOF_VERSION,
+            version: FAP_VERSION,
             langsSuportados: LANGS_SUPORTADOS
         }));
         return;
@@ -1482,7 +1482,7 @@ const server = http.createServer((req, res) => {
     // ----------------------------------------------------------
     //
     // Usado pelo script.js para detectar Flatpaks que foram
-    // removidos fora do FOF (via GNOME Software, linha de
+    // removidos fora do FAP (via GNOME Software, linha de
     // comando, ou outro gerenciador) e restaurar o botão
     // original para o usuário reinstalar.
     //
@@ -1740,7 +1740,7 @@ const server = http.createServer((req, res) => {
     // /changelog — changelog da versão atual (parseado do CHANGELOG.md)
     // ----------------------------------------------------------
     if (req.method === 'GET' && url === '/changelog') {
-        var resultado = _lerChangelogVersao(FOF_VERSION);
+        var resultado = _lerChangelogVersao(FAP_VERSION);
         res.writeHead(200, {
             'Content-Type': 'application/json; charset=utf-8',
             'Cache-Control': 'no-cache, no-store, must-revalidate'
@@ -1801,7 +1801,7 @@ const server = http.createServer((req, res) => {
                 const residualCmd =
                 '[ -d /var/lib/waydroid ] && echo "residual" && exit 0; ' +
                 '[ -d "' + homeDir + '/.local/share/waydroid" ] && echo "residual" && exit 0; ' +
-                '[ -d "' + homeDir + '/.local/share/fof-waydroid" ] && echo "residual" && exit 0; ' +
+                '[ -d "' + homeDir + '/.local/share/fap-waydroid" ] && echo "residual" && exit 0; ' +
                 '[ -f "' + homeDir + '/.local/share/applications/Waydroid.desktop" ] && echo "residual" && exit 0; ' +
                 '[ -f "' + homeDir + '/.local/share/applications/waydroid-helper.desktop" ] && echo "residual" && exit 0; ' +
                 'echo "clean"';
@@ -1936,7 +1936,7 @@ server.listen(PORT, HOST, () => {
     _limparLogsAntigos();
 
     console.log(`====================================================`);
-    console.log(` 🐧 Fedora Advantage Panel - Servidor de Automação v${FOF_VERSION}`);
+    console.log(` 🐧 Fedora Advantage Panel - Servidor de Automação v${FAP_VERSION}`);
     console.log(` 🌐 http://localhost:${PORT} (somente local — 127.0.0.1)`);
     console.log(` 🖥️ Desktop: ${desktop}`);
     console.log(` 🔐 Autenticação: ${metodo.descricao}`);

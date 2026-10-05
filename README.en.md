@@ -2,7 +2,7 @@
 
 **🌐 Language:** [Português (BR)](README.md) | English | [Español](README.es.md)
 
-![Version](https://img.shields.io/badge/Version-v1.0.0--10012026.b-orange?style=flat-square)
+![Version](https://img.shields.io/badge/Version-v1.0--10042026-orange?style=flat-square)
 ![Fedora](https://img.shields.io/badge/Fedora-44+-294172?style=flat-square&logo=fedora)
 ![License](https://img.shields.io/badge/License-GPL--3.0-green?style=flat-square)
 ![Languages](https://img.shields.io/badge/Languages-PT--BR%20%7C%20EN%20%7C%20ES-3c67e3?style=flat-square)
@@ -20,8 +20,8 @@ bash <(curl -s https://raw.githubusercontent.com/vitaotub/Fedora-Advantage-Panel
 ## 📦 Commands
 
 ```bash
-fof                                 # Launch (normal mode)
-fof-compat                          # Launch (compatibility mode — older GPUs)
+fap                                 # Launch (normal mode)
+fap-compat                          # Launch (compatibility mode — older GPUs)
 # Update:     pass --update to install.sh
 # Uninstall:  pass --uninstall to install.sh
 ```
@@ -109,23 +109,21 @@ Fedora-Advantage-Panel/
 ├── diagnostico.html                 # Session 11
 ├── ajustes-manutencao.html          # Session 12
 ├── estado-fedora.html               # Session 13
-├── sobre-fof.html                   # Session 14 (file keeps its name for compatibility)
+├── sobre-fap.html                   # Session 14
 ├── template-sessao.html             # Template for new sessions
 ├── CHANGELOG.md                     # Change history (read by FAP)
 ├── server.js                        # Node.js server + SSE + endpoints
 ├── hardware-service.js              # Hardware detection (lspci/lsusb + rpm)
 ├── hardware_map.json                # Vendor map PCI/USB → packages
-├── iniciar_fof.sh                   # Startup script
-├── iniciar_fof_compat.sh            # Compatibility mode
+├── iniciar_fap.sh                   # Startup script
+├── iniciar_fap_compat.sh            # Compatibility mode
 ├── install.sh                       # Installer / uninstaller / updater
 ├── build-container.sh / Makefile    # Native container build
-├── src/fof-container.c              # WebKitGTK container (C + GTK3)
+├── src/fap-container.c              # WebKitGTK container (C + GTK3)
 ├── package.json                     # Node deps + FAP version
 ├── icone_app.png                    # App icon
 └── LICENSE                          # GPL-3.0
 ```
-
-**Note:** the file names (`fof-container`, `iniciar_fof.sh`, `sobre-fof.html`, etc.) keep the `fof` technical identifier to preserve existing installations. The terminal command is still `fof`. A migration script for `fap` identifiers is planned for a future release.
 
 ---
 
@@ -147,10 +145,10 @@ FAP is desktop-agnostic — it was built to run on any Linux environment that fo
 
 ### What's automatic
 
-- **Startup terminal** — `iniciar_fof.sh` detects your desktop via `XDG_CURRENT_DESKTOP` and prefers its native terminal.
+- **Startup terminal** — `iniciar_fap.sh` detects your desktop via `XDG_CURRENT_DESKTOP` and prefers its native terminal.
 - **Authentication** — `install.sh` automatically installs `zenity` if you have neither `kdialog` nor `zenity`.
 - **Menu shortcut** — created at `~/.local/share/applications/`
-- **Icon** — installed at `hicolor/256x256/apps/` named `fof-container`
+- **Icon** — installed at `hicolor/256x256/apps/` named `fap-container`
 
 ### What's NOT automatic
 
@@ -160,7 +158,7 @@ FAP is desktop-agnostic — it was built to run on any Linux environment that fo
 
 - Fedora 43, 44 or 45 (tested on 44)
 - Kernel with WebKitGTK 4.1 (every Fedora 40+ has it)
-- `nodejs` >= 18 (`iniciar_fof.sh` installs it if missing)
+- `nodejs` >= 18 (`iniciar_fap.sh` installs it if missing)
 - `zenity` **or** `kdialog` (for graphical authentication)
 
 ---
@@ -184,7 +182,7 @@ FAP is desktop-agnostic — it was built to run on any Linux environment that fo
 - **Chain rejection** in no-auth commands (`;`, `` ` ``, `|`, `$(`, `&&`, isolated `&`, newlines, `<(`/`>(`)
 - **Input sanitization** and `idComando` validation
 - **Rate limiting** 1.5s per `idComando`
-- **Automatic log rotation** (7 days in `/tmp/fof-*.log`)
+- **Automatic log rotation** (7 days in `/tmp/fap-*.log`)
 
 ---
 
@@ -192,28 +190,31 @@ FAP is desktop-agnostic — it was built to run on any Linux environment that fo
 
 The full history is available in the [GitHub releases](https://github.com/vitaotub/Fedora-Advantage-Panel/releases). FAP also displays the changelog for the current version inside the **About FAP** session, loaded dynamically from `CHANGELOG.md`.
 
-### v1.0.0-10012026.b (Current) 🚧
+### v1.0-10042026 (Current) 🚧
 
-Project renamed to **Fedora Advantage Panel (FAP)**, with a new logo.
+**Complete project rename: FOF → FAP.** The technical identifier is now `fap` at every level — terminal command, install folder, container binary, `.desktop` files, icons, temporary files, and internal keys.
 
-- **New display name**: "Fedora Only Fans" → "Fedora Advantage Panel". All user-visible texts in all three languages have been updated.
+- **New display name:** "Fedora Only Fans" → "Fedora Advantage Panel". All user-visible texts in all three languages have been updated.
 - **New logo**: replaces the previous one across the application (app, menu shortcut, native container).
 - **Repository renamed on GitHub** to `vitaotub/Fedora-Advantage-Panel`.
-- **Internal URLs updated** — `GITHUB_REPO`, `REPO_URL`, issues/documentation/changelog links.
-- **No behavior change**: `fof` command, install folder, and internal technical identifiers stay the same to preserve existing installations.
-
-### v1.0.0-10012026.a
-
-Update focused on visual standardization, bug fixes, and security.
-
-- **Semantic color scheme across all buttons** — blue for main action, green for "open app", red for remove/revert, dashed red for irreversible actions. Eliminates the previous confusion between "disabled button" (gray) and "revert button" (also gray).
-- **Compact update badge** — shows only the icon (download arrow), overlapping the version card, without breaking layout.
-- **Overlaid notification toast** — no longer pushes page content aside.
-- **`server.js` fixes** — `guiado.html?session=X` deep link no longer returns 404; `POST /executar` no longer crashes the server; `Ctrl+C` kills the process tree (`dnf` no longer orphaned); SSE buffer cleared between runs; temp scripts with `0o700` mode; hardened chain regex.
-- **Black screen race condition** in `guiado.html` fixed with a generation token.
-- **Hardware card notes now translated** into EN and ES.
-- **New `/kernel-atual` endpoint** — kernel removal no longer depends on shared log parsing.
-- **Internal logs read by delta** — less I/O on long commands.
+- **Technical identifiers fully renamed:**
+  - Terminal command: `fof` → `fap`, `fof-compat` → `fap-compat`.
+  - Install folder: `~/.local/share/fedora-only-fans` → `~/.local/share/fedora-advantage-panel`.
+  - Container binary: `fof-container` → `fap-container`.
+  - Source file: `src/fof-container.c` → `src/fap-container.c`.
+  - Startup scripts: `iniciar_fof.sh` → `iniciar_fap.sh`, `iniciar_fof_compat.sh` → `iniciar_fap_compat.sh`.
+  - `.desktop` shortcuts: `fof-container.desktop` → `fap-container.desktop`.
+  - Icon in hicolor: `fof-container.png` → `fap-container.png`.
+  - WebKitGTK data: `~/.local/share/fof-container` → `~/.local/share/fap-container`.
+  - WebKitGTK cache: `~/.cache/fof-container` → `~/.cache/fap-container`.
+  - Config folder: `~/.config/fof-container` → `~/.config/fap-container`.
+  - Waydroid extras: `~/.local/share/fof-waydroid` → `~/.local/share/fap-waydroid`.
+  - Temp prefix: `/tmp/fof-*` → `/tmp/fap-*`.
+  - Storage keys: `fof_*` → `fap_*` (theme, language, progress, remote version).
+  - Version variable: `FOF_VERSION` → `FAP_VERSION` (in `.c`, `Makefile`, `build-container.sh`).
+  - Server PID file: `.fof.pid` → `.fap.pid`.
+- **`install.sh` performs a clean migration:** if an old FOF install is present, `install.sh` detects and removes **everything** from the old scheme before installing FAP — directory, symlinks, shortcuts, icon, WebKitGTK data and orphan logs in `/tmp`. No data preservation (full reset).
+- **No behavior changes** across the 14 sessions — all task, progress, i18n and theme logic works exactly as before.
 
 ---
 
@@ -221,26 +222,30 @@ Update focused on visual standardization, bug fixes, and security.
 
 1. Copy `template-sessao.html` to `<name>.html` (no number)
 2. Fill in the placeholders
-3. Add an entry to the `SESSOES` array in `script.js`
+3. Add an entry to the `SESSOES` array in `script.js` (with `id: '<name>'`)
 4. Add the emoji to `ICONES_SESSOES` in `guiado.html`
-5. Add the i18n keys to `locales/en.json` and `locales/es.json`
+5. Add the i18n keys to `locales/en.json` and `locales/es.json` (and to the HTML as PT-BR fallback)
 
-Display order comes from the position of the entry in the `SESSOES` array.
+Display order comes from the position of the entry in the `SESSOES` array, not from the file name.
+
+**About `flatpakId` and `sempreClicavel`:** commands that install Flatpak must carry `flatpakId: 'org.example.App'` in the `script.js` registry. Commands whose real state is queryable via `rpm -q` (hardware drivers) should use `sempreClicavel: true` and verify state via an endpoint.
 
 ---
 
 ## 🌐 How to add a language
 
 1. Copy `locales/en.json` to `locales/XX.json`
-2. Translate the values
+2. Translate the values (keep the keys)
 3. Add `XX` to `LANGS_DISPONIVEIS` (`i18n.js`) and `LANGS_SUPORTADOS` (`server.js`)
 4. Add the option to the `opcoes` array in `criarSeletorIdioma()`
+
+**Note:** the default language (pt-BR) has **no JSON file** on purpose — the HTML of each session contains the Portuguese text as fallback.
 
 ---
 
 ## 🏷️ How to release a version
 
-1. Edit `package.json` → `"version": "1.0.0-<NEW>"`
+1. Edit `package.json` → `"version": "1.0-<NEW_DATE>"`
 2. Replace `CHANGELOG.md` with the new version's section (full history stays on GitHub releases)
 3. Update the version badge in all three READMEs (`README.md`, `README.en.md`, `README.es.md`)
 4. Create the tag/release on GitHub with the same name
@@ -253,11 +258,15 @@ Display order comes from the position of the entry in the `SESSOES` array.
 
 ## 🐛 Bug reports
 
-Open an issue at [github.com/vitaotub/Fedora-Advantage-Panel/issues](https://github.com/vitaotub/Fedora-Advantage-Panel/issues)
+Open an issue at [github.com/vitaotub/Fedora-Advantage-Panel/issues](https://github.com/vitaotub/Fedora-Advantage-Panel/issues) including:
+- Fedora version
+- Desktop environment
+- Logs (`/tmp/fap-*.log`)
+- Steps to reproduce
 
 ## ⚠️ Legal notice
 
-Project in development (alpha). **Always back up** before making system changes.
+Project in development (alpha). Production use at your own risk. **Always back up** before making system changes.
 
 ## 📄 License
 

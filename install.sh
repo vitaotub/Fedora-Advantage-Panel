@@ -12,11 +12,20 @@ BLUE='\033[0;34m'
 CYAN='\033[0;36m'
 NC='\033[0m'
 
-INSTALL_DIR="$HOME/.local/share/fedora-only-fans"
+INSTALL_DIR="$HOME/.local/share/fedora-advantage-panel"
 BIN_DIR="$HOME/.local/bin"
 
 # ============================================================
-# VERSÃO DO FOF — fonte única: package.json
+# DIRETÓRIOS DO ESQUEMA ANTIGO (FOF) — para migração limpa
+# ============================================================
+#
+# Se o usuário tem o FOF instalado, o install.sh detecta e remove
+# toda a instalação antiga antes de instalar o FAP. É uma migração
+# limpa — nenhum dado é preservado (progresso, tema, idioma).
+OLD_INSTALL_DIR="$HOME/.local/share/fedora-only-fans"
+
+# ============================================================
+# VERSÃO DO FAP — fonte única: package.json
 # ============================================================
 #
 # Procura o package.json em ordem de preferência:
@@ -31,7 +40,7 @@ BIN_DIR="$HOME/.local/bin"
 #
 # Se nada for encontrado, cai em "desconhecida" — o banner mostra
 # isso, mas o script continua funcionando normalmente. Esta versão
-# é apenas cosmética (o badge do FOF é alimentado pelo /info do
+# é apenas cosmética (o badge do FAP é alimentado pelo /info do
 # server.js, que lê o package.json em runtime).
 _ler_versao_package() {
     local arquivo
@@ -52,21 +61,27 @@ VERSION="$(_ler_versao_package)"
 
 # ============================================================
 # CORREÇÃO ÍCONE (KDE/Wayland): os nomes dos arquivos .desktop
-# agora batem com o app_id definido em g_set_prgname("fof-container")
+# agora batem com o app_id definido em g_set_prgname("fap-container")
 # no C. O KDE Plasma em Wayland é rigoroso: se o nome do .desktop
 # não bater com o app_id da janela, o ícone não é associado e o
 # toolkit mostra o ícone genérico ("W" do WebKitGTK).
-# Não alterar sem atualizar o g_set_prgname no src/fof-container.c.
+# Não alterar sem atualizar o g_set_prgname no src/fap-container.c.
 # ============================================================
-DESKTOP_FILE="$HOME/.local/share/applications/fof-container.desktop"
-DESKTOP_FILE_COMPAT="$HOME/.local/share/applications/fof-container-compat.desktop"
+DESKTOP_FILE="$HOME/.local/share/applications/fap-container.desktop"
+DESKTOP_FILE_COMPAT="$HOME/.local/share/applications/fap-container-compat.desktop"
 
 # Nomes antigos (para limpeza em desinstalação/atualização)
-DESKTOP_FILE_OLD="$HOME/.local/share/applications/fedora-only-fans.desktop"
-DESKTOP_FILE_COMPAT_OLD="$HOME/.local/share/applications/fedora-only-fans-compat.desktop"
+DESKTOP_FILE_OLD="$HOME/.local/share/applications/fedora-advantage-panel.desktop"
+DESKTOP_FILE_COMPAT_OLD="$HOME/.local/share/applications/fedora-advantage-panel-compat.desktop"
+
+# Nomes do esquema antigo (FOF) — removidos na migração
+DESKTOP_FILE_FOF="$HOME/.local/share/applications/fof-container.desktop"
+DESKTOP_FILE_FOF_COMPAT="$HOME/.local/share/applications/fof-container-compat.desktop"
+DESKTOP_FILE_FOF_OLD="$HOME/.local/share/applications/fedora-only-fans.desktop"
+DESKTOP_FILE_FOF_COMPAT_OLD="$HOME/.local/share/applications/fedora-only-fans-compat.desktop"
 
 REPO_URL="https://github.com/vitaotub/Fedora-Advantage-Panel.git"
-LOG_FILE="/tmp/fof-install-$(date +%Y%m%d-%H%M%S).log"
+LOG_FILE="/tmp/fap-install-$(date +%Y%m%d-%H%M%S).log"
 
 # ============================================================
 # ARQUIVOS DE SESSÃO
@@ -76,7 +91,7 @@ LOG_FILE="/tmp/fof-install-$(date +%Y%m%d-%H%M%S).log"
 # é só mover linhas no array SESSOES em script.js.
 #
 # manutencao.html foi removida — conteúdo absorvido pelas sessões
-# ajustes-manutencao e sobre-fof. CHANGELOG.md é lido em runtime
+# ajustes-manutencao e sobre-fap. CHANGELOG.md é lido em runtime
 # pelo endpoint /changelog do server.js.
 
 SESSAO_ARQUIVOS=(
@@ -93,7 +108,7 @@ SESSAO_ARQUIVOS=(
 "diagnostico.html"
 "ajustes-manutencao.html"
 "estado-fedora.html"
-"sobre-fof.html"
+"sobre-fap.html"
 )
 
 ARQUIVOS_PRINCIPAIS=(
@@ -106,8 +121,8 @@ ARQUIVOS_PRINCIPAIS=(
 "script.js"
 "i18n.js"
 "icone_app.png"
-"iniciar_fof.sh"
-"iniciar_fof_compat.sh"
+"iniciar_fap.sh"
+"iniciar_fap_compat.sh"
 "build-container.sh"
 "Makefile"
 "template-sessao.html"
@@ -134,9 +149,9 @@ reaplicar_permissoes() {
 print_step "Reaplicando permissões dos arquivos..."
 
 local arquivos_para_permissoes=(
-"iniciar_fof.sh"
-"iniciar_fof_compat.sh"
-"fof-container"
+"iniciar_fap.sh"
+"iniciar_fap_compat.sh"
+"fap-container"
 "build-container.sh"
 )
 
@@ -147,7 +162,7 @@ print_info "Permissão aplicada: $arquivo"
 fi
 done
 
-local links_para_permissoes=("fof" "fof-compat" "fof-container")
+local links_para_permissoes=("fap" "fap-compat" "fap-container")
 for link in "${links_para_permissoes[@]}"; do
 # -L cobre symlinks (mesmo quebrados); -e cobre arquivos regulares.
 if [ -L "$BIN_DIR/$link" ] || [ -e "$BIN_DIR/$link" ]; then
@@ -167,12 +182,6 @@ print_success "Permissões reaplicadas com sucesso!"
 # detecta renomeações. Roda em --update, DEPOIS do git pull:
 # - Se o git já tiver removido, o `rm -f` é no-op.
 # - Se o git não detectou a renomeação, limpamos o resquício.
-#
-# Definida como função top-level (fora de reaplicar_permissoes)
-# porque é chamada por atualizar() antes de qualquer chamada a
-# reaplicar_permissoes. Se estivesse aninhada, o parser do bash
-# só a registraria na primeira invocação de reaplicar_permissoes
-# — e atualizar() falharia com "command not found".
 
 limpar_arquivos_antigos() {
 print_step "Removendo arquivos de versões anteriores..."
@@ -195,6 +204,11 @@ local antigos=(
 "manutencao.html"
 "90-manutencao.html"
 "91-fof-manutencao.html"
+"sobre-fof.html"
+"iniciar_fof.sh"
+"iniciar_fof_compat.sh"
+"src/fof-container.c"
+"fof-container"
 )
 
 local removidos=0
@@ -211,6 +225,228 @@ print_success "$removidos arquivo(s) antigo(s) removido(s)"
 else
 print_info "Nenhum arquivo antigo encontrado"
 fi
+}
+
+# ============================================================
+# MIGRAÇÃO DO ESQUEMA ANTIGO (FOF → FAP)
+# ============================================================
+#
+# Quando o usuário roda o install.sh da nova versão sobre uma
+# instalação antiga do FOF, removemos TUDO do esquema antigo:
+# diretório de instalação, symlinks, atalhos .desktop, ícone no
+# hicolor, logs em /tmp, dados do WebKitGTK.
+#
+# ANTES de apagar o diretório antigo, preservamos o arquivo
+# .progresso.json (que guarda o estado de cada botão das 14
+# sessões) num local temporário. Após instalar o FAP, esse
+# arquivo é restaurado dentro de $INSTALL_DIR.
+#
+# O localStorage do WebKitGTK (tema, idioma) NÃO é preservado:
+# o diretório de dados do WebKit muda com o app_id da janela
+# (fof-container → fap-container) e migrar isso envolveria
+# manipular arquivos internos do WebKit. O usuário terá que
+# reconfigurar tema e idioma — apenas uma vez.
+#
+# Progresso: preservado.
+# Tema e idioma: resetados.
+
+_MIGRACAO_PROGRESSO_TEMP="$HOME/.local/share/fap-migracao-progresso.json"
+
+migrar_esquema_antigo() {
+    print_step "Verificando instalação antiga do FOF..."
+
+    local migrou=0
+
+    # ─── 0. Preservar .progresso.json ANTES de apagar qualquer coisa ───
+    # Só faz sentido preservar se o diretório antigo existe E
+    # contém o arquivo. Se não existir, seguimos em frente.
+    if [ -f "$OLD_INSTALL_DIR/.progresso.json" ]; then
+        mkdir -p "$(dirname "$_MIGRACAO_PROGRESSO_TEMP")"
+        cp "$OLD_INSTALL_DIR/.progresso.json" "$_MIGRACAO_PROGRESSO_TEMP" 2>/dev/null || true
+        print_info "Progresso do FOF preservado temporariamente"
+        migrou=1
+    fi
+
+    # ─── 1. Diretório de instalação antigo ─────────────────────
+    if [ -d "$OLD_INSTALL_DIR" ]; then
+        rm -rf "$OLD_INSTALL_DIR"
+        print_info "Diretório antigo removido: $OLD_INSTALL_DIR"
+        migrou=1
+    fi
+
+    # ─── 2. Symlinks antigos em ~/.local/bin ────────────────────
+    local links_antigos=("fof" "fof-compat" "fof-container")
+    for link in "${links_antigos[@]}"; do
+        if [ -L "$BIN_DIR/$link" ] || [ -e "$BIN_DIR/$link" ]; then
+            rm -f "$BIN_DIR/$link"
+            print_info "Symlink antigo removido: $BIN_DIR/$link"
+            migrou=1
+        fi
+    done
+
+    # ─── 3. Atalhos .desktop antigos ────────────────────────────
+    local atalhos_antigos=(
+        "$DESKTOP_FILE_FOF"
+        "$DESKTOP_FILE_FOF_COMPAT"
+        "$DESKTOP_FILE_FOF_OLD"
+        "$DESKTOP_FILE_FOF_COMPAT_OLD"
+    )
+    for atalho in "${atalhos_antigos[@]}"; do
+        if [ -L "$atalho" ] || [ -e "$atalho" ]; then
+            rm -f "$atalho"
+            print_info "Atalho antigo removido: $atalho"
+            migrou=1
+        fi
+    done
+
+    # ─── 4. Ícone no hicolor ────────────────────────────────────
+    if [ -f "$HOME/.local/share/icons/hicolor/256x256/apps/fof-container.png" ]; then
+        rm -f "$HOME/.local/share/icons/hicolor/256x256/apps/fof-container.png"
+        gtk-update-icon-cache -f -t "$HOME/.local/share/icons/hicolor" 2>/dev/null || true
+        print_info "Ícone antigo removido do hicolor"
+        migrou=1
+    fi
+
+    # ─── 5. Dados e cache do WebKitGTK (esquema antigo) ────────
+    for dir_antigo in \
+        "$HOME/.cache/fof-container" \
+        "$HOME/.local/share/fof-container" \
+        "$HOME/.config/fof-container"; do
+        if [ -d "$dir_antigo" ]; then
+            rm -rf "$dir_antigo"
+            print_info "Diretório antigo removido: $dir_antigo"
+            migrou=1
+        fi
+    done
+
+    # ─── 6. Logs antigos em /tmp ────────────────────────────────
+    if ls /tmp/fof-*.log >/dev/null 2>&1; then
+        rm -f /tmp/fof-*.log 2>/dev/null || true
+        print_info "Logs antigos removidos de /tmp"
+        migrou=1
+    fi
+    if ls /tmp/fof-out-*.log >/dev/null 2>&1; then
+        sudo rm -f /tmp/fof-out-*.log 2>/dev/null || true
+        print_info "Logs de autenticação antigos removidos de /tmp"
+        migrou=1
+    fi
+    if ls /tmp/fof-cmd-*.sh >/dev/null 2>&1; then
+        rm -f /tmp/fof-cmd-*.sh 2>/dev/null || true
+        print_info "Scripts temporários antigos removidos de /tmp"
+        migrou=1
+    fi
+    if [ -d "$HOME/.local/share/fof-waydroid" ]; then
+        rm -rf "$HOME/.local/share/fof-waydroid"
+        print_info "Extras antigos do Waydroid removidos: ~/.local/share/fof-waydroid"
+        migrou=1
+    fi
+
+    if [ $migrou -eq 1 ]; then
+        print_success "Migração do esquema antigo concluída"
+        [ -f "$_MIGRACAO_PROGRESSO_TEMP" ] && \
+            print_info "Progresso do FOF será restaurado após a instalação do FAP"
+    else
+        print_info "Nenhuma instalação antiga do FOF encontrada"
+    fi
+}
+
+# ============================================================
+# RESTAURAR PROGRESSO MIGRADO (FOF → FAP)
+# ============================================================
+#
+# Se _MIGRACAO_PROGRESSO_TEMP existe, significa que
+# migrar_esquema_antigo() rodou e preservou o .progresso.json
+# do FOF. Depois de instalar o FAP, movemos esse arquivo para
+# dentro de $INSTALL_DIR, onde o server.js vai lê-lo como se
+# fosse o progresso do próprio FAP.
+#
+# O formato do .progresso.json é o mesmo (executados + pulados),
+# então o FAP interpreta corretamente. As chaves que não existirem
+# mais em SESSOES são limpas automaticamente pelo próprio
+# script.js na primeira carga (função _limparIdsOrfaos).
+
+_restaurar_progresso_migrado() {
+    if [ ! -f "$_MIGRACAO_PROGRESSO_TEMP" ]; then
+        return 0
+    fi
+
+    if [ ! -d "$INSTALL_DIR" ]; then
+        print_warning "Diretório de instalação não existe; não foi possível restaurar o progresso"
+        rm -f "$_MIGRACAO_PROGRESSO_TEMP"
+        return 1
+    fi
+
+    mv "$_MIGRACAO_PROGRESSO_TEMP" "$INSTALL_DIR/.progresso.json"
+    print_success "Progresso do FOF restaurado no FAP"
+    return 0
+}
+
+# ============================================================
+# MIGRAÇÃO VIA --update (FOF antigo → FAP)
+# ============================================================
+#
+# Cenário: o usuário tem o FOF antigo instalado e clica no botão
+# "Atualizar" do próprio FOF. O FOF executa:
+#
+#   bash <(curl .../install.sh) --update
+#
+# Esse --update chega no FAP novo, que procura em $INSTALL_DIR
+# (~/.local/share/fedora-advantage-panel). Como o usuário ainda
+# está no esquema antigo, o diretório NÃO existe — mas o
+# $OLD_INSTALL_DIR (~/.local/share/fedora-only-fans) existe.
+#
+# Em vez de retornar "FAP não está instalado" e travar, caímos
+# aqui e fazemos a instalação completa com migração.
+#
+# Após o término, o processo do FOF antigo (que ainda está
+# rodando com o server.js antigo) continua até ser fechado, mas
+# todas as suas referências a arquivos foram removidas. Na
+# próxima abertura, o usuário já estará no FAP.
+
+_migrar_via_update() {
+    print_header
+    print_step "Detectada instalação do FOF antigo"
+    print_info "Migrando automaticamente para o Fedora Advantage Panel (FAP)..."
+    echo ""
+
+    # Reaproveita a migração, a instalação e a restauração de
+    # progresso — na ordem correta.
+    migrar_esquema_antigo
+
+    instalar_fap
+    _restaurar_progresso_migrado
+    verificar_arquivos_instalados
+    instalar_dependencias_container
+    compilar_container_install
+    criar_atalhos
+    configurar_path
+    reaplicar_permissoes
+
+    echo ""
+    print_success "🎉 Migração para o Fedora Advantage Panel concluída!"
+    echo ""
+    print_info "📁 Instalado em: $INSTALL_DIR"
+    print_info ""
+    print_warning "⚠️  Feche o FOF antigo (esta janela) para concluir."
+    print_info ""
+    print_info "Para abrir o FAP:"
+    echo " - Terminal: digite 'fap' ou 'fap-compat'"
+    echo " - Menu: procure por 'Fedora Advantage Panel'"
+    echo ""
+    print_info "💡 Seu progresso anterior foi preservado."
+    print_info "   Tema e idioma precisarão ser reconfigurados (uma única vez)."
+    echo ""
+    print_info "📋 Log da migração: $LOG_FILE"
+    echo ""
+
+    # Encerra o servidor antigo (node server.js) que ainda está
+    # rodando com o código do FOF. Sem isso, o usuário pode
+    # continuar vendo a UI antiga por trás do container.
+    if pgrep -f "node server.js" > /dev/null 2>&1; then
+        print_info "🔄 Encerrando o servidor antigo em 3 segundos..."
+        print_info "   A janela do FOF vai fechar automaticamente."
+        nohup bash -c 'sleep 3 && pkill -f "node server.js" 2>/dev/null' > /dev/null 2>&1 &
+    fi
 }
 
 verificar_arquivos_instalados() {
@@ -269,7 +505,7 @@ cd "$INSTALL_DIR"
 
 if [ ! -f "$INSTALL_DIR/build-container.sh" ]; then
 print_warning "build-container.sh não encontrado"
-print_info "O FOF usará o navegador como fallback"
+print_info "O FAP usará o navegador como fallback"
 return 1
 fi
 
@@ -280,9 +516,9 @@ chmod +x "$INSTALL_DIR/build-container.sh"
 # reclamando, etc.), o motivo fica visível para diagnóstico — em vez
 # de um simples "não foi possível recompilar o container".
 if "$INSTALL_DIR/build-container.sh" >> "$LOG_FILE" 2>&1; then
-if [ -f "$INSTALL_DIR/fof-container" ]; then
-ln -sf "$INSTALL_DIR/fof-container" "$BIN_DIR/fof-container"
-chmod +x "$BIN_DIR/fof-container"
+if [ -f "$INSTALL_DIR/fap-container" ]; then
+ln -sf "$INSTALL_DIR/fap-container" "$BIN_DIR/fap-container"
+chmod +x "$BIN_DIR/fap-container"
 print_success "Container compilado e instalado"
 return 0
 else
@@ -293,7 +529,7 @@ fi
 else
 print_warning "Falha ao compilar o container"
 print_info "Motivo registrado em: $LOG_FILE"
-print_info "O FOF continuará usando o container antigo (se existir) ou o navegador como fallback"
+print_info "O FAP continuará usando o container antigo (se existir) ou o navegador como fallback"
 return 1
 fi
 }
@@ -362,7 +598,7 @@ fi
 # zenity: diálogo gráfico de senha em DEs não-KDE
 # ------------------------------------------------------------
 #
-# Em KDE, o FOF usa kdesu/kdialog para autenticação. Em qualquer
+# Em KDE, o FAP usa kdesu/kdialog para autenticação. Em qualquer
 # outro desktop (GNOME, XFCE, Cinnamon, MATE, LXQt, tiling WMs),
 # o fallback é pkexec + zenity. Sem zenity, a autenticação
 # quebra silenciosamente: pkexec não consegue abrir diálogo e o
@@ -395,7 +631,7 @@ print_success "Todas as dependências estão instaladas"
 fi
 }
 
-instalar_fof() {
+instalar_fap() {
 print_step "Instalando Fedora Advantage Panel..."
 
 mkdir -p "$INSTALL_DIR"
@@ -412,26 +648,31 @@ cd "$INSTALL_DIR"
 fi
 
 print_step "Instalando dependências do Node.js..."
-# --omit=dev evita instalar nodemon (devDependency), que o FOF
+# --omit=dev evita instalar nodemon (devDependency), que o FAP
 # não usa em runtime.
 if ! npm install --omit=dev --no-audit --no-fund --silent; then
 print_error "Falha ao instalar dependências"
 exit 1
 fi
 
-ln -sf "$INSTALL_DIR/iniciar_fof.sh" "$BIN_DIR/fof"
-chmod +x "$INSTALL_DIR/iniciar_fof.sh"
-chmod +x "$BIN_DIR/fof"
+ln -sf "$INSTALL_DIR/iniciar_fap.sh" "$BIN_DIR/fap"
+chmod +x "$INSTALL_DIR/iniciar_fap.sh"
+chmod +x "$BIN_DIR/fap"
 
-if [ -f "$INSTALL_DIR/iniciar_fof_compat.sh" ]; then
-ln -sf "$INSTALL_DIR/iniciar_fof_compat.sh" "$BIN_DIR/fof-compat"
-chmod +x "$INSTALL_DIR/iniciar_fof_compat.sh"
-chmod +x "$BIN_DIR/fof-compat"
+if [ -f "$INSTALL_DIR/iniciar_fap_compat.sh" ]; then
+ln -sf "$INSTALL_DIR/iniciar_fap_compat.sh" "$BIN_DIR/fap-compat"
+chmod +x "$INSTALL_DIR/iniciar_fap_compat.sh"
+chmod +x "$BIN_DIR/fap-compat"
 fi
 
-print_success "FOF instalado em: $INSTALL_DIR"
-print_success "Comando 'fof' disponível em: $BIN_DIR"
-print_success "Comando 'fof-compat' disponível em: $BIN_DIR"
+# Restaura o progresso preservado por migrar_esquema_antigo(),
+# se houver. Se não houver (instalação limpa num sistema sem
+# FOF), é no-op.
+_restaurar_progresso_migrado
+
+print_success "FAP instalado em: $INSTALL_DIR"
+print_success "Comando 'fap' disponível em: $BIN_DIR"
+print_success "Comando 'fap-compat' disponível em: $BIN_DIR"
 }
 
 criar_atalhos() {
@@ -439,8 +680,8 @@ print_step "Criando atalhos no menu de aplicativos..."
 
 # ============================================================
 # CORREÇÃO ÍCONE (KDE/Wayland): o nome do arquivo .desktop agora
-# é "fof-container.desktop", casando com o app_id definido em
-# g_set_prgname("fof-container") no src/fof-container.c. Sem essa
+# é "fap-container.desktop", casando com o app_id definido em
+# g_set_prgname("fap-container") no src/fap-container.c. Sem essa
 # correspondência, o KDE Plasma em Wayland não associa o ícone do
 # .desktop com a janela do container e mostra o ícone genérico do
 # WebKitGTK (o "W" amarelo).
@@ -452,15 +693,15 @@ print_step "Criando atalhos no menu de aplicativos..."
 # INSTALL_DIR), não para o symlink em ~/.local/bin. Isso é
 # ligeiramente mais robusto: se algo remover o symlink, o
 # atalho continua funcionando. Também dispensa a resolução de
-# symlink que o iniciar_fof.sh faz no topo (embora essa resolução
+# symlink que o iniciar_fap.sh faz no topo (embora essa resolução
 # continue existindo para o caso de invocação via linha de comando).
 # ============================================================
 
 # Ícone no tema hicolor com o MESMO nome do app_id, para o KDE
-# achar o ícone por nome (Icon=fof-container) em qualquer tema.
+# achar o ícone por nome (Icon=fap-container) em qualquer tema.
 if [ -f "$INSTALL_DIR/icone_app.png" ]; then
 mkdir -p "$HOME/.local/share/icons/hicolor/256x256/apps"
-cp "$INSTALL_DIR/icone_app.png" "$HOME/.local/share/icons/hicolor/256x256/apps/fof-container.png"
+cp "$INSTALL_DIR/icone_app.png" "$HOME/.local/share/icons/hicolor/256x256/apps/fap-container.png"
 gtk-update-icon-cache -f -t "$HOME/.local/share/icons/hicolor" 2>/dev/null || true
 print_success "Ícone do container instalado em hicolor"
 fi
@@ -477,31 +718,31 @@ Version=1.0
 Type=Application
 Name=Fedora Advantage Panel
 Comment=Painel de Automação do Fedora
-Exec=$INSTALL_DIR/iniciar_fof.sh
-Icon=fof-container
+Exec=$INSTALL_DIR/iniciar_fap.sh
+Icon=fap-container
 Terminal=false
 Categories=System;Settings;
 StartupNotify=false
-StartupWMClass=fof-container
+StartupWMClass=fap-container
 EOF
 
 chmod +x "$DESKTOP_FILE"
 print_success "Atalho criado: $DESKTOP_FILE"
 
 # --- Atalho de compatibilidade (modo software rendering) ---
-if [ -f "$INSTALL_DIR/iniciar_fof_compat.sh" ]; then
+if [ -f "$INSTALL_DIR/iniciar_fap_compat.sh" ]; then
 cat > "$DESKTOP_FILE_COMPAT" <<EOF
 [Desktop Entry]
 Version=1.0
 Type=Application
 Name=Fedora Advantage Panel (Modo Compatibilidade)
 Comment=Painel de Automação do Fedora - Modo compatível com GPUs antigas
-Exec=$INSTALL_DIR/iniciar_fof_compat.sh
-Icon=fof-container
+Exec=$INSTALL_DIR/iniciar_fap_compat.sh
+Icon=fap-container
 Terminal=false
 Categories=System;Settings;
 StartupNotify=false
-StartupWMClass=fof-container
+StartupWMClass=fap-container
 EOF
 
 chmod +x "$DESKTOP_FILE_COMPAT"
@@ -557,7 +798,7 @@ fi
 # NOTA: usamos `-L` (testa symlink) em vez de `-f` (segue o
 # symlink). Como o INSTALL_DIR foi removido acima, os symlinks
 # ficam "quebrados" e `-f` retorna false — pulando a remoção.
-local links=("fof" "fof-compat" "fof-container")
+local links=("fap" "fap-compat" "fap-container")
 for link in "${links[@]}"; do
 if [ -L "$BIN_DIR/$link" ] || [ -e "$BIN_DIR/$link" ]; then
 rm -f "$BIN_DIR/$link"
@@ -580,33 +821,33 @@ fi
 done
 
 # ─── 4. Ícone hicolor ──────────────────────────────────────
-if [ -f "$HOME/.local/share/icons/hicolor/256x256/apps/fof-container.png" ]; then
-rm -f "$HOME/.local/share/icons/hicolor/256x256/apps/fof-container.png"
+if [ -f "$HOME/.local/share/icons/hicolor/256x256/apps/fap-container.png" ]; then
+rm -f "$HOME/.local/share/icons/hicolor/256x256/apps/fap-container.png"
 gtk-update-icon-cache -f -t "$HOME/.local/share/icons/hicolor" 2>/dev/null || true
 print_success "Ícone removido do hicolor"
 fi
 
 # ─── 5. Dados e cache do WebKitGTK ──────────────────────────
-# O fof-container (WebKitGTK) cria esses dois diretórios em
+# O fap-container (WebKitGTK) cria esses dois diretórios em
 # runtime. Sem removê-los, o cache HTTP e o localStorage ficam
 # órfãos no sistema (incluindo o badge de atualização).
-if [ -d "$HOME/.cache/fof-container" ]; then
-rm -rf "$HOME/.cache/fof-container"
-print_success "Cache do WebKitGTK removido: ~/.cache/fof-container"
+if [ -d "$HOME/.cache/fap-container" ]; then
+rm -rf "$HOME/.cache/fap-container"
+print_success "Cache do WebKitGTK removido: ~/.cache/fap-container"
 fi
 
-if [ -d "$HOME/.local/share/fof-container" ]; then
-rm -rf "$HOME/.local/share/fof-container"
-print_success "Dados do WebKitGTK removidos: ~/.local/share/fof-container"
+if [ -d "$HOME/.local/share/fap-container" ]; then
+rm -rf "$HOME/.local/share/fap-container"
+print_success "Dados do WebKitGTK removidos: ~/.local/share/fap-container"
 fi
 
-if [ -d "$HOME/.config/fof-container" ]; then
-rm -rf "$HOME/.config/fof-container"
-print_success "Configurações do FOF removidas: ~/.config/fof-container"
+if [ -d "$HOME/.config/fap-container" ]; then
+rm -rf "$HOME/.config/fap-container"
+print_success "Configurações do FAP removidas: ~/.config/fap-container"
 fi
 
 # ─── 6. Logs temporários ────────────────────────────────────
-# Os arquivos /tmp/fof-out-*.log são criados pelo kdesu/pkexec
+# Os arquivos /tmp/fap-out-*.log são criados pelo kdesu/pkexec
 # (que rodam como root) e ficam com owner root. O `rm -f` como
 # usuário comum falha com "Operação não permitida", o que faz o
 # `set -e` abortar o script inteiro. Solução: tentar como user
@@ -614,14 +855,14 @@ fi
 print_step "Removendo logs temporários..."
 
 # Logs do usuário (sempre removíveis)
-rm -f /tmp/fof-install-*.log 2>/dev/null || true
-rm -f /tmp/fof-waydroid-ui.log 2>/dev/null || true
+rm -f /tmp/fap-install-*.log 2>/dev/null || true
+rm -f /tmp/fap-waydroid-ui.log 2>/dev/null || true
 
 # Logs de comandos autenticados — podem pertencer ao root
-if ls /tmp/fof-out-*.log >/dev/null 2>&1; then
-if ! rm -f /tmp/fof-out-*.log 2>/dev/null; then
+if ls /tmp/fap-out-*.log >/dev/null 2>&1; then
+if ! rm -f /tmp/fap-out-*.log 2>/dev/null; then
 print_info "Alguns logs pertencem ao root (kdesu/pkexec). Removendo com sudo..."
-sudo rm -f /tmp/fof-out-*.log 2>/dev/null || true
+sudo rm -f /tmp/fap-out-*.log 2>/dev/null || true
 fi
 fi
 
@@ -645,7 +886,7 @@ fi
 
 # Backup atômico com timestamp, mantido por segurança caso o
 # usuário queira restaurar manualmente.
-local backup="${arquivo}.fof-backup-$(date +%Y%m%d-%H%M%S)"
+local backup="${arquivo}.fap-backup-$(date +%Y%m%d-%H%M%S)"
 cp "$arquivo" "$backup"
 grep -vF "$linha_a_remover" "$arquivo" > "${arquivo}.tmp"
 mv "${arquivo}.tmp" "$arquivo"
@@ -661,16 +902,33 @@ update-desktop-database ~/.local/share/applications/ 2>/dev/null || true
 kbuildsycoca6 --noincremental 2>/dev/null || kbuildsycoca5 --noincremental 2>/dev/null || true
 
 echo ""
-print_success "✅ FOF completamente desinstalado!"
+print_success "✅ FAP completamente desinstalado!"
 }
 
 atualizar() {
 print_header
 
+# ------------------------------------------------------------
+# Detecção do cenário FOF → FAP
+# ------------------------------------------------------------
+#
+# Se não existe FAP instalado ($INSTALL_DIR/.git ausente), mas
+# existe o FOF antigo ($OLD_INSTALL_DIR presente), estamos num
+# cenário de migração via botão "Atualizar" do próprio FOF.
+# Delegamos para _migrar_via_update(), que faz a instalação
+# completa com migração e preservação de progresso.
+if [ ! -d "$INSTALL_DIR/.git" ] && [ -d "$OLD_INSTALL_DIR" ]; then
+    _migrar_via_update
+    exit 0
+fi
+
+# ------------------------------------------------------------
+# Cenário normal: FAP já está instalado, atualizar normalmente
+# ------------------------------------------------------------
 if [ ! -d "$INSTALL_DIR/.git" ]; then
-print_error "FOF não está instalado ou não foi clonado do Git"
-print_info "Execute a instalação primeiro: ./install.sh"
-exit 1
+    print_error "FAP não está instalado ou não foi clonado do Git"
+    print_info "Execute a instalação primeiro: ./install.sh"
+    exit 1
 fi
 
 print_step "Atualizando Fedora Advantage Panel..."
@@ -703,21 +961,21 @@ print_warning "Falha ao atualizar dependências, continuando..."
 fi
 
 # Recompila o container nativo. O install.sh --update é chamado pelo
-# botão "Atualizar FOF" na sessão sobre-fof, então essa recompilação
+# botão "Atualizar FAP" na sessão sobre-fap, então essa recompilação
 # roda automaticamente em cada atualização.
 compilar_container_install || true
 
 print_step "Recriando symlinks dos comandos..."
 mkdir -p "$BIN_DIR"
-ln -sf "$INSTALL_DIR/iniciar_fof.sh" "$BIN_DIR/fof"
-chmod +x "$INSTALL_DIR/iniciar_fof.sh" "$BIN_DIR/fof"
-if [ -f "$INSTALL_DIR/iniciar_fof_compat.sh" ]; then
-ln -sf "$INSTALL_DIR/iniciar_fof_compat.sh" "$BIN_DIR/fof-compat"
-chmod +x "$INSTALL_DIR/iniciar_fof_compat.sh" "$BIN_DIR/fof-compat"
+ln -sf "$INSTALL_DIR/iniciar_fap.sh" "$BIN_DIR/fap"
+chmod +x "$INSTALL_DIR/iniciar_fap.sh" "$BIN_DIR/fap"
+if [ -f "$INSTALL_DIR/iniciar_fap_compat.sh" ]; then
+ln -sf "$INSTALL_DIR/iniciar_fap_compat.sh" "$BIN_DIR/fap-compat"
+chmod +x "$INSTALL_DIR/iniciar_fap_compat.sh" "$BIN_DIR/fap-compat"
 fi
-if [ -f "$INSTALL_DIR/fof-container" ]; then
-ln -sf "$INSTALL_DIR/fof-container" "$BIN_DIR/fof-container"
-chmod +x "$BIN_DIR/fof-container"
+if [ -f "$INSTALL_DIR/fap-container" ]; then
+ln -sf "$INSTALL_DIR/fap-container" "$BIN_DIR/fap-container"
+chmod +x "$BIN_DIR/fap-container"
 fi
 print_success "Symlinks atualizados"
 
@@ -725,25 +983,25 @@ verificar_arquivos_instalados
 reaplicar_permissoes
 criar_atalhos
 
-print_success "✅ FOF atualizado para a versão mais recente!"
+print_success "✅ FAP atualizado para a versão mais recente!"
 
 # ============================================================
 # ENCERRA O SERVIDOR ANTIGO APÓS A ATUALIZAÇÃO
 # ============================================================
 #
-# O processo `node server.js` carrega FOF_VERSION uma única vez, no
+# O processo `node server.js` carrega FAP_VERSION uma única vez, no
 # boot. Se ele continuar rodando após o update, o endpoint /info
 # segue retornando a versão antiga — e o badge de "atualização
-# disponível" continua aparecendo, mesmo com o FOF já atualizado
+# disponível" continua aparecendo, mesmo com o FAP já atualizado
 # no disco.
 #
 # Solução: encerrar o servidor antigo automaticamente ao fim do
-# update. O usuário só precisa reabrir o FOF com `fof`, e o novo
+# update. O usuário só precisa reabrir o FAP com `fap`, e o novo
 # servidor sobe com a versão nova.
 
 if pgrep -f "node server.js" > /dev/null 2>&1; then
 print_info "🔄 Encerrando o servidor antigo em 3 segundos..."
-print_info "💡 Reabra o FOF com o comando 'fof' para usar a versão nova."
+print_info "💡 Reabra o FAP com o comando 'fap' para usar a versão nova."
 
 nohup bash -c 'sleep 3 && pkill -f "node server.js" 2>/dev/null' > /dev/null 2>&1 &
 fi
@@ -758,11 +1016,11 @@ Uso: $(basename "$0") [opções]
 Opções:
 --help, -h Mostra esta ajuda
 --update Atualiza uma instalação existente
---uninstall Desinstala o FOF do sistema
+--uninstall Desinstala o FAP do sistema
 
 Após a instalação:
-- O comando 'fof' estará disponível no terminal
-- O comando 'fof-compat' estará disponível (modo compatibilidade)
+- O comando 'fap' estará disponível no terminal
+- O comando 'fap-compat' estará disponível (modo compatibilidade)
 - Dois atalhos serão criados no menu de aplicativos
 
 Nota sobre desktops:
@@ -770,8 +1028,8 @@ Nota sobre desktops:
   Cinnamon, MATE, LXQt, tiling WMs).
 - Em KDE, a autenticação usa kdesu/kdialog. Nos demais,
   pkexec+zenity (instalado automaticamente se faltar).
-- O FOF NÃO fixa atalhos na barra de tarefas. Faça manualmente
-  pelo menu do seu desktop (botão direito no ícone do FOF).
+- O FAP NÃO fixa atalhos na barra de tarefas. Faça manualmente
+  pelo menu do seu desktop (botão direito no ícone do FAP).
 
 EOF
 exit 0
@@ -797,7 +1055,11 @@ print_header
 verificar_sistema
 verificar_dependencias
 
-instalar_fof
+# Migração do esquema antigo (FOF → FAP) — roda ANTES de qualquer
+# coisa, para garantir que nenhum resquício do FOF interfira.
+migrar_esquema_antigo
+
+instalar_fap
 verificar_arquivos_instalados
 instalar_dependencias_container
 compilar_container_install
@@ -810,12 +1072,12 @@ print_success "🎉 Fedora Advantage Panel instalado com sucesso!"
 echo ""
 print_info "📁 Instalado em: $INSTALL_DIR"
 print_info ""
-print_info "Para iniciar o FOF:"
-echo " - Terminal: digite 'fof' ou 'fof-compat'"
+print_info "Para iniciar o FAP:"
+echo " - Terminal: digite 'fap' ou 'fap-compat'"
 echo " - Menu: procure por 'Fedora Advantage Panel'"
 echo ""
 print_info "💡 Para fixar na barra de tarefas, use o menu do seu desktop"
-print_info "   (botão direito no ícone do FOF → 'Adicionar ao Painel' ou similar)"
+print_info "   (botão direito no ícone do FAP → 'Adicionar ao Painel' ou similar)"
 echo ""
 print_info "📋 Log da instalação: $LOG_FILE"
 echo ""

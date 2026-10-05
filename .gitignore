@@ -13,16 +13,16 @@ yarn-error.log*
 # ------------------------------------------------------------
 # Build do container nativo
 # ------------------------------------------------------------
-fof-container
+fap-container
 *.o
 *.so
 *.a
 
 # ------------------------------------------------------------
-# Estado do FOF (runtime — específico da máquina do usuário)
+# Estado do FAP (runtime — específico da máquina do usuário)
 # ------------------------------------------------------------
 .progresso.json
-.fof.pid
+.fap.pid
 
 # ------------------------------------------------------------
 # Perfis de navegador (criados pelo fallback)
@@ -48,7 +48,7 @@ Thumbs.db
 
 # ------------------------------------------------------------
 # NÃO IGNORAR (arquivos lidos em runtime — precisam ser
-# rastreados para o FOF funcionar depois do clone)
+# rastreados para o FAP funcionar depois do clone)
 # ------------------------------------------------------------
 # hardware_map.json precisa ser rastreado — o hardware-service.js
 # o lê em runtime para o endpoint /hardware-scan.

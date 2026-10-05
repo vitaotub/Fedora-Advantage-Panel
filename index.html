@@ -8,7 +8,7 @@
 // Aplica o tema antes do CSS pintar (evita flash do tema errado).
 (function() {
 try {
-var t = localStorage.getItem('fof_tema') || 'escuro';
+var t = localStorage.getItem('fap_tema') || 'escuro';
 document.documentElement.setAttribute('data-tema', t === 'claro' ? 'claro' : 'escuro');
 } catch (e) {
 document.documentElement.setAttribute('data-tema', 'escuro');
@@ -503,7 +503,7 @@ box-shadow: 0 0 0 2px rgba(60, 103, 227, 0.3);
  * TOASTS
  * ============================================================ */
 
-.fof-toast-container {
+.fap-toast-container {
 position: fixed;
 top: 0;
 left: 0;
@@ -520,7 +520,7 @@ gap: 0.5rem;
 overflow: hidden;
 }
 
-.fof-toast {
+.fap-toast {
 background-color: var(--bg-card);
 border: 1px solid var(--border);
 border-left: 4px solid var(--accent);
@@ -539,19 +539,19 @@ box-sizing: border-box;
 flex-shrink: 0;
 }
 
-.fof-toast.success {
+.fap-toast.success {
 border-left-color: var(--success);
 }
 
-.fof-toast.error {
+.fap-toast.error {
 border-left-color: var(--danger);
 }
 
-.fof-toast.info {
+.fap-toast.info {
 border-left-color: var(--accent);
 }
 
-.fof-toast.removendo {
+.fap-toast.removendo {
 animation: slideOutToast 0.3s ease-in forwards;
 }
 
@@ -622,8 +622,8 @@ justify-content: center;
 <div class="container">
 <div class="hero">
 <img src="icone_app.png" alt="Fedora Advantage Panel" class="logo" onerror="this.style.display='none'">
-<div class="version-badge" data-i18n-html="index.badge_versao">🚀 v<span class="fof-version"></span></div>
-<h1 data-i18n="index.titulo">Fedora Advantage Panel</h1>
+<div class="version-badge" data-i18n-html="index.badge_versao">🚀 v<span class="fap-version"></span></div>
+<h1>Fedora Advantage Panel</h1>
 <p class="subtitle" data-i18n="index.subtitulo">
 Painel de automação para configurar, otimizar e personalizar seu Fedora Linux de forma rápida e segura.
 </p>
@@ -657,7 +657,7 @@ CARD PRINCIPAL — relógio + textos + botão Iniciar
 Clicando em <strong>Iniciar</strong>, você acessa sessões que otimizam, configuram e deixam sua instalação do Fedora mais prática no dia a dia.
 </p>
 <p data-i18n-html="index.card_guiado_desc_2">
-O FOF é intuitivo e explica cada passo com clareza — mas, por escolha de projeto, <strong>não faz backup dos seus arquivos</strong>. Apesar de cada comando ser testado, imprevistos podem acontecer. Por isso: leia as dicas com atenção antes de aplicar qualquer alteração e, sempre que possível, <strong>faça backup antes de seguir adiante</strong>.
+O FAP é intuitivo e explica cada passo com clareza — mas, por escolha de projeto, <strong>não faz backup dos seus arquivos</strong>. Apesar de cada comando ser testado, imprevistos podem acontecer. Por isso: leia as dicas com atenção antes de aplicar qualquer alteração e, sempre que possível, <strong>faça backup antes de seguir adiante</strong>.
 </p>
 </div>
 

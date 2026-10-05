@@ -204,7 +204,7 @@ body {
  *              desinstalar, reverter, desativar, remover.
  *
  *   4. VERMELHO DESTRUTIVO (.btn-executar.destrutivo) — exceção
- *              ações irreversíveis: desinstalar FOF, remover repo
+ *              ações irreversíveis: desinstalar FAP, remover repo
  *              Fedora Flatpak, remover Waydroid completamente.
  *              Vermelho + contorno tracejado, para dar peso visual.
  *
@@ -1382,7 +1382,7 @@ body {
  * full-viewport + overflow: hidden, nada vaza.
  */
 
-.fof-toast-container {
+.fap-toast-container {
     position: fixed;
     top: 0;
     left: 0;
@@ -1399,7 +1399,7 @@ body {
     overflow: hidden;
 }
 
-.fof-toast {
+.fap-toast {
     background-color: var(--bg-card);
     border: 1px solid var(--border);
     border-left: 4px solid var(--accent);
@@ -1418,19 +1418,19 @@ body {
     flex-shrink: 0;
 }
 
-.fof-toast.success {
+.fap-toast.success {
     border-left-color: var(--success);
 }
 
-.fof-toast.error {
+.fap-toast.error {
     border-left-color: var(--danger);
 }
 
-.fof-toast.info {
+.fap-toast.info {
     border-left-color: var(--accent);
 }
 
-.fof-toast.removendo {
+.fap-toast.removendo {
     animation: slideOutToast 0.3s ease-in forwards;
 }
 

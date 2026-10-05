@@ -34,7 +34,7 @@
  * deixem IDs "fantasmas" poluindo o .progresso.json para sempre.
  *
  * TEMA: claro/escuro alternável via botão na UI. Persistência em localStorage
- * sob a chave 'fof_tema'.
+ * sob a chave 'fap_tema'.
  */
 
 // ============================================================
@@ -51,25 +51,25 @@ var API_URL = (function() {
     return 'http://localhost:3000';
 })();
 
-var STORAGE_KEY = 'fof_progress';
+var STORAGE_KEY = 'fap_progress';
 
-let FOF_VERSION = '';
+let FAP_VERSION = '';
 
-window.FOF_VERSION_UI18N = '';
+window.FAP_VERSION_UI18N = '';
 
 async function carregarVersaoServidor() {
     try {
         const response = await fetch(API_URL + '/info');
         if (response.ok) {
             const data = await response.json();
-            FOF_VERSION = data.version || FOF_VERSION;
-            window.FOF_VERSION_UI18N = FOF_VERSION;
+            FAP_VERSION = data.version || FAP_VERSION;
+            window.FAP_VERSION_UI18N = FAP_VERSION;
         }
     } catch (e) {
         console.warn('[Versão] Não foi possível consultar /info:', e.message);
     }
-    document.querySelectorAll('.fof-version').forEach(function(el) {
-        el.textContent = FOF_VERSION || '?';
+    document.querySelectorAll('.fap-version').forEach(function(el) {
+        el.textContent = FAP_VERSION || '?';
     });
 
     if (typeof I18N !== 'undefined' && typeof I18N.aplicarTraducoes === 'function') {
@@ -79,13 +79,13 @@ async function carregarVersaoServidor() {
         }
     }
 
-    // Notifica consumidores (sobre-fof.html) que a versão já está
+    // Notifica consumidores (sobre-fap.html) que a versão já está
     // disponível. Substitui o polling de 100ms que existia antes.
-    document.dispatchEvent(new CustomEvent('fof-versao-pronta', {
-        detail: { versao: FOF_VERSION }
+    document.dispatchEvent(new CustomEvent('fap-versao-pronta', {
+        detail: { versao: FAP_VERSION }
     }));
 
-    console.log('🚀 Fedora Advantage Panel v' + (FOF_VERSION || '?') + ' - Script compartilhado carregado!');
+    console.log('🚀 Fedora Advantage Panel v' + (FAP_VERSION || '?') + ' - Script compartilhado carregado!');
 }
 
 // ============================================================
@@ -93,8 +93,8 @@ async function carregarVersaoServidor() {
 // ============================================================
 
 var GITHUB_REPO = 'vitaotub/Fedora-Advantage-Panel';
-var ULTIMA_VERIFICACAO_KEY = 'fof_ultima_verificacao';
-var VERSAO_REMOTA_KEY = 'fof_versao_remota';
+var ULTIMA_VERIFICACAO_KEY = 'fap_ultima_verificacao';
+var VERSAO_REMOTA_KEY = 'fap_versao_remota';
 var TTL_VERIFICACAO_MS = 12 * 60 * 60 * 1000; // 12 horas
 
 async function verificarAtualizacoes() {
@@ -166,13 +166,13 @@ function temAtualizacao(versaoLocal, versaoRemota) {
 // ============================================================
 //
 // O badge de "atualização disponível" antes navegava para
-// guiado.html?session=sobre-fof. Em alguns casos isso causava uma
+// guiado.html?session=sobre-fap. Em alguns casos isso causava uma
 // tela preta (race entre dois carregamentos de sessão). Agora o
 // clique dispara o `POST /executar` direto, sem navegação.
 
 var _atualizacaoEmAndamento = false;
 
-async function _dispararAtualizacaoFOF() {
+async function _dispararAtualizacaoFAP() {
     if (_atualizacaoEmAndamento) {
         mostrarToast(
             _t('comum.badge_ja_atualizando', '⏳ Atualização já em andamento...'),
@@ -181,7 +181,7 @@ async function _dispararAtualizacaoFOF() {
         return;
     }
 
-    var confirmMsg = _t('sessoes.sobre-fof.atualizar_confirmar',
+    var confirmMsg = _t('sessoes.sobre-fap.atualizar_confirmar',
                         '🔄 Deseja atualizar o Fedora Advantage Panel para a versão mais recente?\n\n' +
                         'Isso irá baixar e instalar a última versão do GitHub.');
     if (!confirm(confirmMsg)) return;
@@ -207,7 +207,7 @@ async function _dispararAtualizacaoFOF() {
         }
         if (sucesso === true) {
             mostrarToast(
-                _t('sessoes.sobre-fof.atualizar_popup_concluido',
+                _t('sessoes.sobre-fap.atualizar_popup_concluido',
                    '✅ Atualização concluída! Feche e reabra o FAP.').split('\n')[0],
                          'success', 10000
             );
@@ -226,7 +226,7 @@ async function _dispararAtualizacaoFOF() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 comando: 'bash <(curl -s https://raw.githubusercontent.com/vitaotub/Fedora-Advantage-Panel/main/install.sh) --update',
-                                 idComando: 'atualizar-fof'
+                                 idComando: 'atualizar-fap'
             })
         });
 
@@ -240,7 +240,7 @@ async function _dispararAtualizacaoFOF() {
         }
 
         // Conecta ao SSE para saber quando o comando termina.
-        es = new EventSource(API_URL + '/stream?id=atualizar-fof');
+        es = new EventSource(API_URL + '/stream?id=atualizar-fap');
         es.onmessage = function(event) {
             try {
                 var dados = JSON.parse(event.data);
@@ -272,7 +272,7 @@ async function mostrarBadgeSeHouverAtualizacao() {
     var versaoRemota = await verificarAtualizacoes();
     if (!versaoRemota) return;
 
-    var versaoLocal = FOF_VERSION || '?';
+    var versaoLocal = FAP_VERSION || '?';
     if (!temAtualizacao(versaoLocal, versaoRemota)) return;
 
     var versaoRemotaFresca = await verificarAtualizacoesForcado();
@@ -285,7 +285,7 @@ async function mostrarBadgeSeHouverAtualizacao() {
         return;
     }
 
-    document.querySelectorAll('.fof-version').forEach(function(el) {
+    document.querySelectorAll('.fap-version').forEach(function(el) {
         var parent = el.parentElement;
         if (!parent) return;
         if (parent.querySelector('.badge-atualizacao')) return;
@@ -311,7 +311,7 @@ async function mostrarBadgeSeHouverAtualizacao() {
         badge.addEventListener('click', function(e) {
             e.preventDefault();
             e.stopPropagation();
-            _dispararAtualizacaoFOF();
+            _dispararAtualizacaoFAP();
         });
 
         parent.insertBefore(badge, el.nextSibling);
@@ -320,9 +320,9 @@ async function mostrarBadgeSeHouverAtualizacao() {
     console.log('⬆️ Atualização disponível: ' + versaoLocal + ' → ' + versaoRemota);
 }
 
-// Expõe globalmente para o sobre-fof.html reutilizar a lógica de
+// Expõe globalmente para o sobre-fap.html reutilizar a lógica de
 // atualização (mesma confirmação + toast + rate-limit).
-window._dispararAtualizacaoFOF = _dispararAtualizacaoFOF;
+window._dispararAtualizacaoFAP = _dispararAtualizacaoFAP;
 
 // ============================================================
 // i18n HELPER LOCAL
@@ -348,7 +348,7 @@ function _textoOriginalTraduzido(btn) {
 // TEMA CLARO / ESCURO
 // ============================================================
 
-var TEMA_STORAGE_KEY = 'fof_tema';
+var TEMA_STORAGE_KEY = 'fap_tema';
 
 (function _aplicarTemaInicial() {
     try {
@@ -406,11 +406,11 @@ function criarBotaoTema() {
 // ============================================================
 
 function _garantirContainerToast() {
-    var c = document.getElementById('fof-toast-container');
+    var c = document.getElementById('fap-toast-container');
     if (!c) {
         c = document.createElement('div');
-        c.id = 'fof-toast-container';
-        c.className = 'fof-toast-container';
+        c.id = 'fap-toast-container';
+        c.className = 'fap-toast-container';
         document.body.appendChild(c);
     }
     return c;
@@ -419,7 +419,7 @@ function _garantirContainerToast() {
 function mostrarToast(mensagem, tipo, duracaoMs) {
     var c = _garantirContainerToast();
     var t = document.createElement('div');
-    t.className = 'fof-toast ' + (tipo || 'info');
+    t.className = 'fap-toast ' + (tipo || 'info');
     t.textContent = mensagem;
     c.appendChild(t);
     setTimeout(function() {
@@ -1041,18 +1041,18 @@ var SESSOES = [
 // Sobre do FAP + Manutenção do FAP (atualizar, desinstalar, changelog).
 // ============================================================
 {
-    id: 'sobre-fof',
+    id: 'sobre-fap',
     nome: 'Sobre o FAP',
-    nomeKey: 'sessoes.sobre-fof.nome',
+    nomeKey: 'sessoes.sobre-fap.nome',
     comandos: {
-        'atualizar-fof': {
+        'atualizar-fap': {
             sempreClicavel: true,
             textoConcluido: '✅ FAP atualizado',
-            textoConcluidoKey: 'sessoes.sobre-fof.texto_concluido_fof_atualizar'
+            textoConcluidoKey: 'sessoes.sobre-fap.texto_concluido_fap_atualizar'
         },
-        'desinstalar-fof': {
+        'desinstalar-fap': {
             textoConcluido: '✅ FAP desinstalado',
-            textoConcluidoKey: 'sessoes.sobre-fof.texto_concluido_fof_desinstalar'
+            textoConcluidoKey: 'sessoes.sobre-fap.texto_concluido_fap_desinstalar'
         }
     }
 }
@@ -1869,7 +1869,7 @@ function _atualizarProgressoPacotes(idComando, atual, total) {
     fill.style.width = perc + '%';
     percent.textContent = perc + '%';
     status.textContent = _tVars('comum.status_pacote',
-                                'Pacote {atual} de {total}',
+                                'Pacote ' + atual + ' de ' + total,
                                 { atual: atual, total: total });
     status.className = 'status running';
 }
@@ -2241,8 +2241,8 @@ function bindCustomSelect(triggerId, optionsId, hiddenId, displayId) {
 
     if (!trigger || !options || !hiddenInput || !displayValue) return;
 
-    if (trigger.dataset.fofSelectBound === '1') return;
-    trigger.dataset.fofSelectBound = '1';
+    if (trigger.dataset.fapSelectBound === '1') return;
+    trigger.dataset.fapSelectBound = '1';
 
     trigger.addEventListener('click', function(e) {
         e.stopPropagation();

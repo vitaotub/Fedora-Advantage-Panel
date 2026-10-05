@@ -21,18 +21,18 @@ LDFLAGS = -lm
 # acidente — mas quebra silenciosamente se alguém trocar o
 # operador (:=, =) ou a ordem. Manter esta ordem.
 #
-# Mesmo `grep -oP` dos outros scripts (install.sh, iniciar_fof.sh,
+# Mesmo `grep -oP` dos outros scripts (install.sh, iniciar_fap.sh,
 # build-container.sh). Fallback "unknown" garante que o build
 # continua mesmo sem o package.json.
-FOF_VERSION := $(shell grep -oP '"version"\s*:\s*"\K[^"]+' package.json 2>/dev/null | head -1)
-ifeq ($(FOF_VERSION),)
-FOF_VERSION := unknown
+FAP_VERSION := $(shell grep -oP '"version"\s*:\s*"\K[^"]+' package.json 2>/dev/null | head -1)
+ifeq ($(FAP_VERSION),)
+FAP_VERSION := unknown
 endif
 
 # Macro com a versão — passada ao gcc como string literal.
 # A sintaxe '"..."' (single quote fora, double dentro) é
 # necessária para o Make passar as aspas literais ao gcc.
-CPPFLAGS += -DFOF_VERSION='"$(FOF_VERSION)"'
+CPPFLAGS += -DFAP_VERSION='"$(FAP_VERSION)"'
 
 # Detecção de WebKitGTK 4.1 (base GTK3). Este é o único pacote
 # válido em qualquer Fedora suportado por este projeto (40+).
@@ -49,8 +49,8 @@ endif
 PKG_CFLAGS := $(shell pkg-config --cflags $(WEBKIT_PKG) gtk+-3.0)
 PKG_LIBS := $(shell pkg-config --libs $(WEBKIT_PKG) gtk+-3.0)
 
-TARGET = fof-container
-SRC = src/fof-container.c
+TARGET = fap-container
+SRC = src/fap-container.c
 
 .PHONY: all clean install uninstall run version check check-basico
 
@@ -66,17 +66,17 @@ install: $(TARGET)
 	install -d $(DESTDIR)$(BINDIR)
 	install -m 755 $(TARGET) $(DESTDIR)$(BINDIR)/$(TARGET)
 	install -d $(DESTDIR)$(ICONDIR)
-	install -m 644 icone_app.png $(DESTDIR)$(ICONDIR)/fof-container.png
+	install -m 644 icone_app.png $(DESTDIR)$(ICONDIR)/fap-container.png
 
 uninstall:
 	rm -f $(DESTDIR)$(BINDIR)/$(TARGET)
-	rm -f $(DESTDIR)$(ICONDIR)/fof-container.png
+	rm -f $(DESTDIR)$(ICONDIR)/fap-container.png
 
 run: $(TARGET)
 	./$(TARGET) --url http://localhost:3000 --icon icone_app.png
 
 version:
-	@echo "FOF version: $(FOF_VERSION)"
+	@echo "FAP version: $(FAP_VERSION)"
 
 # Alvo de sanidade — roda os mesmos checks que o install.sh
 # e o build-container.sh poderiam rodar. Útil antes de commitar.
@@ -93,7 +93,7 @@ check-basico:
 		node --check "$$f" && echo "  OK: $$f" || exit 1; \
 	done
 	@echo "==> Checando sintaxe Bash..."
-	@for f in iniciar_fof.sh iniciar_fof_compat.sh install.sh build-container.sh; do \
+	@for f in iniciar_fap.sh iniciar_fap_compat.sh install.sh build-container.sh; do \
 		bash -n "$$f" && echo "  OK: $$f" || exit 1; \
 	done
 	@echo "==> Checando JSON dos locales e do mapa de hardware..."

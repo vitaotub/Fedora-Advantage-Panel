@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>FOF - Aplicativos Recomendados</title>
+<title>FAP - Aplicativos Recomendados</title>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -195,14 +195,14 @@ já configurado pra rodar a Affinity.
 
 <div class="aviso-caixa" data-i18n-html="sessoes.aplicativos.affinity_aviso">
 ⚠️ Você precisa ter <strong>comprado e baixado o instalador <code>.exe</code> da Affinity</strong>
-pelo site oficial da Serif/Canva antes de usar isto — o FOF só prepara o ambiente Wine e
+pelo site oficial da Serif/Canva antes de usar isto — o FAP só prepara o ambiente Wine e
 abre o instalador da comunidade; ele é quem vai pedir o arquivo <code>.exe</code> na hora certa.
 É um projeto de terceiros: se algo não funcionar no seu hardware, consulte a
 <a href="https://github.com/ryzendew/Linux-Affinity-Installer/blob/main/docs/Known-issues.md">página de problemas conhecidos</a> deles.
 </div>
 
 <div class="aviso-caixa" style="border-color: #3c67e3; color: #60a5fa;" data-i18n-html="sessoes.aplicativos.affinity_prereq">
-📦 <strong>Pré-requisito:</strong> PyQt6 é necessário para a interface do instalador. O FOF verifica e instala automaticamente se necessário.
+📦 <strong>Pré-requisito:</strong> PyQt6 é necessário para a interface do instalador. O FAP verifica e instala automaticamente se necessário.
 </div>
 
 <div class="botoes-flex" style="margin-top: 1rem;">
@@ -396,7 +396,7 @@ data-i18n="sessoes.aplicativos.btn_abrir_instalador">
 <p data-i18n="sessoes.aplicativos.bloco6_desc">Ferramentas para sincronizar arquivos com Google Drive, OneDrive, Dropbox e outros serviços.</p>
 
 <div class="aviso-caixa" data-i18n-html="sessoes.aplicativos.rclone_aviso">
-ℹ️ <strong>Configuração das contas de nuvem:</strong> o Rclone Manager é uma interface gráfica para o Rclone. Ele permite configurar acesso a Google Drive, OneDrive, Dropbox, S3, e dezenas de outros serviços de armazenamento em nuvem. Após instalar os dois aplicativos, abra o Rclone Manager e siga o guia interno da própria interface para adicionar suas contas. O FOF apenas instala as ferramentas — a configuração das contas é feita por você, dentro do Rclone Manager.
+ℹ️ <strong>Configuração das contas de nuvem:</strong> o Rclone Manager é uma interface gráfica para o Rclone. Ele permite configurar acesso a Google Drive, OneDrive, Dropbox, S3, e dezenas de outros serviços de armazenamento em nuvem. Após instalar os dois aplicativos, abra o Rclone Manager e siga o guia interno da própria interface para adicionar suas contas. O FAP apenas instala as ferramentas — a configuração das contas é feita por você, dentro do Rclone Manager.
 </div>
 
 <div class="botoes-flex">
@@ -713,12 +713,12 @@ async function abrirInstaladorAffinity() {
     }
 
     const comando =
-        'mkdir -p /tmp/fof-affinity && ' +
+        'mkdir -p /tmp/fap-affinity && ' +
         '{ rpm -q python3-pyqt6 > /dev/null 2>&1 || sudo dnf install -y python3-pyqt6; } && ' +
-        'curl -sSL https://raw.githubusercontent.com/ryzendew/Linux-Affinity-Installer/refs/heads/main/AffinityScripts/AffinityLinuxInstaller.py -o /tmp/fof-affinity/AffinityLinuxInstaller.py && ' +
-        'chmod +x /tmp/fof-affinity/AffinityLinuxInstaller.py && ' +
-        'chown -R $USER:$USER /tmp/fof-affinity && ' +
-        'nohup python3 /tmp/fof-affinity/AffinityLinuxInstaller.py > /tmp/fof-affinity/installer.log 2>&1 &';
+        'curl -sSL https://raw.githubusercontent.com/ryzendew/Linux-Affinity-Installer/refs/heads/main/AffinityScripts/AffinityLinuxInstaller.py -o /tmp/fap-affinity/AffinityLinuxInstaller.py && ' +
+        'chmod +x /tmp/fap-affinity/AffinityLinuxInstaller.py && ' +
+        'chown -R $USER:$USER /tmp/fap-affinity && ' +
+        'nohup python3 /tmp/fap-affinity/AffinityLinuxInstaller.py > /tmp/fap-affinity/installer.log 2>&1 &';
 
     try {
         if (logBox) {
@@ -739,7 +739,7 @@ async function abrirInstaladorAffinity() {
             logBox.appendChild(infoLine);
             const infoLine2 = document.createElement('div');
             infoLine2.className = 'log-line info';
-            infoLine2.textContent = _t('sessoes.aplicativos.log_instalador_local', '📋 Log: /tmp/fof-affinity/installer.log');
+            infoLine2.textContent = _t('sessoes.aplicativos.log_instalador_local', '📋 Log: /tmp/fap-affinity/installer.log');
             logBox.appendChild(infoLine2);
             logBox.scrollTop = logBox.scrollHeight;
         }

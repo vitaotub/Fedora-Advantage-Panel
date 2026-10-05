@@ -3,14 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>FOF - Fedora</title>
+<title>FAP - Estado do Fedora</title>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 <div class="sessao-container" id="sessao-estado-fedora">
 <div class="sessao-titulo">
 <span class="sessao-label">Sessão</span>
-<span data-i18n="sessoes.estado-fedora.titulo">🐧 Fedora</span>
+<span data-i18n="sessoes.estado-fedora.titulo">🐧 Estado do Fedora</span>
 </div>
 
 <!-- Aviso de escopo amplo: natureza da sessão (informativa) -->
@@ -33,10 +33,10 @@ VERSÃO DO FEDORA
 <div class="bloco-comando">
 <div class="comando-info">
 <h3 data-i18n="sessoes.estado-fedora.versao_h3">Verificação de compatibilidade</h3>
-<p data-i18n="sessoes.estado-fedora.versao_desc">O FOF é desenvolvido e testado no Fedora 44. Se você está numa versão diferente, alguns comandos podem se comportar de forma inesperada (pacotes renomeados, repositórios alterados, sintaxe nova). Esta verificação avisa quando isso acontece.</p>
+<p data-i18n="sessoes.estado-fedora.versao_desc">O FAP é desenvolvido e testado no Fedora 44. Se você está numa versão diferente, alguns comandos podem se comportar de forma inesperada (pacotes renomeados, repositórios alterados, sintaxe nova). Esta verificação avisa quando isso acontece.</p>
 
 <div class="info-extra" data-i18n-html="sessoes.estado-fedora.versao_info">
-ℹ️ <strong>Versões suportadas:</strong> Fedora 43, 44 e 45. Versões mais antigas (42 e anteriores) ou mais novas (46+) podem exigir ajustes manuais. O FOF continua funcionando, mas você pode precisar adaptar algum comando específico.
+ℹ️ <strong>Versões suportadas:</strong> Fedora 43, 44 e 45. Versões mais antigas (42 e anteriores) ou mais novas (46+) podem exigir ajustes manuais. O FAP continua funcionando, mas você pode precisar adaptar algum comando específico.
 </div>
 
 <div class="grupo-botoes" style="margin-bottom: 1rem;">
@@ -70,7 +70,7 @@ ATOMIC / SILVERBLUE
 <p data-i18n="sessoes.estado-fedora.atomic_desc">O Fedora tem duas variantes: a "tradicional" (Workstation, KDE, etc) e a "imutável" (Silverblue, Kinoite, Bazzite, Bluefin). Nas variantes imutáveis, o sistema base é protegido e não pode ser modificado por <code>dnf install</code> — só por <code>rpm-ostree</code> ou <code>bootc</code>.</p>
 
 <div class="info-extra" data-i18n-html="sessoes.estado-fedora.atomic_info">
-ℹ️ <strong>Por que isso importa:</strong> o FOF usa <code>dnf</code> para instalar a maioria dos pacotes. Se você está num sistema imutável, esses comandos vão falhar (ou pior, exigir override). Esta detecção avisa antes de você tentar algo que não vai funcionar.
+ℹ️ <strong>Por que isso importa:</strong> o FAP usa <code>dnf</code> para instalar a maioria dos pacotes. Se você está num sistema imutável, esses comandos vão falhar (ou pior, exigir override). Esta detecção avisa antes de você tentar algo que não vai funcionar.
 </div>
 
 <div class="grupo-botoes" style="margin-bottom: 1rem;">
@@ -260,7 +260,7 @@ data-i18n="sessoes.estado-fedora.btn_selinux_gui_open">
 <!-- ===== JAVASCRIPT ESPECÍFICO DA SESSÃO ===== -->
 <script>
 // ============================================================
-// SESSÃO 12: FEDORA
+// SESSÃO 12: ESTADO DO FEDORA
 // ============================================================
 
 function _t(chave, fallback) {
@@ -399,7 +399,7 @@ var statusTexto = '';
 if (versaoNumero != null) {
 if (versaoNumero >= 43 && versaoNumero <= 45) {
 statusClass = 'aviso-sucesso';
-statusTexto = '✅ Versão suportada. O FOF foi desenvolvido e testado nesta faixa.';
+statusTexto = '✅ Versão suportada. O FAP foi desenvolvido e testado nesta faixa.';
 } else if (versaoNumero < 43) {
 statusTexto = '⚠️ Versão antiga (< 43). Alguns comandos podem falhar. Considere atualizar o Fedora.';
 } else {
@@ -413,7 +413,7 @@ html =
 '<li><span class="label">Distribuição</span><span class="valor">' + _escapeHTML(fedora) + '</span></li>' +
 '<li><span class="label">Versão</span><span class="valor">' + (versaoNumero || '—') + '</span></li>' +
 '<li><span class="label">Kernel</span><span class="valor">' + _escapeHTML(kernel || '—') + '</span></li>' +
-'<li><span class="label">Suporte do FOF</span><span class="valor">43 — 45</span></li>' +
+'<li><span class="label">Suporte do FAP</span><span class="valor">43 — 45</span></li>' +
 '</ul>';
 }
 
@@ -468,7 +468,7 @@ if (isAtomic) {
 resultadoEl.innerHTML =
 '<div class="aviso-caixa">' +
 '⚠️ <strong>Sistema imutável detectado.</strong> Você está rodando uma variante Atomic/Silverblue do Fedora. ' +
-'Os comandos <code>dnf install</code> do FOF <strong>não vão funcionar</strong> nesta sessão — o sistema base é protegido. ' +
+'Os comandos <code>dnf install</code> do FAP <strong>não vão funcionar</strong> nesta sessão — o sistema base é protegido. ' +
 'Apenas os comandos baseados em Flatpak (a maioria das sessões de Aplicativos e Gaming) funcionam.' +
 '</div>' +
 '<ul class="lista-info">' +
@@ -479,7 +479,7 @@ resultadoEl.innerHTML =
 } else {
 resultadoEl.innerHTML =
 '<div class="aviso-sucesso">' +
-'✅ <strong>Sistema tradicional detectado.</strong> Todos os comandos do FOF funcionam normalmente.' +
+'✅ <strong>Sistema tradicional detectado.</strong> Todos os comandos do FAP funcionam normalmente.' +
 '</div>' +
 '<ul class="lista-info">' +
 '<li><span class="label">Tipo</span><span class="valor">Tradicional</span></li>' +
