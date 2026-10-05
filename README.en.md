@@ -2,7 +2,7 @@
 
 **🌐 Language:** [Português (BR)](README.md) | English | [Español](README.es.md)
 
-![Version](https://img.shields.io/badge/Version-v1.0.0--10042026-orange?style=flat-square)
+![Version](https://img.shields.io/badge/Version-v1.0.0--10052026-orange?style=flat-square)
 ![Fedora](https://img.shields.io/badge/Fedora-44+-294172?style=flat-square&logo=fedora)
 ![License](https://img.shields.io/badge/License-GPL--3.0-green?style=flat-square)
 ![Languages](https://img.shields.io/badge/Languages-PT--BR%20%7C%20EN%20%7C%20ES-3c67e3?style=flat-square)
@@ -62,12 +62,16 @@ Each button remembers its own state. Closing and reopening FAP (or rebooting) al
 ## 🎨 Features
 
 - **Dark/light theme** — real-time toggle, saved preference
-- **Multilingual** — PT-BR, EN, ES with real-time switching
+- **Multilingual** — PT-BR, EN, ES with real-time switching (active session is preserved when switching languages)
 - **Real-time logs** via SSE, expanded by default
 - **Consistent visual structure** — every session starts with a session info card, and content accordions are collapsed by default
 - **Semantic color scheme** — blue for action, green for open app, red for revert, dashed red for irreversible actions
 - **Uninstall icon** next to each installed Flatpak app
 - **External Flatpak removal detection** — if the user deletes the app outside FAP, the button reverts to its initial state
+- **Detection of already-installed Flatpaks** — apps installed outside FAP (GNOME Software, KDE Discover, CLI) are automatically recognized when the session loads
+- **Flatpak install queue** — click on multiple apps in sequence; FAP installs them one at a time, in click order, without requiring wait between selections
+- **Navigation lock during execution** — while a command is running in the current session, menu chips and Previous/Next buttons are locked, avoiding state conflicts
+- **Cross-session lock** — while a dnf/rpm command is running in one session, buttons that also use dnf/rpm in other sessions are locked, avoiding `rpm` lock conflicts
 - **Automatic hardware detection** — `/hardware-scan` endpoint cross-references PCI/USB IDs with `hardware_map.json` and suggests drivers
 - **NVIDIA GPU generation detection** — automatically picks the correct driver series (`akmod-nvidia`, `580xx`, `470xx` or `390xx`)
 - **Multi-desktop support** — works on GNOME, KDE, XFCE, Cinnamon, MATE, LXQt, LXDE, Budgie and tiling WMs. The startup terminal follows the detected desktop
@@ -190,31 +194,22 @@ FAP is desktop-agnostic — it was built to run on any Linux environment that fo
 
 The full history is available in the [GitHub releases](https://github.com/vitaotub/Fedora-Advantage-Panel/releases). FAP also displays the changelog for the current version inside the **About FAP** session, loaded dynamically from `CHANGELOG.md`.
 
-### v1.0-10042026 (Current) 🚧
+### v1.0.0-10052026 (Current) 🚧
 
-**Complete project rename: FOF → FAP.** The technical identifier is now `fap` at every level — terminal command, install folder, container binary, `.desktop` files, icons, temporary files, and internal keys.
+Flatpak queue, navigation lock, and usability improvements.
 
-- **New display name:** "Fedora Only Fans" → "Fedora Advantage Panel". All user-visible texts in all three languages have been updated.
-- **New logo**: replaces the previous one across the application (app, menu shortcut, native container).
-- **Repository renamed on GitHub** to `vitaotub/Fedora-Advantage-Panel`.
-- **Technical identifiers fully renamed:**
-  - Terminal command: `fof` → `fap`, `fof-compat` → `fap-compat`.
-  - Install folder: `~/.local/share/fedora-only-fans` → `~/.local/share/fedora-advantage-panel`.
-  - Container binary: `fof-container` → `fap-container`.
-  - Source file: `src/fof-container.c` → `src/fap-container.c`.
-  - Startup scripts: `iniciar_fof.sh` → `iniciar_fap.sh`, `iniciar_fof_compat.sh` → `iniciar_fap_compat.sh`.
-  - `.desktop` shortcuts: `fof-container.desktop` → `fap-container.desktop`.
-  - Icon in hicolor: `fof-container.png` → `fap-container.png`.
-  - WebKitGTK data: `~/.local/share/fof-container` → `~/.local/share/fap-container`.
-  - WebKitGTK cache: `~/.cache/fof-container` → `~/.cache/fap-container`.
-  - Config folder: `~/.config/fof-container` → `~/.config/fap-container`.
-  - Waydroid extras: `~/.local/share/fof-waydroid` → `~/.local/share/fap-waydroid`.
-  - Temp prefix: `/tmp/fof-*` → `/tmp/fap-*`.
-  - Storage keys: `fof_*` → `fap_*` (theme, language, progress, remote version).
-  - Version variable: `FOF_VERSION` → `FAP_VERSION` (in `.c`, `Makefile`, `build-container.sh`).
-  - Server PID file: `.fof.pid` → `.fap.pid`.
-- **`install.sh` performs a clean migration:** if an old FOF install is present, `install.sh` detects and removes **everything** from the old scheme before installing FAP — directory, symlinks, shortcuts, icon, WebKitGTK data and orphan logs in `/tmp`. No data preservation (full reset).
-- **No behavior changes** across the 14 sessions — all task, progress, i18n and theme logic works exactly as before.
+- **Flatpak install queue** — click on multiple apps in sequence; FAP installs them one at a time, in click order. The first one starts immediately; the others show `⏳ In queue (Nº)` and are dispatched automatically as the previous ones finish.
+- **Navigation lock during execution** — while a command is running in the current session, menu chips and Previous/Next buttons are locked. They are released as soon as all commands in the session finish.
+- **Detection of already-installed Flatpaks** — apps installed outside FAP (GNOME Software, Discover, CLI) are automatically recognized and the button shows `✅ installed`.
+- **"Update Fedora" truly locked during execution** — previously it re-enabled after 3 seconds, regardless of whether `dnf upgrade` had finished.
+- **Progress bar display fix** — the placeholders `{atual}` and `{total}` were showing literally instead of the real numbers.
+- **Active session preserved** when switching UI language or closing/reopening the app.
+- **Cross-session lock** for dnf/rpm commands (avoids `rpm` lock conflicts).
+- **FOF → FAP migration without progress preservation**: users with the old FOF must uninstall through FOF itself and install FAP from the new repository.
+
+### v1.0.0-10042026
+
+Complete project rename **FOF → FAP**, with new logo. All technical identifiers were changed (`fof` → `fap` command, install folder, container binary, `.desktop`, icons, internal keys, `/tmp` temp files).
 
 ---
 
@@ -245,7 +240,7 @@ Display order comes from the position of the entry in the `SESSOES` array, not f
 
 ## 🏷️ How to release a version
 
-1. Edit `package.json` → `"version": "1.0-<NEW_DATE>"`
+1. Edit `package.json` → `"version": "1.0.0-<NEW_DATE>"`
 2. Replace `CHANGELOG.md` with the new version's section (full history stays on GitHub releases)
 3. Update the version badge in all three READMEs (`README.md`, `README.en.md`, `README.es.md`)
 4. Create the tag/release on GitHub with the same name

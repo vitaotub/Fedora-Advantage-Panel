@@ -149,6 +149,12 @@ async function executarAtualizacaoFedora() {
     var btn = document.getElementById('btn-' + idComando);
 
     if (!logBox) return;
+
+    // Guarda contra duplo clique enquanto a atualização está em
+    // andamento. O botão é sempreClicavel (pode ser reexecutado em
+    // outro momento), mas fica travado DURANTE a execução atual.
+    // Sem isso, o usuário podia disparar `dnf upgrade` duas vezes
+    // em paralelo — o que trava o banco do rpm.
     if (btn && btn.disabled) return;
 
     iniciarProgresso(idComando);
@@ -179,6 +185,7 @@ async function executarAtualizacaoFedora() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ comando: comando, idComando: idComando })
         });
+
         if (!response.ok) {
             var errorLine = document.createElement('div');
             errorLine.className = 'log-line error';
@@ -186,6 +193,24 @@ async function executarAtualizacaoFedora() {
             logBox.appendChild(errorLine);
             logBox.scrollTop = logBox.scrollHeight;
             completarProgresso(idComando, false);
+            return;
+        }
+
+        // Aguarda o SSE retornar 'end' — ou seja, o `dnf upgrade`
+        // terminar de verdade. Só então o botão volta a ficar ativo.
+        // O timeout é generoso (1 hora) porque uma atualização
+        // completa do Fedora pode demorar bastante em conexões
+        // lentas ou muitos pacotes.
+        var sucesso = await aguardarConclusaoReal(idComando, 3600000);
+
+        // sucesso === true  → terminou com código 0
+        // sucesso === false → terminou com erro
+        // sucesso === null  → timeout (não deveria acontecer em 1h)
+        // Em qualquer caso, o botão volta ao estado clicável.
+        if (btn) {
+            btn.disabled = false;
+            btn.textContent = nomeAcao;
+            btn.style.opacity = '1';
         }
     } catch (e) {
         var errorLine2 = document.createElement('div');
@@ -194,14 +219,12 @@ async function executarAtualizacaoFedora() {
         logBox.appendChild(errorLine2);
         logBox.scrollTop = logBox.scrollHeight;
         completarProgresso(idComando, false);
-    } finally {
-        setTimeout(function() {
-            if (btn) {
-                btn.disabled = false;
-                btn.textContent = nomeAcao;
-                btn.style.opacity = '1';
-            }
-        }, 3000);
+
+        if (btn) {
+            btn.disabled = false;
+            btn.textContent = nomeAcao;
+            btn.style.opacity = '1';
+        }
     }
 }
 

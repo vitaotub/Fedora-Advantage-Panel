@@ -7,7 +7,7 @@ e o FAP usa versionamento baseado em data: `v1.0.0-MMDDAAAA`.
 Este arquivo é lido em runtime pelo endpoint `GET /changelog` do `server.js`,
 que exibe a seção da versão atual dentro do FAP, na sessão **Sobre o FAP**.
 
-> **Regra importante para quem for editar:** use apenas `## vX.Y-...` para os
+> **Regra importante para quem for editar:** use apenas `## vX.Y.Z-...` para os
 > cabeçalhos de versão. Dentro de uma seção, use `###` (três hashes) para
 > subseções — um `##` no meio de uma versão encerra a captura do parser e o
 > resto é descartado silenciosamente.
@@ -18,63 +18,90 @@ que exibe a seção da versão atual dentro do FAP, na sessão **Sobre o FAP**.
 
 ---
 
-## 1.0.0-10042026
+## v1.0.0-10052026
 
-### 🎨 Renomeação completa do projeto: FOF → FAP
+### 🚀 Fila de instalação de Flatpaks
 
-O projeto passa a se chamar **Fedora Advantage Panel (FAP)** em todos os
-níveis: nome de exibição, identificadores técnicos, nomes de arquivos e
-comandos internos. Esta é a primeira versão distribuída exclusivamente
-com os novos identificadores.
+Agora é possível clicar em vários botões de Flatpak em sequência sem esperar cada
+instalação terminar. O FAP gerencia uma fila:
 
-- **Novo logo** substitui o anterior. Aplicado ao app, ao atalho do menu e ao container nativo.
-- **Todos os textos visíveis ao usuário** atualizados nos três idiomas (PT-BR, EN, ES).
-- **Repositório renomeado no GitHub** para [`vitaotub/Fedora-Advantage-Panel`](https://github.com/vitaotub/Fedora-Advantage-Panel).
+- O primeiro Flatpak clicado começa a instalar imediatamente.
+- Os seguintes entram em fila, com o botão mostrando `⏳ Na fila (2º)`, `⏳ Na fila (3º)`.
+- Quando um termina, o próximo começa automaticamente. As posições na fila se reajustam a cada término.
+- Se um item falhar, o próximo da fila continua normalmente.
+- Clicar duas vezes no mesmo botão é ignorado (não entra duplicado na fila).
 
-### 🔧 Identificadores técnicos renomeados
+Isso resolve o problema do `flatpak install` ter um lock global — só é possível rodar uma
+instalação por vez — mas sem obrigar o usuário a esperar entre cliques.
 
-| Elemento | Antes (FOF) | Agora (FAP) |
-|---|---|---|
-| Comando do terminal | `fof` | `fap` |
-| Comando (modo compat) | `fof-compat` | `fap-compat` |
-| Pasta de instalação | `~/.local/share/fedora-only-fans` | `~/.local/share/fedora-advantage-panel` |
-| Binário do container | `fof-container` | `fap-container` |
-| Arquivo-fonte do container | `src/fof-container.c` | `src/fap-container.c` |
-| Script de inicialização | `iniciar_fof.sh` | `iniciar_fap.sh` |
-| Script (modo compat) | `iniciar_fof_compat.sh` | `iniciar_fap_compat.sh` |
-| Atalho do menu | `fof-container.desktop` | `fap-container.desktop` |
-| Ícone no hicolor | `fof-container.png` | `fap-container.png` |
-| Dados do WebKitGTK | `~/.local/share/fof-container` | `~/.local/share/fap-container` |
-| Cache do WebKitGTK | `~/.cache/fof-container` | `~/.cache/fap-container` |
-| Configurações | `~/.config/fof-container` | `~/.config/fap-container` |
-| Extras do Waydroid | `~/.local/share/fof-waydroid` | `~/.local/share/fap-waydroid` |
-| Temporários em `/tmp` | `/tmp/fof-*` | `/tmp/fap-*` |
-| Chaves de armazenamento | `fof_*` (tema, idioma, progresso, versão remota) | `fap_*` |
-| Variável de versão (`.c`, Makefile, build) | `FOF_VERSION` | `FAP_VERSION` |
-| Arquivo de PID do servidor | `.fof.pid` | `.fap.pid` |
-| Evento JS de versão pronta | `fof-versao-pronta` | `fap-versao-pronta` |
-| Container do toast | `fof-toast-container` | `fap-toast-container` |
-| Classe CSS da versão | `.fof-version` | `.fap-version` |
+### 🔒 Bloqueio de navegação durante execução
 
-### 🔄 Migração limpa no `install.sh`
+**Enquanto houver comando rodando na sessão atual** (dnf, rpm, flatpak, fila de Flatpaks ou
+qualquer fluxo próprio, como o "Atualizar Fedora"), os chips do menu do topo e os botões
+Anterior/Próximo ficam bloqueados.
 
-Se um FOF antigo estiver instalado, o `install.sh` da versão nova detecta e
-remove **tudo** do esquema antigo antes de instalar o FAP:
+- A navegação volta a funcionar quando **todos** os comandos da sessão atual terminam.
+- O bloqueio cobre também comandos que não passam pelo `executarComandoGenerico` — a detecção é feita
+  lendo o estado da barra de progresso da sessão.
+- Passar o mouse sobre um chip bloqueado mostra um tooltip explicando o motivo. Clicar em um chip bloqueado exibe um toast com a mesma mensagem.
+- Tema, idioma, botão "voltar ao início" e badge de atualização **não** são bloqueados — só a navegação entre sessões é.
 
-- Diretório `~/.local/share/fedora-only-fans`
-- Symlinks `fof`, `fof-compat` e `fof-container` em `~/.local/bin`
-- Atalhos `.desktop` antigos (`fof-container.desktop`, `fedora-only-fans.desktop` e variantes `-compat`)
-- Ícone `fof-container.png` do hicolor
-- Cache e dados do WebKitGTK (`~/.cache/fof-container`, `~/.local/share/fof-container`, `~/.config/fof-container`)
-- Extras do Waydroid (`~/.local/share/fof-waydroid`)
-- Logs órfãos em `/tmp` (`fof-*.log`, `fof-out-*.log`, `fof-cmd-*.sh`)
+Isso evita um problema real: as variáveis globais dos scripts inline de cada sessão
+(`APPS_FLATPAK`, `_svgLixeira`, etc.) têm os mesmos nomes em sessões diferentes. Sair de uma
+sessão no meio de uma instalação de Flatpak poderia fazer com que os botões de uma sessão usassem
+as variáveis da outra.
 
-Não há preservação de dados — é um **reset completo**. Progresso, tema e
-idioma escolhidos na versão antiga não são levados adiante.
+### ✅ Detecção de Flatpaks já instalados no sistema
 
-### ✅ O que NÃO mudou
+Antes, o FAP só marcava um botão como "instalado" se o próprio FAP tivesse executado a instalação.
+Agora, ao carregar uma sessão, o FAP consulta a lista de Flatpaks instalados no sistema e marca
+automaticamente todos os apps que já existem — mesmo que tenham sido instalados por fora (via
+GNOME Software, KDE Discover, linha de comando, etc.).
 
-- **Comportamento das 14 sessões**: toda a lógica de tarefas, ordem de execução, progresso, i18n e temas continua exatamente igual.
-- **Endpoints do servidor**: `/progress`, `/info`, `/status`, `/kernels`, `/flatpak-installed`, `/hardware-scan`, `/system-info`, `/top-processes`, `/disk-usage`, `/journal-errors`, `/changelog`, `/waydroid-status`, `/stream`, `/executar`. Todos inalterados.
-- **Formato do `.progresso.json`**: mesma estrutura `{ executados: [...], pulados: [...] }`.
-- **Chaves i18n**: a estrutura dos arquivos `locales/*.json` permanece idêntica — apenas o texto interno de algumas chaves foi atualizado para refletir o novo nome do projeto.
+Resultado: um usuário que já tenha o VLC instalado, por exemplo, vê o botão como
+`✅ VLC instalado` (com o ícone de lixeira ao lado) sem precisar clicar em "instalar" primeiro.
+
+### 🎯 "Atualizar Fedora" agora é realmente travado durante a execução
+
+O botão **🔄 Atualizar Fedora** (sessão Primeiros Passos) tinha um bug antigo: reabilitava
+após 3 segundos, independente de o `dnf upgrade` ter terminado. Agora ele fica cinza e
+desabilitado até o comando realmente terminar (detecção via SSE). Também tem proteção contra
+duplo clique.
+
+### 🐛 Correção de exibição de progresso de pacotes
+
+A barra de progresso do DNF mostrando "Pacote N de M" exibia os placeholders `{atual}` e `{total}`
+literalmente, em vez dos números reais. Corrigido.
+
+### 💾 Sessão ativa preservada ao trocar de idioma
+
+Trocar o idioma da interface (PT-BR / EN / ES) recarregava o FAP e voltava para a **Sessão 1**.
+Agora o FAP salva a sessão atual em `localStorage` a cada navegação e a restaura ao carregar — tanto
+na troca de idioma quanto ao fechar e reabrir o app.
+
+### 🧹 Melhorias internas
+
+- **Bloqueio entre sessões**: enquanto um comando dnf/rpm está rodando em uma sessão, os botões que também usam dnf/rpm nas **outras** sessões ficam travados, evitando conflito de lock no `rpm`.
+- **Fila de Flatpaks não bloqueia a sessão inteira**: só o botão do Flatpak clicado muda de estado. Os outros botões de Flatpak ficam livres para novos cliques.
+- **`_reaplicarBloqueioSeNecessario()`**: o bloqueio entre sessões agora se reaplica quando o usuário navega para uma sessão que estava com o DOM desatualizado.
+- **Detecção `completa` de "sessão ocupada"**: o bloqueio de navegação passa a detectar também comandos que criam barra de progresso mas não passam pelo `executarComandoGenerico` (fluxo próprio em `primeiros-passos.html`).
+
+### 🔄 Alterações estruturais
+
+- **Removida a preservação de progresso na migração FOF → FAP.** A migração agora é limpa: detecta o FOF antigo, remove tudo e instala o FAP do zero. Usuários que tinham o FOF precisam desinstalar pelo próprio FOF (ou rodar `install.sh --uninstall` de um clone anterior) e depois instalar o FAP pelo repositório novo. Isso evita problemas de estado misto entre as duas versões.
+- **`migrar_esquema_antigo()` do `install.sh`** continua removendo tudo do FOF antigo: diretório, symlinks, atalhos `.desktop`, ícone no hicolor, dados/cache do WebKitGTK e logs em `/tmp`.
+
+---
+
+## Como adicionar uma versão nova
+
+Ao lançar uma versão nova:
+
+1. Atualize o campo `version` no `package.json` (ex.: `"1.0.0-10062026"`).
+2. Substitua o conteúdo deste arquivo pela seção da nova versão, mantendo apenas ela. O histórico das versões anteriores fica disponível nas releases do GitHub.
+3. Use `###` (três hashes) para subseções dentro de uma versão. Um `##` no meio da seção encerra a captura do parser e o resto é descartado.
+4. Crie a tag/release no GitHub com o mesmo nome.
+
+Se o cabeçalho não bater exatamente com o `version` do `package.json`, o FAP não
+encontrará a seção correspondente e mostrará apenas o link para o changelog
+completo no GitHub.

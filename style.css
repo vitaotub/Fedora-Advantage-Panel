@@ -1551,6 +1551,37 @@ body {
     color: #fff;
 }
 
+/* ============================================================
+ * MENU DE SESSÕES — ESTADO BLOQUEADO
+ * ============================================================
+ * Aplicado aos chips do menu quando há um comando rodando na
+ * sessão atual. Enquanto isso, o usuário não pode trocar de
+ * sessão (ver `_atualizarBloqueioNavegacao()` no script.js).
+ *
+ * O chip continua visível e mostra o nome/ícone — só fica com
+ * aparência de inativo. O bloqueio real do clique é feito no
+ * JS (guiado.html), para que o tooltip (title) funcione.
+ */
+
+.session-menu-item.bloqueado {
+    opacity: 0.5;
+    cursor: not-allowed;
+    filter: grayscale(0.4);
+}
+
+.session-menu-item.bloqueado:hover {
+    /* Cancela o efeito de hover do estado normal */
+    border-color: var(--border);
+    color: var(--text-muted);
+    transform: none;
+}
+
+.session-menu-item.ativa.bloqueado {
+    /* Mesmo bloqueado, o chip da sessão atual continua destacado */
+    opacity: 0.7;
+    filter: grayscale(0.2);
+}
+
 /* Em telas médias, o menu quebra em mais linhas */
 @media (max-width: 900px) {
     .session-menu-wrapper {

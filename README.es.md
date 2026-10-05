@@ -2,7 +2,7 @@
 
 **🌐 Idioma:** [Português (BR)](README.md) | [English](README.en.md) | Español
 
-![Versión](https://img.shields.io/badge/Versi%C3%B3n-v1.0.0--10042026-orange?style=flat-square)
+![Versión](https://img.shields.io/badge/Versi%C3%B3n-v1.0.0--10052026-orange?style=flat-square)
 ![Fedora](https://img.shields.io/badge/Fedora-44+-294172?style=flat-square&logo=fedora)
 ![Licencia](https://img.shields.io/badge/Licencia-GPL--3.0-green?style=flat-square)
 ![Idiomas](https://img.shields.io/badge/Idiomas-PT--BR%20%7C%20EN%20%7C%20ES-3c67e3?style=flat-square)
@@ -62,12 +62,16 @@ Cada botón recuerda su propio estado. Cerrar y reabrir FAP siempre muestra exac
 ## 🎨 Características
 
 - **Tema claro/oscuro** — alternancia en tiempo real, preferencia guardada
-- **Multiidioma** — PT-BR, EN, ES con cambio en tiempo real
+- **Multiidioma** — PT-BR, EN, ES con cambio en tiempo real (la sesión activa se conserva al cambiar de idioma)
 - **Registros en tiempo real** vía SSE, expandidos por defecto
 - **Estructura visual consistente** — cada sesión comienza con una tarjeta de información, y los acordeones de contenido están colapsados por defecto
 - **Esquema de colores semántico** — azul para acción, verde para abrir app, rojo para revertir, rojo discontinuo para acciones irreversibles
 - **Icono de desinstalar** al lado de cada app Flatpak instalada
 - **Detección de Flatpak eliminado externamente**
+- **Detección de Flatpaks ya instalados** — apps instalados por fuera (GNOME Software, KDE Discover, CLI) se reconocen automáticamente al cargar la sesión
+- **Cola de instalación de Flatpaks** — haz clic en varias apps en secuencia; FAP instala una a la vez, en el orden de los clics, sin exigir espera entre selecciones
+- **Bloqueo de navegación durante la ejecución** — mientras un comando se ejecuta en la sesión actual, los chips del menú y los botones Anterior/Siguiente se bloquean, evitando conflictos de estado
+- **Bloqueo entre sesiones** — mientras un comando dnf/rpm se ejecuta en una sesión, los botones que también usan dnf/rpm en otras sesiones se bloquean, evitando conflictos de lock en `rpm`
 - **Detección automática de hardware** — endpoint `/hardware-scan` cruza IDs PCI/USB con `hardware_map.json`
 - **Detección de generación de GPU NVIDIA** — elige automáticamente la serie correcta (`akmod-nvidia`, `580xx`, `470xx` o `390xx`)
 - **Soporte multi-escritorio** — funciona en GNOME, KDE, XFCE, Cinnamon, MATE, LXQt, LXDE, Budgie y tiling WMs
@@ -190,31 +194,22 @@ FAP es agnóstico al escritorio — fue construido para funcionar en cualquier e
 
 El historial completo está disponible en las [releases de GitHub](https://github.com/vitaotub/Fedora-Advantage-Panel/releases). FAP también muestra el changelog de la versión actual dentro de la sesión **Acerca de FAP**, cargado dinámicamente del `CHANGELOG.md`.
 
-### v1.0-10042026 (Actual) 🚧
+### v1.0.0-10052026 (Actual) 🚧
 
-**Renombrado completo del proyecto: FOF → FAP.** El identificador técnico ahora es `fap` en todos los niveles — comando de terminal, carpeta de instalación, binario del contenedor, archivos `.desktop`, iconos, archivos temporales y claves internas.
+Cola de Flatpaks, bloqueo de navegación y mejoras de usabilidad.
 
-- **Nuevo nombre de visualización:** "Fedora Only Fans" → "Fedora Advantage Panel". Todos los textos visibles en los tres idiomas fueron actualizados.
-- **Nuevo logo**: reemplaza al anterior en toda la aplicación (app, acceso directo del menú, contenedor nativo).
-- **Repositorio renombrado en GitHub** a `vitaotub/Fedora-Advantage-Panel`.
-- **Identificadores técnicos renombrados por completo:**
-  - Comando de terminal: `fof` → `fap`, `fof-compat` → `fap-compat`.
-  - Carpeta de instalación: `~/.local/share/fedora-only-fans` → `~/.local/share/fedora-advantage-panel`.
-  - Binario del contenedor: `fof-container` → `fap-container`.
-  - Archivo fuente: `src/fof-container.c` → `src/fap-container.c`.
-  - Scripts de inicio: `iniciar_fof.sh` → `iniciar_fap.sh`, `iniciar_fof_compat.sh` → `iniciar_fap_compat.sh`.
-  - Accesos directos `.desktop`: `fof-container.desktop` → `fap-container.desktop`.
-  - Icono en hicolor: `fof-container.png` → `fap-container.png`.
-  - Datos de WebKitGTK: `~/.local/share/fof-container` → `~/.local/share/fap-container`.
-  - Caché de WebKitGTK: `~/.cache/fof-container` → `~/.cache/fap-container`.
-  - Configuración: `~/.config/fof-container` → `~/.config/fap-container`.
-  - Extras de Waydroid: `~/.local/share/fof-waydroid` → `~/.local/share/fap-waydroid`.
-  - Prefijo de temporales: `/tmp/fof-*` → `/tmp/fap-*`.
-  - Claves de almacenamiento: `fof_*` → `fap_*` (tema, idioma, progreso, versión remota).
-  - Variable de versión: `FOF_VERSION` → `FAP_VERSION` (en `.c`, `Makefile`, `build-container.sh`).
-  - Archivo PID del servidor: `.fof.pid` → `.fap.pid`.
-- **`install.sh` hace migración limpia:** si hay un FOF antiguo instalado, `install.sh` detecta y elimina **todo** del esquema antiguo antes de instalar FAP — directorio, symlinks, accesos directos, icono, datos de WebKitGTK y registros huérfanos en `/tmp`. Sin preservación de datos (reset completo).
-- **Ningún cambio de comportamiento** en las 14 sesiones — toda la lógica de tareas, progreso, i18n y temas sigue funcionando igual.
+- **Cola de instalación de Flatpaks** — haz clic en varias apps en secuencia; FAP instala una a la vez, en el orden de los clics. La primera comienza de inmediato; las siguientes se muestran como `⏳ En cola (Nº)` y se despachan automáticamente conforme las anteriores terminan.
+- **Bloqueo de navegación durante la ejecución** — mientras un comando se ejecuta en la sesión actual, los chips del menú y los botones Anterior/Siguiente se bloquean. Se liberan cuando todos los comandos de la sesión terminan.
+- **Detección de Flatpaks ya instalados** — apps instalados por fuera (GNOME Software, Discover, CLI) se reconocen automáticamente y el botón muestra `✅ instalado`.
+- **"Actualizar Fedora" realmente bloqueado durante la ejecución** — antes se rehabilitaba a los 3 segundos, independientemente del término de `dnf upgrade`.
+- **Corrección de la barra de progreso** — los marcadores `{atual}` y `{total}` aparecían literalmente en lugar de los números reales.
+- **Sesión activa preservada** al cambiar el idioma de la interfaz o al cerrar y reabrir la app.
+- **Bloqueo entre sesiones** para comandos dnf/rpm (evita conflictos de lock en `rpm`).
+- **Migración FOF → FAP sin preservación de progreso**: los usuarios con el FOF antiguo deben desinstalarlo a través del propio FOF e instalar FAP desde el nuevo repositorio.
+
+### v1.0.0-10042026
+
+Renombrado completo del proyecto **FOF → FAP**, con nuevo logo. Todos los identificadores técnicos fueron cambiados (comando `fof` → `fap`, carpeta de instalación, binario del contenedor, `.desktop`, iconos, claves internas, archivos temporales en `/tmp`).
 
 ---
 
@@ -245,7 +240,7 @@ El orden de visualización viene de la posición de la entrada en el array `SESS
 
 ## 🏷️ Cómo publicar una versión
 
-1. Edita `package.json` → `"version": "1.0-<NUEVA_FECHA>"`
+1. Edita `package.json` → `"version": "1.0.0-<NUEVA_FECHA>"`
 2. Reemplaza `CHANGELOG.md` con la sección de la nueva versión (el historial completo queda en las releases de GitHub)
 3. Actualiza el badge de versión en los tres READMEs (`README.md`, `README.en.md`, `README.es.md`)
 4. Crea el tag/release en GitHub con el mismo nombre

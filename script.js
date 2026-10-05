@@ -1100,6 +1100,40 @@ var SEMPRE_CLICAVEIS = SESSOES.reduce(function(lista, sessao) {
         return lista;
 }, []);
 
+// ============================================================
+// MAPA idComando → sessaoId
+// ============================================================
+//
+// Permite responder "a qual sessão pertence este comando?" em O(1).
+// Usado pelo bloqueio de navegação, para saber se há algum comando
+// rodando na sessão atual.
+//
+// Construído uma única vez, a partir do array SESSOES.
+
+var _mapaComandoParaSessao = (function() {
+    var mapa = {};
+    for (var i = 0; i < SESSOES.length; i++) {
+        var comandos = SESSOES[i].comandos || {};
+        var ids = Object.keys(comandos);
+        for (var j = 0; j < ids.length; j++) {
+            mapa[ids[j]] = SESSOES[i].id;
+        }
+    }
+    return mapa;
+})();
+
+function _sessaoDoComando(idComando) {
+    return _mapaComandoParaSessao[idComando] || null;
+}
+
+// Retorna o id da sessão atual, lendo o DOM. Devolve null se não
+// for possível determinar (por exemplo, antes do menu ser criado).
+function _sessaoAtualId() {
+    var ativa = document.querySelector('.session-menu-item.ativa');
+    if (!ativa) return null;
+    return ativa.getAttribute('data-sessao');
+}
+
 function numerarSessao(sessaoId, container) {
     const index = SESSOES_PRINCIPAIS.indexOf(sessaoId);
     if (index === -1 || !container) return;
@@ -1183,6 +1217,237 @@ function _liberarSessao(idComando) {
         b.style.opacity = '';
         b.style.pointerEvents = '';
     });
+}
+
+// ============================================================
+// BLOQUEIO ENTRE SESSÕES
+// ============================================================
+//
+// Quando um comando dnf/rpm/copr está rodando em uma sessão, os
+// botões de dnf/rpm das outras sessões também precisam ficar
+// travados. Sem isso, o usuário pode disparar dois `dnf install`
+// em sessões diferentes — e o rpm trava por conflito de lock.
+//
+// O bloqueio NÃO afeta:
+// - Botões de flatpak (a fila cuida deles).
+// - Botões "abrir app" (idComando terminando em `-open`).
+// - Botões com `flatpakId` no registro (instalam flatpak).
+// - Botões com `sempreClicavel: true` (read-only ou reexecutáveis).
+//
+// Os botões são identificados pelo `data-comando` no HTML. Como
+// cada botão é montado dinamicamente pela sessão carregada, o
+// bloqueio roda sobre o documento inteiro (não só a sessão atual).
+
+var _comandoDnfRodando = null;
+
+// Decide se um idComando deve ser bloqueado durante a execução de
+// um comando dnf/rpm em outra sessão.
+function _deveBloquearDuranteDnf(idComando) {
+    // O próprio comando que está rodando nunca é bloqueado.
+    if (idComando === _comandoDnfRodando) return false;
+
+    var info = _infoComando(idComando);
+    if (!info) return false;
+
+    // Flatpak → não bloqueia (a fila cuida).
+    if (info.flatpakId) return false;
+
+    // Sempre clicável → não bloqueia (read-only ou reexecutável).
+    if (info.sempreClicavel) return false;
+
+    // É um "abrir app" (idComando terminando em `-open`)? Não bloqueia.
+    if (idComando.slice(-5) === '-open') return false;
+
+    // Todo o resto é dnf/rpm/copr → bloqueia.
+    return true;
+}
+
+// Aplica o bloqueio em todos os botões dnf/rpm de todas as
+// sessões carregadas (não apenas a atual).
+function _bloquearOutrasSessoes(idComandoDnf) {
+    _comandoDnfRodando = idComandoDnf;
+
+    var botoes = document.querySelectorAll('.btn-executar[data-comando]');
+    botoes.forEach(function(b) {
+        var id = b.getAttribute('data-comando');
+        if (!id) return;
+        if (!_deveBloquearDuranteDnf(id)) return;
+
+        // Ignora os que já estão marcados (para não sobrescrever o
+        // `data-was-disabled` original).
+        if (b.hasAttribute('data-cross-sessao-bloqueado')) return;
+
+        b.setAttribute('data-was-disabled', b.disabled ? '1' : '0');
+        b.setAttribute('data-cross-sessao-bloqueado', '1');
+        b.disabled = true;
+        b.style.opacity = '0.4';
+        b.style.pointerEvents = 'none';
+    });
+}
+
+// Libera todos os botões bloqueados pelo bloqueio entre sessões.
+function _liberarOutrasSessoes() {
+    _comandoDnfRodando = null;
+
+    var botoes = document.querySelectorAll('[data-cross-sessao-bloqueado="1"]');
+    botoes.forEach(function(b) {
+        var wasDisabled = b.getAttribute('data-was-disabled') === '1';
+        b.removeAttribute('data-cross-sessao-bloqueado');
+        b.removeAttribute('data-was-disabled');
+        b.disabled = wasDisabled;
+        b.style.opacity = '';
+        b.style.pointerEvents = '';
+    });
+}
+
+// Re-aplica o bloqueio entre sessões quando uma sessão nova é
+// carregada. Isso é necessário porque a navegação entre sessões
+// (guiado.html) injeta HTML dinamicamente — os botões das outras
+// sessões só existem no DOM depois de a sessão ser carregada.
+//
+// Sem isso, o bloqueio entre sessões só funciona se o usuário
+// navegar para outra sessão ANTES de iniciar o comando — o que é
+// raro.
+function _reaplicarBloqueioSeNecessario() {
+    if (!_comandoDnfRodando) return;
+
+    var botoes = document.querySelectorAll('.btn-executar[data-comando]');
+    botoes.forEach(function(b) {
+        var id = b.getAttribute('data-comando');
+        if (!id) return;
+        if (!_deveBloquearDuranteDnf(id)) return;
+        if (b.hasAttribute('data-cross-sessao-bloqueado')) return;
+
+        b.setAttribute('data-was-disabled', b.disabled ? '1' : '0');
+        b.setAttribute('data-cross-sessao-bloqueado', '1');
+        b.disabled = true;
+        b.style.opacity = '0.4';
+        b.style.pointerEvents = 'none';
+    });
+}
+
+// ============================================================
+// BLOQUEIO DE NAVEGAÇÃO ENTRE SESSÕES
+// ============================================================
+//
+// Enquanto houver comando rodando na sessão atual (dnf, flatpak,
+// ou item na fila de flatpak pertencente à sessão atual), o
+// usuário não deve poder trocar de sessão.
+//
+// Motivo: as variáveis globais dos scripts inline de cada sessão
+// (APPS_FLATPAK, _svgLixeira, instalarFlatpak, etc.) têm os mesmos
+// nomes em sessões diferentes. Se o usuário sai da Sessão 6 no meio
+// de uma instalação de flatpak e volta depois, o eval da Sessão 7
+// (que ele visitou no meio) teria sobrescrito essas variáveis — e o
+// botão da Sessão 6 passaria a usar o `APPS_FLATPAK` da Sessão 7.
+//
+// Também evita que o usuário perca o progresso visual de uma fila
+// em andamento (o log e a posição na fila ficariam órfãos ao sair).
+//
+// Elementos bloqueados:
+// - Chips do menu do topo (.session-menu-item).
+// - Botões Anterior e Próximo.
+//
+// Elementos NÃO bloqueados:
+// - Tema, idioma, menu "voltar ao início", badge de atualização.
+
+var _navegacaoBloqueada = false;
+
+// Decide se a navegação deve estar bloqueada. Verdadeiro se
+// houver QUALQUER comando rodando na sessão atual — seja dnf,
+// flatpak ou item pendente na fila de flatpak.
+function _deveBloquearNavegacao() {
+    var sessaoAtual = _sessaoAtualId();
+    if (!sessaoAtual) return false;
+
+    // dnf/rpm rodando na sessão atual?
+    if (_comandoDnfRodando) {
+        var sessaoDnf = _sessaoDoComando(_comandoDnfRodando);
+        if (sessaoDnf === sessaoAtual) return true;
+    }
+
+    // flatpak rodando na sessão atual?
+    if (_flatpakRodando) {
+        var sessaoFp = _sessaoDoComando(_flatpakRodando);
+        if (sessaoFp === sessaoAtual) return true;
+    }
+
+    // Há itens na fila pertencentes à sessão atual?
+    if (typeof _filaFlatpaks !== 'undefined' && _filaFlatpaks.length > 0) {
+        for (var i = 0; i < _filaFlatpaks.length; i++) {
+            var sessaoItem = _sessaoDoComando(_filaFlatpaks[i].idComando);
+            if (sessaoItem === sessaoAtual) return true;
+        }
+    }
+
+    // Há alguma barra de progresso visível e NÃO concluída na
+    // sessão atual? Isso cobre comandos que não passam por
+    // executarComandoGenerico (ex.: "Atualizar Fedora", que tem
+    // fluxo próprio em primeiros-passos.html).
+    //
+    // A classe `.concluido` é adicionada por completarProgresso()
+    // ao terminar o comando. Ignoramos essas barras — assim o
+    // usuário pode navegar imediatamente após o término, mesmo
+    // enquanto a barra ainda está visível (ela some após 5s).
+    var sessaoContainer = document.querySelector('.sessao-container');
+    if (sessaoContainer) {
+        var barras = sessaoContainer.querySelectorAll('.progress-container:not(.concluido)');
+        for (var j = 0; j < barras.length; j++) {
+            var b = barras[j];
+            if (b.style.display && b.style.display !== 'none') {
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
+// Aplica ou remove o bloqueio visual da navegação, de acordo
+// com o estado atual. Idempotente.
+function _atualizarBloqueioNavegacao() {
+    var deveBloquear = _deveBloquearNavegacao();
+
+    // Se o estado não mudou, não mexe no DOM.
+    if (deveBloquear === _navegacaoBloqueada) return;
+    _navegacaoBloqueada = deveBloquear;
+
+    var menuItens = document.querySelectorAll('.session-menu-item');
+    var btnAnterior = document.getElementById('btn-anterior');
+    var btnProximo = document.getElementById('btn-proximo');
+
+    var titleTexto = _t('comum.navegacao_bloqueada',
+                        'Aguarde o término dos comandos desta sessão para trocar de sessão.');
+
+    menuItens.forEach(function(item) {
+        if (deveBloquear) {
+            item.classList.add('bloqueado');
+            item.setAttribute('aria-disabled', 'true');
+            item.setAttribute('title', titleTexto);
+        } else {
+            item.classList.remove('bloqueado');
+            item.removeAttribute('aria-disabled');
+            // O title original era o nome da sessão — restaura
+            var sessaoId = item.dataset.sessao;
+            if (sessaoId && typeof nomeDaSessao === 'function') {
+                item.setAttribute('title', nomeDaSessao(sessaoId));
+            }
+        }
+    });
+
+    if (btnAnterior && deveBloquear) btnAnterior.disabled = true;
+    if (btnProximo && deveBloquear) btnProximo.disabled = true;
+
+    // Quando libera, restaura o estado correto dos botões conforme
+    // a posição da sessão atual (o primeiro não tem Anterior, o
+    // último não tem Próximo).
+    if (!deveBloquear) {
+        if (typeof SESSOES_PRINCIPAIS !== 'undefined' && typeof sessaoAtual !== 'undefined') {
+            var total = SESSOES_PRINCIPAIS.length;
+            if (btnAnterior) btnAnterior.disabled = (sessaoAtual === 0);
+            if (btnProximo) btnProximo.disabled = (sessaoAtual === total - 1);
+        }
+    }
 }
 
 // ============================================================
@@ -1460,6 +1725,88 @@ async function verificarFlatpaksRemovidos() {
 }
 
 // ============================================================
+// DETECÇÃO DE FLATPAKS JÁ INSTALADOS
+// ============================================================
+//
+// verificarFlatpaksRemovidos() só DESMARCA comandos Flatpak
+// quando o app correspondente deixa de existir. Falta o inverso:
+// quando o app já está instalado no sistema (via loja, terminal,
+// ou porque o usuário já tinha o app antes de instalar o FAP), o
+// botão precisa aparecer como "✅ instalado".
+//
+// Sem isso, um usuário com Haruna instalado via GNOME Software
+// veria o botão "📦 Instalar Haruna" ativo — e clicaria nele sem
+// sentido.
+//
+// Esta função roda uma vez por sessão carregada. Faz uma única
+// chamada a /flatpak-installed e marca todos os comandos Flatpak
+// que correspondem a apps já instalados. O `marcarComoExecutado`
+// é idempotente — não faz POST se o idComando já estiver na lista.
+//
+// Throttle de 30s é compartilhado com verificarFlatpaksRemovidos(),
+// para não fazer duas chamadas seguidas ao mesmo endpoint.
+
+async function marcarFlatpaksJaInstalados() {
+    // Reaproveita o throttle do verificarFlatpaksRemovidos.
+    var agora = Date.now();
+    if (agora - _ultimaVerificacaoFlatpak < FLATPAK_VERIFY_TTL_MS) {
+        return;
+    }
+    _ultimaVerificacaoFlatpak = agora;
+
+    try {
+        var r = await fetch(API_URL + '/flatpak-installed', { cache: 'no-store' });
+        if (!r.ok) return;
+        var data = await r.json();
+        var instalados = Array.isArray(data.apps) ? data.apps : [];
+
+        var progress = await getProgress();
+        var executados = progress.executados || [];
+
+        var marcados = [];
+        for (var i = 0; i < SESSOES.length; i++) {
+            var sessao = SESSOES[i];
+            var comandos = sessao.comandos || {};
+            for (var idComando in comandos) {
+                var info = comandos[idComando];
+                if (!info.flatpakId) continue;
+                if (executados.includes(idComando)) continue;
+                if (!instalados.includes(info.flatpakId)) continue;
+
+                marcados.push(idComando);
+            }
+        }
+
+        if (marcados.length === 0) return;
+
+        for (var j = 0; j < marcados.length; j++) {
+            console.log('[Flatpak] Já instalado, marcando como executado:', marcados[j]);
+            await marcarComoExecutado(marcados[j]);
+        }
+
+        // Repinta os botões que ficaram na tela, se algum deles
+        // pertence ao conjunto marcado.
+        for (var k = 0; k < marcados.length; k++) {
+            try {
+                restaurarBotaoAposExecucao(marcados[k], true);
+                _atualizarIconeDesinstalarSeExistir(marcados[k]);
+            } catch (e) { /* ignora */ }
+        }
+    } catch (e) {
+        console.warn('[Flatpak] Falha ao detectar instalados:', e.message);
+    }
+}
+
+// Helper que tenta chamar _atualizarIconeDesinstalar se ele
+// existir no escopo global. Existe nas sessões que importam o
+// helper via <script> inline. Não existe no script.js.
+function _atualizarIconeDesinstalarSeExistir(idComando) {
+    if (typeof _atualizarIconeDesinstalar === 'function') {
+        try { _atualizarIconeDesinstalar(idComando); } catch (e) { /* ignora */ }
+    }
+}
+
+// ============================================================
 // BARRA DE PROGRESSO
 // ============================================================
 
@@ -1471,6 +1818,19 @@ function iniciarProgresso(idComando) {
     const container = document.getElementById('progress-' + idComando);
     if (!container) return;
     container.style.display = 'block';
+
+    // Remove a marca de "concluído" caso este comando seja
+    // reexecutado (ex.: "Atualizar Fedora" pode ser clicado de
+    // novo dias depois). Sem isso, a barra ficaria marcada como
+    // concluída desde o início, e o bloqueio de navegação não
+    // ativaria ao clicar.
+    container.classList.remove('concluido');
+
+    // Bloqueia a navegação imediatamente ao iniciar o comando.
+    // Sem isso, haveria uma janela de alguns milissegundos onde
+    // o usuário poderia clicar em um chip antes do bloqueio
+    // entrar em vigor.
+    _atualizarBloqueioNavegacao();
 
     const fill = document.getElementById('progress-fill-' + idComando);
     const percent = document.getElementById('progress-percent-' + idComando);
@@ -1592,6 +1952,13 @@ function completarProgresso(idComando, sucesso) {
                     status.className = 'status error';
                 }
 
+                // Marca a barra como "concluída". O bloqueio de
+                // navegação ignora barras com esta classe, para
+                // que o usuário possa navegar imediatamente após
+                // o término do comando — mesmo enquanto a barra
+                // ainda está visível (ela some após 5s).
+                container.classList.add('concluido');
+
                 setTimeout(() => {
                     container.style.display = 'none';
                 }, 5000);
@@ -1616,7 +1983,20 @@ function completarProgresso(idComando, sucesso) {
         _notificarConclusaoReal(idComando, sucesso);
 
         _liberarSessao(idComando);
-    };
+        // Libera os botões dnf/rpm das outras sessões. Se por algum
+        // motivo outro comando dnf tiver começado antes (não deveria,
+        // porque o bloqueio cruzado impede), o `_comandoDnfRodando`
+        // mais recente manda — e como estamos dentro da sessão de
+        // origem, ele é o mesmo idComando.
+        if (_comandoDnfRodando === idComando) {
+            _liberarOutrasSessoes();
+        }
+
+        // Reavalia o bloqueio de navegação. Se este era o último
+        // comando rodando da sessão atual, libera os chips e os
+        // botões Anterior/Próximo.
+        _atualizarBloqueioNavegacao();
+        };
 
     if (sucesso && !SEMPRE_CLICAVEIS.includes(idComando)) {
         marcarComoExecutado(idComando).then(aplicarUI, aplicarUI);
@@ -2019,10 +2399,175 @@ function obterBotoesPorId(idComando) {
 }
 
 // ============================================================
+// FILA DE INSTALAÇÃO DE FLATPAKS
+// ============================================================
+//
+// O `flatpak install` tem um lock global: dois comandos em
+// paralelo falham com "Remote flathub already in use". Por isso
+// só podemos rodar UM `flatpak install` por vez.
+//
+// Para melhorar a UX (o usuário quer clicar em vários apps e ver
+// tudo instalando), criamos uma fila:
+//
+//   1. Usuário clica em "VLC" → dispara imediatamente.
+//   2. Usuário clica em "GIMP" → entra na fila, botão mostra
+//      "⏳ Na fila (2º)".
+//   3. Usuário clica em "Inkscape" → entra na fila, botão mostra
+//      "⏳ Na fila (3º)".
+//   4. VLC termina → GIMP começa automaticamente.
+//   5. GIMP termina → Inkscape começa automaticamente.
+//
+// Regras:
+//   - Clicar num botão que já está rodando ou na fila é ignorado.
+//   - Se um item falha, o próximo da fila continua.
+//   - A fila é em memória: recarregar a página a descarta.
+//
+// A fila é exclusiva para flatpaks. Comandos dnf/rpm/copr
+// continuam com o comportamento normal (travam a sessão inteira
+// e não entram nesta fila).
+
+var _filaFlatpaks = [];         // [{ idComando, comando, nomeAcao, onSucesso }]
+var _flatpakRodando = null;     // idComando do flatpak sendo instalado agora
+
+// Verifica se um idComando está na fila OU sendo instalado agora.
+function _flatpakNaFila(idComando) {
+    if (_flatpakRodando === idComando) return true;
+    for (var i = 0; i < _filaFlatpaks.length; i++) {
+        if (_filaFlatpaks[i].idComando === idComando) return true;
+    }
+    return false;
+}
+
+// Atualiza o texto do botão para refletir o estado "na fila".
+// O botão fica desabilitado (não pode ser clicado de novo) e
+// mostra a posição na fila.
+function _marcarBotaoNaFila(idComando, posicao) {
+    var btn = document.getElementById('btn-' + idComando);
+    if (!btn) return;
+
+    // Salva o texto original se ainda não foi salvo.
+    if (!btn.hasAttribute('data-texto-original')) {
+        btn.setAttribute('data-texto-original', btn.textContent);
+    }
+
+    btn.textContent = '⏳ Na fila (' + posicao + 'º)';
+    btn.disabled = true;
+    btn.style.opacity = '0.5';
+    btn.style.cursor = 'not-allowed';
+}
+
+// Remove o estado "na fila" de um botão, restaurando o texto
+// original (para os itens que ainda não começaram).
+function _desmarcarBotaoDaFila(idComando) {
+    var btn = document.getElementById('btn-' + idComando);
+    if (!btn) return;
+    var original = btn.getAttribute('data-texto-original') || btn.textContent;
+    btn.textContent = original;
+    btn.disabled = false;
+    btn.style.opacity = '1';
+    btn.style.cursor = 'pointer';
+}
+
+// Recalcula a posição mostrada em cada botão da fila. Chamado
+// após remover o primeiro item (para que "3º" vire "2º" e assim
+// por diante).
+function _reajustarPosicoesDaFila() {
+    for (var i = 0; i < _filaFlatpaks.length; i++) {
+        _marcarBotaoNaFila(_filaFlatpaks[i].idComando, i + 1);
+    }
+}
+
+// Ponto de entrada. Chamado pelas sessões que instalam flatpak.
+async function _enfileirarFlatpak(idComando, comando, nomeAcao, onSucesso) {
+    // Opção A: ignorar clique duplicado.
+    if (_flatpakNaFila(idComando)) {
+        return;
+    }
+
+    // Se ninguém está rodando, dispara imediatamente.
+    if (_flatpakRodando === null) {
+        _flatpakRodando = idComando;
+        // Atualiza o bloqueio de navegação antes de disparar — a
+        // fila agora tem um item "rodando", então a navegação deve
+        // travar (se este comando pertence à sessão atual).
+        _atualizarBloqueioNavegacao();
+        await _dispararFlatpak(idComando, comando, nomeAcao, onSucesso);
+        return;
+    }
+
+    // Senão, entra na fila.
+    _filaFlatpaks.push({
+        idComando: idComando,
+        comando: comando,
+        nomeAcao: nomeAcao,
+        onSucesso: onSucesso
+    });
+    _marcarBotaoNaFila(idComando, _filaFlatpaks.length);
+
+    // Atualiza o bloqueio de navegação — a fila agora tem um item
+    // a mais. Se ele pertence à sessão atual, a navegação já está
+    // (ou continua) bloqueada.
+    _atualizarBloqueioNavegacao();
+}
+
+// Executa um flatpak e, quando terminar, dispara o próximo da
+// fila (se houver).
+async function _dispararFlatpak(idComando, comando, nomeAcao, onSucesso) {
+    // Reaproveita a lógica existente: executarComandoGenerico já
+    // cuida do log em tempo real (SSE), da barra de progresso, do
+    // bloqueio da sessão e da marcação de concluído no sucesso.
+    //
+    // Precisamos saber quando termina para disparar o próximo, e
+    // para isso usamos aguardarConclusaoReal() logo depois.
+    //
+    // O `onSucesso` do flatpak original é passado adiante.
+    // Chama a versão ORIGINAL (não a interceptada), porque senão
+    // a interceptação roteia de volta para _enfileirarFlatpak, o
+    // qual detecta que o idComando já está rodando e retorna sem
+    // disparar nada. Resultado: o comando nunca era executado.
+    await _executarComandoGenericoOriginal(idComando, comando, nomeAcao, null, true);
+
+    // Aguarda o SSE retornar 'end'. O timeout de 30min é generoso
+    // — flatpaks grandes (Blender, Steam) podem demorar bastante
+    // em conexões lentas.
+    var sucesso = await aguardarConclusaoReal(idComando, 1800000);
+
+    // Se o flatpak teve sucesso e havia um callback registrado,
+    // executa agora (ex.: atualizar o ícone da lixeira).
+    if (sucesso && typeof onSucesso === 'function') {
+        try {
+            onSucesso(idComando);
+        } catch (e) {
+            console.warn('[flatpak-fila] Erro no onSucesso de ' + idComando + ':', e);
+        }
+    }
+
+    // Esse flatpak terminou (com sucesso ou falha). Libera o slot
+    // e dispara o próximo da fila.
+    _flatpakRodando = null;
+
+    if (_filaFlatpaks.length > 0) {
+        var proximo = _filaFlatpaks.shift();
+        _reajustarPosicoesDaFila();
+        _flatpakRodando = proximo.idComando;
+        // Reavalia o bloqueio de navegação. Ainda pode haver itens
+        // na fila pertencentes à sessão atual, então a navegação
+        // continua bloqueada — mas se a fila ficou vazia para esta
+        // sessão, libera.
+        _atualizarBloqueioNavegacao();
+        // Chama de novo, sem await — queremos que a fila continue
+        // rodando em background enquanto a UI permanece responsiva.
+        _dispararFlatpak(proximo.idComando, proximo.comando, proximo.nomeAcao, proximo.onSucesso);
+    } else {
+        // Fila vazia: reavalia o bloqueio (pode ser a hora de liberar).
+        _atualizarBloqueioNavegacao();
+    }
+}
+
+// ============================================================
 // EXECUTAR COMANDO GENÉRICO
 // ============================================================
-
-async function executarComandoGenerico(idComando, comando, nomeAcao, onSucesso) {
+async function executarComandoGenerico(idComando, comando, nomeAcao, onSucesso, ehFlatpak) {
     const logBox = _getLogBox(idComando);
     const btn = document.getElementById('btn-' + idComando);
 
@@ -2053,7 +2598,21 @@ async function executarComandoGenerico(idComando, comando, nomeAcao, onSucesso) 
         btn.style.opacity = '0.6';
     }
 
-    _bloquearSessao(idComando);
+    // Flatpaks NÃO bloqueiam a sessão inteira. O usuário precisa
+    // poder clicar em outros botões de flatpak enquanto um está
+    // instalando (eles entram na fila). Já comandos dnf/rpm/copr
+    // continuam bloqueando toda a sessão atual E as demais sessões
+    // (bloqueio entre sessões — Opção A) para evitar conflitos de
+    // lock no rpm.
+    if (!ehFlatpak) {
+        _bloquearSessao(idComando);
+        _bloquearOutrasSessoes(idComando);
+    }
+
+    // Atualiza o bloqueio de navegação. Se este comando é o
+    // primeiro a rodar na sessão atual, os chips do menu e os
+    // botões Anterior/Próximo ficam travados.
+    _atualizarBloqueioNavegacao();
 
     try {
         const response = await fetch(API_URL + '/executar', {
@@ -2097,10 +2656,22 @@ async function executarComandoGenerico(idComando, comando, nomeAcao, onSucesso) 
     }
 }
 
+// Detecta `flatpak install` e roteia para a fila.
+// Qualquer outro comando segue o fluxo normal.
+var _executarComandoGenericoOriginal = executarComandoGenerico;
+executarComandoGenerico = async function(idComando, comando, nomeAcao, onSucesso, ehFlatpak) {
+    // Se o caller já marcou explicitamente como flatpak, ou se o
+    // comando é um `flatpak install`, entra na fila.
+    var isFlatpak = ehFlatpak || /^\s*flatpak\s+install\b/.test(comando);
+    if (isFlatpak) {
+        return await _enfileirarFlatpak(idComando, comando, nomeAcao, onSucesso);
+    }
+    return await _executarComandoGenericoOriginal(idComando, comando, nomeAcao, onSucesso, ehFlatpak);
+};
+
 // ============================================================
 // DESINSTALAR PACOTE
 // ============================================================
-
 async function desinstalarPacote(idComando, comandoRemover, nomeExibicao) {
     if (!isExecutado(idComando)) {
         alert(_tVars('comum.nao_instalado', nomeExibicao + ' não está instalado.', { nome: nomeExibicao }));
@@ -2343,6 +2914,16 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 document.addEventListener('sessao-carregada', function() {
+    // Re-aplica o bloqueio entre sessões, caso um comando dnf/rpm
+    // esteja rodando. Sem isso, os botões da sessão recém-carregada
+    // ficariam todos ativos, mesmo com um comando rodando em outra.
+    _reaplicarBloqueioSeNecessario();
+
+    // Marca Flatpaks já instalados no sistema. Roda antes do
+    // restaurarEstadoSessao() da sessão (que é chamado no
+    // setTimeout abaixo, indiretamente via carregarProgressoInicial).
+    marcarFlatpaksJaInstalados();
+
     setTimeout(initCustomSelects, 200);
     setTimeout(carregarProgressoInicial, 300);
     criarBotaoTema();
@@ -2353,6 +2934,12 @@ document.addEventListener('sessao-carregada', function() {
     if (typeof I18N !== 'undefined' && typeof I18N.criarSeletorIdioma === 'function') {
         setTimeout(function() { I18N.criarSeletorIdioma(); }, 100);
     }
+
+    // Reavalia o bloqueio de navegação para a nova sessão. Se a
+    // sessão recém-carregada tem comandos rodando (o que não
+    // deveria acontecer, porque a navegação estaria bloqueada —
+    // mas é uma garantia), os chips ficam travados.
+    setTimeout(_atualizarBloqueioNavegacao, 200);
 });
 
 document.addEventListener('todas-sessoes-carregadas', function() {

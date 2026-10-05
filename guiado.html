@@ -261,6 +261,46 @@ async function carregarSessao(index) {
 }
 
 // ------------------------------------------------------------
+// Decide em qual sessão abrir no boot
+// ------------------------------------------------------------
+//
+// Prioridade:
+//   1. Parâmetro ?session=X na URL (deep-link) — se válido
+//   2. Chave 'fap_sessao_ativa' no localStorage — se válida
+//   3. Sessão 0 (fallback)
+//
+// O deep-link tem precedência porque o usuário o digitou
+// explicitamente agora. E ele ATUALIZA a chave de localStorage
+// (o irParaSessao() já faz isso), então o deep-link vira a nova
+// sessão ativa.
+function irParaSessaoInicial() {
+    var total = SESSOES_PRINCIPAIS.length;
+
+    // 1. Deep-link ?session=X
+    try {
+        var params = new URLSearchParams(window.location.search);
+        var sessaoAlvo = params.get('session');
+        if (sessaoAlvo && SESSOES_PRINCIPAIS.indexOf(sessaoAlvo) !== -1) {
+            var idx = SESSOES_PRINCIPAIS.indexOf(sessaoAlvo);
+            irParaSessao(idx);
+            return;
+        }
+    } catch (e) { /* URLSearchParams indisponível ou URL malformada */ }
+
+    // 2. Sessão ativa salva
+    try {
+        var salvo = parseInt(localStorage.getItem('fap_sessao_ativa'), 10);
+        if (!isNaN(salvo) && salvo >= 0 && salvo < total) {
+            irParaSessao(salvo);
+            return;
+        }
+    } catch (e) { /* localStorage indisponível */ }
+
+    // 3. Fallback: primeira sessão
+    irParaSessao(0);
+}
+
+// ------------------------------------------------------------
 // Navegar para uma sessão (usado pelo menu, botões e deep-link)
 // ------------------------------------------------------------
 function irParaSessao(index) {
@@ -268,6 +308,15 @@ function irParaSessao(index) {
     if (index < 0 || index >= total) return;
 
     sessaoAtual = index;
+
+    // Persiste a sessão ativa para que:
+    // 1. Ao trocar de idioma (que recarrega a página), o usuário
+    //    volte para a mesma sessão onde estava.
+    // 2. Ao fechar e reabrir o FAP, ele reabra na última sessão.
+    // A chave é lida em carregarSessaoInicial() no boot.
+    try {
+        localStorage.setItem('fap_sessao_ativa', String(index));
+    } catch (e) { /* localStorage indisponível */ }
 
     carregarSessao(index);
 
@@ -372,6 +421,18 @@ function criarMenuSessoes() {
             '<span class="session-label" data-i18n="' + chaveNome + '">' + nome + '</span>';
 
         item.addEventListener('click', function() {
+            // Se o chip está bloqueado (há comando rodando na
+            // sessão atual), avisa o usuário e não navega. O
+            // `pointer-events` no CSS não é usado para permitir
+            // que o tooltip (title) funcione.
+            if (this.classList.contains('bloqueado')) {
+                if (typeof mostrarToast === 'function') {
+                    mostrarToast(_t('comum.navegacao_bloqueada',
+                        'Aguarde o término dos comandos desta sessão para trocar de sessão.'),
+                        'info', 4000);
+                }
+                return;
+            }
             var idx = parseInt(this.dataset.index, 10);
             if (idx !== sessaoAtual) irParaSessao(idx);
         });
@@ -380,6 +441,14 @@ function criarMenuSessoes() {
         item.addEventListener('keydown', function(e) {
             if (e.key === 'Enter' || e.key === ' ') {
                 e.preventDefault();
+                if (this.classList.contains('bloqueado')) {
+                    if (typeof mostrarToast === 'function') {
+                        mostrarToast(_t('comum.navegacao_bloqueada',
+                            'Aguarde o término dos comandos desta sessão para trocar de sessão.'),
+                            'info', 4000);
+                    }
+                    return;
+                }
                 var idx = parseInt(this.dataset.index, 10);
                 if (idx !== sessaoAtual) irParaSessao(idx);
             }
@@ -537,13 +606,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (typeof getProgress !== 'undefined' && typeof SESSOES_PRINCIPAIS !== 'undefined') {
         criarMenuSessoes();
-        irParaSessao(0);
+        irParaSessaoInicial();
     } else {
         console.warn('⏳ Aguardando script.js carregar...');
         setTimeout(function() {
             if (typeof getProgress !== 'undefined' && typeof SESSOES_PRINCIPAIS !== 'undefined') {
                 criarMenuSessoes();
-                irParaSessao(0);
+                irParaSessaoInicial();
             } else {
                 console.error('❌ script.js não foi carregado!');
                 var msgErro = _t('comum.erro_script_js', '❌ Erro: script.js não foi carregado!');
