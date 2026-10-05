@@ -2,7 +2,7 @@
 
 Todas as mudanças notáveis deste projeto estão documentadas aqui.
 O formato segue [Keep a Changelog](https://keepachangelog.com/pt-BR/1.0.0/),
-e o FAP usa versionamento baseado em data: `v1.0-MMDDAAAA`.
+e o FAP usa versionamento baseado em data: `v1.0.0-MMDDAAAA`.
 
 Este arquivo é lido em runtime pelo endpoint `GET /changelog` do `server.js`,
 que exibe a seção da versão atual dentro do FAP, na sessão **Sobre o FAP**.
