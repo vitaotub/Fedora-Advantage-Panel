@@ -2,7 +2,7 @@
 
 **🌐 Idioma:** [Português (BR)](README.md) | [English](README.en.md) | Español
 
-![Versión](https://img.shields.io/badge/Versi%C3%B3n-v1.0.0--10052026.b-orange?style=flat-square)
+![Versión](https://img.shields.io/badge/Versi%C3%B3n-v1.0.0--10062026-orange?style=flat-square)
 ![Fedora](https://img.shields.io/badge/Fedora-44+-294172?style=flat-square&logo=fedora)
 ![Licencia](https://img.shields.io/badge/Licencia-GPL--3.0-green?style=flat-square)
 ![Idiomas](https://img.shields.io/badge/Idiomas-PT--BR%20%7C%20EN%20%7C%20ES-3c67e3?style=flat-square)
@@ -39,7 +39,7 @@ Panel de automatización visual para Fedora Linux. Transforma una instalación l
 | 3 | 🖥️ Hardware | Controladores AMD/NVIDIA/Intel, CoreCtrl, LACT, overclock |
 | 4 | 🔌 Dispositivos | Detección automática, COPRs, mandos, firmware |
 | 5 | 🎬 Producción Multimedia | OBS Studio, cámara virtual, EasyEffects |
-| 6 | 📦 Aplicaciones | ~45 apps Flatpak (productividad, multimedia, gráficos, internet) |
+| 6 | 📦 Aplicaciones | ~45 apps Flatpak (productividad, multimedia, gráficos, internet) + Herramientas de Acceso Remoto |
 | 7 | 🏠 Hogar y Oficina | CUPS, Samba, LocalSend, KeePassXC, OCR |
 | 8 | 🎮 Gaming | Steam nativo, Heroic, Lutris, Wine, GameMode, Gamescope Session, emuladores |
 | 9 | 📱 Waydroid | Android en Linux vía contenedor |
@@ -57,6 +57,8 @@ Panel de automatización visual para Fedora Linux. Transforma una instalación l
 - **Papelera unificada** para Flatpaks y apps no-Flatpak
 - **Botón "Abrir"** en cada app GUI — se inicia en sesión propia (sobrevive al cierre de FAP)
 - **Steam nativo** vía RPM Fusion — necesario para la sesión Gamescope
+- **Sesión Gamescope oficial** — launcher y `.desktop` creados siguiendo la receta oficial de Fedora Docs, con `TryExec` (compatible con plasmalogin), detección dinámica de resolución y log de diagnóstico
+- **Herramientas de Acceso Remoto** — RustDesk, Remmina, GNOME Connections y KRDC, con detección automática del escritorio para ocultar el botón "Instalar" cuando la app nativa ya está presente
 - **Cola de instalación** de Flatpaks — haz clic en varios en secuencia
 - **Bloqueo inteligente** — evita conflictos de lock en `rpm`
 - **Detección automática de hardware** — GPUs, Wi-Fi, Ethernet

@@ -445,6 +445,76 @@ disabled>
 <div class="progress-container" id="progress-desfazer-rclone-manager"><div class="progress-bar"><div class="progress-fill" id="progress-fill-desfazer-rclone-manager"></div></div><div class="progress-text"><span class="status" id="progress-status-desfazer-rclone-manager">⏳ Iniciando...</span><span class="percentage" id="progress-percent-desfazer-rclone-manager">0%</span></div></div>
 </details>
 
+<!-- BLOCO 7 — FERRAMENTAS DE ACESSO REMOTO -->
+<details class="acordeao">
+<summary data-i18n="sessoes.aplicativos.bloco7_titulo">📡 Ferramentas de Acesso Remoto</summary>
+<div class="acordeao-conteudo">
+
+<p data-i18n="sessoes.aplicativos.bloco7_desc">Ferramentas para acessar e controlar outros computadores remotamente, ou para se conectar a servidores Windows e Linux via RDP, VNC e outros protocolos. Ideal para suporte técnico, acesso a máquinas do trabalho e administração de servidores.</p>
+
+<div class="aviso-caixa" data-i18n-html="sessoes.aplicativos.bloco7_aviso">
+⚠️ <strong>Nota sobre Wayland:</strong> o Fedora 44+ está migrando do X11 para o Wayland. Algumas ferramentas tradicionais de controle remoto (AnyDesk, TeamViewer) ainda apresentam problemas nesse ambiente — tela preta, cursor travado ou ausência de controle. As ferramentas listadas abaixo funcionam bem no Wayland.
+</div>
+
+<div class="grid-launchers">
+
+<!-- RustDesk (Flatpak) -->
+<div class="launcher-item">
+<div class="btn-flatpak-wrapper">
+<button class="btn-executar" onclick="executarRustDesk()" data-comando="instalar-rustdesk" data-logbox="log-sessao-aplicativos" id="btn-instalar-rustdesk" data-i18n="sessoes.aplicativos.btn_rustdesk">
+🖥️ RustDesk
+</button>
+</div>
+<button class="btn-executar verde" style="display: none;" onclick="abrirRustDesk()" data-comando="abrir-rustdesk" data-logbox="log-sessao-aplicativos" id="btn-abrir-rustdesk" data-i18n="sessoes.aplicativos.btn_abrir_rustdesk">
+🚀 Abrir RustDesk
+</button>
+</div>
+
+<!-- Remmina (dnf) -->
+<div class="launcher-item">
+<div class="btn-flatpak-wrapper">
+<button class="btn-executar" onclick="executarRemmina()" data-comando="instalar-remmina" data-logbox="log-sessao-aplicativos" id="btn-instalar-remmina" data-i18n="sessoes.aplicativos.btn_remmina">
+🖥️ Remmina
+</button>
+</div>
+<button class="btn-executar verde" style="display: none;" onclick="abrirRemmina()" data-comando="abrir-remmina" data-logbox="log-sessao-aplicativos" id="btn-abrir-remmina" data-i18n="sessoes.aplicativos.btn_abrir_remmina">
+🚀 Abrir Remmina
+</button>
+</div>
+
+<!-- GNOME Connections (dnf) -->
+<div class="launcher-item">
+<div class="btn-flatpak-wrapper">
+<button class="btn-executar" onclick="executarGnomeConnections()" data-comando="instalar-gnome-connections" data-logbox="log-sessao-aplicativos" id="btn-instalar-gnome-connections" data-i18n="sessoes.aplicativos.btn_gnome_connections">
+🖥️ GNOME Connections
+</button>
+</div>
+<button class="btn-executar verde" style="display: none;" onclick="abrirGnomeConnections()" data-comando="abrir-gnome-connections" data-logbox="log-sessao-aplicativos" id="btn-abrir-gnome-connections" data-i18n="sessoes.aplicativos.btn_abrir_gnome_connections">
+🚀 Abrir GNOME Connections
+</button>
+</div>
+
+<!-- KRDC (dnf) -->
+<div class="launcher-item">
+<div class="btn-flatpak-wrapper">
+<button class="btn-executar" onclick="executarKrdc()" data-comando="instalar-krdc" data-logbox="log-sessao-aplicativos" id="btn-instalar-krdc" data-i18n="sessoes.aplicativos.btn_krdc">
+🖥️ KRDC
+</button>
+</div>
+<button class="btn-executar verde" style="display: none;" onclick="abrirKrdc()" data-comando="abrir-krdc" data-logbox="log-sessao-aplicativos" id="btn-abrir-krdc" data-i18n="sessoes.aplicativos.btn_abrir_krdc">
+🚀 Abrir KRDC
+</button>
+</div>
+
+</div>
+</div>
+
+<div class="progress-container" id="progress-instalar-rustdesk"><div class="progress-bar"><div class="progress-fill" id="progress-fill-instalar-rustdesk"></div></div><div class="progress-text"><span class="status" id="progress-status-instalar-rustdesk">⏳ Iniciando...</span><span class="percentage" id="progress-percent-instalar-rustdesk">0%</span></div></div>
+<div class="progress-container" id="progress-instalar-remmina"><div class="progress-bar"><div class="progress-fill" id="progress-fill-instalar-remmina"></div></div><div class="progress-text"><span class="status" id="progress-status-instalar-remmina">⏳ Iniciando...</span><span class="percentage" id="progress-percent-instalar-remmina">0%</span></div></div>
+<div class="progress-container" id="progress-instalar-gnome-connections"><div class="progress-bar"><div class="progress-fill" id="progress-fill-instalar-gnome-connections"></div></div><div class="progress-text"><span class="status" id="progress-status-instalar-gnome-connections">⏳ Iniciando...</span><span class="percentage" id="progress-percent-instalar-gnome-connections">0%</span></div></div>
+<div class="progress-container" id="progress-instalar-krdc"><div class="progress-bar"><div class="progress-fill" id="progress-fill-instalar-krdc"></div></div><div class="progress-text"><span class="status" id="progress-status-instalar-krdc">⏳ Iniciando...</span><span class="percentage" id="progress-percent-instalar-krdc">0%</span></div></div>
+</details>
+
 <!-- Log único da sessão -->
 <div class="terminal-log sessao-compartilhado" id="log-sessao-aplicativos"></div>
 </div>
@@ -505,7 +575,8 @@ var APPS_FLATPAK = {
     'instalar-blender': { appId: 'org.blender.Blender', fallback: '🧊 Blender' },
     'instalar-ardour': { appId: 'org.ardour.Ardour', fallback: '🎵 Ardour' },
     'instalar-lmms': { appId: 'io.lmms.LMMS', fallback: '🎹 LMMS' },
-    'instalar-audacity': { appId: 'org.audacityteam.Audacity', fallback: '🎙️ Audacity' }
+    'instalar-audacity': { appId: 'org.audacityteam.Audacity', fallback: '🎙️ Audacity' },
+    'instalar-rustdesk': { appId: 'com.rustdesk.RustDesk', fallback: '🖥️ RustDesk' }
 };
 
 // ============================================================
@@ -542,6 +613,30 @@ registrarAppRemovivel('instalar-rclone-manager', {
         'fi; ' +
         'sudo dnf clean all && sudo dnf autoremove -y',
     nome: 'Rclone Manager'
+});
+
+// --- Ferramentas de acesso remoto (não-Flatpak) ---
+//
+// Três ferramentas via dnf, cada uma com lixeira global.
+// A RustDesk (Flatpak) NÃO entra aqui — é tratada pela
+// APPS_FLATPAK, como os outros apps do Flathub.
+
+registrarAppRemovivel('instalar-remmina', {
+    tipo: 'dnf',
+    pacotes: ['remmina', 'remmina-plugins-rdp', 'remmina-plugins-vnc', 'remmina-plugins-ssh'],
+    nome: 'Remmina'
+});
+
+registrarAppRemovivel('instalar-gnome-connections', {
+    tipo: 'dnf',
+    pacotes: ['gnome-connections'],
+    nome: 'GNOME Connections'
+});
+
+registrarAppRemovivel('instalar-krdc', {
+    tipo: 'dnf',
+    pacotes: ['krdc'],
+    nome: 'KRDC'
 });
 
 // ============================================================
@@ -845,10 +940,193 @@ async function abrirInstaladorAffinity() {
 }
 
 // ============================================================
+// HELPER: VISIBILIDADE DO BOTÃO "ABRIR X"
+// ============================================================
+//
+// O botão "🚀 Abrir <App>" só aparece quando o idComando
+// correspondente está marcado como executado (ou, em KDE/GNOME,
+// quando o pacote nativo já está instalado — ver
+// _ajustarFerramentasPorDesktop).
+//
+// Este helper é local da sessão: gaming.html e casa-escritorio.html
+// têm cópias próprias (definidas via <script> inline). Como as
+// sessões são avaliadas em sequência pelo guiado.html, a última
+// definição sobrescreveria as anteriores se fosse global. Manter
+// local evita esse conflito silencioso.
+
+function _atualizarBotaoAbrir(idInstalacao, idBotaoAbrir) {
+    var btn = document.getElementById(idBotaoAbrir);
+    if (!btn) return;
+    btn.style.display = isExecutado(idInstalacao) ? '' : 'none';
+}
+
+// ============================================================
+// FERRAMENTAS DE ACESSO REMOTO
+// ============================================================
+//
+// RustDesk (Flatpak) e três clientes RDP/VNC (dnf). Cada um segue
+// o mesmo padrão dos outros apps da sessão:
+//
+//   - Botão de instalar (`.btn-executar`)
+//   - Lixeira ao lado (aparece só quando `isExecutado`)
+//   - Botão "🚀 Abrir" abaixo (aparece só após instalar)
+//
+// Todos os "Abrir" usam `gtk-launch <desktop-id>` — o servidor já
+// tem `gtk-launch` na whitelist de comandos sem autenticação, e
+// `setsid -f` é aplicado automaticamente pelo `abrirFerramentaExterna`.
+// O `gtk-launch` é mais robusto que chamar o binário direto porque
+// respeita o .desktop oficial de cada app (inclusive em Flatpak).
+
+async function executarRustDesk() {
+    var idComando = 'instalar-rustdesk';
+    var info = APPS_FLATPAK[idComando];
+    if (!info) return;
+    var comando = 'flatpak install flathub ' + info.appId + ' -y';
+    await executarComandoGenerico(idComando, comando,
+        _t('sessoes.aplicativos.btn_rustdesk', '🖥️ RustDesk'),
+        function() {
+            _atualizarIconeDesinstalar(idComando);
+            _atualizarBotaoAbrir('instalar-rustdesk', 'btn-abrir-rustdesk');
+        });
+}
+
+function abrirRustDesk() {
+    abrirFerramentaExterna('gtk-launch com.rustdesk.RustDesk', 'instalar-rustdesk', 'RustDesk');
+}
+
+async function executarRemmina() {
+    var idComando = 'instalar-remmina';
+    // Os dois plugins abaixo cobrem os protocolos mais usados:
+    // RDP (Windows) e VNC (Linux/macOS). O suporte a SSH (terminal
+    // + túnel) já vem embutido no pacote principal `remmina` — NÃO
+    // existe `remmina-plugins-ssh` no Fedora, e listar um pacote
+    // inexistente faz o dnf abortar a instalação inteira, mesmo
+    // com `-y`. Se um dia o pacote for criado, adicione aqui.
+    var comando = 'sudo dnf install -y remmina remmina-plugins-rdp remmina-plugins-vnc';
+    await executarComandoGenerico(idComando, comando,
+        _t('sessoes.aplicativos.btn_remmina', '🖥️ Remmina'),
+        function() {
+            atualizarIconeRemover(idComando);
+            _atualizarBotaoAbrir('instalar-remmina', 'btn-abrir-remmina');
+        });
+}
+
+function abrirRemmina() {
+    abrirFerramentaExterna('gtk-launch org.remmina.Remmina', 'instalar-remmina', 'Remmina');
+}
+
+async function executarGnomeConnections() {
+    var idComando = 'instalar-gnome-connections';
+    var comando = 'sudo dnf install -y gnome-connections';
+    await executarComandoGenerico(idComando, comando,
+        _t('sessoes.aplicativos.btn_gnome_connections', '🖥️ GNOME Connections'),
+        function() {
+            atualizarIconeRemover(idComando);
+            _atualizarBotaoAbrir('instalar-gnome-connections', 'btn-abrir-gnome-connections');
+        });
+}
+
+function abrirGnomeConnections() {
+    abrirFerramentaExterna('gtk-launch org.gnome.Connections', 'instalar-gnome-connections', 'GNOME Connections');
+}
+
+async function executarKrdc() {
+    var idComando = 'instalar-krdc';
+    var comando = 'sudo dnf install -y krdc';
+    await executarComandoGenerico(idComando, comando,
+        _t('sessoes.aplicativos.btn_krdc', '🖥️ KRDC'),
+        function() {
+            atualizarIconeRemover(idComando);
+            _atualizarBotaoAbrir('instalar-krdc', 'btn-abrir-krdc');
+        });
+}
+
+function abrirKrdc() {
+    abrirFerramentaExterna('gtk-launch org.kde.krdc', 'instalar-krdc', 'KRDC');
+}
+
+// ============================================================
+// AJUSTE DE FERRAMENTAS POR DESKTOP
+// ============================================================
+//
+// Em GNOME, o GNOME Connections é a ferramenta nativa de acesso
+// remoto. Em KDE, o KRDC cumpre esse papel. Nos dois casos, se
+// o pacote já estiver instalado, o FAP esconde o botão
+// "Instalar" e mostra o "Abrir" direto — porque instalar algo
+// que já está no sistema é fricção inútil.
+//
+// A verificação é feita via `/check-package`, que roda `rpm -q`
+// no servidor. Se o pacote NÃO estiver instalado, o botão de
+// instalar permanece visível e o fluxo normal continua.
+//
+// RustDesk e Remmina não são tratados aqui — são ferramentas
+// cross-desktop e seguem o fluxo normal (instalar → lixeira →
+// abrir) em qualquer ambiente.
+
+async function _ajustarFerramentasPorDesktop() {
+    var desktop = 'UNKNOWN';
+    try {
+        desktop = await detectarDesktopReal();
+    } catch (e) {
+        console.warn('[aplicativos] Não foi possível detectar desktop:', e);
+    }
+
+    // Só vale a pena checar pacotes se o desktop for um dos
+    // dois alvos. Em XFCE, Cinnamon, etc., nenhuma ferramenta
+    // é considerada "nativa", então o fluxo normal já está certo.
+    if (desktop === 'GNOME') {
+        await _esconderSePacoteInstalado('gnome-connections',
+                                          'instalar-gnome-connections',
+                                          'btn-abrir-gnome-connections');
+    } else if (desktop === 'KDE') {
+        await _esconderSePacoteInstalado('krdc',
+                                          'instalar-krdc',
+                                          'btn-abrir-krdc');
+    }
+}
+
+async function _esconderSePacoteInstalado(pkg, idComando, idBotaoAbrir) {
+    var instalado = false;
+    try {
+        var r = await fetch(API_URL + '/check-package?pkg=' + encodeURIComponent(pkg),
+                            { cache: 'no-store' });
+        if (r.ok) {
+            var data = await r.json();
+            instalado = !!data.installed;
+        }
+    } catch (e) {
+        console.warn('[aplicativos] Falha ao checar pacote ' + pkg + ':', e.message);
+        return; // em caso de dúvida, NÃO esconde — fluxo normal fica seguro
+    }
+
+    if (!instalado) return; // pacote ausente → mantém o botão de instalar
+
+    var btnInstalar = document.getElementById('btn-' + idComando);
+    var btnAbrir = document.getElementById(idBotaoAbrir);
+
+    if (btnInstalar) {
+        // O botão está dentro de um .btn-flatpak-wrapper que
+        // também contém a lixeira. Esconder o wrapper inteiro
+        // evita deixar uma lixeira órfã ao lado de um botão
+        // invisível.
+        var wrapper = btnInstalar.closest('.btn-flatpak-wrapper');
+        if (wrapper) {
+            wrapper.style.display = 'none';
+        } else {
+            btnInstalar.style.display = 'none';
+        }
+    }
+
+    if (btnAbrir) {
+        btnAbrir.style.display = '';
+    }
+}
+
+// ============================================================
 // RESTAURAR ESTADO DA SESSÃO
 // ============================================================
 
-function restaurarEstadoSessao() {
+async function restaurarEstadoSessao() {
     Object.keys(APPS_FLATPAK).forEach(function(idComando) {
         if (isExecutado(idComando)) {
             var btn = document.getElementById('btn-' + idComando);
@@ -884,10 +1162,39 @@ function restaurarEstadoSessao() {
         }
     }
 
+    // Ferramentas de acesso remoto não-Flatpak (dnf + lixeira global)
+    ['instalar-remmina', 'instalar-gnome-connections', 'instalar-krdc'].forEach(function(id) {
+        if (isExecutado(id)) {
+            var btn = document.getElementById('btn-' + id);
+            if (btn) {
+                btn.textContent = getTextoAposExecucao(id);
+                btn.style.backgroundColor = '#4b5563';
+                btn.style.cursor = 'default';
+                btn.disabled = true;
+            }
+            atualizarIconeRemover(id);
+        }
+    });
+
     atualizarBotaoAbrirRclone();
     aplicarEstadoToggle('instalar-rclone-manager', 'desfazer-rclone-manager');
 
+    // Botões "Abrir" das ferramentas de acesso remoto — só aparecem
+    // quando o respectivo idComando está marcado como executado.
+    // RustDesk usa o mesmo caminho dos outros flatpaks (via
+    // APPS_FLATPAK em _restaurarIconesFlatpak).
+    _atualizarBotaoAbrir('instalar-rustdesk', 'btn-abrir-rustdesk');
+    _atualizarBotaoAbrir('instalar-remmina', 'btn-abrir-remmina');
+    _atualizarBotaoAbrir('instalar-gnome-connections', 'btn-abrir-gnome-connections');
+    _atualizarBotaoAbrir('instalar-krdc', 'btn-abrir-krdc');
+
     _restaurarIconesFlatpak();
+
+    // Ajuste final por desktop. Se GNOME/KDE e o pacote nativo
+    // já estiver instalado, esconde o botão de instalar e mostra
+    // o "Abrir" direto. Se o pacote não estiver instalado,
+    // mantém o fluxo normal de instalação.
+    await _ajustarFerramentasPorDesktop();
 }
 
 (function() {

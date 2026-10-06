@@ -2,7 +2,7 @@
 
 **🌐 Language:** [Português (BR)](README.md) | English | [Español](README.es.md)
 
-![Version](https://img.shields.io/badge/Version-v1.0.0--10052026.b-orange?style=flat-square)
+![Version](https://img.shields.io/badge/Version-v1.0.0--10062026-orange?style=flat-square)
 ![Fedora](https://img.shields.io/badge/Fedora-44+-294172?style=flat-square&logo=fedora)
 ![License](https://img.shields.io/badge/License-GPL--3.0-green?style=flat-square)
 ![Languages](https://img.shields.io/badge/Languages-PT--BR%20%7C%20EN%20%7C%20ES-3c67e3?style=flat-square)
@@ -39,7 +39,7 @@ Visual automation panel for Fedora Linux. Turns a clean installation into a comp
 | 3 | 🖥️ Hardware | AMD/NVIDIA/Intel drivers, CoreCtrl, LACT, overclock |
 | 4 | 🔌 Devices | Auto-detection, COPRs, controllers, firmware |
 | 5 | 🎬 Media Production | OBS Studio, virtual camera, EasyEffects |
-| 6 | 📦 Recommended Apps | ~45 Flatpak apps (productivity, media, graphics, internet) |
+| 6 | 📦 Recommended Apps | ~45 Flatpak apps (productivity, media, graphics, internet) + Remote Access Tools |
 | 7 | 🏠 Home and Office | CUPS, Samba, LocalSend, KeePassXC, OCR |
 | 8 | 🎮 Gaming | Native Steam, Heroic, Lutris, Wine, GameMode, Gamescope Session, emulators |
 | 9 | 📱 Waydroid | Android on Linux via container |
@@ -57,6 +57,8 @@ Visual automation panel for Fedora Linux. Turns a clean installation into a comp
 - **Unified trash icon** for Flatpaks and non-Flatpak apps
 - **"Open" button** on every GUI app — launches in its own session (survives FAP closing)
 - **Native Steam** via RPM Fusion — required for the Gamescope session
+- **Official Gamescope Session** — launcher and `.desktop` created following the Fedora Docs recipe, with `TryExec` (plasmalogin-compatible), dynamic resolution detection and a diagnostic log
+- **Remote Access Tools** — RustDesk, Remmina, GNOME Connections and KRDC, with automatic desktop detection to hide the "Install" button when the native app is already present
 - **Install queue** for Flatpaks — click on multiple in sequence
 - **Smart lock** — prevents `rpm` lock conflicts
 - **Automatic hardware detection** — GPUs, Wi-Fi, Ethernet

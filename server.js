@@ -1498,6 +1498,41 @@ const server = http.createServer((req, res) => {
     }
 
     // ----------------------------------------------------------
+    // /check-package — verifica se um pacote rpm está instalado
+    // ----------------------------------------------------------
+    //
+    // Usado pelo frontend para decidir se um app nativo de
+    // desktop (gnome-connections, krdc) já está presente no
+    // sistema. Se estiver, o FAP esconde o botão de instalar
+    // e mostra o "Abrir" direto.
+    //
+    // Validação do nome do pacote: só aceita letras, números,
+    // ponto, hífen e underscore. Isso é suficiente para nomes
+    // rpm válidos e bloqueia qualquer tentativa de injeção via
+    // query string.
+    if (req.method === 'GET' && url === '/check-package') {
+        var pkg = query.get('pkg');
+        if (!pkg || !/^[a-zA-Z0-9._-]+$/.test(pkg)) {
+            res.writeHead(400, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'pkg inválido' }));
+            return;
+        }
+        exec('rpm -q ' + pkg, { shell: '/bin/bash', timeout: 3000 }, (error, stdout) => {
+            var out = (stdout || '').toLowerCase();
+            var instalado = !error &&
+            !/not installed/.test(out) &&
+            !/não instalado/.test(out) &&
+            out.trim().length > 0;
+            res.writeHead(200, {
+                'Content-Type': 'application/json',
+                'Cache-Control': 'no-cache, no-store, must-revalidate'
+            });
+            res.end(JSON.stringify({ installed: instalado, pkg: pkg }));
+        });
+        return;
+    }
+
+    // ----------------------------------------------------------
     // /flatpak-installed — lista de app-ids Flatpak instalados
     // ----------------------------------------------------------
     //

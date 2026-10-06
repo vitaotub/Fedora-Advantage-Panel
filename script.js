@@ -761,6 +761,11 @@ var SESSOES = [
         'instalar-ardour': { textoConcluido: '✅ Ardour instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_ardour', flatpakId: 'org.ardour.Ardour' },
         'instalar-lmms': { textoConcluido: '✅ LMMS instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_lmms', flatpakId: 'io.lmms.LMMS' },
         'instalar-audacity': { textoConcluido: '✅ Audacity instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_audacity', flatpakId: 'org.audacityteam.Audacity' },
+        // --- Ferramentas de acesso remoto ---
+        'instalar-rustdesk': { textoConcluido: '✅ RustDesk instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_rustdesk', flatpakId: 'com.rustdesk.RustDesk' },
+        'instalar-remmina': { textoConcluido: '✅ Remmina instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_remmina' },
+        'instalar-gnome-connections': { textoConcluido: '✅ GNOME Connections instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_gnome_connections' },
+        'instalar-krdc': { textoConcluido: '✅ KRDC instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_krdc' },
         'instalar-rclone-manager': {
             textoConcluido: '✅ Rclone Manager instalado',
             textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_rclone_manager'
@@ -2951,6 +2956,17 @@ async function _executarRemocaoApp(idComando) {
         idRemocao = idComando + '-revert';
     } else if (info.tipo === 'dnf') {
         comando = 'sudo dnf remove -y ' + info.pacotes.join(' ');
+        idRemocao = _idRemocaoDe(idComando);
+    } else if (info.tipo === 'arquivos') {
+        // Remoção de ARQUIVOS criados pelo FAP em diretórios do
+        // sistema (ex.: /usr/bin/gamescope-session,
+        // /usr/share/wayland-sessions/*). Diferente de 'flatpak' e
+        // 'dnf', aqui não há pacote: o próprio registro em
+        // registrarAppRemovivel() traz o comandoRemocao completo.
+        //
+        // Usado por Gamescope Session, que cria seus arquivos
+        // manualmente em vez de instalar um pacote de terceiros.
+        comando = info.comandoRemocao;
         idRemocao = _idRemocaoDe(idComando);
     } else {
         console.warn('[remove-icon] tipo inválido:', info.tipo);

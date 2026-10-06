@@ -357,7 +357,7 @@ Ferramentas para quem quer tirar o máximo do Fedora em jogos: versões específ
     ⚠️ <strong>Pré-requisitos para a sessão Gamescope:</strong><br>
     • <strong>Steam instalado e configurado</strong> — a sessão inicia diretamente no Steam Big Picture. Instale o Steam pelo RPM Fusion (não via Flatpak), execute-o pela primeira vez para aplicar as atualizações necessárias e faça login com sua conta.<br>
     • <strong>Hardware compatível</strong> — AMD e Intel funcionam nativamente. NVIDIA exige o parâmetro <code>nvidia-drm.modeset=1</code> ativo no kernel (ative pela sessão <strong>Hardware → NVIDIA</strong>).<br>
-    • <strong>Logout para testar</strong> — a sessão não pode ser testada dentro do FAP. Após instalar, reinicie o computador, faça logout e selecione <strong>"Steam Big Picture"</strong> no seletor de sessão da tela de login.
+    • <strong>Logout para testar</strong> — a sessão não pode ser testada dentro do FAP. Após instalar, reinicie o computador, faça logout e selecione <strong>"SteamOS mode (Gamescope)"</strong> no seletor de sessão da tela de login. Se a sessão travar, verifique <code>/tmp/fap-gamescope-session.log</code> para detalhes.
 </div>
 <div class="grupo-botoes">
 <div class="btn-flatpak-wrapper">
@@ -681,14 +681,20 @@ registrarAppRemovivel('goverlay-install',   { tipo: 'dnf', pacotes: ['goverlay']
 registrarAppRemovivel('gamescope-install',  { tipo: 'dnf', pacotes: ['gamescope'], nome: 'Gamescope' });
 registrarAppRemovivel('vkbasalt-install',   { tipo: 'dnf', pacotes: ['vkBasalt'], nome: 'vkBasalt' });
 registrarAppRemovivel('gamescope-session-install', {
-    tipo: 'dnf',
-    pacotes: ['gamescope-session-steam'],
+    tipo: 'arquivos',
+    comandoRemocao:
+        'sudo rm -f /usr/bin/gamescope-session && ' +
+        'sudo rm -f /usr/share/wayland-sessions/gamescope-session.desktop && ' +
+        'sudo dnf remove -y gamescope-session-steam 2>/dev/null || true; ' +
+        'sudo dnf copr disable pvermeer/gamescope-session-steam -y 2>/dev/null || true',
     nome: 'Gamescope Session',
     confirmMsg: '⚠️ Desinstalar o Gamescope Session?\n\n' +
-                'O pacote gamescope (do Fedora oficial) NÃO será removido — ele pode ser ' +
-                'usado independentemente por outros jogos e ferramentas.\n\n' +
-                'Se você quiser remover o gamescope também, use a lixeira do botão ' +
-                '"Gamescope" separadamente.\n\n' +
+                'Isso remove:\n' +
+                '• O script /usr/bin/gamescope-session\n' +
+                '• A entrada /usr/share/wayland-sessions/gamescope-session.desktop\n' +
+                '• O pacote gamescope-session-steam (se estava instalado via COPR antigo)\n\n' +
+                'O pacote gamescope em si NÃO é removido — ele continua disponível\n' +
+                'para uso independente (ex.: pelo comando `gamescope -- %command%`).\n\n' +
                 'Continuar?'
 });
 registrarAppRemovivel('controller-test-install',   { tipo: 'dnf', pacotes: ['jstest-gtk'], nome: 'Teste de Controle' });
@@ -931,30 +937,163 @@ async function executarGameModePresets() {
 
 async function executarGamescopeSession() {
     // ============================================================
-    // Gamescope Session via COPR pvermeer
+    // Gamescope Session — abordagem oficial do Fedora Docs
     // ============================================================
     //
-    // Combinação validada manualmente no Fedora 45:
+    // Substitui o COPR pvermeer/gamescope-session-steam (que
+    // apresentava "tela travada após login") pela receita oficial
+    // do próprio Fedora:
     //
-    //   - gamescope-session-steam   ← COPR pvermeer
-    //   - gamescope + deps          ← Fedora oficial
+    //   https://docs.fedoraproject.org/en-US/gaming/gamescope/
     //
-    // O gamescope em si vem do próprio Fedora (sem conflito com
-    // terceiros). Apenas o script de sessão (gamescope-session-steam)
-    // vem do COPR.
+    // Criamos manualmente dois arquivos:
+    //   1. /usr/bin/gamescope-session  — launcher
+    //   2. /usr/share/wayland-sessions/gamescope-session.desktop
     //
-    // Não usamos o Terra porque o pacote gamescope-session-steam
-    // disponível lá é compilado para Fedora Rawhide (fcrawhide),
-    // não para Fedora 45 estável.
+    // POR QUE A VERSÃO DO COPR NÃO FUNCIONAVA:
+    //   O launcher do COPR não passa `-steamdeck -steamos3` ao
+    //   Steam. Sem essas flags o Steam abre em modo DESKTOP
+    //   dentro do gamescope — o compositor não recebe uma janela
+    //   válida para fazer o present e a sessão inteira trava.
+    //   É exatamente o sintoma que o usuário relatou.
     //
-    // O repositório hardware:razer (OpenRazer) pode exibir erro
-    // 404 durante o refresh, mas o dnf apenas emite warning e
-    // segue — não aborta a instalação.
+    // DIFERENÇAS EM RELAÇÃO AO COMANDO CRU DO FEDORA DOCS:
+    //
+    //   • Resolução dinâmica. O doc usa 1920x1080 hardcoded — em
+    //     1440p/4K/ultrawide a saída fica distorcida. Lemos o
+    //     modo atual do kernel via /sys/class/drm/card*/mode
+    //     (funciona em X11 e Wayland, sem depender de wlr-randr,
+    //     xrandr ou kscreen-doctor) e gravamos no script.
+    //
+    //   • Log de sessão em /tmp/fap-gamescope-session.log. O
+    //     script do Fedora engole stdout/stderr — se a sessão
+    //     falhar, nada fica registrado. Redirecionamos tudo para
+    //     um arquivo rastreável para diagnóstico posterior.
+    //
+    //   • Limpeza automática do COPR antigo. Se o usuário tinha a
+    //     versão anterior do FAP, removemos gamescope-session-steam
+    //     e desabilitamos o repo. Sem isso, dois .desktop
+    //     concorrentes apareceriam no seletor de sessão.
+    //
+    // PRÉ-REQUISITOS (avisados na UI, não bloqueantes):
+    //   • Steam NATIVO (não Flatpak) — a sessão chama /usr/bin/steam.
+    //   • Em NVIDIA: nvidia-drm.modeset=1 ativo (senão a sessão
+    //     trava no login, mesmo com o script correto).
 
-    await executarComandoGenerico('gamescope-session-install',
-        'sudo dnf copr enable pvermeer/gamescope-session-steam -y && ' +
-        'sudo dnf install -y gamescope-session-steam && ' +
-        'sudo usermod -aG render,video $USER',
+        var comando =
+        // --- Pré-requisito: gamescope ------------------------------
+        // A sessão depende do binário `gamescope` (o compositor em
+        // si), que tem um botão separado na seção "Desempenho e
+        // Monitoramento" (gamescope-install). Como o usuário pode
+        // não ter clicado nele ainda — ou tê-lo removido depois —
+        // garantimos a instalação aqui.
+        //
+        // DNF é idempotente: se o pacote já estiver instalado, a
+        // linha não faz nada e o comando segue. O `|| exit 1`
+        // garante que, se o DNF falhar (rede fora, repo quebrado),
+        // não criamos um gamescope-session.desktop apontando para
+        // um binário inexistente.
+        'sudo dnf install -y gamescope || { echo "❌ Falha ao instalar gamescope. Abortando."; exit 1; }; ' +
+
+        // --- Detecção de resolução ---------------------------------
+        // /sys/class/drm/card*-*/mode contém o modo atual de cada
+        // conector DRM (ex.: "1920x1080" ou vazio se desconectado).
+        // Lemos o primeiro que tiver conteúdo — funciona em
+        // qualquer compositor (KWin, Mutter, wlroots, X11) sem
+        // precisar de ferramenta externa.
+        'DETECTED_W=1920; DETECTED_H=1080; ' +
+        'for f in /sys/class/drm/card*/mode; do ' +
+        '  if [ -s "$f" ]; then ' +
+        '    RES=$(cat "$f" 2>/dev/null); ' +
+        '    if echo "$RES" | grep -qE "^[0-9]+x[0-9]+$"; then ' +
+        '      DETECTED_W="${RES%x*}"; ' +
+        '      DETECTED_H="${RES#*x}"; ' +
+        '      break; ' +
+        '    fi; ' +
+        '  fi; ' +
+        'done; ' +
+        'echo "🎯 Resolução detectada: ${DETECTED_W}x${DETECTED_H}"; ' +
+
+        // --- Launcher /usr/bin/gamescope-session -------------------
+        // Heredoc SEM quotes (GAMESCOPE_EOF) — expande ${DETECTED_W}
+        // e ${DETECTED_H} na hora da escrita, gravando a resolução
+        // detectada no script final.
+        //
+        // As flags -W/-H são obrigatórias: o gamescope cria uma
+        // saída virtual e precisa saber qual resolução apresentar
+        // aos jogos.
+        //
+        // As flags -steamdeck -steamos3 são a CHAVE do problema
+        // atual: forçam o Steam a abrir em Big Picture / Gamepad UI
+        // em vez de modo desktop.
+        //
+        // O `--` antes do `steam` é crítico: sem ele, o gamescope
+        // engole as flags subsequentes como se fossem dele.
+        'sudo tee /usr/bin/gamescope-session > /dev/null <<GAMESCOPE_EOF\n' +
+        '#!/bin/sh\n' +
+        '# Fedora Advantage Panel — Gamescope Steam Session\n' +
+        '# Gerado automaticamente. Para alterar, edite este arquivo ou\n' +
+        '# re-execute o botão "Instalar Gamescope Session" no FAP.\n' +
+        'exec gamescope -W ${DETECTED_W} -H ${DETECTED_H} -e -f -- steam -steamdeck -steamos3 >/tmp/fap-gamescope-session.log 2>&1\n' +
+        'GAMESCOPE_EOF\n' +
+        'sudo chmod +x /usr/bin/gamescope-session && ' +
+
+        // --- Entrada de sessão Wayland -----------------------------
+        // Heredoc COM quotes ('DESKTOP_EOF') — nada é expandido.
+        //
+        // DesktopNames=Gamescope é o que faz o SDDM/GDM reconhecer
+        // esta entrada como sessão Wayland válida. Sem essa linha,
+        // o display manager ignora o arquivo.
+        //
+        // TryExec é OBRIGATÓRIO no plasmalogin (display manager do
+        // Fedora 45 KDE). Sem essa chave, o plasmalogin descarta a
+        // entrada silenciosamente — o arquivo existe, mas nunca
+        // aparece no seletor de sessões. Validado em Fedora 45
+        // (KDE Plasma prerelease): com TryExec, a sessão aparece;
+        // sem, não aparece. O plasma.desktop do próprio Fedora usa
+        // TryExec=/usr/bin/startplasma-wayland — confirma o
+        // requisito. SDDM e GDM também aceitam a chave (é padrão
+        // freedesktop), então isto é seguro para todos os DMs.
+        'sudo tee /usr/share/wayland-sessions/gamescope-session.desktop > /dev/null <<\'DESKTOP_EOF\'\n' +
+        '[Desktop Entry]\n' +
+        'Name=SteamOS mode (Gamescope)\n' +
+        'Comment=Standalone Gamescope session running Steam Big Picture\n' +
+        'Exec=/usr/bin/gamescope-session\n' +
+        'TryExec=/usr/bin/gamescope-session\n' +
+        'Type=Application\n' +
+        'DesktopNames=Gamescope\n' +
+        'DESKTOP_EOF\n' +
+
+        // --- Grupos de dispositivo ---------------------------------
+        // render + video dão acesso a /dev/dri/renderD128 e aos
+        // controles de vídeo. Sem eles, o gamescope não abre o
+        // DRM master.
+        'sudo usermod -aG render,video $USER && ' +
+
+        // --- Limpeza do COPR antigo -------------------------------
+        // Se o usuário tinha a versão anterior do FAP, removemos o
+        // pacote e desabilitamos o repo. Sem isso, dois
+        // gamescope-session.desktop concorreriam no seletor de
+        // sessão (um do COPR, um nosso).
+        //
+        // `|| true` para não abortar o comando se o pacote não
+        // existir (caso de instalação limpa).
+        'sudo dnf remove -y gamescope-session-steam 2>/dev/null || true; ' +
+        'sudo dnf copr disable pvermeer/gamescope-session-steam -y 2>/dev/null || true; ' +
+
+        // --- Confirmação final ------------------------------------
+        'echo ""; ' +
+        'echo "════════════════════════════════════════════════════════════"; ' +
+        'echo "✅ Gamescope Session instalada!"; ' +
+        'echo "════════════════════════════════════════════════════════════"; ' +
+        'echo ""; ' +
+        'echo "ℹ️  Faça logout e selecione SteamOS mode (Gamescope)"; ' +
+        'echo "   no seletor de sessão do seu display manager."; ' +
+        'echo ""; ' +
+        'echo "📋 Log da sessão: /tmp/fap-gamescope-session.log"; ' +
+        'echo "════════════════════════════════════════════════════════════";';
+
+    await executarComandoGenerico('gamescope-session-install', comando,
         _t('sessoes.gaming.btn_gamescope_session', '📦 Instalar Gamescope Session'),
         function() { atualizarIconeRemover('gamescope-session-install'); });
 }

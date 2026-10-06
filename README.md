@@ -2,7 +2,7 @@
 
 **🌐 Idioma:** Português (BR) | [English](README.en.md) | [Español](README.es.md)
 
-![Versão](https://img.shields.io/badge/Vers%C3%A3o-v1.0.0--10052026.b-orange?style=flat-square)
+![Versão](https://img.shields.io/badge/Vers%C3%A3o-v1.0.0--10062026-orange?style=flat-square)
 ![Fedora](https://img.shields.io/badge/Fedora-44+-294172?style=flat-square&logo=fedora)
 ![Licença](https://img.shields.io/badge/Licen%C3%A7a-GPL--3.0-green?style=flat-square)
 ![Idiomas](https://img.shields.io/badge/Idiomas-PT--BR%20%7C%20EN%20%7C%20ES-3c67e3?style=flat-square)
@@ -39,7 +39,7 @@ Painel de automação visual para Fedora Linux. Transforma uma instalação limp
 | 3 | 🖥️ Hardware | Drivers AMD/NVIDIA/Intel, CoreCtrl, LACT, overclock |
 | 4 | 🔌 Dispositivos | Detecção automática, COPRs, controles, firmwares |
 | 5 | 🎬 Produção Multimídia | OBS Studio, câmera virtual, EasyEffects |
-| 6 | 📦 Aplicativos | ~45 apps Flatpak (produtividade, mídia, gráficos, internet) |
+| 6 | 📦 Aplicativos | ~45 apps Flatpak (produtividade, mídia, gráficos, internet) + Ferramentas de Acesso Remoto |
 | 7 | 🏠 Casa e Escritório | CUPS, Samba, LocalSend, KeePassXC, OCR |
 | 8 | 🎮 Gaming | Steam nativo, Heroic, Lutris, Wine, GameMode, Gamescope Session, emuladores |
 | 9 | 📱 Waydroid | Android no Linux via container |
@@ -57,6 +57,8 @@ Painel de automação visual para Fedora Linux. Transforma uma instalação limp
 - **Lixeira unificada** para Flatpaks e apps não-Flatpak
 - **Botão "Abrir"** em todos os apps GUI — abre em sessão própria (sobrevive ao fechar o FAP)
 - **Steam nativo** via RPM Fusion — necessário para a sessão Gamescope
+- **Sessão Gamescope oficial** — launcher e `.desktop` criados conforme a receita do Fedora Docs, com `TryExec` (compatível com plasmalogin), detecção dinâmica de resolução e log de diagnóstico
+- **Ferramentas de Acesso Remoto** — RustDesk, Remmina, GNOME Connections e KRDC, com detecção automática do desktop para esconder o botão "Instalar" quando o app nativo já está presente
 - **Fila de instalação** de Flatpaks — clique em vários em sequência
 - **Bloqueio inteligente** — evita conflitos de lock no `rpm`
 - **Detecção automática de hardware** — GPUs, Wi-Fi, Ethernet
