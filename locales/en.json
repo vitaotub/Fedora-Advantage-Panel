@@ -429,7 +429,23 @@
             "texto_concluido_rclone_manager": "✅ Rclone Manager installed",
             "btn_abrir_rclone_manager": "🚀 Open Rclone Manager",
             "rclone_uninstall_aviso": "⚠️ <strong>Completely remove Rclone Manager?</strong> This button removes the packages <code>rclone-manager</code> and <code>rclone</code> from the system, including any version of Rclone that Rclone Manager itself installed. <strong>Your cloud accounts are stored in <code>~/.config/rclone</code> and are NOT deleted</strong> — if you reinstall later, your accounts will still be there. Irreversible action regarding the packages.",
-            "btn_desfazer_rclone_manager": "🗑️ Completely remove Rclone Manager"
+            "btn_desfazer_rclone_manager": "🗑️ Completely remove Rclone Manager",
+
+            "bloco7_titulo": "📡 Remote Access Tools",
+            "bloco7_desc": "Tools to access and control other computers remotely, or to connect to Windows and Linux servers via RDP, VNC and other protocols. Ideal for tech support, accessing work machines and server administration.",
+            "bloco7_aviso": "⚠️ <strong>Note about Wayland:</strong> Fedora 44+ is migrating from X11 to Wayland. Some traditional remote control tools (AnyDesk, TeamViewer) still have issues in this environment — black screen, frozen cursor or no control. The tools listed below work well on Wayland.",
+            "btn_rustdesk": "🖥️ RustDesk",
+            "texto_concluido_rustdesk": "✅ RustDesk installed",
+            "btn_abrir_rustdesk": "🚀 Open RustDesk",
+            "btn_remmina": "🖥️ Remmina",
+            "texto_concluido_remmina": "✅ Remmina installed",
+            "btn_abrir_remmina": "🚀 Open Remmina",
+            "btn_gnome_connections": "🖥️ GNOME Connections",
+            "texto_concluido_gnome_connections": "✅ GNOME Connections installed",
+            "btn_abrir_gnome_connections": "🚀 Open GNOME Connections",
+            "btn_krdc": "🖥️ KRDC",
+            "texto_concluido_krdc": "✅ KRDC installed",
+            "btn_abrir_krdc": "🚀 Open KRDC"
         },
 
         "casa-escritorio": {
@@ -542,7 +558,7 @@
             "btn_gamemode_presets": "⚙️ Apply Presets",
             "gamescope_session_titulo": "Gamescope Session — Gaming mode on boot",
             "gamescope_session_desc": "Installs an alternative login session that boots the computer directly into Gamescope (the same mode Steam Deck uses). Ideal for HTPCs and TV-connected machines.",
-            "gamescope_session_aviso": "⚠️ <strong>Prerequisites for the Gamescope session:</strong><br>• <strong>Steam installed and configured</strong> — the session boots directly into Steam Big Picture. Install Steam via RPM Fusion (not Flatpak), launch it once to apply updates and log in with your account before proceeding.<br>• <strong>Compatible hardware</strong> — AMD and Intel work natively. NVIDIA requires the <code>nvidia-drm.modeset=1</code> kernel parameter (enable via the <strong>Hardware → NVIDIA</strong> session).<br>• <strong>Logout to test</strong> — the session cannot be tested inside FAP. After installing, reboot, log out and select <strong>\"Steam Big Picture\"</strong> in the login screen's session selector.",
+            "gamescope_session_aviso": "⚠️ <strong>Prerequisites for the Gamescope session:</strong><br>• <strong>Steam installed and configured</strong> — the session boots directly into Steam Big Picture. Install Steam via RPM Fusion (not Flatpak), launch it once to apply updates and log in with your account before proceeding.<br>• <strong>Compatible hardware</strong> — AMD and Intel work natively. NVIDIA requires the <code>nvidia-drm.modeset=1</code> kernel parameter (enable via the <strong>Hardware → NVIDIA</strong> session).<br>• <strong>Logout to test</strong> — the session cannot be tested inside FAP. After installing, reboot, log out and select <strong>\"SteamOS mode (Gamescope)\"</strong> in the login screen's session selector. If the session freezes, check <code>/tmp/fap-gamescope-session.log</code> for details.",
             "btn_gamescope_session": "📦 Install Gamescope Session",
             "texto_concluido_gamescope_session": "✅ Gamescope session installed",
             "controller_test_titulo": "Controller Test",

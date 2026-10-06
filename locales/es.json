@@ -429,7 +429,23 @@
             "texto_concluido_rclone_manager": "✅ Rclone Manager instalado",
             "btn_abrir_rclone_manager": "🚀 Abrir Rclone Manager",
             "rclone_uninstall_aviso": "⚠️ <strong>¿Eliminar completamente Rclone Manager?</strong> Este botón elimina los paquetes <code>rclone-manager</code> y <code>rclone</code> del sistema, incluyendo cualquier versión de Rclone que el propio Rclone Manager haya instalado. <strong>Sus cuentas de nube se guardan en <code>~/.config/rclone</code> y NO se eliminan</strong> — si reinstala después, sus cuentas seguirán allí. Acción irreversible en cuanto a los paquetes.",
-            "btn_desfazer_rclone_manager": "🗑️ Eliminar completamente Rclone Manager"
+            "btn_desfazer_rclone_manager": "🗑️ Eliminar completamente Rclone Manager",
+
+            "bloco7_titulo": "📡 Herramientas de Acceso Remoto",
+            "bloco7_desc": "Herramientas para acceder y controlar otras computadoras remotamente, o para conectarse a servidores Windows y Linux vía RDP, VNC y otros protocolos. Ideal para soporte técnico, acceso a máquinas del trabajo y administración de servidores.",
+            "bloco7_aviso": "⚠️ <strong>Nota sobre Wayland:</strong> Fedora 44+ está migrando de X11 a Wayland. Algunas herramientas tradicionales de control remoto (AnyDesk, TeamViewer) aún presentan problemas en este entorno — pantalla negra, cursor congelado o falta de control. Las herramientas listadas abajo funcionan bien en Wayland.",
+            "btn_rustdesk": "🖥️ RustDesk",
+            "texto_concluido_rustdesk": "✅ RustDesk instalado",
+            "btn_abrir_rustdesk": "🚀 Abrir RustDesk",
+            "btn_remmina": "🖥️ Remmina",
+            "texto_concluido_remmina": "✅ Remmina instalado",
+            "btn_abrir_remmina": "🚀 Abrir Remmina",
+            "btn_gnome_connections": "🖥️ GNOME Connections",
+            "texto_concluido_gnome_connections": "✅ GNOME Connections instalado",
+            "btn_abrir_gnome_connections": "🚀 Abrir GNOME Connections",
+            "btn_krdc": "🖥️ KRDC",
+            "texto_concluido_krdc": "✅ KRDC instalado",
+            "btn_abrir_krdc": "🚀 Abrir KRDC"
         },
 
         "casa-escritorio": {
@@ -542,7 +558,7 @@
             "btn_gamemode_presets": "⚙️ Aplicar Presets",
             "gamescope_session_titulo": "Gamescope Session — Modo Gaming al arrancar",
             "gamescope_session_desc": "Instala una sesión de inicio alternativa que arranca el equipo directamente en Gamescope (el mismo modo que usa Steam Deck). Ideal para HTPCs y equipos conectados a la TV.",
-            "gamescope_session_aviso": "⚠️ <strong>Requisitos previos para la sesión Gamescope:</strong><br>• <strong>Steam instalado y configurado</strong> — la sesión arranca directamente en Steam Big Picture. Instala Steam vía RPM Fusion (no Flatpak), ejecútalo una vez para aplicar las actualizaciones necesarias e inicia sesión con tu cuenta antes de continuar.<br>• <strong>Hardware compatible</strong> — AMD e Intel funcionan de forma nativa. NVIDIA requiere el parámetro <code>nvidia-drm.modeset=1</code> en el kernel (actívalo desde la sesión <strong>Hardware → NVIDIA</strong>).<br>• <strong>Cerrar sesión para probar</strong> — la sesión no se puede probar dentro de FAP. Después de instalar, reinicia el equipo, cierra sesión y selecciona <strong>\"Steam Big Picture\"</strong> en el selector de sesión de la pantalla de inicio.",
+            "gamescope_session_aviso": "⚠️ <strong>Requisitos previos para la sesión Gamescope:</strong><br>• <strong>Steam instalado y configurado</strong> — la sesión arranca directamente en Steam Big Picture. Instala Steam vía RPM Fusion (no Flatpak), ejecútalo una vez para aplicar las actualizaciones necesarias e inicia sesión con tu cuenta antes de continuar.<br>• <strong>Hardware compatible</strong> — AMD e Intel funcionan de forma nativa. NVIDIA requiere el parámetro <code>nvidia-drm.modeset=1</code> en el kernel (actívalo desde la sesión <strong>Hardware → NVIDIA</strong>).<br>• <strong>Cerrar sesión para probar</strong> — la sesión no se puede probar dentro de FAP. Después de instalar, reinicia el equipo, cierra sesión y selecciona <strong>\"SteamOS mode (Gamescope)\"</strong> en el selector de sesión de la pantalla de inicio. Si la sesión se congela, revisa <code>/tmp/fap-gamescope-session.log</code> para más detalles.",
             "btn_gamescope_session": "📦 Instalar Gamescope Session",
             "texto_concluido_gamescope_session": "✅ Gamescope session instalado",
             "controller_test_titulo": "Prueba de Mando",
