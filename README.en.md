@@ -2,7 +2,7 @@
 
 **🌐 Language:** [Português (BR)](README.md) | English | [Español](README.es.md)
 
-![Version](https://img.shields.io/badge/Version-v1.0.0--10062026-orange?style=flat-square)
+![Version](https://img.shields.io/badge/Version-v1.0.0--10062026.b-orange?style=flat-square)
 ![Fedora](https://img.shields.io/badge/Fedora-44+-294172?style=flat-square&logo=fedora)
 ![License](https://img.shields.io/badge/License-GPL--3.0-green?style=flat-square)
 ![Languages](https://img.shields.io/badge/Languages-PT--BR%20%7C%20EN%20%7C%20ES-3c67e3?style=flat-square)
@@ -34,12 +34,12 @@ Visual automation panel for Fedora Linux. Turns a clean installation into a comp
 
 | # | Session | What it does |
 |---|---|---|
-| 1 | 🚀 First Steps | System update, RPM Fusion, Flathub |
+| 1 | 🚀 First Steps | System update, RPM Fusion, Flathub, Terra |
 | 2 | 🔤 Codecs | Multimedia codecs, commercial DVD, MS fonts |
 | 3 | 🖥️ Hardware | AMD/NVIDIA/Intel drivers, CoreCtrl, LACT, overclock |
 | 4 | 🔌 Devices | Auto-detection, COPRs, controllers, firmware |
 | 5 | 🎬 Media Production | OBS Studio, virtual camera, EasyEffects |
-| 6 | 📦 Recommended Apps | ~45 Flatpak apps (productivity, media, graphics, internet) + Remote Access Tools |
+| 6 | 📦 Recommended Apps | ~45 Flatpak apps + ArtCraft Suite (7 Rust apps) + Remote Access Tools |
 | 7 | 🏠 Home and Office | CUPS, Samba, LocalSend, KeePassXC, OCR |
 | 8 | 🎮 Gaming | Native Steam, Heroic, Lutris, Wine, GameMode, Gamescope Session, emulators |
 | 9 | 📱 Waydroid | Android on Linux via container |
@@ -57,10 +57,12 @@ Visual automation panel for Fedora Linux. Turns a clean installation into a comp
 - **Unified trash icon** for Flatpaks and non-Flatpak apps
 - **"Open" button** on every GUI app — launches in its own session (survives FAP closing)
 - **Native Steam** via RPM Fusion — required for the Gamescope session
-- **Official Gamescope Session** — launcher and `.desktop` created following the Fedora Docs recipe, with `TryExec` (plasmalogin-compatible), dynamic resolution detection and a diagnostic log
+- **Official Gamescope Session** — launcher and `.desktop` created following the Fedora Docs recipe, with `TryExec` (plasmalogin-compatible), dynamic resolution detection and a diagnostic log at `/tmp/fap-gamescope-session.log`. Non-blocking warning if native Steam is missing.
+- **ArtCraft Suite** — 7 creative apps (PhotoCraft, VectorCraft, FilmCraft, LightCraft, PrintCraft, EffectCraft, DesignCraft) developed in Rust, open source, with buttons that always download the latest `.x86_64` RPM straight from each project's GitHub Releases
 - **Remote Access Tools** — RustDesk, Remmina, GNOME Connections and KRDC, with automatic desktop detection to hide the "Install" button when the native app is already present
+- **Terra Repository** — community repository that complements RPM Fusion, enableable in one click
 - **Install queue** for Flatpaks — click on multiple in sequence
-- **Smart lock** — prevents `rpm` lock conflicts
+- **Smart lock** — prevents `rpm` lock conflicts and blocks session navigation during execution
 - **Automatic hardware detection** — GPUs, Wi-Fi, Ethernet
 - **Detection of externally installed apps** — recognized on session load
 - **Native WebKitGTK container** (no external browser)
@@ -80,6 +82,7 @@ GNOME, KDE Plasma, XFCE, Cinnamon, MATE, LXQt, LXDE, Budgie, Sway, Hyprland, i3 
 
 ## 🙏 Acknowledgments
 
-[Fedora Project](https://getfedora.org/) · [RPM Fusion](https://rpmfusion.org/) · [Flathub](https://flathub.org/)
+[![Fedora Project](https://img.shields.io/badge/Fedora-Project-294172?style=flat-square&logo=fedora&logoColor=white)](https://getfedora.org/)
+[![DeepSeek](https://img.shields.io/badge/DeepSeek-AI-4D6BFE?style=flat-square&logo=deepseek&logoColor=white)](https://www.deepseek.com/)
 
 **Made with ❤️ for the Fedora community**

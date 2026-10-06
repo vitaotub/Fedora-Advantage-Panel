@@ -509,6 +509,10 @@ var SESSOES = [
                 textoConcluido: '✅ Flatpak configurado',
                 textoConcluidoKey: 'sessoes.primeiros-passos.texto_concluido_flatpak'
             },
+            'terra-repo': {
+                textoConcluido: '✅ Terra Repository ativado',
+                textoConcluidoKey: 'sessoes.primeiros-passos.texto_concluido_terra'
+            },
             'remover-repo-fedora-flatpak': {
                 textoConcluido: '✅ Repositório Fedora Flatpak removido',
                 textoConcluidoKey: 'sessoes.primeiros-passos.texto_concluido_remover_fedora_flatpak'
@@ -661,7 +665,6 @@ var SESSOES = [
             textoConcluidoKey: 'sessoes.dispositivos-perifericos.btn_pacote_instalado'
         },
         'driver-broadcom-wl-remove': {
-            sempreClicavel: true,
             textoConcluido: '✅ Removido',
             textoConcluidoKey: 'sessoes.dispositivos-perifericos.btn_revertido'
         },
@@ -678,7 +681,8 @@ var SESSOES = [
         'steam-devices-install': {
             textoConcluido: '✅ Steam Devices instalado',
             textoConcluidoKey: 'sessoes.dispositivos-perifericos.texto_concluido_steam_devices'
-        }
+        },
+        'steam-devices-remove': { sempreClicavel: true }
     }
 },
 
@@ -766,6 +770,14 @@ var SESSOES = [
         'instalar-remmina': { textoConcluido: '✅ Remmina instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_remmina' },
         'instalar-gnome-connections': { textoConcluido: '✅ GNOME Connections instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_gnome_connections' },
         'instalar-krdc': { textoConcluido: '✅ KRDC instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_krdc' },
+        // --- Suíte ArtCraft (RPMs do GitHub oficial) ---
+        'instalar-photocraft':  { textoConcluido: '✅ PhotoCraft instalado',  textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_photocraft' },
+        'instalar-vectorcraft': { textoConcluido: '✅ VectorCraft instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_vectorcraft' },
+        'instalar-filmcraft':   { textoConcluido: '✅ FilmCraft instalado',   textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_filmcraft' },
+        'instalar-lightcraft':  { textoConcluido: '✅ LightCraft instalado',  textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_lightcraft' },
+        'instalar-printcraft':  { textoConcluido: '✅ PrintCraft instalado',  textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_printcraft' },
+        'instalar-effectcraft': { textoConcluido: '✅ EffectCraft instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_effectcraft' },
+        'instalar-designcraft': { textoConcluido: '✅ DesignCraft instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_designcraft' },
         'instalar-rclone-manager': {
             textoConcluido: '✅ Rclone Manager instalado',
             textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_rclone_manager'
@@ -1343,19 +1355,42 @@ function _reaplicarBloqueioSeNecessario() {
 // BLOQUEIO DE NAVEGAÇÃO ENTRE SESSÕES
 // ============================================================
 //
-// Enquanto houver comando rodando na sessão atual (dnf, flatpak,
-// ou item na fila de flatpak pertencente à sessão atual), o
-// usuário não deve poder trocar de sessão.
+// Enquanto houver QUALQUER comando rodando pertencente à sessão
+// atualmente visível, o usuário não pode trocar de sessão.
 //
 // Motivo: as variáveis globais dos scripts inline de cada sessão
 // (APPS_FLATPAK, _svgLixeira, instalarFlatpak, etc.) têm os mesmos
 // nomes em sessões diferentes. Se o usuário sai da Sessão 6 no meio
-// de uma instalação de flatpak e volta depois, o eval da Sessão 7
-// (que ele visitou no meio) teria sobrescrito essas variáveis — e o
-// botão da Sessão 6 passaria a usar o `APPS_FLATPAK` da Sessão 7.
+// de uma instalação e volta depois, o eval da Sessão 7 (que ele
+// visitou no meio) teria sobrescrito essas variáveis — e o botão da
+// Sessão 6 passaria a usar o `APPS_FLATPAK` da Sessão 7.
 //
 // Também evita que o usuário perca o progresso visual de uma fila
 // em andamento (o log e a posição na fila ficariam órfãos ao sair).
+//
+// ESCOPO DO BLOQUEIO
+// ------------------
+// O bloqueio é POR SESSÃO, não global. Isso significa:
+//
+//   • Usuário clica em "Instalar VLC" na Sessão 6 (Aplicativos).
+//   • Chips do menu e botões Anterior/Próximo travam.
+//   • Usuário NÃO pode trocar de sessão enquanto o VLC instala.
+//   • Quando o VLC termina, os controles voltam a funcionar.
+//
+// A fonte de verdade para "há comando rodando na sessão atual" é
+// uma combinação de três checagens independentes, avaliadas em
+// ordem de custo (barato → caro):
+//
+//   1. `_comandoDnfRodando` — comando dnf/rpm/copr em execução.
+//   2. `_flatpakRodando` + `_filaFlatpaks` — flatpak em execução
+//      (mais os flatpaks enfileirados pertencentes à sessão atual).
+//   3. Barras de progresso visíveis e NÃO concluídas no DOM da
+//      sessão atual. Cobre fluxos que não passam pelo
+//      `executarComandoGenerico` (ex.: "Atualizar Fedora" em
+//      primeiros-passos.html, que tem fluxo próprio).
+//
+// Se QUALQUER uma dessas três for verdadeira para a sessão atual,
+// a navegação fica bloqueada.
 //
 // Elementos bloqueados:
 // - Chips do menu do topo (.session-menu-item).
@@ -1367,25 +1402,31 @@ function _reaplicarBloqueioSeNecessario() {
 var _navegacaoBloqueada = false;
 
 // Decide se a navegação deve estar bloqueada. Verdadeiro se
-// houver QUALQUER comando rodando na sessão atual — seja dnf,
-// flatpak ou item pendente na fila de flatpak.
+// houver QUALQUER comando rodando pertencente à sessão atual.
 function _deveBloquearNavegacao() {
     var sessaoAtual = _sessaoAtualId();
     if (!sessaoAtual) return false;
 
-    // dnf/rpm rodando na sessão atual?
+    // 1. dnf/rpm/copr rodando na sessão atual?
+    //    O `_comandoDnfRodando` já registra o idComando, então
+    //    basta cruzar com o mapa de comando → sessão.
     if (_comandoDnfRodando) {
         var sessaoDnf = _sessaoDoComando(_comandoDnfRodando);
         if (sessaoDnf === sessaoAtual) return true;
     }
 
-    // flatpak rodando na sessão atual?
-    if (_flatpakRodando) {
+    // 2. flatpak rodando na sessão atual?
+    //    Mesma lógica do dnf: o `_flatpakRodando` é o idComando
+    //    do flatpak em execução. Quando termina, volta a `null`.
+    if (typeof _flatpakRodando !== 'undefined' && _flatpakRodando) {
         var sessaoFp = _sessaoDoComando(_flatpakRodando);
         if (sessaoFp === sessaoAtual) return true;
     }
 
-    // Há itens na fila pertencentes à sessão atual?
+    // 2b. Há itens da fila pertencentes à sessão atual?
+    //     Mesmo que o flatpak em execução seja de outra sessão,
+    //     se houver itens enfileirados da sessão atual, o usuário
+    //     não deve sair — perderia a posição na fila.
     if (typeof _filaFlatpaks !== 'undefined' && _filaFlatpaks.length > 0) {
         for (var i = 0; i < _filaFlatpaks.length; i++) {
             var sessaoItem = _sessaoDoComando(_filaFlatpaks[i].idComando);
@@ -1393,15 +1434,15 @@ function _deveBloquearNavegacao() {
         }
     }
 
-    // Há alguma barra de progresso visível e NÃO concluída na
-    // sessão atual? Isso cobre comandos que não passam por
-    // executarComandoGenerico (ex.: "Atualizar Fedora", que tem
-    // fluxo próprio em primeiros-passos.html).
+    // 3. Rede de segurança: barra de progresso visível e NÃO
+    //    concluída na sessão atual. Cobre fluxos que não passam
+    //    por `executarComandoGenerico` — notadamente o botão
+    //    "Atualizar Fedora" da sessão 1, que tem fluxo próprio.
     //
-    // A classe `.concluido` é adicionada por completarProgresso()
-    // ao terminar o comando. Ignoramos essas barras — assim o
-    // usuário pode navegar imediatamente após o término, mesmo
-    // enquanto a barra ainda está visível (ela some após 5s).
+    //    A classe `.concluido` é adicionada por `completarProgresso`
+    //    ao terminar o comando. Ignoramos essas barras — assim o
+    //    usuário pode navegar imediatamente após o término, mesmo
+    //    enquanto a barra ainda está visível (ela some após 5s).
     var sessaoContainer = document.querySelector('.sessao-container');
     if (sessaoContainer) {
         var barras = sessaoContainer.querySelectorAll('.progress-container:not(.concluido)');
@@ -1733,24 +1774,44 @@ async function _sincronizarEstadoFlatpaks() {
         }
 
         // Etapa 1: marca os que já estão instalados no sistema.
+        //
+        // CORREÇÃO v1.0.0-10062026.b: após marcar como executado,
+        // chamamos `aplicarEstadoInstalavel` em vez de
+        // `restaurarBotaoAposExecucao`. Motivo: restaurarBotaoAposExecucao
+        // pinta o botão de cinza com o texto "✅ instalado", mas NÃO faz
+        // o swap para "🚀 Abrir X" — que é o comportamento correto para
+        // apps GUI. aplicarEstadoInstalavel detecta se o botão de abrir
+        // existe (no HTML ou criado dinamicamente pela sessão) e faz o
+        // swap correto. Isso resolve o caso do usuário que instalou o
+        // app fora do FAP e via o botão travado em "instalado".
         for (var j = 0; j < marcados.length; j++) {
             console.log('[Flatpak] Já instalado, marcando como executado:', marcados[j]);
             await marcarComoExecutado(marcados[j]);
         }
         for (var k = 0; k < marcados.length; k++) {
             try {
-                restaurarBotaoAposExecucao(marcados[k], true);
+                var idAbrirMarc = (typeof _derivarIdAbrir === 'function')
+                ? _derivarIdAbrir(marcados[k])
+                : null;
+                aplicarEstadoInstalavel(marcados[k], idAbrirMarc);
                 _atualizarIconeDesinstalarSeExistir(marcados[k]);
             } catch (e) { /* ignora */ }
         }
 
         // Etapa 2: desmarca os que foram removidos por fora.
+        //
+        // Mesmo motivo da Etapa 1: usar aplicarEstadoInstalavel
+        // garante que a lixeira seja escondida junto com a
+        // restauração do botão de instalar.
         for (var l = 0; l < removidos.length; l++) {
             var item = removidos[l];
             console.log('[Flatpak] Removido externamente:', item.id, '→', item.appId);
             await desmarcarComoExecutado(item.id);
             try {
-                restaurarBotaoAposExecucao(item.id, false);
+                var idAbrirRem = (typeof _derivarIdAbrir === 'function')
+                ? _derivarIdAbrir(item.id)
+                : null;
+                aplicarEstadoInstalavel(item.id, idAbrirRem);
             } catch (e) {
                 console.warn('[Flatpak] Erro ao restaurar botão de', item.id, ':', e.message);
             }
@@ -2755,26 +2816,62 @@ async function desinstalarPacote(idComando, comandoRemover, nomeExibicao) {
 // stdin/stdout/stderr do terminal do FAP — sem isso, o Node ficaria
 // preso ao buffer do app e o bash só sairia quando o app fechasse.
 
+// ============================================================
+// ABRIR FERRAMENTA EXTERNA
+// ============================================================
+//
+// Ponto ÚNICO de abertura de apps GUI no FAP. Todas as sessões
+// devem chamar esta função em vez de montar o comando sozinhas —
+// assim garantimos três invariantes em um só lugar:
+//
+//   1. `setsid -f` — o app ganha uma SESSÃO PRÓPRIA, desacoplada
+//      do FAP. Sem isso, o app morre quando o FAP é fechado
+//      (compartilhava o mesmo PGID do bash spawnado pelo server.js).
+//      Comportamento idêntico a clicar no atalho do menu do Fedora.
+//
+//   2. Redirecionamento `> /tmp/fap-open-<id>.log 2>&1 < /dev/null`
+//      — o app não fica preso ao terminal do FAP. Sem isso, o Node
+//      ficaria esperando o app fechar para liberar o buffer.
+//
+//   3. `& ` no final do comando original é REMOVIDO — o `&` duplica
+//      o `setsid -f` e pode confundir o bash. O helper rejeita
+//      qualquer `&` final antes de adicionar o `setsid`.
+//
+// A chamada também escreve uma linha no log da sessão. Essa linha
+// é puramente informativa — o SSE para o id `<id>-open` NÃO é
+// aberto porque o servidor já mata o processo pai do app (o
+// `setsid -f` cria a sessão nova e o `-open` termina na hora).
+
 function abrirFerramentaExterna(comando, idLog, nomeExibicao) {
     var cmdFinal = (comando || '').trim();
 
+    // Remove `&` final, se houver. Não usamos `&` aqui — o
+    // `setsid -f` já faz o "background" sozinho, e o `&` residual
+    // poderia disparar um segundo fork.
     cmdFinal = cmdFinal.replace(/\s*&\s*$/, '').trim();
 
+    // Adiciona `setsid -f` se ainda não estiver.
     if (!/^setsid\s/.test(cmdFinal)) {
         cmdFinal = 'setsid -f ' + cmdFinal;
     }
 
+    // Redireciona a saída para um log individual. Só faz isso se
+    // o comando ainda não tiver redirecionamento próprio.
     if (cmdFinal.indexOf('> /dev/null') === -1 && cmdFinal.indexOf('> /tmp/') === -1) {
         var logFile = '/tmp/fap-open-' + (idLog || 'app') + '.log';
         cmdFinal += ' > ' + logFile + ' 2>&1 < /dev/null';
     }
 
+    // Envia para o servidor. Como o `setsid -f` cria uma sessão
+    // nova, o bash do servidor sai imediatamente — o app sobrevive
+    // ao fechamento do FAP.
     fetch(API_URL + '/executar', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ comando: cmdFinal, idComando: idLog + '-open' })
     });
 
+    // Registra a abertura no log da sessão (informativo).
     var logBox = _getLogBox(idLog);
     if (logBox) {
         logBox.style.display = 'block';
@@ -2915,6 +3012,199 @@ function esconderBotoesAbrirDe(idInstall) {
 }
 
 // ============================================================
+// HELPER GLOBAL — SUBSTITUIÇÃO "INSTALAR" → "ABRIR"
+// ============================================================
+//
+// Padrão visual adotado em todas as sessões (v1.0.0-10062026+):
+//
+//   Estado 1 (não instalado):
+//     [ 📦 Instalar VLC ]
+//
+//   Estado 2 (instalado, com botão de abrir):
+//     [ 🚀 Abrir VLC ]  🗑️
+//     (o botão verde substitui o botão de instalar no mesmo
+//      lugar; a lixeira aparece ao lado)
+//
+//   Estado 3 (instalado, sem botão de abrir — módulos, configs):
+//     [ ✅ Nome do recurso instalado ]  🗑️
+//     (botão cinza, sem "Abrir")
+//
+// Os três estados são aplicados pelas funções abaixo. Elas são
+// a ÚNICA fonte de verdade do layout visual dos pares
+// instalar/abrir/lixeira. Toda sessão que siga este padrão deve
+// chamar `aplicarEstadoInstalavel()` no `restaurarEstadoSessao()`
+// e no onSucesso dos comandos.
+
+/**
+ * Aplica os 3 estados visuais para um app instalável.
+ *
+ * @param {string} idInstall   idComando do botão de instalar
+ * @param {string} idAbrir     idComando do botão de abrir (nullable
+ *                             para apps sem "Abrir", tipo módulos)
+ * @param {string} [idRemover] idComando de remoção para a lixeira.
+ *                             Se omitido, tenta derivar
+ *                             (`<install>-remove` ou `<install>-revert`).
+ */
+function aplicarEstadoInstalavel(idInstall, idAbrir, idRemover) {
+    var btnInstall = document.getElementById('btn-' + idInstall);
+    if (!btnInstall) return;
+
+    var btnAbrir = idAbrir ? document.getElementById('btn-' + idAbrir) : null;
+    var instalado = isExecutado(idInstall);
+
+    // Cor original do botão de instalar (azul padrão) — guardada
+    // uma vez para restaurar quando o app for desinstalado.
+    var corOriginal = _corOriginalDoBotao(btnInstall);
+    var textoOriginalInstall = btnInstall.getAttribute('data-texto-original') || btnInstall.textContent;
+
+    if (instalado) {
+        // Estado 2 ou 3: app instalado.
+        if (btnAbrir) {
+            // Estado 2 — botão de instalar vira botão de abrir.
+            // Reaproveita o mesmo botão (não cria novo), mudando
+            // texto, cor e handler. Assim a lixeira "irmã" continua
+            // no lugar certo.
+            // Usa _textoOriginalTraduzido() em vez de data-texto-original
+            // direto: data-texto-original guarda o texto PT-BR capturado
+            // no init, ANTES do i18n aplicar. Sem isso, em EN/ES o botão
+            // de abrir aparecia em português. _textoOriginalTraduzido lê
+            // o data-i18n do botão de abrir e retorna a string traduzida,
+            // caindo no fallback PT-BR se a tradução não existir.
+            var textoAbrir = _textoOriginalTraduzido(btnAbrir);
+            btnInstall.textContent = textoAbrir;
+            btnInstall.style.backgroundColor = '#10b981'; // verde
+            btnInstall.style.cursor = 'pointer';
+            btnInstall.disabled = false;
+            btnInstall.style.opacity = '1';
+
+            // Move o handler do botão original para o de abrir
+            // sem perder o estado salvo — o clique agora chama
+            // a função de abrir, não a de instalar.
+            var onclickAbrir = btnAbrir.getAttribute('onclick') || '';
+            var onclickInstall = btnInstall.getAttribute('data-onclick-install');
+
+            if (!onclickInstall) {
+                // Primeira vez: salva o onclick de instalar
+                btnInstall.setAttribute('data-onclick-install', btnInstall.getAttribute('onclick') || '');
+            }
+            btnInstall.setAttribute('onclick', onclickAbrir);
+
+            // Esconde o botão "Abrir" original (não é mais usado)
+            btnAbrir.style.display = 'none';
+
+            // Marca visualmente como "instalado"
+            btnInstall.setAttribute('data-estado', 'instalado-abrir');
+        } else {
+            // Estado 3 — botão cinza "✅ instalado", sem "Abrir".
+            btnInstall.textContent = getTextoAposExecucao(idInstall);
+            btnInstall.style.backgroundColor = '#4b5563';
+            btnInstall.style.cursor = 'default';
+            btnInstall.disabled = true;
+            btnInstall.style.opacity = '1';
+            btnInstall.setAttribute('data-estado', 'instalado-sem-abrir');
+        }
+
+        // Lixeira ao lado.
+        var idRem = idRemover || _idRemocaoDe(idInstall);
+        _mostrarLixeira(idInstall, idRem);
+    } else {
+        // Estado 1: não instalado.
+        btnInstall.textContent = textoOriginalInstall;
+        btnInstall.style.backgroundColor = corOriginal || '';
+        btnInstall.style.cursor = 'pointer';
+        btnInstall.disabled = false;
+        btnInstall.style.opacity = '1';
+
+        // Restaura o onclick de instalar (se foi salvo).
+        var onclickInstallSalvo = btnInstall.getAttribute('data-onclick-install');
+        if (onclickInstallSalvo !== null) {
+            btnInstall.setAttribute('onclick', onclickInstallSalvo);
+        }
+        btnInstall.removeAttribute('data-estado');
+
+        // Botão "Abrir" original volta a ser escondido (estado 1
+        // não mostra botão de abrir).
+        if (btnAbrir) btnAbrir.style.display = 'none';
+
+        // Esconde a lixeira.
+        _esconderLixeira(idInstall);
+    }
+}
+
+/**
+ * Cria (ou reexibe) o botão de lixeira SVG ao lado do botão
+ * install. Usado tanto por flatpaks quanto por apps dnf/rpm que
+ * usam o `registrarAppRemovivel`.
+ */
+function _mostrarLixeira(idInstall, idRemover) {
+    var btnInstall = document.getElementById('btn-' + idInstall);
+    if (!btnInstall) return;
+
+    var wrapper = btnInstall.closest('.btn-flatpak-wrapper');
+    if (!wrapper) return;
+
+    // Reaproveita o ícone existente ou cria um novo.
+    var icone = wrapper.querySelector('.btn-flatpak-uninstall');
+    if (!icone) {
+        icone = document.createElement('button');
+        icone.type = 'button';
+        icone.className = 'btn-flatpak-uninstall';
+        icone.setAttribute('data-comando-install', idInstall);
+        icone.setAttribute('data-comando-remover', idRemover);
+        icone.innerHTML = FAP_SVG_LIXEIRA;
+
+        var nomeAcao = (APPS_REMOVIVEIS[idInstall] && APPS_REMOVIVEIS[idInstall].nome) || idInstall;
+        icone.title = 'Remover ' + nomeAcao;
+        icone.setAttribute('aria-label', icone.title);
+
+        icone.addEventListener('click', function(e) {
+            e.stopPropagation();
+            _executarRemocaoPeloWrapper(this.getAttribute('data-comando-install'));
+        });
+
+        wrapper.appendChild(icone);
+    }
+
+    icone.style.display = '';
+}
+
+function _esconderLixeira(idInstall) {
+    var btnInstall = document.getElementById('btn-' + idInstall);
+    if (!btnInstall) return;
+    var wrapper = btnInstall.closest('.btn-flatpak-wrapper');
+    if (!wrapper) return;
+    var icone = wrapper.querySelector('.btn-flatpak-uninstall');
+    if (icone) icone.style.display = 'none';
+}
+
+/**
+ * Ponto de entrada unificado para o clique da lixeira em QUALQUER
+ * botão registrado via `registrarAppRemovivel`. Cobre os três
+ * tipos (`flatpak`, `dnf`, `arquivos`) e o modo `desfazerTudo`.
+ *
+ * Se o app não estiver registrado, cai no fluxo genérico (idRemover
+ * derivado). Isso permite que a lixeira funcione mesmo em apps
+ * ainda não migrados para `registrarAppRemovivel`.
+ */
+function _executarRemocaoPeloWrapper(idInstall) {
+    var info = APPS_REMOVIVEIS[idInstall];
+
+    if (info) {
+        if (info.modo === 'desfazerTudo') {
+            _executarDesfazerTudo(idInstall);
+        } else {
+            _executarRemocaoApp(idInstall);
+        }
+        return;
+    }
+
+    // Fallback: sem registro, derivar idRemover e chamar o fluxo
+    // antigo. Isso mantém a compatibilidade com apps ainda não
+    // migrados para o novo padrão.
+    _executarRemocaoApp(idInstall);
+}
+
+// ============================================================
 // REMOÇÃO DE APP (LIXEIRA) — FLUXO PRÓPRIO
 // ============================================================
 //
@@ -3034,20 +3324,17 @@ async function _executarRemocaoApp(idComando) {
             return;
         }
 
-        // Sucesso: desmarca o install, esconde a lixeira, restaura o botão.
+        // Sucesso: desmarca o install. O estado visual é
+        // reaplicado pelo `aplicarEstadoInstalavel` — que cuida
+        // do botão, do "Abrir" e da lixeira em uníssono.
         await desmarcarComoExecutado(idComando);
-        esconderIconeRemover(idComando);
 
-        if (btn) {
-            btn.textContent = _textoOriginalTraduzido(btn) || (info.nome || idComando);
-            btn.style.backgroundColor = _corOriginalDoBotao(btn);
-            btn.style.cursor = 'pointer';
-            btn.disabled = false;
-            btn.style.opacity = '1';
-        }
+        // Deriva o idAbrir a partir do idInstall. Convenção: para
+        // 'instalar-<nome>' → 'abrir-<nome>'; para '<nome>-install'
+        // → 'abrir-<nome>'. Isso cobre os padrões existentes.
+        var idAbrir = _derivarIdAbrir(idComando);
 
-        // Esconde o botão "Abrir X" associado (se existir).
-        esconderBotoesAbrirDe(idComando);
+        aplicarEstadoInstalavel(idComando, idAbrir, idComando);
 
         if (logBox) {
             var successLine = document.createElement('div');
@@ -3294,3 +3581,42 @@ document.addEventListener('todas-sessoes-carregadas', function() {
         setTimeout(function() { I18N.criarSeletorIdioma(); }, 100);
     }
 });
+
+// ============================================================
+// HELPER GLOBAL — DERIVAR IDs DE ABRIR A PARTIR DO INSTALL
+// ============================================================
+//
+// Convenção usada em todo o FAP:
+//   'instalar-vlc'         → 'abrir-vlc'
+//   'samba-install'        → 'abrir-samba'
+//   'okular-tesseract-install' → 'abrir-okular-tesseract'
+//
+// Se o botão de abrir tiver um id que NÃO segue a convenção
+// (ex.: 'instalar-gnome-connections' → 'abrir-gnome-connections'
+// segue, mas 'okular-tesseract-install' → 'abrir-okular' não),
+// o DOM resolve sozinho — passamos o id derivado e, se o botão
+// não existir, o `aplicarEstadoInstalavel` cai no estado 3.
+//
+// Para casos onde o nome real do botão de abrir é diferente do
+// derivado (ex.: 'instalar-obs-studio' → 'abrir-obs-studio' bate,
+// mas 'instalar-easyeffects' → 'abrir-easyeffects' bate), a
+// convenção cobre 100% dos casos atuais. Se surgir divergência
+// futura, mapeie aqui.
+var _MAPA_ABRIR_EXCECOES = {
+    // instalar-id : abrir-id
+    'okular-tesseract-install': 'abrir-okular',
+    // Os demais seguem a convenção padrão e não precisam de mapeamento.
+};
+
+function _derivarIdAbrir(idInstall) {
+    if (_MAPA_ABRIR_EXCECOES[idInstall]) {
+        return _MAPA_ABRIR_EXCECOES[idInstall];
+    }
+    if (idInstall.indexOf('instalar-') === 0) {
+        return 'abrir-' + idInstall.substring('instalar-'.length);
+    }
+    if (idInstall.indexOf('-install') !== -1) {
+        return 'abrir-' + idInstall.replace(/-install$/, '');
+    }
+    return null;
+}

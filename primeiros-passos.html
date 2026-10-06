@@ -85,6 +85,28 @@ Atualiza o índice de repositórios, sincroniza as chaves de segurança e baixa 
 </div>
 </div>
 
+<!-- Terra Repository -->
+<div class="bloco-comando">
+<div class="comando-info">
+<h3 data-i18n="sessoes.primeiros-passos.terra_titulo">📦 Habilitar Terra Repository</h3>
+<p data-i18n="sessoes.primeiros-passos.terra_desc">O Terra é um repositório comunitário de pacotes RPM que complementa o RPM Fusion. Ele traz versões atualizadas de softwares populares (como navegadores, codecs e ferramentas de desenvolvimento) que ainda não estão nos repositórios oficiais do Fedora, ou que lá estão em versões mais antigas.</p>
+
+<div class="info-extra" data-i18n-html="sessoes.primeiros-passos.terra_info">
+ℹ️ <strong>Sobre o Terra:</strong> é mantido pela comunidade, não pela Red Hat nem pelo RPM Fusion. O FAP instala apenas o repositório — os pacotes só são baixados quando você instala um software que vive lá.
+</div>
+
+<div class="grupo-botoes">
+<button class="btn-executar" onclick="executarTerra()" data-comando="terra-repo" data-logbox="log-sessao-primeiros-passos" id="btn-terra-repo" data-i18n="sessoes.primeiros-passos.btn_ativar_terra">
+📦 Ativar Terra Repository
+</button>
+</div>
+</div>
+<div class="progress-container" id="progress-terra-repo">
+<div class="progress-bar"><div class="progress-fill" id="progress-fill-terra-repo"></div></div>
+<div class="progress-text"><span class="status" id="progress-status-terra-repo">⏳ Iniciando...</span><span class="percentage" id="progress-percent-terra-repo">0%</span></div>
+</div>
+</div>
+
 <!-- Remover repositório Flatpak do Fedora -->
 <div class="bloco-comando" style="border-left: 4px solid #d97706;">
 <div class="comando-info">
@@ -229,6 +251,13 @@ async function executarAtualizacaoFedora() {
 }
 
 async function executarRPMFusion() {
+    // ATENÇÃO: este é o ÚNICO comando desta lista que NÃO deve ter
+    // `--nogpgcheck` nem `--setopt=localpkg_gpgcheck=0`. Os RPMs de
+    // release do RPM Fusion são assinados com a chave pública
+    // deles, e o pacote `rpmfusion-*-release` instala essa chave no
+    // sistema. Após isso, TODOS os pacotes vindos do RPM Fusion
+    // são verificados por GPG. Bypassar aqui quebraria a cadeia de
+    // confiança e deixaria o FAP cego para pacotes corrompidos.
     var idComando = 'rpm-fusion';
     var comando = 'sudo dnf install -y https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm && sudo dnf install -y rpmfusion-*-appstream-data && sudo dnf update -y --refresh';
     await executarComandoGenerico(idComando, comando, _t('sessoes.primeiros-passos.btn_ativar_rpm', '📦 Ativar RPM Fusion'));
@@ -247,6 +276,20 @@ async function executarFlatpak() {
 
     var comando = comandoExtra + ' && flatpak remote-add --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo';
     await executarComandoGenerico(idComando, comando, _t('sessoes.primeiros-passos.btn_configurar_flatpak', '📦 Configurar Flatpak'));
+}
+
+async function executarTerra() {
+    // O RPM de release do Terra não é assinado pelo Fedora —
+    // `--nogpgcheck` permite a instalação. Após ele ser instalado,
+    // o repo Terra é adicionado em /etc/yum.repos.d/ e passa a ser
+    // usado para instalar os pacotes dele, que são verificados
+    // pelas chaves próprias do Terra (cuidadas pelo próprio repo).
+    var idComando = 'terra-repo';
+    var comando =
+        'sudo dnf install -y --nogpgcheck ' +
+        '"https://terra.fyralabs.com/terra-release-$(rpm -E %fedora).noarch.rpm"';
+    await executarComandoGenerico(idComando, comando,
+        _t('sessoes.primeiros-passos.btn_ativar_terra', '📦 Ativar Terra Repository'));
 }
 
 async function executarRemoverRepoFedoraFlatpak() {
@@ -287,8 +330,8 @@ async function executarRemoverRepoFedoraFlatpak() {
 }
 
 function restaurarEstadoSessao() {
-    // One-shot: RPM Fusion, Flatpak e remoção do repo Fedora
-    ['rpm-fusion', 'flatpak-setup', 'remover-repo-fedora-flatpak'].forEach(function(id) {
+    // One-shot: RPM Fusion, Flatpak, Terra e remoção do repo Fedora
+    ['rpm-fusion', 'flatpak-setup', 'terra-repo', 'remover-repo-fedora-flatpak'].forEach(function(id) {
         if (isExecutado(id)) {
             var btn = document.getElementById('btn-' + id);
             if (btn) {

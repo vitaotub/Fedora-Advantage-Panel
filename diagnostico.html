@@ -383,17 +383,35 @@ function _t(chave, fallback) {
     return (typeof tOr === 'function') ? tOr(chave, fallback) : fallback;
 }
 
+// ============================================================
+// REGISTRO DE APPS REMOVÍVEIS (lixeira unificada)
+// ============================================================
+
+registrarAppRemovivel('gsmartcontrol-install', {
+    tipo: 'dnf',
+    pacotes: ['gsmartcontrol'],
+    nome: 'GSmartControl'
+});
+
+registrarAppRemovivel('coolercontrol-install', {
+    tipo: 'dnf',
+    pacotes: ['coolercontrol'],
+    nome: 'CoolerControl'
+});
+
 // ------------------------------------------------------------
 // Helper: gerencia visibilidade do botão "Abrir X"
 // ------------------------------------------------------------
+//
+// Após a migração para `aplicarEstadoInstalavel` (em script.js),
+// o próprio botão de instalar é reaproveitado como botão de abrir.
+// O `<button>` verde original do HTML é escondido permanentemente
+// — o helper continua existindo apenas para compatibilidade.
+
 function _atualizarBotaoAbrir(idInstalacao, idBotaoAbrir) {
     var btn = document.getElementById(idBotaoAbrir);
     if (!btn) return;
-    if (isExecutado(idInstalacao)) {
-        btn.style.display = '';
-    } else {
-        btn.style.display = 'none';
-    }
+    btn.style.display = 'none';
 }
 
 // ------------------------------------------------------------
@@ -696,13 +714,13 @@ async function _atualizarParticiones() {
 async function executarGSmartControl() {
     var idComando = 'gsmartcontrol-install';
     var comando = 'sudo dnf install -y gsmartcontrol';
-    await executarComandoGenerico(idComando, comando, _t('sessoes.diagnostico.btn_gsmart_install', '📦 Instalar GSmartControl'), function() {
-        _atualizarBotaoAbrir('gsmartcontrol-install', 'btn-abrir-gsmartcontrol');
-    });
+    await executarComandoGenerico(idComando, comando,
+        _t('sessoes.diagnostico.btn_gsmart_install', '📦 Instalar GSmartControl'),
+        function() { aplicarEstadoInstalavel(idComando, 'abrir-gsmartcontrol'); });
 }
 
 function abrirGSmartControl() {
-    abrirFerramentaExterna('gtk-launch gsmartcontrol 2>/dev/null &', 'gsmartcontrol-install', 'GSmartControl');
+    abrirFerramentaExterna('gtk-launch gsmartcontrol', 'gsmartcontrol-install', 'GSmartControl');
 }
 
 // ============================================================
@@ -716,13 +734,13 @@ async function executarCoolerControl() {
         'sudo dnf install -y coolercontrol && ' +
         'sudo systemctl enable --now coolercontrold && ' +
         'sudo usermod -aG coolercontrol $USER';
-    await executarComandoGenerico(idComando, comando, _t('sessoes.diagnostico.btn_coolercontrol_install', '📦 Instalar CoolerControl'), function() {
-        _atualizarBotaoAbrir('coolercontrol-install', 'btn-abrir-coolercontrol');
-    });
+    await executarComandoGenerico(idComando, comando,
+        _t('sessoes.diagnostico.btn_coolercontrol_install', '📦 Instalar CoolerControl'),
+        function() { aplicarEstadoInstalavel(idComando, 'abrir-coolercontrol'); });
 }
 
 function abrirCoolerControl() {
-    abrirFerramentaExterna('gtk-launch coolercontrol 2>/dev/null &', 'coolercontrol-install', 'CoolerControl');
+    abrirFerramentaExterna('gtk-launch coolercontrol', 'coolercontrol-install', 'CoolerControl');
 }
 
 // ============================================================
@@ -776,26 +794,12 @@ async function verificarJournalErrors() {
 // RESTAURAR ESTADO DA SESSÃO
 // ============================================================
 function restaurarEstadoSessao() {
-    // Botões não-reversíveis
-    var comandosNaoReversiveis = [
-        'gsmartcontrol-install',
-        'coolercontrol-install'
-    ];
+    // Apps com GUI → Estado 2 (verde + lixeira).
+    aplicarEstadoInstalavel('gsmartcontrol-install', 'abrir-gsmartcontrol');
+    aplicarEstadoInstalavel('coolercontrol-install', 'abrir-coolercontrol');
 
-    comandosNaoReversiveis.forEach(function(id) {
-        if (isExecutado(id)) {
-            var btn = document.getElementById('btn-' + id);
-            if (btn) {
-                var textoFinal = getTextoAposExecucao(id);
-                btn.textContent = textoFinal;
-                btn.style.backgroundColor = '#4b5563';
-                btn.style.cursor = 'default';
-                btn.disabled = true;
-            }
-        }
-    });
-
-    // Botões de ação sempre disponíveis
+    // Botões de ação sempre disponíveis (read-only, sem par de
+    // revert — nada a alterar no estado visual).
     ['diag-refresh', 'journal-errors-check'].forEach(function(id) {
         var btn = document.getElementById('btn-' + id);
         if (btn) {
@@ -804,10 +808,6 @@ function restaurarEstadoSessao() {
             btn.style.cursor = 'pointer';
         }
     });
-
-    // Botões "Abrir X"
-    _atualizarBotaoAbrir('gsmartcontrol-install', 'btn-abrir-gsmartcontrol');
-    _atualizarBotaoAbrir('coolercontrol-install', 'btn-abrir-coolercontrol');
 
     // Popula o painel pela primeira vez
     setTimeout(function() {

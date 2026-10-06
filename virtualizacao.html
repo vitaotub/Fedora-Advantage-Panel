@@ -202,10 +202,7 @@ async function executarQemuKvm() {
         'sudo usermod -aG libvirt $USER';
     await executarComandoGenerico(idComando, comando,
         _t('sessoes.virtualizacao.btn_qemu', '📦 Instalar QEMU/KVM'),
-        function() {
-            atualizarIconeRemover(idComando);
-            atualizarBotaoAbrirVirtManager();
-        });
+        function() { aplicarEstadoInstalavel(idComando, 'abrir-virt-manager'); });
 }
 
 async function executarVirtualBox() {
@@ -213,10 +210,7 @@ async function executarVirtualBox() {
     var comando = 'sudo dnf install -y akmod-VirtualBox VirtualBox';
     await executarComandoGenerico(idComando, comando,
         _t('sessoes.virtualizacao.btn_virtualbox', '📦 Instalar VirtualBox'),
-        function() {
-            atualizarIconeRemover(idComando);
-            atualizarBotaoAbrirVirtualBox();
-        });
+        function() { aplicarEstadoInstalavel(idComando, 'abrir-virtualbox'); });
 }
 
 async function executarGnomeBoxes() {
@@ -224,10 +218,7 @@ async function executarGnomeBoxes() {
     var comando = 'sudo dnf install -y gnome-boxes';
     await executarComandoGenerico(idComando, comando,
         _t('sessoes.virtualizacao.btn_boxes', '📦 Instalar GNOME Boxes'),
-        function() {
-            atualizarIconeRemover(idComando);
-            atualizarBotaoAbrirGnomeBoxes();
-        });
+        function() { aplicarEstadoInstalavel(idComando, 'abrir-gnome-boxes'); });
 }
 
 // ------------------------------------------------------------
@@ -246,22 +237,29 @@ function abrirGnomeBoxes() {
     abrirFerramentaExterna('gtk-launch org.gnome.Boxes', 'gnome-boxes-install', 'GNOME Boxes');
 }
 
+// Os três helpers abaixo foram mantidos para compatibilidade com
+// chamadas antigas (caso alguma sessão externa chame estas funções).
+// Após a migração para `aplicarEstadoInstalavel`, eles ficam como
+// no-op porque o próprio botão de instalar é reaproveitado como
+// botão de abrir. O `<button>` verde original é escondido pelo
+// helper `aplicarEstadoInstalavel`.
+
 function atualizarBotaoAbrirVirtManager() {
     var btn = document.getElementById('btn-abrir-virt-manager');
     if (!btn) return;
-    btn.style.display = isExecutado('qemu-kvm-install') ? '' : 'none';
+    btn.style.display = 'none';
 }
 
 function atualizarBotaoAbrirVirtualBox() {
     var btn = document.getElementById('btn-abrir-virtualbox');
     if (!btn) return;
-    btn.style.display = isExecutado('virtualbox-install') ? '' : 'none';
+    btn.style.display = 'none';
 }
 
 function atualizarBotaoAbrirGnomeBoxes() {
     var btn = document.getElementById('btn-abrir-gnome-boxes');
     if (!btn) return;
-    btn.style.display = isExecutado('gnome-boxes-install') ? '' : 'none';
+    btn.style.display = 'none';
 }
 
 // ------------------------------------------------------------
@@ -269,22 +267,10 @@ function atualizarBotaoAbrirGnomeBoxes() {
 // ------------------------------------------------------------
 
 function restaurarEstadoSessao() {
-    ['qemu-kvm-install', 'virtualbox-install', 'gnome-boxes-install'].forEach(function(id) {
-        if (isExecutado(id)) {
-            var btn = document.getElementById('btn-' + id);
-            if (btn) {
-                btn.textContent = getTextoAposExecucao(id);
-                btn.style.backgroundColor = '#4b5563';
-                btn.style.cursor = 'default';
-                btn.disabled = true;
-            }
-            atualizarIconeRemover(id);
-        }
-    });
-
-    atualizarBotaoAbrirVirtManager();
-    atualizarBotaoAbrirVirtualBox();
-    atualizarBotaoAbrirGnomeBoxes();
+    // Todos os três são apps com GUI — Estado 2 (verde + lixeira).
+    aplicarEstadoInstalavel('qemu-kvm-install', 'abrir-virt-manager');
+    aplicarEstadoInstalavel('virtualbox-install', 'abrir-virtualbox');
+    aplicarEstadoInstalavel('gnome-boxes-install', 'abrir-gnome-boxes');
 }
 
 // ------------------------------------------------------------

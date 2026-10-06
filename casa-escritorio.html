@@ -38,7 +38,8 @@ IMPRESSORA E SCANNER
 ℹ️ <strong>Sobre drivers específicos:</strong> impressoras HP podem precisar de <code>hplip</code>, Brother de <code>brother-*</code> (via site do fabricante), Epson de <code>epson-inkjet-printer-escpr</code>. Após instalar o CUPS, abra as Configurações de Impressora — o sistema sugere os drivers que faltam.
 </div>
 
-<div class="grupo-botoes">
+<div class="botoes-flex">
+<div class="btn-flatpak-wrapper">
 <button class="btn-executar"
 onclick="executarCups()"
 data-comando="cups-install"
@@ -47,6 +48,7 @@ id="btn-cups-install"
 data-i18n="sessoes.casa-escritorio.btn_cups">
 📦 Instalar Suporte a Impressão
 </button>
+</div>
 </div>
 </div>
 
@@ -84,7 +86,7 @@ Ferramentas para transferir e compartilhar arquivos entre o Fedora e outros disp
 ℹ️ <strong>O que é instalado:</strong> <code>samba</code>, <code>samba-client</code> e <code>cifs-utils</code> (para montar pastas Windows). Os serviços <code>smb</code> e <code>nmb</code> são habilitados.
 </div>
 
-<div class="grupo-botoes">
+<div class="botoes-flex">
 <div class="btn-flatpak-wrapper">
 <button class="btn-executar"
 onclick="executarSamba()"
@@ -310,6 +312,12 @@ var APPS_FLATPAK = {
 // Registro de apps não-Flatpak removíveis (lixeira)
 // ------------------------------------------------------------
 
+registrarAppRemovivel('cups-install', {
+    tipo: 'dnf',
+    pacotes: ['cups', 'cups-filters', 'avahi', 'avahi-tools', 'system-config-printer', 'ghostscript'],
+    nome: 'Suporte a Impressão (CUPS)'
+});
+
 registrarAppRemovivel('samba-install', {
     tipo: 'dnf',
     pacotes: ['samba', 'samba-client', 'cifs-utils'],
@@ -340,7 +348,7 @@ async function executarCups() {
         'sudo systemctl enable --now avahi-daemon';
     await executarComandoGenerico(idComando, comando,
         _t('sessoes.casa-escritorio.btn_cups', '📦 Instalar Suporte a Impressão'),
-        mostrarBotaoDesinstalar);
+        function() { aplicarEstadoInstalavel(idComando, null); });
 }
 
 // ------------------------------------------------------------
@@ -355,17 +363,25 @@ async function executarSamba() {
         'sudo systemctl enable --now nmb';
     await executarComandoGenerico(idComando, comando,
         _t('sessoes.casa-escritorio.btn_samba', '📦 Instalar Samba'),
-        function() { atualizarIconeRemover(idComando); });
+        function() { aplicarEstadoInstalavel(idComando, null); });
 }
 
 // ------------------------------------------------------------
 // Helper: visibilidade dos botões "Abrir X"
 // ------------------------------------------------------------
+//
+// Mantido para compatibilidade — as chamadas desta sessão foram
+// migradas para `aplicarEstadoInstalavel` (em script.js), que
+// reaproveita o próprio botão de instalar como botão de abrir.
+//
+// Este helper continua sendo usado pelos handlers de abrir, para
+// esconder o `<button>` original do HTML (o "abrir" verdadeiro
+// fica dentro do botão de instalar depois da substituição).
 
 function _atualizarBotaoAbrir(idInstalacao, idBotaoAbrir) {
     var btn = document.getElementById(idBotaoAbrir);
     if (!btn) return;
-    btn.style.display = isExecutado(idInstalacao) ? '' : 'none';
+    btn.style.display = 'none';
 }
 
 async function executarLocalSend() {
@@ -373,10 +389,7 @@ async function executarLocalSend() {
     const comando = 'flatpak install flathub org.localsend.localsend_app -y';
     await executarComandoGenerico(idComando, comando,
         _t('sessoes.casa-escritorio.btn_localsend', '📦 Instalar LocalSend'),
-        function() {
-            _atualizarIconeDesinstalar(idComando);
-            _atualizarBotaoAbrir('localsend-install', 'btn-abrir-localsend');
-        });
+        function() { aplicarEstadoInstalavel(idComando, 'abrir-localsend'); });
 }
 
 function abrirLocalSend() {
@@ -388,10 +401,7 @@ async function executarWarpinator() {
     const comando = 'flatpak install flathub org.x.Warpinator -y';
     await executarComandoGenerico(idComando, comando,
         _t('sessoes.casa-escritorio.btn_warpinator', '📦 Instalar Warpinator'),
-        function() {
-            _atualizarIconeDesinstalar(idComando);
-            _atualizarBotaoAbrir('warpinator-install', 'btn-abrir-warpinator');
-        });
+        function() { aplicarEstadoInstalavel(idComando, 'abrir-warpinator'); });
 }
 
 function abrirWarpinator() {
@@ -407,10 +417,7 @@ async function executarKeePassXC() {
     const comando = 'sudo dnf install -y keepassxc';
     await executarComandoGenerico(idComando, comando,
         _t('sessoes.casa-escritorio.btn_keepassxc', '📦 Instalar KeePassXC'),
-        function() {
-            atualizarIconeRemover(idComando);
-            _atualizarBotaoAbrir('keepassxc-install', 'btn-abrir-keepassxc');
-        });
+        function() { aplicarEstadoInstalavel(idComando, 'abrir-keepassxc'); });
 }
 
 function abrirKeePassXC() {
@@ -427,10 +434,7 @@ async function executarOkularTesseract() {
         'sudo dnf install -y okular tesseract tesseract-langpack-por tesseract-langpack-eng ocrmypdf';
     await executarComandoGenerico(idComando, comando,
         _t('sessoes.casa-escritorio.btn_okular_tesseract', '📦 Instalar Okular + Tesseract'),
-        function() {
-            atualizarIconeRemover(idComando);
-            _atualizarBotaoAbrir('okular-tesseract-install', 'btn-abrir-okular');
-        });
+        function() { aplicarEstadoInstalavel(idComando, 'abrir-okular'); });
 }
 
 function abrirOkular() {
@@ -588,37 +592,20 @@ function _restaurarIconesFlatpak() {
 // ------------------------------------------------------------
 
 function restaurarEstadoSessao() {
-    const comandos = [
-        'cups-install',
-        'samba-install',
-        'localsend-install',
-        'warpinator-install',
-        'keepassxc-install',
-        'okular-tesseract-install'
-    ];
+    // CUPS e Samba são pacotes sem GUI — Estado 3 (cinza + lixeira).
+    aplicarEstadoInstalavel('cups-install', null);
+    aplicarEstadoInstalavel('samba-install', null);
 
-    comandos.forEach(function(id) {
-        if (isExecutado(id)) {
-            const btn = document.getElementById('btn-' + id);
-            if (btn) {
-                btn.textContent = getTextoAposExecucao(id);
-                btn.style.backgroundColor = '#4b5563';
-                btn.style.cursor = 'default';
-                btn.disabled = true;
-            }
-        }
-    });
+    // LocalSend e Warpinator têm GUI — Estado 2 (verde + lixeira).
+    aplicarEstadoInstalavel('localsend-install', 'abrir-localsend');
+    aplicarEstadoInstalavel('warpinator-install', 'abrir-warpinator');
 
-    // Lixeiras dos não-flatpaks
-    if (isExecutado('samba-install')) atualizarIconeRemover('samba-install');
-    if (isExecutado('keepassxc-install')) atualizarIconeRemover('keepassxc-install');
-    if (isExecutado('okular-tesseract-install')) atualizarIconeRemover('okular-tesseract-install');
-
-    // Botões "Abrir" (só aparecem se o install está marcado como executado)
-    _atualizarBotaoAbrir('localsend-install', 'btn-abrir-localsend');
-    _atualizarBotaoAbrir('warpinator-install', 'btn-abrir-warpinator');
-    _atualizarBotaoAbrir('keepassxc-install', 'btn-abrir-keepassxc');
-    _atualizarBotaoAbrir('okular-tesseract-install', 'btn-abrir-okular');
+    // KeePassXC e Okular+Tesseract têm GUI — Estado 2.
+    // Okular+Tesseract tem idAbrir fora do padrão — o mapa global
+    // `_MAPA_ABRIR_EXCECOES` em script.js já resolve isso para
+    // `_derivarIdAbrir`, mas aqui passamos explícito.
+    aplicarEstadoInstalavel('keepassxc-install', 'abrir-keepassxc');
+    aplicarEstadoInstalavel('okular-tesseract-install', 'abrir-okular');
 
     _restaurarIconesFlatpak();
 }

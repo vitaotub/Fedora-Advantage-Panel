@@ -267,17 +267,35 @@ function _t(chave, fallback) {
 return (typeof tOr === 'function') ? tOr(chave, fallback) : fallback;
 }
 
+// ============================================================
+// REGISTRO DE APPS REMOVÍVEIS (lixeira unificada)
+// ============================================================
+
+registrarAppRemovivel('selinux-setroubleshoot-install', {
+tipo: 'dnf',
+pacotes: ['setroubleshoot-server', 'setools-console', 'policycoreutils-python-utils'],
+nome: 'setroubleshoot'
+});
+
+registrarAppRemovivel('selinux-gui-install', {
+tipo: 'dnf',
+pacotes: ['policycoreutils-gui'],
+nome: 'Gerenciador SELinux'
+});
+
 // ------------------------------------------------------------
 // Helper: gerencia visibilidade do botão "Abrir X"
 // ------------------------------------------------------------
+//
+// Após a migração para `aplicarEstadoInstalavel` (em script.js),
+// o próprio botão de instalar é reaproveitado como botão de abrir.
+// O `<button>` verde original do HTML é escondido permanentemente
+// — o helper continua existindo apenas para compatibilidade.
+
 function _atualizarBotaoAbrir(idInstalacao, idBotaoAbrir) {
 var btn = document.getElementById(idBotaoAbrir);
 if (!btn) return;
-if (isExecutado(idInstalacao)) {
-btn.style.display = '';
-} else {
 btn.style.display = 'none';
-}
 }
 
 // ------------------------------------------------------------
@@ -606,7 +624,9 @@ resultadoEl.innerHTML = msg;
 async function executarSetroubleshootInstall() {
 var idComando = 'selinux-setroubleshoot-install';
 var comando = 'sudo dnf install -y setroubleshoot-server setools-console policycoreutils-python-utils';
-await executarComandoGenerico(idComando, comando, _t('sessoes.estado-fedora.btn_setroubleshoot_install', '📦 Instalar setroubleshoot'), mostrarBotaoDesinstalar);
+await executarComandoGenerico(idComando, comando,
+_t('sessoes.estado-fedora.btn_setroubleshoot_install', '📦 Instalar setroubleshoot'),
+function() { aplicarEstadoInstalavel(idComando, null); });
 }
 
 // ============================================================
@@ -616,34 +636,26 @@ await executarComandoGenerico(idComando, comando, _t('sessoes.estado-fedora.btn_
 async function executarSelinuxGUIInstall() {
 var idComando = 'selinux-gui-install';
 var comando = 'sudo dnf install -y policycoreutils-gui';
-await executarComandoGenerico(idComando, comando, _t('sessoes.estado-fedora.btn_selinux_gui_install', '📦 Instalar Gerenciador SELinux'), function() {
-_atualizarBotaoAbrir('selinux-gui-install', 'btn-abrir-selinux-gui');
-});
+await executarComandoGenerico(idComando, comando,
+_t('sessoes.estado-fedora.btn_selinux_gui_install', '📦 Instalar Gerenciador SELinux'),
+function() { aplicarEstadoInstalavel(idComando, 'abrir-selinux-gui'); });
 }
 
 function abrirSelinuxGUI() {
-abrirFerramentaExterna('gtk-launch system-config-selinux 2>/dev/null &', 'selinux-gui-install', 'Gerenciador SELinux');
+abrirFerramentaExterna('gtk-launch system-config-selinux', 'selinux-gui-install', 'Gerenciador SELinux');
 }
 
 // ============================================================
 // RESTAURAR ESTADO DA SESSÃO
 // ============================================================
 function restaurarEstadoSessao() {
-// Botões não-reversíveis
-['selinux-setroubleshoot-install', 'selinux-gui-install'].forEach(function(id) {
-if (isExecutado(id)) {
-var btn = document.getElementById('btn-' + id);
-if (btn) {
-var textoFinal = getTextoAposExecucao(id);
-btn.textContent = textoFinal;
-btn.style.backgroundColor = '#4b5563';
-btn.style.cursor = 'default';
-btn.disabled = true;
-}
-}
-});
+// setroubleshoot é um pacote sem GUI própria → Estado 3 (cinza).
+aplicarEstadoInstalavel('selinux-setroubleshoot-install', null);
 
-// Botões de leitura: sempre clicáveis
+// Gerenciador SELinux tem GUI → Estado 2 (verde + "Abrir").
+aplicarEstadoInstalavel('selinux-gui-install', 'abrir-selinux-gui');
+
+// Botões de leitura: sempre clicáveis (sem estado visual).
 ['fedora-version-check', 'atomic-check', 'selinux-status-check', 'selinux-troubleshoot'].forEach(function(id) {
 var btn = document.getElementById('btn-' + id);
 if (btn) {
@@ -652,9 +664,6 @@ btn.style.opacity = '1';
 btn.style.cursor = 'pointer';
 }
 });
-
-// Botões "Abrir X"
-_atualizarBotaoAbrir('selinux-gui-install', 'btn-abrir-selinux-gui');
 
 // Auto-verifica a versão do Fedora ao entrar
 setTimeout(function() {

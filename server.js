@@ -112,7 +112,14 @@ const COMANDOS_SEM_AUTENTICACAO = [
 'setsid -f steam',
 'setsid -f waydroid show-full-ui',
 'setsid -f keepassxc',
-'setsid -f okular',,
+'setsid -f okular',
+'setsid -f photocraft',
+'setsid -f vectorcraft',
+'setsid -f filmcraft',
+'setsid -f lightcraft',
+'setsid -f printcraft',
+'setsid -f effectcraft',
+'setsid -f designcraft',
 // Flatpak roda como usuário; a autenticação (quando necessária)
 // é resolvida pelo Polkit do sistema, não pelo FAP.
 'flatpak install',

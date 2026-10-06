@@ -1860,3 +1860,37 @@ body {
         flex-wrap: wrap;
     }
 }
+
+/* ============================================================
+ * ESTADOS DE BOTÕES — padrão unificado v1.0.0-10062026+
+ * ============================================================
+ *
+ * `aplicarEstadoInstalavel` (em script.js) alterna o mesmo botão
+ * entre três estados visuais, sem recriar elementos:
+ *
+ *   data-estado="instalado-abrir"
+ *     → botão verde com texto de "Abrir X"; clique chama o handler
+ *       do botão de abrir que estava escondido. A lixeira aparece
+ *       ao lado (criada por `_mostrarLixeira`).
+ *
+ *   data-estado="instalado-sem-abrir"
+ *     → botão cinza com "✅ Nome do recurso instalado"; sem
+ *       handler de clique. Usado em módulos de kernel, pacotes
+ *       sem interface gráfica e configurações de sistema.
+ *
+ *   (sem data-estado)
+ *     → estado original (azul, clicável, texto de instalar).
+ */
+
+.btn-executar[data-estado="instalado-abrir"] {
+    background-color: #10b981 !important;
+}
+
+.btn-executar[data-estado="instalado-abrir"]:hover:not(:disabled) {
+    background-color: #059669 !important;
+}
+
+.btn-executar[data-estado="instalado-sem-abrir"] {
+    background-color: #4b5563 !important;
+    cursor: default;
+}

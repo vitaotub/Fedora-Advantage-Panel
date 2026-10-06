@@ -324,11 +324,56 @@ data-i18n="sessoes.hardware.btn_intel_media_instalar">
 // SESSÃO 3: HARDWARE
 // ============================================================
 //
-// NOTA: este arquivo NÃO define mais helpers locais de toggle
-// (_marcarBotaoConcluido, _resetarBotao, _resetarIrmao). Essas
-// funções agora são globais em script.js — _marcarBotaoConcluido
-// e aplicarEstadoToggle. A consolidação evita três implementações
-// divergentes da mesma regra ("install feito → revert ativo").
+// NOTA: este arquivo NÃO define mais helpers locais de toggle.
+// Os pares install/revert desta sessão agora usam o padrão
+// unificado "instalado-sem-abrir" (botão cinza + lixeira SVG) via
+// `aplicarEstadoInstalavel` do script.js.
+
+// ============================================================
+// REGISTRO DE APPS REMOVÍVEIS (ícone de lixeira unificado)
+// ============================================================
+
+registrarAppRemovivel('vulkan-amd', {
+    tipo: 'dnf',
+    pacotes: ['mesa-vulkan-drivers', 'mesa-vulkan-drivers.i686', 'vulkan-tools', 'vulkan-loader', 'mesa-dri-drivers', 'mesa-dri-drivers.i686'],
+    nome: 'Vulkan e Mesa 3D'
+});
+
+registrarAppRemovivel('vaapi-amd', {
+    tipo: 'dnf',
+    pacotes: ['ffmpeg-libs', 'libva', 'libva-utils', 'mesa-va-drivers-freeworld', 'mesa-va-drivers-freeworld.i686'],
+    nome: 'VA-API AMD'
+});
+
+registrarAppRemovivel('vaapi-swap', {
+    tipo: 'dnf',
+    pacotes: ['mesa-va-drivers-freeworld', 'mesa-vdpau-drivers-freeworld'],
+    nome: 'VA-API AMD (Alternativa)'
+});
+
+registrarAppRemovivel('corectrl-install', {
+    tipo: 'dnf',
+    pacotes: ['corectrl'],
+    nome: 'CoreCtrl'
+});
+
+registrarAppRemovivel('lact-install', {
+    tipo: 'dnf',
+    pacotes: ['lact'],
+    nome: 'LACT'
+});
+
+registrarAppRemovivel('nvidia-driver-install', {
+    tipo: 'dnf',
+    pacotes: ['akmod-nvidia', 'akmod-nvidia-580xx', 'akmod-nvidia-470xx', 'akmod-nvidia-390xx', 'xorg-x11-drv-nvidia-cuda', 'xorg-x11-drv-nvidia-cuda-libs', 'nvidia-settings'],
+    nome: 'Driver NVIDIA'
+});
+
+registrarAppRemovivel('intel-media-install', {
+    tipo: 'dnf',
+    pacotes: ['intel-media-driver'],
+    nome: 'Intel Media Driver'
+});
 
 function _t(chave, fallback) {
     return (typeof tOr === 'function') ? tOr(chave, fallback) : fallback;
@@ -341,19 +386,25 @@ function _t(chave, fallback) {
 async function executarVulkan() {
     var idComando = 'vulkan-amd';
     var comando = 'sudo dnf install -y mesa-vulkan-drivers mesa-vulkan-drivers.i686 vulkan-tools vulkan-loader mesa-dri-drivers mesa-dri-drivers.i686';
-    await executarComandoGenerico(idComando, comando, _t('sessoes.hardware.btn_vulkan', '🚀 Instalar Vulkan e Mesa 3D'));
+    await executarComandoGenerico(idComando, comando,
+        _t('sessoes.hardware.btn_vulkan', '🚀 Instalar Vulkan e Mesa 3D'),
+        function() { aplicarEstadoInstalavel('vulkan-amd', 'abrir-vulkan-amd'); });
 }
 
 async function executarVaapi() {
     var idComando = 'vaapi-amd';
     var comando = 'sudo dnf install ffmpeg-libs libva libva-utils -y && sudo dnf install mesa-va-drivers-freeworld mesa-va-drivers-freeworld.i686 -y';
-    await executarComandoGenerico(idComando, comando, _t('sessoes.hardware.btn_vaapi_padrao', '🚀 Instalação Padrão'));
+    await executarComandoGenerico(idComando, comando,
+        _t('sessoes.hardware.btn_vaapi_padrao', '🚀 Instalação Padrão'),
+        function() { aplicarEstadoInstalavel('vaapi-amd', null); });
 }
 
 async function executarVaapiSwap() {
     var idComando = 'vaapi-swap';
     var comando = 'sudo dnf swap mesa-va-drivers mesa-va-drivers-freeworld -y && sudo dnf swap mesa-vdpau-drivers mesa-vdpau-drivers-freeworld -y';
-    await executarComandoGenerico(idComando, comando, _t('sessoes.hardware.btn_vaapi_alt', '🔄 Alternativa'));
+    await executarComandoGenerico(idComando, comando,
+        _t('sessoes.hardware.btn_vaapi_alt', '🔄 Alternativa'),
+        function() { aplicarEstadoInstalavel('vaapi-swap', null); });
 }
 
 // ------------------------------------------------------------
@@ -363,13 +414,13 @@ async function executarVaapiSwap() {
 async function executarCoreCtrl() {
     var idComando = 'corectrl-install';
     var comando = 'sudo dnf install -y corectrl';
-    await executarComandoGenerico(idComando, comando, _t('sessoes.hardware.btn_corectrl', '📦 Instalar CoreCtrl'), function() {
-        atualizarBotaoAbrirCoreCtrl();
-    });
+    await executarComandoGenerico(idComando, comando,
+        _t('sessoes.hardware.btn_corectrl', '📦 Instalar CoreCtrl'),
+        function() { aplicarEstadoInstalavel('corectrl-install', 'abrir-corectrl'); });
 }
 
 function abrirCoreCtrl() {
-    abrirFerramentaExterna('corectrl > /dev/null 2>&1 &', 'corectrl-install', 'CoreCtrl');
+    abrirFerramentaExterna('corectrl', 'corectrl-install', 'CoreCtrl');
 }
 
 function atualizarBotaoAbrirCoreCtrl() {
@@ -385,13 +436,13 @@ function atualizarBotaoAbrirCoreCtrl() {
 async function executarLACT() {
     var idComando = 'lact-install';
     var comando = 'sudo dnf copr enable ilyaz/LACT -y && sudo dnf install -y lact && sudo systemctl enable --now lactd';
-    await executarComandoGenerico(idComando, comando, _t('sessoes.hardware.btn_lact', '📦 Instalar LACT'), function() {
-        atualizarBotaoAbrirLACT();
-    });
+    await executarComandoGenerico(idComando, comando,
+        _t('sessoes.hardware.btn_lact', '📦 Instalar LACT'),
+        function() { aplicarEstadoInstalavel('lact-install', 'abrir-lact'); });
 }
 
 function abrirLACT() {
-    abrirFerramentaExterna('lact > /dev/null 2>&1 &', 'lact-install', 'LACT');
+    abrirFerramentaExterna('lact', 'lact-install', 'LACT');
 }
 
 function atualizarBotaoAbrirLACT() {
@@ -680,7 +731,7 @@ async function executarNvidiaDriverRemove() {
 }
 
 function abrirNvidiaSettings() {
-    abrirFerramentaExterna('gtk-launch nvidia-settings 2>/dev/null &', 'nvidia-driver-install', 'NVIDIA Settings');
+    abrirFerramentaExterna('gtk-launch nvidia-settings', 'nvidia-driver-install', 'NVIDIA Settings');
 }
 
 async function executarNvidiaModeset() {
@@ -703,7 +754,8 @@ async function executarIntelMedia() {
     var idComando = 'intel-media-install';
     var comando = 'sudo dnf install -y intel-media-driver';
     await executarComandoGenerico(idComando, comando,
-        _t('sessoes.hardware.btn_intel_media_instalar', '🎬 Instalar Intel Media Driver'));
+        _t('sessoes.hardware.btn_intel_media_instalar', '🎬 Instalar Intel Media Driver'),
+        function() { aplicarEstadoInstalavel('intel-media-install', null); });
 }
 
 // ------------------------------------------------------------
@@ -711,45 +763,26 @@ async function executarIntelMedia() {
 // ------------------------------------------------------------
 
 async function restaurarEstadoSessao() {
+    // Aplica o estado unificado (instalado-sem-abrir) em todos os
+    // botões que instalam pacotes dnf.
+    aplicarEstadoInstalavel('vulkan-amd',      'abrir-vulkan-amd');
+    aplicarEstadoInstalavel('vaapi-amd',       null);
+    aplicarEstadoInstalavel('vaapi-swap',      null);
+    aplicarEstadoInstalavel('corectrl-install', 'abrir-corectrl');
+    aplicarEstadoInstalavel('lact-install',    'abrir-lact');
+    aplicarEstadoInstalavel('nvidia-driver-install', 'abrir-nvidia-settings');
+    aplicarEstadoInstalavel('intel-media-install', null);
 
-    // Botões one-shot: reaplica o estado persistido.
-    // O texto final ("✅ ...") só aparece se o comando já foi executado.
-    if (isExecutado('vulkan-amd')) {
-        _marcarBotaoConcluido('vulkan-amd');
-    }
-
-    if (isExecutado('vaapi-amd')) {
-        _marcarBotaoConcluido('vaapi-amd');
-    }
-    if (isExecutado('vaapi-swap')) {
-        _marcarBotaoConcluido('vaapi-swap');
-    }
-
-    if (isExecutado('corectrl-install')) {
-        _marcarBotaoConcluido('corectrl-install');
-    }
-
-    if (isExecutado('lact-install')) {
-        _marcarBotaoConcluido('lact-install');
-    }
-
-    // Overclock — par install/revert. aplicarEstadoToggle() é a
-    // fonte única de verdade desse estado (mesma função global do
-    // script.js usada por todas as sessões).
+    // Overclock — par install/revert. Mantém `aplicarEstadoToggle`
+    // porque não é uma instalação de pacote, é um ajuste de kernel
+    // (não faz sentido ter lixeira).
     aplicarEstadoToggle('amdgpu-overclock', 'amdgpu-overclock-remove');
 
-    // NVIDIA — a seção tem detecção própria (painel + estado dos
-    // botões). Aplicar via _atualizarSecaoNvidia() garante que a UI
-    // reflita o hardware real, não só o .progresso.json.
+    // NVIDIA — seção com detecção de hardware própria. O painel
+    // de detecção e a lógica de abrir/desabilitar botões continuam
+    // iguais, apenas o visual do botão de instalar agora usa o
+    // estado unificado. `_atualizarSecaoNvidia` cuida disso.
     await _atualizarSecaoNvidia();
-
-    // Intel — one-shot
-    if (isExecutado('intel-media-install')) {
-        _marcarBotaoConcluido('intel-media-install');
-    }
-
-    atualizarBotaoAbrirCoreCtrl();
-    atualizarBotaoAbrirLACT();
 }
 
 // ------------------------------------------------------------

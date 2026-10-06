@@ -122,8 +122,25 @@ Configura o sistema para permitir que aplicativos de áudio tenham prioridade de
 ⚠️ <strong>Requer logout/login:</strong> o grupo <code>realtime</code> só entra em vigor depois que você sair e entrar novamente.
 </div>
 <div class="botoes-flex">
-<button class="btn-executar" onclick="executarRealtimeSetup()" data-comando="realtime-setup" data-logbox="log-sessao-ajustes-manutencao" id="btn-realtime-setup" data-i18n="sessoes.ajustes-manutencao.btn_realtime_setup">⚙️ Ativar Prioridade de Tempo Real</button>
-<button class="btn-executar vermelho" onclick="executarRealtimeSetupRemove()" data-comando="realtime-setup-remove" data-logbox="log-sessao-ajustes-manutencao" id="btn-realtime-setup-remove" data-i18n="sessoes.ajustes-manutencao.btn_realtime_setup_remove">↩️ Reverter</button>
+<div class="btn-flatpak-wrapper">
+<button class="btn-executar"
+onclick="executarRealtimeSetup()"
+data-comando="realtime-setup"
+data-logbox="log-sessao-ajustes-manutencao"
+id="btn-realtime-setup"
+data-i18n="sessoes.ajustes-manutencao.btn_realtime_setup">
+⚙️ Ativar Prioridade de Tempo Real
+</button>
+</div>
+<button class="btn-executar vermelho"
+onclick="executarRealtimeSetupRemove()"
+data-comando="realtime-setup-remove"
+data-logbox="log-sessao-ajustes-manutencao"
+id="btn-realtime-setup-remove"
+data-i18n="sessoes.ajustes-manutencao.btn_realtime_setup_remove"
+style="display: none;">
+↩️ Reverter
+</button>
 </div>
 </div>
 <div class="progress-container" id="progress-realtime-setup"><div class="progress-bar"><div class="progress-fill" id="progress-fill-realtime-setup"></div></div><div class="progress-text"><span class="status" id="progress-status-realtime-setup">⏳ Iniciando...</span><span class="percentage" id="progress-percent-realtime-setup">0%</span></div></div>
@@ -328,6 +345,22 @@ Tarefas periódicas que mantêm o sistema limpo e controlável: limpeza de cache
 function _t(chave, fallback) {
     return (typeof tOr === 'function') ? tOr(chave, fallback) : fallback;
 }
+
+// ============================================================
+// REGISTRO DE APPS REMOVÍVEIS (lixeira unificada)
+// ============================================================
+//
+// Único item desta sessão que instala pacote no sistema. Os
+// demais tunings alteram kernel/sysctl/configs locais — nesses
+// casos, a lixeira não se aplica (não há pacote para remover) e
+// o padrão de texto continua em uso.
+
+registrarAppRemovivel('realtime-setup', {
+    tipo: 'dnf',
+    pacotes: ['realtime-setup'],
+    nome: 'Prioridade de Tempo Real'
+});
+
 function _tVars(chave, fallback, vars) {
     return (typeof tOr === 'function') ? tOr(chave, fallback, vars) : fallback;
 }
@@ -442,15 +475,19 @@ async function executarTcpBbrRemove() {
 // ------------------------------------------------------------
 // ÁUDIO: realtime-setup
 // ------------------------------------------------------------
+//
+// Este é o único tuning da sessão que instala um PACOTE no
+// sistema (`realtime-setup`). Os demais configuram kernel,
+// sysctl ou arquivos locais — nesses casos, o padrão de texto
+// (aplicar/reverter) continua sendo o correto, porque não há
+// pacote para colocar na lixeira.
 
 async function executarRealtimeSetup() {
     var idComando = 'realtime-setup';
     var comando = 'sudo dnf install -y realtime-setup && sudo usermod -aG realtime $USER';
     await executarComandoGenerico(idComando, comando,
         _t('sessoes.ajustes-manutencao.btn_realtime_setup', '⚙️ Ativar Prioridade de Tempo Real'),
-        function() {
-            _resetarIrmao('realtime-setup-remove', _t('sessoes.ajustes-manutencao.btn_realtime_setup_remove', '↩️ Reverter'));
-        });
+        function() { aplicarEstadoInstalavel('realtime-setup', null); });
 }
 
 async function executarRealtimeSetupRemove() {
@@ -459,7 +496,12 @@ async function executarRealtimeSetupRemove() {
     await executarComandoGenerico(idComando, comando,
         _t('sessoes.ajustes-manutencao.btn_realtime_setup_remove', '↩️ Reverter'),
         function() {
-            _resetarIrmao('realtime-setup', _t('sessoes.ajustes-manutencao.btn_realtime_setup', '⚙️ Ativar Prioridade de Tempo Real'));
+            desmarcarComoExecutado('realtime-setup').then(function() {
+                aplicarEstadoInstalavel('realtime-setup', null);
+            }).catch(function(e) {
+                console.warn('[toggle] Erro ao limpar estado:', e);
+                aplicarEstadoInstalavel('realtime-setup', null);
+            });
         });
 }
 
@@ -1094,7 +1136,14 @@ async function restaurarEstadoSessao() {
         btnDualBoot.style.cursor = 'pointer';
     }
 
-    // --- Toggles de tuning ---
+    // --- Tuning realtime-setup: único que instala pacote ---
+    // Migrado para o padrão cinza + lixeira (Estado 3).
+    aplicarEstadoInstalavel('realtime-setup', null);
+
+    // --- Toggles de tuning (kernel/sysctl/config) ---
+    // Estes NÃO instalam pacote — continuam com o par de texto
+    // aplicar/reverter. A cor do "Aplicar" é a padrão (azul) e o
+    // "Reverter" (vermelho) só é habilitado após aplicação.
     var toggles = [
         ['vm-max-map-count', 'vm-max-map-count-remove',
             _t('sessoes.ajustes-manutencao.btn_vm_max_map_count', '⚙️ Aplicar Ajuste'),
@@ -1105,9 +1154,6 @@ async function restaurarEstadoSessao() {
         ['tcp-bbr', 'tcp-bbr-remove',
             _t('sessoes.ajustes-manutencao.btn_tcp_bbr', '⚙️ Aplicar Ajuste'),
             _t('sessoes.ajustes-manutencao.btn_tcp_bbr_remove', '↩️ Reverter')],
-        ['realtime-setup', 'realtime-setup-remove',
-            _t('sessoes.ajustes-manutencao.btn_realtime_setup', '⚙️ Ativar Prioridade de Tempo Real'),
-            _t('sessoes.ajustes-manutencao.btn_realtime_setup_remove', '↩️ Reverter')],
         ['pipewire-quantum-low', 'pipewire-quantum-low-remove',
             _t('sessoes.ajustes-manutencao.btn_pipewire_quantum', '⚙️ Ativar Baixa Latência'),
             _t('sessoes.ajustes-manutencao.btn_pipewire_quantum_remove', '↩️ Reverter')]

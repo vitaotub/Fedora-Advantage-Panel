@@ -209,7 +209,7 @@ data-i18n="sessoes.dispositivos-perifericos.btn_input_remove">
 ℹ️ <strong>O que isso resolve:</strong> sem essas regras, alguns controles podem não ser detectados pelo Steam, mesmo conectados. É um pacote pequeno e complementar ao grupo <code>input</code> acima — o grupo dá permissão ao seu usuário, e este pacote ensina o sistema a identificar cada modelo de controle.
 </div>
 
-<div class="grupo-botoes">
+<div class="botoes-flex">
 <button class="btn-executar"
 onclick="executarSteamDevices()"
 data-comando="steam-devices-install"
@@ -218,9 +218,18 @@ id="btn-steam-devices-install"
 data-i18n="sessoes.dispositivos-perifericos.btn_steam_devices">
 🎮 Instalar Regras para Controles
 </button>
+<button class="btn-executar vermelho"
+onclick="executarSteamDevicesRemove()"
+data-comando="steam-devices-remove"
+data-logbox="log-sessao-dispositivos-perifericos"
+id="btn-steam-devices-remove"
+data-i18n="sessoes.dispositivos-perifericos.btn_steam_devices_reverter">
+🗑️ Reverter Regras
+</button>
 </div>
 </div>
 <div class="progress-container" id="progress-steam-devices-install"><div class="progress-bar"><div class="progress-fill" id="progress-fill-steam-devices-install"></div></div><div class="progress-text"><span class="status" id="progress-status-steam-devices-install">⏳ Iniciando...</span><span class="percentage" id="progress-percent-steam-devices-install">0%</span></div></div>
+<div class="progress-container" id="progress-steam-devices-remove"><div class="progress-bar"><div class="progress-fill" id="progress-fill-steam-devices-remove"></div></div><div class="progress-text"><span class="status" id="progress-status-steam-devices-remove">⏳ Iniciando...</span><span class="percentage" id="progress-percent-steam-devices-remove">0%</span></div></div>
 </div>
 
 </div>
@@ -741,7 +750,25 @@ async function executarSteamDevices() {
     var idComando = 'steam-devices-install';
     var comando = 'sudo dnf install -y steam-devices';
     await executarComandoGenerico(idComando, comando,
-        _t('sessoes.dispositivos-perifericos.btn_steam_devices', '🎮 Instalar Regras para Controles'));
+        _t('sessoes.dispositivos-perifericos.btn_steam_devices', '🎮 Instalar Regras para Controles'),
+        function() {
+            aplicarEstadoToggle('steam-devices-install', 'steam-devices-remove');
+        });
+}
+
+async function executarSteamDevicesRemove() {
+    var idComando = 'steam-devices-remove';
+    var comando = 'sudo dnf remove -y steam-devices';
+    await executarComandoGenerico(idComando, comando,
+        _t('sessoes.dispositivos-perifericos.btn_steam_devices_reverter', '🗑️ Reverter Regras'),
+        function() {
+            desmarcarComoExecutado('steam-devices-install').then(function() {
+                aplicarEstadoToggle('steam-devices-install', 'steam-devices-remove');
+            }).catch(function(e) {
+                console.warn('[toggle] Erro ao limpar estado do install:', e);
+                aplicarEstadoToggle('steam-devices-install', 'steam-devices-remove');
+            });
+        });
 }
 
 // ============================================================
@@ -754,10 +781,14 @@ async function executarSteamDevices() {
 //   - Reverter tudo
 //
 // Regra de estado (progressiva):
-//   Estado inicial:  repo ativo, instalar DESABILITADO, reverter DESABILITADO
-//   Após ativar:     repo feito, instalar ATIVO,       reverter ATIVO
-//   Após instalar:   repo feito, instalar feito,       reverter ATIVO
-//   Após reverter:   volta ao estado inicial
+//   Estado inicial (COM repo):    repo ativo, instalar DESABILITADO, reverter DESABILITADO
+//   Após ativar (COM repo):       repo feito, instalar ATIVO,       reverter ATIVO
+//   Após instalar (COM repo):     repo feito, instalar feito,       reverter ATIVO
+//   Após reverter (COM repo):     volta ao estado inicial
+//
+//   Estado inicial (SEM repo):    instalar ATIVO,                    reverter DESABILITADO
+//   Após instalar (SEM repo):     instalar feito,                    reverter ATIVO
+//   Após reverter (SEM repo):     volta ao estado inicial
 //
 // O estado é persistido via `.progresso.json` (usando marcarComoExecutado
 // e desmarcarComoExecutado). Não há detecção em runtime do estado real
@@ -768,8 +799,20 @@ function aplicarEstadoItemCompleto(idRepoAtivar, idInstall, idRemove) {
     var installBtn = idInstall    ? document.getElementById('btn-' + idInstall)    : null;
     var removeBtn  = idRemove     ? document.getElementById('btn-' + idRemove)     : null;
 
-    var repoFeito    = idRepoAtivar ? isExecutado(idRepoAtivar) : true; // sem repo = já está "pronto"
-    var pacoteFeito  = idInstall    ? isExecutado(idInstall)    : false;
+    // repoFeito: true se o repo já foi ativado. Para itens SEM repo
+    // separado (Broadcom — usa RPM Fusion configurado na Sessão 1),
+    // é sempre false — não há repo para "ativar" aqui.
+    var repoFeito = idRepoAtivar ? isExecutado(idRepoAtivar) : false;
+
+    // prerequisitoOk: para instalar o pacote, o pré-requisito precisa
+    // estar satisfeito.
+    //   - Com repo: o repo precisa estar ativo.
+    //   - Sem repo (Broadcom): o pré-requisito (RPM Fusion) foi
+    //     satisfeito na Sessão 1 e não é rastreado aqui — tratamos
+    //     como sempre satisfeito.
+    var prerequisitoOk = idRepoAtivar ? repoFeito : true;
+
+    var pacoteFeito = idInstall ? isExecutado(idInstall) : false;
 
     // --- Botão "Ativar repositório" ---
     if (repoBtn) {
@@ -800,15 +843,15 @@ function aplicarEstadoItemCompleto(idRepoAtivar, idInstall, idRemove) {
             installBtn.style.cursor = 'default';
             installBtn.disabled = true;
             installBtn.style.opacity = '1';
-        } else if (repoFeito) {
-            // Repo ativo → pode instalar
+        } else if (prerequisitoOk) {
+            // Pré-requisito satisfeito → pode instalar.
             installBtn.textContent = textoInstallOriginal;
             installBtn.style.backgroundColor = '';
             installBtn.style.cursor = 'pointer';
             installBtn.disabled = false;
             installBtn.style.opacity = '1';
         } else {
-            // Sem repo → não pode instalar
+            // Falta ativar o repo → não pode instalar ainda.
             installBtn.textContent = textoInstallOriginal;
             installBtn.style.backgroundColor = '';
             installBtn.style.cursor = 'not-allowed';
@@ -818,10 +861,20 @@ function aplicarEstadoItemCompleto(idRepoAtivar, idInstall, idRemove) {
     }
 
     // --- Botão "Reverter tudo" ---
+    //
+    // Regra:
+    //   - Item COM repo: reverter habilita se repo ativo OU pacote
+    //     instalado. Faz sentido — o usuário pode querer só
+    //     desativar o repo sem ter instalado o pacote.
+    //   - Item SEM repo (Broadcom): reverter habilita SOMENTE se o
+    //     pacote estiver instalado. Antes, ficava sempre clicável
+    //     porque `repoFeito` era forçado a true.
     if (removeBtn) {
         var textoRemoveOriginal = removeBtn.getAttribute('data-texto-original') || removeBtn.textContent;
+        var podeReverter = idRepoAtivar ? (repoFeito || pacoteFeito) : pacoteFeito;
+
         removeBtn.textContent = textoRemoveOriginal;
-        if (repoFeito || pacoteFeito) {
+        if (podeReverter) {
             removeBtn.style.backgroundColor = '';
             removeBtn.style.cursor = 'pointer';
             removeBtn.disabled = false;
@@ -846,10 +899,8 @@ function restaurarEstadoSessao() {
     // --- Controles: toggles via aplicarEstadoToggle ---
     aplicarEstadoToggle('input-group-add', 'input-group-remove');
 
-    // --- Steam Devices: one-shot ---
-    if (isExecutado('steam-devices-install')) {
-        _marcarBotaoConcluido('steam-devices-install');
-    }
+    // --- Steam Devices: toggle install/revert ---
+    aplicarEstadoToggle('steam-devices-install', 'steam-devices-remove');
 
     // --- Itens com repo + pacote (Razer, Xbox, Broadcom) ---
     //

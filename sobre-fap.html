@@ -273,6 +273,10 @@ async function carregarChangelog() {
 // ------------------------------------------------------------
 
 function abrirChangelogCompleto() {
+    // Mesmo princípio do `abrirGitHubAffinity`: o container
+    // intercepta via `decide-policy` e joga pro navegador externo.
+    // Não usar `xdg-open` diretamente aqui evita o problema de
+    // duplicar lógica que já existe no container.
     var url = 'https://github.com/vitaotub/Fedora-Advantage-Panel/releases';
     window.location.href = url;
 

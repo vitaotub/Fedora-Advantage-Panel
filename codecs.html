@@ -140,6 +140,37 @@ function _t(chave, fallback) {
     return (typeof tOr === 'function') ? tOr(chave, fallback) : fallback;
 }
 
+// ============================================================
+// REGISTRO DE APPS REMOVÍVEIS (ícone de lixeira unificado)
+// ============================================================
+//
+// Cada botão de instalação desta sessão agora tem uma lixeira ao
+// lado. O clique chama `_executarRemocaoPeloWrapper` (definido em
+// script.js), que roteia para o fluxo correto baseado no campo
+// `tipo` abaixo.
+
+registrarAppRemovivel('codecs-essenciais', {
+    tipo: 'dnf',
+    pacotes: ['ffmpeg', 'gstreamer1-plugins-good', 'gstreamer1-plugins-bad-free', 'gstreamer1-plugin-openh264', 'gstreamer1-plugin-libav'],
+    nome: 'Codecs Multimídia Essenciais'
+});
+
+registrarAppRemovivel('extras-tainted', {
+    tipo: 'dnf',
+    pacotes: ['rpmfusion-free-release-tainted', 'rpmfusion-nonfree-release-tainted', 'libdvdcss'],
+    nome: 'DVD Comercial e Firmware Adicional'
+});
+
+registrarAppRemovivel('fontes-ms-all', {
+    tipo: 'dnf',
+    pacotes: ['cabextract', 'fontconfig'],
+    nome: 'Fontes Microsoft',
+    confirmMsg: '⚠️ Remover as fontes Microsoft?\n\n' +
+                'Documentos em LibreOffice/OnlyOffice podem quebrar a formatação ' +
+                'até que as fontes sejam reinstaladas.\n\n' +
+                'Continuar?'
+});
+
 // ------------------------------------------------------------
 // CODECS MULTIMÍDIA
 // ------------------------------------------------------------
@@ -187,19 +218,11 @@ async function executarFontesMS() {
 // ============================================================
 
 function restaurarEstadoSessao() {
-    const comandos = ['codecs-essenciais', 'extras-tainted', 'fontes-ms-all'];
-
-    comandos.forEach(function(id) {
-        if (isExecutado(id)) {
-            const btn = document.getElementById('btn-' + id);
-            if (btn) {
-                const textoFinal = getTextoAposExecucao(id);
-                btn.textContent = textoFinal;
-                btn.style.backgroundColor = '#4b5563';
-                btn.style.cursor = 'default';
-                btn.disabled = true;
-            }
-        }
+    // Cada um dos três botões usa o estado unificado
+    // "instalado-sem-abrir" (Estado 3): botão cinza + lixeira.
+    // Não há botão "Abrir" nesta sessão — são pacotes de sistema.
+    ['codecs-essenciais', 'extras-tainted', 'fontes-ms-all'].forEach(function(id) {
+        aplicarEstadoInstalavel(id, null);
     });
 }
 
