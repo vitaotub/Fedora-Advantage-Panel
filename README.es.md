@@ -2,7 +2,7 @@
 
 **🌐 Idioma:** [Português (BR)](README.md) | [English](README.en.md) | Español
 
-![Versión](https://img.shields.io/badge/Versi%C3%B3n-v1.0.0--10062026.b-orange?style=flat-square)
+![Versión](https://img.shields.io/badge/Versi%C3%B3n-v1.0.0--10072026-orange?style=flat-square)
 ![Fedora](https://img.shields.io/badge/Fedora-44+-294172?style=flat-square&logo=fedora)
 ![Licencia](https://img.shields.io/badge/Licencia-GPL--3.0-green?style=flat-square)
 ![Idiomas](https://img.shields.io/badge/Idiomas-PT--BR%20%7C%20EN%20%7C%20ES-3c67e3?style=flat-square)
@@ -60,6 +60,7 @@ Panel de automatización visual para Fedora Linux. Transforma una instalación l
 - **Sesión Gamescope oficial** — launcher y `.desktop` creados siguiendo la receta oficial de Fedora Docs, con `TryExec` (compatible con plasmalogin), detección dinámica de resolución y log de diagnóstico en `/tmp/fap-gamescope-session.log`. Aviso no bloqueante si el Steam nativo no está presente.
 - **Suite ArtCraft** — 7 apps de creación (PhotoCraft, VectorCraft, FilmCraft, LightCraft, PrintCraft, EffectCraft, DesignCraft) desarrolladas en Rust, código abierto, con botones que siempre descargan el RPM `.x86_64` más reciente directamente desde los GitHub Releases de cada proyecto
 - **Herramientas de Acceso Remoto** — RustDesk, Remmina, GNOME Connections y KRDC, con detección automática del escritorio para ocultar el botón "Instalar" cuando la app nativa ya está presente
+- **Configurador de GRUB** — panel interactivo que lee la configuración actual, explica cada parámetro en lenguaje claro, detecta automáticamente la resolución del monitor y la presencia de dual boot, y aplica un conjunto recomendado con copia de seguridad automática y reversión fácil
 - **Terra Repository** — repositorio comunitario que complementa RPM Fusion, habilitable en un clic
 - **Cola de instalación** de Flatpaks — haz clic en varios en secuencia
 - **Bloqueo inteligente** — evita conflictos de lock en `rpm` y bloquea la navegación entre sesiones durante la ejecución

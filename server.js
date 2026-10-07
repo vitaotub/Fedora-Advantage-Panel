@@ -1505,6 +1505,211 @@ const server = http.createServer((req, res) => {
     }
 
     // ----------------------------------------------------------
+    // /grub-info — lê /etc/default/grub + detecta resolução + dual boot
+    // ----------------------------------------------------------
+    //
+    // Retorna a configuração atual do GRUB, a resolução detectada
+    // (para o GRUB_GFXMODE) e se o sistema tem dual boot (para o
+    // GRUB_DISABLE_OS_PROBER). Nada é alterado — é puramente leitura.
+    //
+    // DETECÇÃO DE RESOLUÇÃO — 4 camadas em ordem de confiabilidade:
+    //
+    //   1. /sys/class/drm/card*-*/mode  (arquivo singular)
+    //      Modo ATUAL do conector. Só existe quando o driver DRM
+    //      souber qual modo está setado. Funciona em alguns drivers
+    //      (i915 em certos casos, nouveau antigo), falha em outros
+    //      (amdgpu + Wayland/KWin, por exemplo).
+    //
+    //   2. /sys/class/drm/card*-*/modes (arquivo plural)
+    //      Lista de TODOS os modos suportados, em ordem de
+    //      preferência. O primeiro é o nativo do monitor. Existe
+    //      sempre que o conector está "connected" e tem EDID.
+    //      ESTA É A CAMADA QUE RESOLVE A MAIORIA DOS CASOS.
+    //
+    //   3. Parse de EDID cru via /sys/class/drm/card*-*/edid
+    //      Fallback para drivers que expõem o EDID mas não a
+    //      lista de modos. Extrai a resolução preferida
+    //      (bytes 54-71 do EDID = Detailed Timing Descriptor 1).
+    //
+    //   4. 1024x768 — fallback final.
+    //
+    // Em todas as camadas, preferimos conectores com status
+    // "connected" para evitar pegar a resolução de uma saída
+    // sem monitor.
+    if (req.method === 'GET' && url === '/grub-info') {
+        const script = [
+            // Lê /etc/default/grub (world-readable por padrão)
+            'if [ -r /etc/default/grub ]; then',
+            '  echo "---GRUB_FILE_START---"',
+            '  cat /etc/default/grub',
+            '  echo "---GRUB_FILE_END---"',
+            'else',
+            '  echo "GRUB_FILE_ERROR=unreadable"',
+            'fi',
+            '',
+            'DETECTED_W=0; DETECTED_H=0',
+            '',
+            'echo "---DRM_LAYER_1---"',
+            '# CAMADA 1: arquivo "mode" (singular) do conector ativo',
+                                 'for f in /sys/class/drm/card*-*/mode; do',
+                                 '  [ -e "$f" ] || continue',
+                                 '  CONN_DIR=$(dirname "$f")',
+                                 '  CONN_STATUS=$(cat "$CONN_DIR/status" 2>/dev/null)',
+                                 '  [ "$CONN_STATUS" = "connected" ] || continue',
+                                 '  RES=$(cat "$f" 2>/dev/null)',
+                                 '  if echo "$RES" | grep -qE "^[0-9]+x[0-9]+$"; then',
+                                 '    DETECTED_W="${RES%x*}"',
+                                 '    DETECTED_H="${RES#*x}"',
+                                 '    echo "MATCH_LAYER1=$RES"',
+                                 '    break',
+                                 '  fi',
+                                 'done',
+                                 '',
+                                 '# CAMADA 2: arquivo "modes" (plural) — primeiro da lista = nativo',
+                                 'if [ "$DETECTED_W" = "0" ]; then',
+                                 '  echo "---DRM_LAYER_2---"',
+                                 '  for f in /sys/class/drm/card*-*/modes; do',
+                                 '    [ -e "$f" ] || continue',
+                                 '    CONN_DIR=$(dirname "$f")',
+                                 '    CONN_STATUS=$(cat "$CONN_DIR/status" 2>/dev/null)',
+                                 '    [ "$CONN_STATUS" = "connected" ] || continue',
+                                 '    RES=$(grep -m1 -E "^[0-9]+x[0-9]+$" "$f" 2>/dev/null)',
+                                 '    if [ -n "$RES" ]; then',
+                                 '      DETECTED_W="${RES%x*}"',
+                                 '      DETECTED_H="${RES#*x}"',
+                                 '      echo "MATCH_LAYER2=$RES"',
+                                 '      break',
+                                 '    fi',
+                                 '  done',
+                                 'fi',
+                                 '',
+                                 '# CAMADA 3: parse do EDID (bytes 54-56 = resolução horizontal,',
+                                 '# bytes 58-59 = vertical, no Detailed Timing Descriptor 1).',
+                                 '# O EDID é binário; usamos od/xxd para extrair bytes.',
+                                 'if [ "$DETECTED_W" = "0" ]; then',
+                                 '  echo "---DRM_LAYER_3---"',
+                                 '  for f in /sys/class/drm/card*-*/edid; do',
+                                 '    [ -e "$f" ] || continue',
+                                 '    CONN_DIR=$(dirname "$f")',
+                                 '    CONN_STATUS=$(cat "$CONN_DIR/status" 2>/dev/null)',
+                                 '    [ "$CONN_STATUS" = "connected" ] || continue',
+                                 '    SIZE=$(wc -c < "$f" 2>/dev/null)',
+                                 '    [ "$SIZE" -ge 128 ] || continue',
+                                 '    # Bytes 54,55 = H active (little-endian, 8 bits low + 4 bits high)',
+                                 '    # Bytes 56,57 = H blank (ignorado)',
+                                 '    # Bytes 58,59 = V active (little-endian)',
+                                 '    H_LO=$(od -An -tu1 -j54 -N1 "$f" 2>/dev/null | tr -d " ")',
+                                 '    H_HI=$(od -An -tu1 -j55 -N1 "$f" 2>/dev/null | tr -d " ")',
+                                 '    V_LO=$(od -An -tu1 -j58 -N1 "$f" 2>/dev/null | tr -d " ")',
+                                 '    V_HI=$(od -An -tu1 -j59 -N1 "$f" 2>/dev/null | tr -d " ")',
+                                 '    if [ -n "$H_LO" ] && [ -n "$H_HI" ] && [ -n "$V_LO" ] && [ -n "$V_HI" ]; then',
+                                 '      HW=$(( H_LO + (H_HI & 0xF0) * 16 ))',
+                                 '      VH=$(( V_LO + (V_HI & 0xF0) * 16 ))',
+                                 '      if [ "$HW" -gt 0 ] && [ "$VH" -gt 0 ]; then',
+                                 '        DETECTED_W="$HW"',
+                                 '        DETECTED_H="$VH"',
+                                 '        echo "MATCH_LAYER3=${HW}x${VH}"',
+                                 '        break',
+                                 '      fi',
+                                 '    fi',
+                                 '  done',
+                                 'fi',
+                                 '',
+                                 '# Fallback final',
+                                 'if [ "$DETECTED_W" = "0" ] || [ "$DETECTED_H" = "0" ]; then',
+                                 '  DETECTED_W=1024',
+                                 '  DETECTED_H=768',
+                                 '  echo "MATCH_FALLBACK=1024x768"',
+                                 'fi',
+                                 '',
+                                 'echo "DETECTED_RES=${DETECTED_W}x${DETECTED_H}"',
+                                 '',
+                                 '# Dual boot: NTFS (Windows) ou outra partição Linux montável',
+                                 'DUAL_BOOT=false',
+                                 'if lsblk -f -n -o FSTYPE 2>/dev/null | grep -qE "^(ntfs|BitLocker)$"; then',
+                                 '  DUAL_BOOT=true',
+                                 'fi',
+                                 'ROOT_DEV=$(findmnt -n -o SOURCE / 2>/dev/null)',
+                                 'for dev in $(lsblk -pn -o NAME,FSTYPE 2>/dev/null | awk \'$2=="ext4" || $2=="btrfs" {print $1}\'); do',
+                                 '  if [ "$dev" != "$ROOT_DEV" ]; then',
+                                 '    DUAL_BOOT=true',
+                                 '    break',
+                                 '  fi',
+                                 'done',
+                                 'echo "DUAL_BOOT=$DUAL_BOOT"',
+                                 '',
+                                 'if [ -d /sys/firmware/efi ]; then',
+                                 '  echo "BOOT_MODE=EFI"',
+                                 'else',
+                                 '  echo "BOOT_MODE=BIOS"',
+                                 'fi',
+                                 '',
+                                 'if [ -f /boot/grub2/grub.cfg ]; then',
+                                 '  echo "GRUB_CFG_PATH=/boot/grub2/grub.cfg"',
+                                 'else',
+                                 '  echo "GRUB_CFG_PATH=/boot/grub2/grub.cfg"',
+                                 'fi'
+        ].join('\n');
+
+        _execReadOnly(script, 10000).then(function(stdout) {
+            var info = {
+                grubContent: null,
+                grubReadable: true,
+                detectedRes: '0x0',
+                dualBoot: false,
+                bootMode: 'BIOS',
+                grubCfgPath: '/boot/grub2/grub.cfg'
+            };
+
+            // Conteúdo do /etc/default/grub
+            var match = stdout.match(/---GRUB_FILE_START---\n([\s\S]*?)\n---GRUB_FILE_END---/);
+            if (match) {
+                info.grubContent = match[1];
+            } else if (stdout.indexOf('GRUB_FILE_ERROR=unreadable') !== -1) {
+                info.grubReadable = false;
+            }
+
+            // Resolução — o script já resolve a hierarquia das 3 camadas
+            // + fallback, e imprime sempre "DETECTED_RES=WxH".
+            var resMatch = stdout.match(/DETECTED_RES=(\d+x\d+)/);
+            if (resMatch) info.detectedRes = resMatch[1];
+
+            // Qual camada respondeu (útil para debug no console)
+            var layerMatch = stdout.match(/MATCH_(LAYER[123]|FALLBACK)=/);
+            if (layerMatch) {
+                console.log('[grub-info] Resolução detectada pela camada:', layerMatch[1]);
+            }
+
+            var dualMatch = stdout.match(/DUAL_BOOT=(\w+)/);
+            if (dualMatch) info.dualBoot = (dualMatch[1] === 'true');
+
+            var bootMatch = stdout.match(/BOOT_MODE=(\w+)/);
+            if (bootMatch) info.bootMode = bootMatch[1];
+
+            var cfgMatch = stdout.match(/GRUB_CFG_PATH=(\S+)/);
+            if (cfgMatch) info.grubCfgPath = cfgMatch[1];
+
+            res.writeHead(200, {
+                'Content-Type': 'application/json',
+                'Cache-Control': 'no-cache, no-store, must-revalidate'
+            });
+            res.end(JSON.stringify(info));
+        }).catch(function() {
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({
+                grubContent: null,
+                grubReadable: false,
+                detectedRes: '1024x768',
+                dualBoot: false,
+                bootMode: 'BIOS',
+                grubCfgPath: '/boot/grub2/grub.cfg',
+                error: 'Falha ao ler informações do GRUB'
+            }));
+        });
+        return;
+    }
+
+    // ----------------------------------------------------------
     // /check-package — verifica se um pacote rpm está instalado
     // ----------------------------------------------------------
     //

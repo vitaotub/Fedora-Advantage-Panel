@@ -2,7 +2,7 @@
 
 **🌐 Language:** [Português (BR)](README.md) | English | [Español](README.es.md)
 
-![Version](https://img.shields.io/badge/Version-v1.0.0--10062026.b-orange?style=flat-square)
+![Version](https://img.shields.io/badge/Version-v1.0.0--10072026-orange?style=flat-square)
 ![Fedora](https://img.shields.io/badge/Fedora-44+-294172?style=flat-square&logo=fedora)
 ![License](https://img.shields.io/badge/License-GPL--3.0-green?style=flat-square)
 ![Languages](https://img.shields.io/badge/Languages-PT--BR%20%7C%20EN%20%7C%20ES-3c67e3?style=flat-square)
@@ -60,6 +60,7 @@ Visual automation panel for Fedora Linux. Turns a clean installation into a comp
 - **Official Gamescope Session** — launcher and `.desktop` created following the Fedora Docs recipe, with `TryExec` (plasmalogin-compatible), dynamic resolution detection and a diagnostic log at `/tmp/fap-gamescope-session.log`. Non-blocking warning if native Steam is missing.
 - **ArtCraft Suite** — 7 creative apps (PhotoCraft, VectorCraft, FilmCraft, LightCraft, PrintCraft, EffectCraft, DesignCraft) developed in Rust, open source, with buttons that always download the latest `.x86_64` RPM straight from each project's GitHub Releases
 - **Remote Access Tools** — RustDesk, Remmina, GNOME Connections and KRDC, with automatic desktop detection to hide the "Install" button when the native app is already present
+- **GRUB configurator** — interactive panel that reads the current configuration, explains each parameter in plain language, auto-detects the monitor resolution and the presence of dual boot, and applies a recommended set with automatic backup and easy reversion
 - **Terra Repository** — community repository that complements RPM Fusion, enableable in one click
 - **Install queue** for Flatpaks — click on multiple in sequence
 - **Smart lock** — prevents `rpm` lock conflicts and blocks session navigation during execution

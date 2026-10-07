@@ -1026,11 +1026,10 @@ var SESSOES = [
         'listar-kernels': { sempreClicavel: true },
         'remover-kernel': { sempreClicavel: true },
         'grub-aplicar-recomendado': {
-            sempreClicavel: true,
             textoConcluido: '✅ Configuração aplicada',
             textoConcluidoKey: 'sessoes.ajustes-manutencao.texto_concluido_grub_aplicar'
         },
-        'grub-restaurar-padrao': {
+        'grub-restaurar-backup': {
             sempreClicavel: true,
             textoConcluido: '✅ Padrão restaurado',
             textoConcluidoKey: 'sessoes.ajustes-manutencao.texto_concluido_grub_restaurar'

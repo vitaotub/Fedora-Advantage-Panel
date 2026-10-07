@@ -12,6 +12,37 @@ que exibe a seção da versão atual dentro do FAP, na sessão **Sobre o FAP**.
 
 ---
 
+## v1.0.0-10072026
+
+### ✨ Novidades
+
+- **Área de GRUB reformulada na Sessão 12 (Ajustes e Manutenção).** A configuração do GRUB deixou de ser um par de botões "aplicar/reverter" com valores fixos e passou a ser uma área interativa completa:
+  - **Painel de configuração atual** — lê `/etc/default/grub` em runtime via novo endpoint `/grub-info` e exibe cada parâmetro com o valor atual e uma explicação em linguagem clara (o que faz, o que muda, quando usar).
+  - **Detecção automática de resolução** para o `GRUB_GFXMODE`, em 4 camadas: (1) arquivo `mode` do conector DRM ativo, (2) primeiro modo do arquivo `modes` (nativo do monitor), (3) parse cru do EDID, (4) fallback `1024x768`. Cobre AMD (Kaveri/RDNA), Intel, NVIDIA e framebuffer simples.
+  - **Detecção de dual boot** para o `GRUB_DISABLE_OS_PROBER` — se houver Windows (partição NTFS) ou outra distro Linux (ext4/btrfs fora da raiz), o FAP seta `false`; senão, `true`.
+  - **Backup automático** de `/etc/default/grub` para `/etc/default/grub.fap-backup` antes de qualquer alteração. O botão "Reverter" restaura esse backup e regenera o `grub.cfg`.
+  - **Configuração recomendada** preserva `GRUB_ENABLE_BLSCFG=true` (padrão do Fedora desde a v30) e mantém `GRUB_CMDLINE_LINUX="rhgb quiet"`.
+
+### 🔧 Correções
+
+- **Suíte ArtCraft — botões nunca instalavam.** Os 7 botões (PhotoCraft, VectorCraft, FilmCraft, LightCraft, PrintCraft, EffectCraft, DesignCraft) falhavam silenciosamente: o comando usava `grep -oP '\.x86_64\.rpm'` para extrair a URL do asset da API do GitHub, mas o JSON da release quebra o campo `browser_download_url` em **múltiplas linhas** — então o padrão nunca casava. Além disso, os projetos publicam os RPMs com hífen antes da arquitetura (`<app>-<versao>-linux-x86_64.rpm`), não com ponto. Corrigido em duas frentes: (1) substituído o `grep` por `node -e` (parse JSON robusto, já que o Node já está no sistema), e (2) regex flexível `/x86[_-]64\.rpm$/i` que aceita ambos os formatos de nome.
+- **Apps instalados fora do FAP não faziam o swap "Instalar" → "Abrir".** Quando o usuário instalava um Flatpak por fora (via terminal, GNOME Software, etc.), o FAP detectava corretamente e mostrava a lixeira — mas o botão de instalar continuava em cinza com "✅ instalado", sem virar "🚀 Abrir <App>". A causa: `_sincronizarEstadoFlatpaks()` chamava `restaurarBotaoAposExecucao()`, que só pinta o botão de cinza, em vez de `aplicarEstadoInstalavel()`, que faz o swap completo. Corrigido nos dois sentidos (marcar como instalado e desmarcar quando removido por fora).
+- **Sessão Aplicativos não tinha botões "Abrir" para os Flatpaks.** Como consequência do item acima, os ~43 apps Flatpak da sessão 6 não tinham botão `btn-abrir-<nome>` no HTML — então `aplicarEstadoInstalavel()` caía sempre no estado 3 (cinza) em vez do estado 2 (verde "Abrir"). A função `_criarBotoesAbrirFlatpak()` cria esses botões dinamicamente a partir do registry `APPS_FLATPAK` no boot da sessão, cobrindo todos os apps atuais e futuros sem editar o HTML.
+- **Broadcom BCM43xx — botão Reverter não fica mais sempre clicável.** O item "Broadcom BCM43xx (Wi-Fi)" não tem repositório separado (usa o RPM Fusion já configurado na Sessão 1), e isso fazia o botão "🗑️ Reverter" aparecer habilitado desde o início — mesmo antes do driver ser instalado. A função `aplicarEstadoItemCompleto()` agora diferencia itens **com** repositório (Razer, Xbox) de itens **sem** repositório (Broadcom): no segundo caso, o Reverter só habilita após o pacote ser de fato instalado. Alinha o comportamento com o resto da sessão, onde Reverter fica desabilitado até que o recurso seja ativado.
+- **`controller-test-install` registrado duas vezes em `gaming.html`.** Havia duas chamadas idênticas a `registrarAppRemovivel('controller-test-install', ...)` — a segunda sobrescrevia a primeira, com o mesmo conteúdo. Código morto removido.
+- **`'obs-cam'` duplicado no array `SESSOES` (`script.js`).** No bloco `producao-multimidia`, a chave `'obs-cam'` aparecia duas vezes no objeto `comandos` — JavaScript sobrescrevia a primeira com a segunda (idênticas), mas era redundância silenciosa. Entrada duplicada removida.
+
+### 🎯 Melhorias
+
+- **Aviso informativo ao instalar a Gamescope Session sem Steam nativo.** O comando `gamescope-session-install` agora verifica `command -v steam` antes de criar o launcher. Se o Steam nativo não estiver presente (usuário só tem o Flatpak, por exemplo), o FAP emite um aviso claro no log — mas **não aborta**, porque o usuário pode instalar o Steam depois e a sessão passa a funcionar sem reinstalar os arquivos. Antes, a sessão Gamescope aparecia no seletor mas travava no login sem nenhum aviso rastreável.
+- **Mensagens de erro claras na Suíte ArtCraft.** Antes, qualquer falha no download do RPM exibia "❌ Nenhum RPM x86_64 encontrado" — mesmo quando a causa real era rede fora ou rate limit da API do GitHub. Agora cada cenário tem mensagem própria:
+  - **Rede fora** → "❌ Falha ao contatar a API do GitHub. Verifique sua conexão de rede e tente novamente."
+  - **Rate limit / 404** → "⚠️ API do GitHub respondeu com erro" + link direto para a release
+  - **Sem `.rpm` publicado** → "❌ Release encontrada, mas sem arquivo .x86_64.rpm" + link para a release
+- **Botão de reverter do GRUB agora segue o padrão de cores do FAP.** Estava azul (como o botão de aplicar) por falta da classe `.vermelho`. Corrigido — agora fica vermelho, consistente com os outros pares aplicar/reverter do projeto.
+
+---
+
 ## v1.0.0-10062026.b
 
 ### 🔧 Correções

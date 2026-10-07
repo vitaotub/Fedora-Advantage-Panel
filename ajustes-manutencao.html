@@ -316,19 +316,44 @@ Tarefas periódicas que mantêm o sistema limpo e controlável: limpeza de cache
 <div class="bloco-comando">
 <div class="comando-info">
 <h3 data-i18n="sessoes.ajustes-manutencao.grub_titulo">🖥️ Configuração do GRUB</h3>
-<p data-i18n="sessoes.ajustes-manutencao.grub_desc">Configure o GRUB para sempre aparecer ao ligar o computador e defina o tempo de exibição para 10 segundos.</p>
-<div class="aviso-caixa" data-i18n="sessoes.ajustes-manutencao.grub_aviso">⚠️ Esta alteração afeta o boot do sistema. Certifique-se de que o GRUB está instalado corretamente.</div>
+<p data-i18n="sessoes.ajustes-manutencao.grub_desc">O GRUB é o gerenciador de boot do Fedora. Ele aparece antes do sistema carregar, permitindo escolher qual kernel ou sistema operacional iniciar. Esta seção mostra a configuração atual, explica cada parâmetro e permite aplicar um conjunto recomendado (ou reverter para o que estava antes).</p>
 
-<div style="display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 0.5rem; align-items: center;">
-<button class="btn-executar" onclick="executarConfigGrubRecomendado()" data-comando="grub-aplicar-recomendado" data-logbox="log-sessao-ajustes-manutencao" id="btn-grub-aplicar-recomendado" data-i18n="sessoes.ajustes-manutencao.btn_grub_recomendado">⚙️ Aplicar Configuração Recomendada</button>
-<button class="btn-executar" onclick="executarConfigGrubPadrao()" data-comando="grub-restaurar-padrao" data-logbox="log-sessao-ajustes-manutencao" id="btn-grub-restaurar-padrao" data-i18n="sessoes.ajustes-manutencao.btn_grub_padrao">↩️ Restaurar Padrão do Sistema</button>
+<div class="aviso-caixa" data-i18n-html="sessoes.ajustes-manutencao.grub_aviso">
+⚠️ <strong>Antes de mexer:</strong> o FAP faz um backup automático de <code>/etc/default/grub</code> antes de qualquer alteração. Se algo der errado, o botão "Reverter" restaura exatamente a configuração original. Ainda assim, é bom saber que uma configuração errada pode impedir o boot — mexa com calma.
+</div>
+
+<!-- Painel de status: carregado via /grub-info -->
+<div id="grub-painel-atual" style="margin-top: 1rem;">
+<div style="color: var(--text-muted); font-size: 0.9rem;">
+<span data-i18n="sessoes.ajustes-manutencao.grub_carregando">⏳ Carregando configuração atual do GRUB...</span>
+</div>
+</div>
+
+<div class="grupo-botoes" style="margin-top: 1.5rem;">
+<button class="btn-executar"
+onclick="executarGrubAplicarRecomendado()"
+data-comando="grub-aplicar-recomendado"
+data-logbox="log-sessao-ajustes-manutencao"
+id="btn-grub-aplicar-recomendado"
+data-i18n="sessoes.ajustes-manutencao.btn_grub_recomendado">
+⚙️ Aplicar Configuração Recomendada
+</button>
+<button class="btn-executar vermelho"
+onclick="executarGrubRestaurarBackup()"
+data-comando="grub-restaurar-backup"
+data-logbox="log-sessao-ajustes-manutencao"
+id="btn-grub-restaurar-backup"
+data-i18n="sessoes.ajustes-manutencao.btn_grub_restaurar_backup"
+disabled>
+↩️ Reverter para Configuração Original
+</button>
 </div>
 
 <div id="grub-status" style="margin-top: 0.75rem; padding: 0.75rem; border-radius: 6px; display: none;"></div>
 </div>
+
 <div class="progress-container" id="progress-grub-aplicar-recomendado"><div class="progress-bar"><div class="progress-fill" id="progress-fill-grub-aplicar-recomendado"></div></div><div class="progress-text"><span class="status" id="progress-status-grub-aplicar-recomendado">⏳ Iniciando...</span><span class="percentage" id="progress-percent-grub-aplicar-recomendado">0%</span></div></div>
-<div class="progress-container" id="progress-grub-restaurar-padrao"><div class="progress-bar"><div class="progress-fill" id="progress-fill-grub-restaurar-padrao"></div></div><div class="progress-text"><span class="status" id="progress-status-grub-restaurar-padrao">⏳ Iniciando...</span><span class="percentage" id="progress-percent-grub-restaurar-padrao">0%</span></div></div>
-</div>
+<div class="progress-container" id="progress-grub-restaurar-backup"><div class="progress-bar"><div class="progress-fill" id="progress-fill-grub-restaurar-backup"></div></div><div class="progress-text"><span class="status" id="progress-status-grub-restaurar-backup">⏳ Iniciando...</span><span class="percentage" id="progress-percent-grub-restaurar-backup">0%</span></div></div>
 
 </div>
 </details>
@@ -921,19 +946,164 @@ async function removerKernel() {
 // ------------------------------------------------------------
 // MANUTENÇÃO: GRUB
 // ------------------------------------------------------------
+//
+// Novo fluxo (v1.0.0-10062026.b):
+//   1. Ao carregar a sessão, consulta /grub-info e exibe a
+//      configuração atual do /etc/default/grub + a resolução
+//      detectada + se há dual boot.
+//   2. Botão "Aplicar Recomendada" grava um /etc/default/grub
+//      novo (com backup automático do original) e regenera o
+//      grub.cfg via grub2-mkconfig.
+//   3. Botão "Reverter para Original" restaura o backup e
+//      regenera o grub.cfg.
+//
+// O botão "Reverter" só é habilitado depois que o "Aplicar" roda
+// com sucesso — assim o usuário nunca reverte sem ter um backup.
 
-async function executarConfigGrubRecomendado() {
+var _grubInfoCache = null;
+
+async function carregarInfoGrub() {
+    var painel = document.getElementById('grub-painel-atual');
+    if (!painel) return;
+
+    try {
+        var r = await fetch(API_URL + '/grub-info', { cache: 'no-store' });
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        _grubInfoCache = await r.json();
+        _renderizarPainelGrub(_grubInfoCache);
+    } catch (e) {
+        painel.innerHTML = '<div class="aviso-caixa">❌ ' +
+            _tVars('comum.erro_conexao', 'Erro de conexão: {msg}', { msg: e.message }) +
+            '</div>';
+    }
+}
+
+function _renderizarPainelGrub(info) {
+    var painel = document.getElementById('grub-painel-atual');
+    if (!painel) return;
+
+    if (!info.grubReadable || !info.grubContent) {
+        painel.innerHTML = '<div class="aviso-caixa">⚠️ ' +
+            _t('sessoes.ajustes-manutencao.grub_nao_legivel',
+               'Não foi possível ler /etc/default/grub. Verifique as permissões do arquivo.') +
+            '</div>';
+        return;
+    }
+
+    // Parse das linhas do arquivo: cada linha útil vira {chave, valor}
+    var linhas = info.grubContent.split('\n');
+    var params = [];
+    linhas.forEach(function(linha) {
+        var l = linha.trim();
+        if (!l || l.startsWith('#')) return;
+        var idx = l.indexOf('=');
+        if (idx === -1) return;
+        var chave = l.substring(0, idx).trim();
+        var valor = l.substring(idx + 1).trim();
+        params.push({ chave: chave, valor: valor });
+    });
+
+    // Mapa de explicações por parâmetro conhecido
+    var explicacoes = {
+        'GRUB_TIMEOUT': _t('sessoes.ajustes-manutencao.grub_exp_timeout',
+            'Tempo (em segundos) que o menu do GRUB fica visível antes de iniciar o padrão. 0 = inicia imediatamente. -1 = espera indefinidamente.'),
+        'GRUB_TIMEOUT_STYLE': _t('sessoes.ajustes-manutencao.grub_exp_timeout_style',
+            'Define como o menu é exibido. "menu" sempre mostra o menu. "countdown" mostra a contagem regressiva. "hidden" esconde o menu (só aparece se você pressionar Shift/Esc).'),
+        'GRUB_DISTRIBUTOR': _t('sessoes.ajustes-manutencao.grub_exp_distributor',
+            'Nome da distribuição exibido no menu do GRUB. No Fedora, é gerado automaticamente a partir de /etc/system-release.'),
+        'GRUB_DEFAULT': _t('sessoes.ajustes-manutencao.grub_exp_default',
+            'Entrada do menu que inicia por padrão. "saved" lembra a última escolha. "0" inicia a primeira entrada. "1>2" navega em submenus.'),
+        'GRUB_GFXMODE': _t('sessoes.ajustes-manutencao.grub_exp_gfxmode',
+            'Resolução de vídeo do menu do GRUB. "auto" tenta detectar sozinho, mas pode falhar em alguns monitores. Valores comuns: 1920x1080, 2560x1440, 3840x2160.'),
+        'GRUB_DISABLE_OS_PROBER': _t('sessoes.ajustes-manutencao.grub_exp_os_prober',
+            'Se "false", o GRUB procura por outros sistemas operacionais (Windows, outras distros Linux) e cria entradas para eles no menu. Em dual boot, deve ser "false". Em single boot, pode ser "true".'),
+        'GRUB_DISABLE_SUBMENU': _t('sessoes.ajustes-manutencao.grub_exp_submenu',
+            'Se "true", não cria submenus (todos os kernels aparecem como entradas separadas). Se "false", agrupa kernels antigos em um submenu.'),
+        'GRUB_TERMINAL_OUTPUT': _t('sessoes.ajustes-manutencao.grub_exp_terminal',
+            'Saída de terminal do GRUB. "console" é o padrão. "gfxterm" habilita o modo gráfico (necessário para GRUB_GFXMODE funcionar).'),
+        'GRUB_CMDLINE_LINUX': _t('sessoes.ajustes-manutencao.grub_exp_cmdline',
+            'Parâmetros passados ao kernel Linux em todas as entradas. "rhgb quiet" esconde a maioria das mensagens de boot. Remover "quiet" mostra logs detalhados (útil para diagnóstico).'),
+        'GRUB_DISABLE_RECOVERY': _t('sessoes.ajustes-manutencao.grub_exp_recovery',
+            'Se "true", não cria entradas de modo de recuperação no menu. Fedora usa "true" por padrão.')
+    };
+
+    var html = '<div class="bloco-info" style="margin: 0;">';
+    html += '<strong style="display: block; margin-bottom: 0.5rem;">' +
+        _t('sessoes.ajustes-manutencao.grub_atual_titulo', '📋 Configuração atual') +
+        '</strong>';
+
+    html += '<ul class="lista-info">';
+    params.forEach(function(p) {
+        var exp = explicacoes[p.chave] || _t('sessoes.ajustes-manutencao.grub_exp_generico',
+            'Parâmetro do GRUB. Consulte a documentação oficial para mais detalhes.');
+        html += '<li style="flex-direction: column; align-items: flex-start; padding: 0.6rem 0; border-bottom: 1px solid var(--border);">';
+        html += '<div style="display: flex; justify-content: space-between; width: 100%; gap: 1rem;">';
+        html += '<code style="color: var(--accent-soft);">' + _escapeHTML(p.chave) + '</code>';
+        html += '<code style="color: var(--text-main); text-align: right;">' + _escapeHTML(p.valor) + '</code>';
+        html += '</div>';
+        html += '<div style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.3rem;">' + exp + '</div>';
+        html += '</li>';
+    });
+    html += '</ul>';
+
+    html += '<div style="margin-top: 1rem; padding-top: 0.75rem; border-top: 1px solid var(--border); font-size: 0.85rem;">';
+    html += '<div style="display: flex; gap: 1rem; flex-wrap: wrap;">';
+    html += '<span><strong>' + _t('sessoes.ajustes-manutencao.grub_res_detectada', 'Resolução detectada') + ':</strong> ' +
+        '<code>' + _escapeHTML(info.detectedRes) + '</code></span>';
+    html += '<span><strong>' + _t('sessoes.ajustes-manutencao.grub_dual_boot', 'Dual boot') + ':</strong> ' +
+        (info.dualBoot ? '✅ ' + _t('sessoes.ajustes-manutencao.grub_sim', 'Sim') : '⚪ ' + _t('sessoes.ajustes-manutencao.grub_nao', 'Não')) + '</span>';
+    html += '<span><strong>' + _t('sessoes.ajustes-manutencao.grub_modo_boot', 'Modo de boot') + ':</strong> ' +
+        '<code>' + _escapeHTML(info.bootMode) + '</code></span>';
+    html += '</div>';
+    html += '</div>';
+
+    html += '</div>';
+    painel.innerHTML = html;
+}
+
+function _escapeHTML(s) {
+    if (s == null) return '';
+    return String(s).replace(/[&<>"']/g, function(c) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+}
+
+async function executarGrubAplicarRecomendado() {
     var idComando = 'grub-aplicar-recomendado';
     var logBox = _getLogBox(idComando);
     var btn = document.getElementById('btn-' + idComando);
+    var btnRevert = document.getElementById('btn-grub-restaurar-backup');
     var statusDiv = document.getElementById('grub-status');
 
     if (!logBox) return;
 
-    if (!confirm(_t('sessoes.ajustes-manutencao.grub_confirmar_recomendado',
-        '⚠️ Deseja aplicar a configuração recomendada do GRUB?\n\n• GRUB sempre aparecerá ao ligar\n• Tempo de exibição: 10 segundos'))) return;
+    // Guarda contra duplo clique / já executado
+    if (btn && btn.disabled) return;
+
+    if (!_grubInfoCache) {
+        await carregarInfoGrub();
+    }
+
+    var info = _grubInfoCache || {};
+    var res = info.detectedRes && info.detectedRes !== '0x0' ? info.detectedRes : '1024x768';
+    var osProber = info.dualBoot ? 'false' : 'true';
+
+    if (!confirm(_tVars('sessoes.ajustes-manutencao.grub_confirmar_recomendado_novo',
+        '⚠️ Aplicar a configuração recomendada do GRUB?\n\n' +
+        '• Menu do GRUB sempre visível\n' +
+        '• Tempo de exibição: 10 segundos\n' +
+        '• Resolução: {res} (detectada automaticamente)\n' +
+        '• Detecção de outros sistemas (dual boot): {os_prober}\n\n' +
+        'O FAP fará backup de /etc/default/grub antes de alterar. Você poderá reverter depois.',
+        {
+            res: res,
+            os_prober: info.dualBoot
+                ? _t('sessoes.ajustes-manutencao.grub_sim', 'Sim')
+                : _t('sessoes.ajustes-manutencao.grub_nao', 'Não')
+        }))) return;
 
     var nomeAcao = _t('sessoes.ajustes-manutencao.btn_grub_recomendado', '⚙️ Aplicar Configuração Recomendada');
+    var textoConcluido = getTextoAposExecucao('grub-aplicar-recomendado');
 
     if (btn) {
         btn.disabled = true;
@@ -963,8 +1133,44 @@ async function executarConfigGrubRecomendado() {
 
     _bloquearSessao(idComando);
 
+    var sucesso = false;
+
     try {
-        var comando = 'sudo sed -i "s/^GRUB_TIMEOUT=.*/GRUB_TIMEOUT=10/" /etc/default/grub && sudo sed -i "/^GRUB_HIDDEN_TIMEOUT=/d" /etc/default/grub && sudo grub2-mkconfig -o /boot/grub2/grub.cfg';
+        var grubNovo =
+            '# Configuração gerada pelo Fedora Advantage Panel\n' +
+            '# Backup do original: /etc/default/grub.fap-backup\n' +
+            '# Para reverter, use o botão "Reverter" na sessão Ajustes.\n' +
+            '\n' +
+            'GRUB_TIMEOUT=10\n' +
+            'GRUB_DISTRIBUTOR="$(sed \'s, release .*$,,g\' /etc/system-release)"\n' +
+            'GRUB_TIMEOUT_STYLE=menu\n' +
+            'GRUB_GFXMODE=' + res + '\n' +
+            'GRUB_DISABLE_OS_PROBER=' + osProber + '\n' +
+            'GRUB_DEFAULT=saved\n' +
+            'GRUB_DISABLE_SUBMENU=true\n' +
+            'GRUB_TERMINAL_OUTPUT="console"\n' +
+            'GRUB_CMDLINE_LINUX="rhgb quiet"\n' +
+            'GRUB_DISABLE_RECOVERY="true"\n' +
+            'GRUB_ENABLE_BLSCFG=true\n';
+
+                // Além de reescrever /etc/default/grub e regenerar o grub.cfg,
+        // limpamos a variável `menu_auto_hide` do grubenv. O Fedora
+        // define essa variável automaticamente quando o boot anterior
+        // foi bem-sucedido, e ela se sobrepõe ao `GRUB_TIMEOUT_STYLE=menu`
+        // — fazendo o menu do GRUB não aparecer. Removendo a variável,
+        // o `TIMEOUT_STYLE=menu` volta a ter efeito.
+        //
+        // O `|| true` no final garante que, se o `grub2-editenv` falhar
+        // (por exemplo, variável não existe), o comando como um todo
+        // não retorna erro — o resto já foi aplicado com sucesso.
+        var comando =
+            'sudo cp -n /etc/default/grub /etc/default/grub.fap-backup && ' +
+            'sudo tee /etc/default/grub > /dev/null <<\'FAP_GRUB_EOF\'\n' +
+            grubNovo +
+            'FAP_GRUB_EOF\n' +
+            'sudo grub2-mkconfig -o /boot/grub2/grub.cfg && ' +
+            'sudo grub2-editenv - unset menu_auto_hide || true';
+
         var response = await fetch(API_URL + '/executar', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -973,7 +1179,7 @@ async function executarConfigGrubRecomendado() {
 
         if (!response.ok) throw new Error('Erro HTTP: ' + response.status);
 
-        var sucesso = await aguardarConclusaoReal(idComando, 30000);
+        sucesso = await aguardarConclusaoReal(idComando, 60000);
 
         if (!sucesso) {
             if (statusDiv) {
@@ -991,8 +1197,22 @@ async function executarConfigGrubRecomendado() {
             statusDiv.style.backgroundColor = 'rgba(52, 211, 153, 0.1)';
             statusDiv.style.border = '1px solid #34d399';
             statusDiv.style.color = '#34d399';
-            statusDiv.innerHTML = '✅ <strong>Configuração aplicada!</strong><br>GRUB_TIMEOUT=10 (10 segundos)<br>GRUB_HIDDEN_TIMEOUT removido (GRUB sempre aparece)';
+            statusDiv.innerHTML = '✅ <strong>Configuração aplicada!</strong><br>' +
+                'Menu do GRUB sempre visível, 10s, resolução ' + res + '.';
         }
+
+        // Aplica o estado correto nos dois botões:
+        //   aplicar → cinza, desabilitado, texto de concluído
+        //   reverter → habilitado, vermelho, texto original
+        // Persiste o estado no .progresso.json. Sem isso, o estado
+        // dos botões se perde ao recarregar a página (o `_aplicarEstadoBotoesGrub`
+        // só mantém em memória).
+        await marcarComoExecutado('grub-aplicar-recomendado');
+
+        _aplicarEstadoBotoesGrub(true);
+
+        await carregarInfoGrub();
+
     } catch (e) {
         console.error('Erro:', e);
         if (statusDiv) {
@@ -1002,7 +1222,10 @@ async function executarConfigGrubRecomendado() {
             statusDiv.innerHTML = '❌ Erro: ' + e.message;
         }
     } finally {
-        if (btn) {
+        // Só reabilita o botão se o comando NÃO teve sucesso.
+        // Se teve, ele fica cinza/desabilitado permanentemente até
+        // o usuário clicar em "Reverter".
+        if (!sucesso && btn) {
             btn.disabled = false;
             btn.textContent = nomeAcao;
             btn.style.opacity = '1';
@@ -1010,18 +1233,21 @@ async function executarConfigGrubRecomendado() {
     }
 }
 
-async function executarConfigGrubPadrao() {
-    var idComando = 'grub-restaurar-padrao';
+async function executarGrubRestaurarBackup() {
+    var idComando = 'grub-restaurar-backup';
     var logBox = _getLogBox(idComando);
     var btn = document.getElementById('btn-' + idComando);
     var statusDiv = document.getElementById('grub-status');
 
     if (!logBox) return;
+    if (btn && btn.disabled) return;
 
-    if (!confirm(_t('sessoes.ajustes-manutencao.grub_confirmar_padrao',
-        'Deseja restaurar a configuração padrão do GRUB (timeout=5 segundos, oculto)?'))) return;
+    if (!confirm(_t('sessoes.ajustes-manutencao.grub_confirmar_reverter_backup',
+        '⚠️ Reverter para a configuração original do GRUB?\n\n' +
+        'Isso restaura /etc/default/grub a partir do backup feito antes ' +
+        'de aplicar a configuração recomendada, e regenera o grub.cfg.'))) return;
 
-    var nomeAcao = _t('sessoes.ajustes-manutencao.btn_grub_padrao', '↩️ Restaurar Padrão do Sistema');
+    var nomeAcao = _t('sessoes.ajustes-manutencao.btn_grub_restaurar_backup', '↩️ Reverter para Configuração Original');
 
     if (btn) {
         btn.disabled = true;
@@ -1035,7 +1261,7 @@ async function executarConfigGrubPadrao() {
 
     var header = document.createElement('div');
     header.className = 'log-line info';
-    header.textContent = '↩️ Restaurando configuração padrão do GRUB...';
+    header.textContent = '↩️ Restaurando configuração original do GRUB...';
     logBox.appendChild(header);
     logBox.scrollTop = logBox.scrollHeight;
 
@@ -1051,8 +1277,18 @@ async function executarConfigGrubPadrao() {
 
     _bloquearSessao(idComando);
 
+    var sucesso = false;
+
     try {
-        var comando = 'sudo sed -i "s/^GRUB_TIMEOUT=.*/GRUB_TIMEOUT=5/" /etc/default/grub && sudo sed -i "/^GRUB_HIDDEN_TIMEOUT=/d" /etc/default/grub && echo "GRUB_HIDDEN_TIMEOUT=0" | sudo tee -a /etc/default/grub > /dev/null && sudo grub2-mkconfig -o /boot/grub2/grub.cfg';
+        var comando =
+            'if [ ! -f /etc/default/grub.fap-backup ]; then ' +
+            '  echo "❌ Backup não encontrado em /etc/default/grub.fap-backup"; ' +
+            '  echo "   Nada a restaurar."; ' +
+            '  exit 1; ' +
+            'fi && ' +
+            'sudo cp /etc/default/grub.fap-backup /etc/default/grub && ' +
+            'sudo grub2-mkconfig -o /boot/grub2/grub.cfg';
+
         var response = await fetch(API_URL + '/executar', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -1061,7 +1297,7 @@ async function executarConfigGrubPadrao() {
 
         if (!response.ok) throw new Error('Erro HTTP: ' + response.status);
 
-        var sucesso = await aguardarConclusaoReal(idComando, 30000);
+        sucesso = await aguardarConclusaoReal(idComando, 60000);
 
         if (!sucesso) {
             if (statusDiv) {
@@ -1079,8 +1315,20 @@ async function executarConfigGrubPadrao() {
             statusDiv.style.backgroundColor = 'rgba(52, 211, 153, 0.1)';
             statusDiv.style.border = '1px solid #34d399';
             statusDiv.style.color = '#34d399';
-            statusDiv.innerHTML = '✅ <strong>Configuração restaurada!</strong><br>GRUB_TIMEOUT=5 (5 segundos)<br>GRUB_HIDDEN_TIMEOUT=0 (GRUB oculto)';
+            statusDiv.innerHTML = '✅ <strong>Configuração original restaurada!</strong>';
         }
+
+        // Aplica o estado correto nos dois botões:
+        //   aplicar → azul, habilitado, texto original
+        //   reverter → cinza, desabilitado, texto original
+        // Limpa o estado persistido. Sem isso, o botão "Aplicar"
+        // continuaria cinza mesmo depois de reverter.
+        await desmarcarComoExecutado('grub-aplicar-recomendado');
+
+        _aplicarEstadoBotoesGrub(false);
+
+        await carregarInfoGrub();
+
     } catch (e) {
         console.error('Erro:', e);
         if (statusDiv) {
@@ -1090,10 +1338,73 @@ async function executarConfigGrubPadrao() {
             statusDiv.innerHTML = '❌ Erro: ' + e.message;
         }
     } finally {
-        if (btn) {
-            btn.disabled = false;
+        if (!sucesso && btn) {
             btn.textContent = nomeAcao;
             btn.style.opacity = '1';
+            // Se falhou, o botão de reverter continua clicável —
+            // não faz sentido bloquear uma nova tentativa
+            btn.disabled = false;
+        }
+    }
+}
+
+// ============================================================
+// ESTADO DOS BOTÕES DE GRUB
+// ============================================================
+//
+// Fonte única de verdade do estado visual dos dois botões de
+// GRUB. A regra é:
+//
+//   Estado A (nada aplicado ainda):
+//     aplicar  → azul, habilitado, texto original
+//     reverter → vermelho, desabilitado, texto original
+//
+//   Estado B (config recomendada aplicada):
+//     aplicar  → cinza, desabilitado, texto "✅ Configuração aplicada"
+//     reverter → vermelho, habilitado, texto original
+//
+// Chamada por executarGrubAplicarRecomendado e executarGrubRestaurarBackup
+// após o sucesso da operação. Também chamada em restaurarEstadoSessao()
+// no boot da sessão (sempre com `false` — o FAP não persiste "aplicado"
+// no .progresso.json, então sempre assume o estado A ao carregar).
+
+function _aplicarEstadoBotoesGrub(aplicado) {
+    var btnAplicar = document.getElementById('btn-grub-aplicar-recomendado');
+    var btnReverter = document.getElementById('btn-grub-restaurar-backup');
+
+    if (btnAplicar) {
+        var textoOriginalAplicar = btnAplicar.getAttribute('data-texto-original') ||
+            _t('sessoes.ajustes-manutencao.btn_grub_recomendado', '⚙️ Aplicar Configuração Recomendada');
+
+        if (aplicado) {
+            btnAplicar.textContent = getTextoAposExecucao('grub-aplicar-recomendado');
+            btnAplicar.style.backgroundColor = '#4b5563';
+            btnAplicar.style.cursor = 'default';
+            btnAplicar.disabled = true;
+            btnAplicar.style.opacity = '1';
+        } else {
+            btnAplicar.textContent = textoOriginalAplicar;
+            btnAplicar.style.backgroundColor = '';
+            btnAplicar.style.cursor = 'pointer';
+            btnAplicar.disabled = false;
+            btnAplicar.style.opacity = '1';
+        }
+    }
+
+    if (btnReverter) {
+        var textoOriginalReverter = btnReverter.getAttribute('data-texto-original') ||
+            _t('sessoes.ajustes-manutencao.btn_grub_restaurar_backup', '↩️ Reverter para Configuração Original');
+
+        btnReverter.textContent = textoOriginalReverter;
+
+        if (aplicado) {
+            btnReverter.style.cursor = 'pointer';
+            btnReverter.disabled = false;
+            btnReverter.style.opacity = '1';
+        } else {
+            btnReverter.style.cursor = 'not-allowed';
+            btnReverter.disabled = true;
+            btnReverter.style.opacity = '0.5';
         }
     }
 }
@@ -1192,10 +1503,10 @@ async function restaurarEstadoSessao() {
                 btnReverter.style.opacity = '0.5';
             }
         }
-    }
+        }
 
-    // --- Limpeza, kernels, GRUB: sempre clicáveis ---
-    ['limpeza-sistema', 'listar-kernels', 'remover-kernel', 'grub-aplicar-recomendado', 'grub-restaurar-padrao'].forEach(function(id) {
+    // --- Limpeza e kernels: sempre clicáveis ---
+    ['limpeza-sistema', 'listar-kernels', 'remover-kernel'].forEach(function(id) {
         var btn = document.getElementById('btn-' + id);
         if (btn) {
             btn.disabled = false;
@@ -1203,6 +1514,15 @@ async function restaurarEstadoSessao() {
             btn.style.cursor = 'pointer';
         }
     });
+
+        // --- GRUB: estado persistido no .progresso.json ---
+    // O FAP marca 'grub-aplicar-recomendado' quando a config
+    // recomendada é aplicada com sucesso, e desmarca ao reverter.
+    // Aqui só lemos o estado — a UI reflete o que foi persistido.
+    _aplicarEstadoBotoesGrub(isExecutado('grub-aplicar-recomendado'));
+
+    // Carrega as infos do GRUB assim que a sessão monta
+    carregarInfoGrub();
 
     var btnRemoverKernel = document.getElementById('btn-remover-kernel');
     if (btnRemoverKernel) {
