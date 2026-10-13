@@ -2,7 +2,7 @@
 
 **🌐 Idioma:** Português (BR) | [English](README.en.md) | [Español](README.es.md)
 
-![Versão](https://img.shields.io/badge/Vers%C3%A3o-v1.0.0--10072026-orange?style=flat-square)
+![Versão](https://img.shields.io/badge/Vers%C3%A3o-v1.0.0--10132026-orange?style=flat-square)
 ![Fedora](https://img.shields.io/badge/Fedora-44+-294172?style=flat-square&logo=fedora)
 ![Licença](https://img.shields.io/badge/Licen%C3%A7a-GPL--3.0-green?style=flat-square)
 ![Idiomas](https://img.shields.io/badge/Idiomas-PT--BR%20%7C%20EN%20%7C%20ES-3c67e3?style=flat-square)
@@ -39,7 +39,7 @@ Painel de automação visual para Fedora Linux. Transforma uma instalação limp
 | 3 | 🖥️ Hardware | Drivers AMD/NVIDIA/Intel, CoreCtrl, LACT, overclock |
 | 4 | 🔌 Dispositivos | Detecção automática, COPRs, controles, firmwares |
 | 5 | 🎬 Produção Multimídia | OBS Studio, câmera virtual, EasyEffects |
-| 6 | 📦 Aplicativos | ~45 apps Flatpak + Suíte ArtCraft (7 apps Rust) + Ferramentas de Acesso Remoto |
+| 6 | 📦 Aplicativos | Flatpaks (Flathub), apps dnf (repos do Fedora) e navegadores via RPM oficial |
 | 7 | 🏠 Casa e Escritório | CUPS, Samba, LocalSend, KeePassXC, OCR |
 | 8 | 🎮 Gaming | Steam nativo, Heroic, Lutris, Wine, GameMode, Gamescope Session, emuladores |
 | 9 | 📱 Waydroid | Android no Linux via container |
@@ -54,10 +54,12 @@ Painel de automação visual para Fedora Linux. Transforma uma instalação limp
 - **Interface escura/clara** com troca em tempo real
 - **Multilíngue** (PT-BR, EN, ES) com troca em tempo real
 - **Logs em tempo real** via SSE
-- **Lixeira unificada** para Flatpaks e apps não-Flatpak
+- **Lixeira unificada** para Flatpaks, apps dnf e navegadores RPM
 - **Botão "Abrir"** em todos os apps GUI — abre em sessão própria (sobrevive ao fechar o FAP)
+- **Navegadores via RPM oficial** — Opera, Brave, Vivaldi e Edge instalados a partir do repositório do próprio fabricante, com atualização automática pelo `dnf`. Chromium via pacote oficial do Fedora. A lixeira remove o pacote **e** desativa o repositório
+- **Origem por tipo de app** — a sessão de Aplicativos escolhe automaticamente a melhor forma de instalação: Flatpak quando não há repo oficial, `dnf` quando o Fedora empacota, RPM do fabricante quando existe
 - **Steam nativo** via RPM Fusion — necessário para a sessão Gamescope
-- **Sessão Gamescope oficial** — launcher e `.desktop` criados conforme a receita do Fedora Docs, com `TryExec` (compatível com plasmalogin), detecção dinâmica de resolução e log de diagnóstico em `/tmp/fap-gamescope-session.log`. Aviso não-bloqueante se o Steam nativo não estiver presente.
+- **Sessão Gamescope oficial** — launcher e `.desktop` criados conforme a receita do Fedora Docs, com `TryExec` (compatível com plasmalogin), detecção dinâmica de resolução e log de diagnóstico em `/tmp/fap-gamescope-session.log`
 - **Suíte ArtCraft** — 7 apps de criação (PhotoCraft, VectorCraft, FilmCraft, LightCraft, PrintCraft, EffectCraft, DesignCraft) desenvolvidos em Rust, open source, com botões que baixam sempre o RPM `.x86_64` mais recente direto do GitHub Releases de cada projeto
 - **Ferramentas de Acesso Remoto** — RustDesk, Remmina, GNOME Connections e KRDC, com detecção automática do desktop para esconder o botão "Instalar" quando o app nativo já está presente
 - **Configurador de GRUB** — painel interativo que lê a configuração atual, explica cada parâmetro em linguagem clara, detecta automaticamente a resolução do monitor e a presença de dual boot, e aplica um conjunto recomendado com backup automático e reversão fácil

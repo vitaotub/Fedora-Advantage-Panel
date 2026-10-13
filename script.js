@@ -715,61 +715,85 @@ var SESSOES = [
 // ============================================================
 // SESSÃO 6 — APLICATIVOS RECOMENDADOS
 // ============================================================
+//
+// ORIGEM DOS APPS (v1.0.0-10072026):
+//
+//   • Flatpak (Flathub): apps sem repo oficial no Fedora nem
+//     pacote nos repos da distro. flatpakId presente.
+//
+//   • DNF (repos oficiais do Fedora): pacotes mantidos pela
+//     própria distro. Sem flatpakId. Remoção via `dnf remove`.
+//
+//   • RPM via repo oficial do fabricante: navegadores (Opera,
+//     Brave, Vivaldi, Edge). Sem flatpakId. A remoção desativa
+//     o repo além de remover o pacote (ver a lixeira em
+//     aplicativos.html).
+//
+//   • RPM baixado de URL (localpkg): ArtCraft, Lightworks,
+//     Rclone Manager. Sem flatpakId. `--setopt=localpkg_gpgcheck=0`
+//     obrigatório (Fedora 44/45 rejeitam RPM local sem assinatura
+//     verificada e sem essa flag).
 {
     id: 'aplicativos',
     nome: 'Aplicativos Recomendados',
     nomeKey: 'sessoes.aplicativos.nome',
     comandos: {
+        // --- Flatpak (Flathub) ---
         'instalar-onlyoffice': { textoConcluido: '✅ OnlyOffice instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_onlyoffice', flatpakId: 'org.onlyoffice.desktopeditors' },
         'instalar-libreoffice': { textoConcluido: '✅ LibreOffice instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_libreoffice', flatpakId: 'org.libreoffice.LibreOffice' },
         'instalar-obsidian': { textoConcluido: '✅ Obsidian instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_obsidian', flatpakId: 'md.obsidian.Obsidian' },
-        'instalar-thunderbird': { textoConcluido: '✅ Thunderbird instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_thunderbird', flatpakId: 'org.mozilla.thunderbird' },
-        'instalar-okular': { textoConcluido: '✅ Okular instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_okular', flatpakId: 'org.kde.okular' },
         'instalar-joplin': { textoConcluido: '✅ Joplin instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_joplin', flatpakId: 'net.cozic.joplin_desktop' },
-        'instalar-foliate': { textoConcluido: '✅ Foliate instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_foliate', flatpakId: 'com.github.johnfactotum.Foliate' },
-        'instalar-haruna': { textoConcluido: '✅ Haruna instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_haruna', flatpakId: 'org.kde.haruna' },
-        'instalar-vlc': { textoConcluido: '✅ VLC instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_vlc', flatpakId: 'org.videolan.VLC' },
-        'instalar-mpv': { textoConcluido: '✅ MPV instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_mpv', flatpakId: 'io.mpv.Mpv' },
         'instalar-spotify': { textoConcluido: '✅ Spotify instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_spotify', flatpakId: 'com.spotify.Client' },
         'instalar-plex': { textoConcluido: '✅ Plex instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_plex', flatpakId: 'tv.plex.PlexDesktop' },
         'instalar-stremio': { textoConcluido: '✅ Stremio instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_stremio', flatpakId: 'com.stremio.Stremio' },
-        'instalar-krita': { textoConcluido: '✅ Krita instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_krita', flatpakId: 'org.kde.krita' },
-        'instalar-inkscape': { textoConcluido: '✅ Inkscape instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_inkscape', flatpakId: 'org.inkscape.Inkscape' },
         'instalar-pinta': { textoConcluido: '✅ Pinta instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_pinta', flatpakId: 'com.github.PintaProject.Pinta' },
-        'instalar-gimp': { textoConcluido: '✅ GIMP instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_gimp', flatpakId: 'org.gimp.GIMP' },
-        'instalar-darktable': { textoConcluido: '✅ Darktable instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_darktable', flatpakId: 'org.darktable.Darktable' },
-        'instalar-freecad': { textoConcluido: '✅ FreeCAD instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_freecad', flatpakId: 'org.freecad.FreeCAD' },
-        'instalar-librecad': { textoConcluido: '✅ LibreCAD instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_librecad', flatpakId: 'org.librecad.librecad' },
         'instalar-cura': { textoConcluido: '✅ Cura instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_cura', flatpakId: 'com.ultimaker.cura' },
         'instalar-upscayl': { textoConcluido: '✅ Upscayl instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_upscayl', flatpakId: 'org.upscayl.Upscayl' },
         'instalar-xnviewmp': { textoConcluido: '✅ XnView MP instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_xnviewmp', flatpakId: 'com.xnview.XnViewMP' },
-        'instalar-affinity': { sempreClicavel: true },
-        'instalar-opera': { textoConcluido: '✅ Opera instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_opera', flatpakId: 'com.opera.Opera' },
-        'instalar-brave': { textoConcluido: '✅ Brave instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_brave', flatpakId: 'com.brave.Browser' },
         'instalar-zen': { textoConcluido: '✅ Zen Browser instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_zen', flatpakId: 'app.zen_browser.zen' },
-        'instalar-edge': { textoConcluido: '✅ Microsoft Edge instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_edge', flatpakId: 'com.microsoft.Edge' },
-        'instalar-chromium': { textoConcluido: '✅ Chromium instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_chromium', flatpakId: 'org.chromium.Chromium' },
         'instalar-zoom': { textoConcluido: '✅ Zoom instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_zoom', flatpakId: 'us.zoom.Zoom' },
-        'instalar-vivaldi': { textoConcluido: '✅ Vivaldi instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_vivaldi', flatpakId: 'com.vivaldi.Vivaldi' },
         'instalar-discord': { textoConcluido: '✅ Discord instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_discord', flatpakId: 'com.discordapp.Discord' },
         'instalar-telegram': { textoConcluido: '✅ Telegram instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_telegram', flatpakId: 'org.telegram.desktop' },
         'instalar-signal': { textoConcluido: '✅ Signal instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_signal', flatpakId: 'org.signal.Signal' },
-        'instalar-kdenlive': { textoConcluido: '✅ Kdenlive instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_kdenlive', flatpakId: 'org.kde.kdenlive' },
         'instalar-shotcut': { textoConcluido: '✅ Shotcut instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_shotcut', flatpakId: 'org.shotcut.Shotcut' },
-        'instalar-pitivi': { textoConcluido: '✅ Pitivi instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_pitivi', flatpakId: 'org.pitivi.Pitivi' },
         'instalar-openshot': { textoConcluido: '✅ OpenShot instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_openshot', flatpakId: 'org.openshot.OpenShot' },
         'instalar-avidemux': { textoConcluido: '✅ Avidemux instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_avidemux', flatpakId: 'org.avidemux.Avidemux' },
-        'instalar-lightworks': { textoConcluido: '✅ Lightworks instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_lightworks' },
         'instalar-drift': { textoConcluido: '✅ Drift instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_drift', flatpakId: 'org.cutwire.Drift' },
-        'instalar-blender': { textoConcluido: '✅ Blender instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_blender', flatpakId: 'org.blender.Blender' },
-        'instalar-ardour': { textoConcluido: '✅ Ardour instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_ardour', flatpakId: 'org.ardour.Ardour' },
-        'instalar-lmms': { textoConcluido: '✅ LMMS instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_lmms', flatpakId: 'io.lmms.LMMS' },
-        'instalar-audacity': { textoConcluido: '✅ Audacity instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_audacity', flatpakId: 'org.audacityteam.Audacity' },
-        // --- Ferramentas de acesso remoto ---
         'instalar-rustdesk': { textoConcluido: '✅ RustDesk instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_rustdesk', flatpakId: 'com.rustdesk.RustDesk' },
+
+        // --- DNF (repos oficiais do Fedora) ---
+        'instalar-thunderbird': { textoConcluido: '✅ Thunderbird instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_thunderbird' },
+        'instalar-okular': { textoConcluido: '✅ Okular instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_okular' },
+        'instalar-foliate': { textoConcluido: '✅ Foliate instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_foliate' },
+        'instalar-haruna': { textoConcluido: '✅ Haruna instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_haruna' },
+        'instalar-vlc': { textoConcluido: '✅ VLC instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_vlc' },
+        'instalar-mpv': { textoConcluido: '✅ MPV instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_mpv' },
+        'instalar-krita': { textoConcluido: '✅ Krita instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_krita' },
+        'instalar-inkscape': { textoConcluido: '✅ Inkscape instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_inkscape' },
+        'instalar-gimp': { textoConcluido: '✅ GIMP instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_gimp' },
+        'instalar-darktable': { textoConcluido: '✅ Darktable instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_darktable' },
+        'instalar-freecad': { textoConcluido: '✅ FreeCAD instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_freecad' },
+        'instalar-librecad': { textoConcluido: '✅ LibreCAD instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_librecad' },
+        'instalar-kdenlive': { textoConcluido: '✅ Kdenlive instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_kdenlive' },
+        'instalar-pitivi': { textoConcluido: '✅ Pitivi instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_pitivi' },
+        'instalar-blender': { textoConcluido: '✅ Blender instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_blender' },
+        'instalar-ardour': { textoConcluido: '✅ Ardour instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_ardour' },
+        'instalar-lmms': { textoConcluido: '✅ LMMS instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_lmms' },
+        'instalar-audacity': { textoConcluido: '✅ Audacity instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_audacity' },
+        'instalar-chromium': { textoConcluido: '✅ Chromium instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_chromium' },
+
+        // --- RPM via repo oficial do fabricante ---
+        'instalar-opera': { textoConcluido: '✅ Opera instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_opera' },
+        'instalar-brave': { textoConcluido: '✅ Brave instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_brave' },
+        'instalar-vivaldi': { textoConcluido: '✅ Vivaldi instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_vivaldi' },
+        'instalar-edge': { textoConcluido: '✅ Microsoft Edge instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_edge' },
+
+        // --- Casos especiais ---
+        'instalar-affinity': { sempreClicavel: true },
         'instalar-remmina': { textoConcluido: '✅ Remmina instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_remmina' },
         'instalar-gnome-connections': { textoConcluido: '✅ GNOME Connections instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_gnome_connections' },
         'instalar-krdc': { textoConcluido: '✅ KRDC instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_krdc' },
+
         // --- Suíte ArtCraft (RPMs do GitHub oficial) ---
         'instalar-photocraft':  { textoConcluido: '✅ PhotoCraft instalado',  textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_photocraft' },
         'instalar-vectorcraft': { textoConcluido: '✅ VectorCraft instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_vectorcraft' },
@@ -778,6 +802,9 @@ var SESSOES = [
         'instalar-printcraft':  { textoConcluido: '✅ PrintCraft instalado',  textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_printcraft' },
         'instalar-effectcraft': { textoConcluido: '✅ EffectCraft instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_effectcraft' },
         'instalar-designcraft': { textoConcluido: '✅ DesignCraft instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_designcraft' },
+
+        // --- RPM baixado de URL (localpkg) ---
+        'instalar-lightworks': { textoConcluido: '✅ Lightworks instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_lightworks' },
         'instalar-rclone-manager': {
             textoConcluido: '✅ Rclone Manager instalado',
             textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_rclone_manager'
@@ -3244,7 +3271,20 @@ async function _executarRemocaoApp(idComando) {
         comando = 'flatpak uninstall -y ' + info.appId;
         idRemocao = idComando + '-revert';
     } else if (info.tipo === 'dnf') {
-        comando = 'sudo dnf remove -y ' + info.pacotes.join(' ');
+        // Monta o comando base: remove os pacotes.
+        var pacotes = info.pacotes.join(' ');
+        comando = 'sudo dnf remove -y ' + pacotes;
+
+        // Se o app foi instalado via repo oficial do fabricante
+        // (navegadores), também removemos os arquivos .repo para
+        // deixar o sistema no estado pré-instalação. O campo
+        // `reposRemover` é opcional — apps DNF puros (VLC, GIMP,
+        // etc) não têm e caem no fluxo simples.
+        if (Array.isArray(info.reposRemover) && info.reposRemover.length > 0) {
+            var repos = info.reposRemover.join(' ');
+            comando += '; sudo rm -f ' + repos;
+        }
+
         idRemocao = _idRemocaoDe(idComando);
     } else if (info.tipo === 'arquivos') {
         // Remoção de ARQUIVOS criados pelo FAP em diretórios do

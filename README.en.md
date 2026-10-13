@@ -2,7 +2,7 @@
 
 **🌐 Language:** [Português (BR)](README.md) | English | [Español](README.es.md)
 
-![Version](https://img.shields.io/badge/Version-v1.0.0--10072026-orange?style=flat-square)
+![Version](https://img.shields.io/badge/Version-v1.0.0--10132026-orange?style=flat-square)
 ![Fedora](https://img.shields.io/badge/Fedora-44+-294172?style=flat-square&logo=fedora)
 ![License](https://img.shields.io/badge/License-GPL--3.0-green?style=flat-square)
 ![Languages](https://img.shields.io/badge/Languages-PT--BR%20%7C%20EN%20%7C%20ES-3c67e3?style=flat-square)
@@ -39,7 +39,7 @@ Visual automation panel for Fedora Linux. Turns a clean installation into a comp
 | 3 | 🖥️ Hardware | AMD/NVIDIA/Intel drivers, CoreCtrl, LACT, overclock |
 | 4 | 🔌 Devices | Auto-detection, COPRs, controllers, firmware |
 | 5 | 🎬 Media Production | OBS Studio, virtual camera, EasyEffects |
-| 6 | 📦 Recommended Apps | ~45 Flatpak apps + ArtCraft Suite (7 Rust apps) + Remote Access Tools |
+| 6 | 📦 Recommended Apps | Flatpaks (Flathub), dnf apps (Fedora repos) and browsers via official RPM |
 | 7 | 🏠 Home and Office | CUPS, Samba, LocalSend, KeePassXC, OCR |
 | 8 | 🎮 Gaming | Native Steam, Heroic, Lutris, Wine, GameMode, Gamescope Session, emulators |
 | 9 | 📱 Waydroid | Android on Linux via container |
@@ -54,10 +54,12 @@ Visual automation panel for Fedora Linux. Turns a clean installation into a comp
 - **Dark/light theme** with real-time toggle
 - **Multilingual** (PT-BR, EN, ES) with real-time switching
 - **Real-time logs** via SSE
-- **Unified trash icon** for Flatpaks and non-Flatpak apps
+- **Unified trash icon** for Flatpaks, dnf apps and RPM browsers
 - **"Open" button** on every GUI app — launches in its own session (survives FAP closing)
+- **Browsers via official RPM** — Opera, Brave, Vivaldi and Edge installed from each vendor's own repository, with automatic updates through `dnf`. Chromium via the official Fedora package. The trash icon removes the package **and** disables the repository
+- **Origin by app type** — the Apps session automatically picks the best install method: Flatpak when there's no official repo, `dnf` when Fedora packages it, vendor RPM when available
 - **Native Steam** via RPM Fusion — required for the Gamescope session
-- **Official Gamescope Session** — launcher and `.desktop` created following the Fedora Docs recipe, with `TryExec` (plasmalogin-compatible), dynamic resolution detection and a diagnostic log at `/tmp/fap-gamescope-session.log`. Non-blocking warning if native Steam is missing.
+- **Official Gamescope Session** — launcher and `.desktop` created following the Fedora Docs recipe, with `TryExec` (plasmalogin-compatible), dynamic resolution detection and a diagnostic log at `/tmp/fap-gamescope-session.log`
 - **ArtCraft Suite** — 7 creative apps (PhotoCraft, VectorCraft, FilmCraft, LightCraft, PrintCraft, EffectCraft, DesignCraft) developed in Rust, open source, with buttons that always download the latest `.x86_64` RPM straight from each project's GitHub Releases
 - **Remote Access Tools** — RustDesk, Remmina, GNOME Connections and KRDC, with automatic desktop detection to hide the "Install" button when the native app is already present
 - **GRUB configurator** — interactive panel that reads the current configuration, explains each parameter in plain language, auto-detects the monitor resolution and the presence of dual boot, and applies a recommended set with automatic backup and easy reversion
