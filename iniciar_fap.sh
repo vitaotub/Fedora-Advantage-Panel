@@ -346,23 +346,139 @@ abrir_container() {
         extra_args="--debug"
     fi
 
+    # ============================================================
+    # CICLO DE VIDA DO CONTAINER
+    # ============================================================
+    #
+    # Antes usávamos `exec` para substituir o processo atual pelo
+    # container. Isso tinha dois problemas:
+    #
+    #   1. O iniciar_fap.sh deixava de existir no momento do exec,
+    #      então o `while true` que monitora o servidor nunca
+    #      rodava — e o node ficava órfão quando o container fechava.
+    #   2. O terminal ficava aberto esperando, porque o cleanup
+    #      dependia de um sinal que ninguém mandava.
+    #
+    # Agora: rodamos o container SEM exec, esperamos ele terminar
+    # (bloqueante), e depois fazemos cleanup explícito. O terminal
+    # fecha junto com a janela.
+
     if [ -f "$DIR/fap-container" ]; then
         log_info "📦 Abrindo no container nativo (WebKitGTK)..."
         "$DIR/fap-container" --url "$url" --icon "$icone" --name "Fedora Advantage Panel" $extra_args
-        exit 0
+        return 0
     fi
 
     if command -v fap-container &> /dev/null; then
         log_info "📦 Abrindo no container nativo (WebKitGTK)..."
         fap-container --url "$url" --icon "$icone" --name "Fedora Advantage Panel" $extra_args
-        exit 0
+        return 0
     fi
 
     return 1
 }
 
+# ============================================================
+# DEPENDÊNCIAS DE COMPILAÇÃO DO CONTAINER
+# ============================================================
+#
+# O container é um binário C que linka contra WebKitGTK 4.1 e
+# GTK3. Sem gcc/make/pkg-config + os headers de desenvolvimento,
+# o build-container.sh falha silenciosamente com "gcc: command
+# not found" (ou similar) e o FAP cai no fallback de navegador.
+#
+# O install.sh já instala esses pacotes na instalação oficial.
+# Mas quando o FAP é rodado direto de um clone (sem install.sh),
+# os pacotes nunca são instalados — e o usuário só descobre isso
+# quando o container não abre.
+#
+# Esta função roda antes da tentativa de compilação e garante os
+# pré-requisitos. É idempotente: só instala o que estiver
+# faltando, e não faz nada se o binário já existir.
+
+instalar_dependencias_container() {
+    # Se o binário já existe, não perde tempo checando pacotes.
+    if [ -f "$DIR/fap-container" ]; then
+        return 0
+    fi
+
+    log_info "🔧 Verificando dependências de compilação do container..."
+
+    # ============================================================
+    # CHECAGEM POR BINÁRIO, NÃO POR PACOTE
+    # ============================================================
+    #
+    # `rpm -q pkgconfig` FALHA no Fedora 40+ porque o pacote foi
+    # renomeado para `pkgconf-pkg-config`. O nome antigo só existe
+    # como Provides virtual, que o rpm -q não enxerga. Resultado:
+    # a checagem antiga achava que faltava instalar e pedia senha
+    # de root SEM NADA ESTAR FALTANDO.
+    #
+    # A checagem correta é pelo BINÁRIO (`command -v`) para
+    # ferramentas, e pelo `pkg-config --exists` para bibliotecas
+    # de desenvolvimento (que não têm binário próprio).
+
+    local faltando=()
+
+    # Ferramentas: checagem por binário.
+    if ! command -v gcc &> /dev/null; then
+        faltando+=("gcc")
+    fi
+
+    if ! command -v make &> /dev/null; then
+        faltando+=("make")
+    fi
+
+    # pkg-config: o binário pode vir de `pkgconf-pkg-config`
+    # (Fedora 40+) ou do antigo `pkgconfig`. Nome moderno em uso.
+    if ! command -v pkg-config &> /dev/null; then
+        faltando+=("pkgconf-pkg-config")
+    fi
+
+    # Bibliotecas: checagem via pkg-config --exists (o binário
+    # pkg-config precisa existir; se não existir, os dois testes
+    # falham e ambos os pacotes entram na lista — o que é correto,
+    # porque sem pkg-config o build não funciona de qualquer jeito).
+    if command -v pkg-config &> /dev/null; then
+        if ! pkg-config --exists webkit2gtk-4.1 2>/dev/null; then
+            faltando+=("webkit2gtk4.1-devel")
+        fi
+
+        if ! pkg-config --exists gtk+-3.0 2>/dev/null; then
+            faltando+=("gtk3-devel")
+        fi
+    else
+        # Sem pkg-config, assume que as duas devel precisam ser
+        # instaladas. `dnf` é idempotente — se já estiverem, não
+        # faz nada.
+        faltando+=("webkit2gtk4.1-devel")
+        faltando+=("gtk3-devel")
+    fi
+
+    if [ ${#faltando[@]} -eq 0 ]; then
+        log_success "Dependências de compilação já estão instaladas"
+        return 0
+    fi
+
+    log_info "Instalando dependências de compilação: ${faltando[*]}"
+    log_info "(será solicitada sua senha de administrador)"
+
+    if sudo dnf install -y "${faltando[@]}"; then
+        log_success "Dependências de compilação instaladas"
+        return 0
+    else
+        log_warning "Algumas dependências não puderam ser instaladas"
+        log_warning "O FAP tentará compilar mesmo assim"
+        return 1
+    fi
+}
+
 compilar_container() {
     log_info "🔧 Compilando container nativo..."
+
+    # Instala gcc/make/pkgconfig + headers do WebKit/GTK3 se faltarem.
+    # Sem isso, o build-container.sh falha com "gcc: command not found".
+    instalar_dependencias_container || true
 
     if [ -f "$DIR/build-container.sh" ]; then
         chmod +x "$DIR/build-container.sh"
@@ -668,25 +784,39 @@ iniciar_servidor() {
 # NAVEGADOR (FALLBACK)
 # ============================================================
 
+# ============================================================
+# FALLBACK DE NAVEGADOR — TAMBÉM BLOQUEANTE
+# ============================================================
+#
+# O fallback de navegador (Firefox/Chromium) precisa seguir a
+# MESMA regra do container nativo: bloquear até o usuário fechar
+# a janela. Sem isso, o iniciar_fap.sh segue em frente, chega no
+# cleanup, mata o servidor — e o navegador, aberto em background,
+# carrega uma URL que já não existe mais.
+#
+# Removemos o `&` final de propósito. Sem ele, o script espera o
+# navegador fechar antes de prosseguir para o cleanup.
+
 abrir_firefox() {
     local url="$1"
     local perfil_dir="$DIR/.perfil_firefox"
 
     mkdir -p "$perfil_dir"
 
+    log_info "🦊 Abrindo Firefox (aguarde fechar a janela para encerrar o servidor)..."
+
     if [ "$DEBUG" = true ]; then
-        firefox --profile "$perfil_dir" --window-size 950,850 --new-window "$url" 2>&1 | tee -a "$LOG_FILE" &
+        firefox --profile "$perfil_dir" --window-size 950,850 --new-window "$url" 2>&1 | tee -a "$LOG_FILE"
     else
-        firefox --profile "$perfil_dir" --window-size 950,850 --new-window "$url" > /dev/null 2>&1 &
+        firefox --profile "$perfil_dir" --window-size 950,850 --new-window "$url" > /dev/null 2>&1
     fi
 
-    log_info "🦊 Firefox aberto"
+    log_info "🦊 Firefox fechado"
 }
 
 abrir_chromium() {
     local url="$1"
     local perfil_dir="$DIR/.perfil_app"
-    local icone="$DIR/icone_app.png"
 
     mkdir -p "$perfil_dir"
 
@@ -703,13 +833,15 @@ abrir_chromium() {
         return 1
     fi
 
+    log_info "🌐 Abrindo $binario (aguarde fechar a janela para encerrar o servidor)..."
+
     if [ "$DEBUG" = true ]; then
-        $binario --user-data-dir="$perfil_dir" --app="$url" --window-size=950,850 2>&1 | tee -a "$LOG_FILE" &
+        $binario --user-data-dir="$perfil_dir" --app="$url" --window-size=950,850 2>&1 | tee -a "$LOG_FILE"
     else
-        $binario --user-data-dir="$perfil_dir" --app="$url" --window-size=950,850 > /dev/null 2>&1 &
+        $binario --user-data-dir="$perfil_dir" --app="$url" --window-size=950,850 > /dev/null 2>&1
     fi
 
-    log_info "🌐 $binario aberto"
+    log_info "🌐 $binario fechado"
 }
 
 abrir_navegador() {
@@ -895,8 +1027,6 @@ main() {
     liberar_porta
     iniciar_servidor
 
-    abrir_navegador
-
     criar_atalho
 
     echo ""
@@ -904,9 +1034,37 @@ main() {
     log_info "🌐 http://localhost:3000"
     log_info "📋 Log: $LOG_FILE"
     echo ""
-    log_info "Pressione Ctrl+C para encerrar o servidor"
-    echo ""
 
+    # ============================================================
+    # CICLO DE VIDA: CONTAINER ABERTO = SERVIDOR VIVO
+    # ============================================================
+    #
+    # ORDEM OBRIGATÓRIA:
+    #   1. `iniciar_servidor` sobe o node na porta 3000
+    #   2. `abrir_navegador` abre o container apontando para essa porta
+    #   3. O container é BLOQUEANTE: só retorna quando o usuário
+    #      fecha a janela do FAP
+    #   4. Quando retorna, o container já fechou — então encerramos
+    #      o servidor e saímos, fechando o terminal junto
+    #
+    # Sem o passo 2 (a chamada `abrir_navegador`), o script sobe o
+    # servidor, cria o atalho, e mata tudo em seguida — o usuário vê
+    # a janela abrir e fechar imediatamente.
+    abrir_navegador
+
+    # Encerra o servidor imediatamente — o container já foi fechado
+    # pelo usuário (caso comum), ou o navegador foi fechado.
+    if [ -f "$SERVER_PID_FILE" ]; then
+        local pid=$(cat "$SERVER_PID_FILE")
+        if kill -0 $pid 2>/dev/null; then
+            log_info "🧹 Container fechado. Encerrando servidor..."
+            cleanup
+            exit 0
+        fi
+    fi
+
+    # Fallback: se o servidor morreu antes do container fechar,
+    # monitora até o node cair.
     while true; do
         if [ -f "$SERVER_PID_FILE" ]; then
             local pid=$(cat "$SERVER_PID_FILE")
@@ -918,6 +1076,8 @@ main() {
         fi
         sleep 2
     done
+
+    cleanup
 }
 
 # ============================================================
@@ -925,16 +1085,77 @@ main() {
 # ============================================================
 
 cleanup() {
+    # Desabilita os traps imediatamente. Sem isso, o `cleanup;
+    # exit 0` do main() dispara o trap EXIT, que chama cleanup de
+    # novo — o log mostrado ao usuário saía duplicado.
+    trap - EXIT INT TERM
+
     echo ""
     log_info "Encerrando o servidor..."
+
+    # ============================================================
+    # ENCERRAMENTO GRACIOSO DO NODE (SIGTERM, DEPOIS SIGKILL)
+    # ============================================================
+    #
+    # O server.js tem handler para SIGTERM (adicionado junto com
+    # este cleanup). Quando enviamos `kill` (SIGTERM por padrão),
+    # o node mata a árvore de processos filho (dnf, pkexec, etc.)
+    # e sai — evitando que comandos órfãos segurem o lock do rpm.
+    #
+    # Esperamos até 3s pela saída limpa. Se ainda estiver vivo,
+    # forçamos com SIGKILL (que mata o node mas NÃO limpa os
+    # filhos — por isso o SIGTERM é preferível).
 
     if [ -f "$SERVER_PID_FILE" ]; then
         local pid=$(cat "$SERVER_PID_FILE")
         if kill -0 $pid 2>/dev/null; then
-            kill $pid 2>/dev/null
-            log_success "Servidor encerrado (PID: $pid)"
+            kill $pid 2>/dev/null || true
+
+            # Aguarda até 30 iterações de 100ms = 3s
+            local tentativas=0
+            while kill -0 $pid 2>/dev/null && [ $tentativas -lt 30 ]; do
+                sleep 0.1
+                tentativas=$((tentativas + 1))
+            done
+
+            if kill -0 $pid 2>/dev/null; then
+                log_warning "Node não encerrou em 3s — forçando"
+                kill -9 $pid 2>/dev/null || true
+            else
+                log_success "Servidor encerrado (PID: $pid)"
+            fi
         fi
         rm -f "$SERVER_PID_FILE"
+    fi
+
+    # ============================================================
+    # LIMPEZA DE ÓRFÃOS (rede de segurança)
+    # ============================================================
+    #
+    # Se por algum motivo o PID salvo em arquivo não corresponder
+    # ao processo node real (crash anterior, kill -9 externo, etc.),
+    # o servidor pode ficar órfão. Este pkill varre qualquer
+    # `node server.js` que esteja rodando no DIRETÓRIO do FAP —
+    # evitando matar outros projetos node do usuário.
+    #
+    # `pkill -f` casa pela linha de comando completa; combinamos
+    # com o diretório do FAP para ser cirúrgico. Tentamos SIGTERM
+    # primeiro (para dar chance ao handler do node), depois SIGKILL.
+    if pgrep -f "node .*$DIR/server\.js" > /dev/null 2>&1; then
+        pkill -TERM -f "node .*$DIR/server\.js" 2>/dev/null || true
+        sleep 0.5
+        pkill -KILL -f "node .*$DIR/server\.js" 2>/dev/null || true
+        log_success "Processos node órfãos do FAP encerrados"
+    fi
+
+    # Libera a porta 3000 caso o node tenha ficado preso em algum
+    # estado intermediário (raro, mas possível em crash).
+    if command -v lsof &> /dev/null; then
+        local porta_pid=$(lsof -t -i:3000 2>/dev/null)
+        if [ -n "$porta_pid" ]; then
+            kill -9 $porta_pid 2>/dev/null || true
+            log_info "Porta 3000 liberada"
+        fi
     fi
 
     log_info "👋 Até logo!"

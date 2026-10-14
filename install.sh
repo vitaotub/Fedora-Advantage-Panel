@@ -359,6 +359,7 @@ _migrar_via_update() {
     migrar_esquema_antigo
 
     instalar_fap
+    desabilitar_eula_chromium
     verificar_arquivos_instalados
     instalar_dependencias_container
     compilar_container_install
@@ -412,21 +413,43 @@ fi
 instalar_dependencias_container() {
 print_step "Instalando dependências do container nativo..."
 
-local pacotes=(
-"webkit2gtk4.1-devel"
-"gtk3-devel"
-"gcc"
-"make"
-"pkgconfig"
-)
+# ============================================================
+# CHECAGEM POR BINÁRIO, NÃO POR PACOTE
+# ============================================================
+#
+# `rpm -q pkgconfig` FALHA no Fedora 40+ porque o pacote foi
+# renomeado para `pkgconf-pkg-config`. O nome antigo só existe
+# como Provides virtual, que o rpm -q não enxerga.
+#
+# A checagem correta é pelo BINÁRIO (`command -v`) para
+# ferramentas, e pelo `pkg-config --exists` para bibliotecas
+# de desenvolvimento.
 
 local instalar=()
 
-for pkg in "${pacotes[@]}"; do
-if ! rpm -q $pkg &> /dev/null; then
-instalar+=($pkg)
+if ! command -v gcc &> /dev/null; then
+instalar+=("gcc")
 fi
-done
+
+if ! command -v make &> /dev/null; then
+instalar+=("make")
+fi
+
+if ! command -v pkg-config &> /dev/null; then
+instalar+=("pkgconf-pkg-config")
+fi
+
+if command -v pkg-config &> /dev/null; then
+if ! pkg-config --exists webkit2gtk-4.1 2>/dev/null; then
+instalar+=("webkit2gtk4.1-devel")
+fi
+if ! pkg-config --exists gtk+-3.0 2>/dev/null; then
+instalar+=("gtk3-devel")
+fi
+else
+instalar+=("webkit2gtk4.1-devel")
+instalar+=("gtk3-devel")
+fi
 
 if [ ${#instalar[@]} -gt 0 ]; then
 print_info "Instalando: ${instalar[*]}"
@@ -492,6 +515,45 @@ print_error "Instalação cancelada"
 exit 1
 fi
 fi
+}
+
+# ============================================================
+# EULA DO CHROMIUM
+# ============================================================
+#
+# O Fedora empacota o Chromium com uma verificação de "Additional
+# Terms of Service" que aparece na primeira inicialização de
+# qualquer app baseado em Chromium. Isso afeta usuários que
+# instalam o Chromium via FAP (sessão Aplicativos Recomendados)
+# e veem a popup de EULA na primeira execução.
+#
+# O arquivo /etc/chromium/master_preferences desabilita essa
+# verificação de forma permanente. Só escrevemos se ele ainda
+# NÃO existir — assim não sobrescrevemos uma configuração que o
+# usuário tenha feito manualmente.
+#
+# Isso não instala o Chromium; apenas garante que, se ele for
+# instalado (pelo usuário ou por uma sessão do FAP), a EULA não
+# apareça.
+
+desabilitar_eula_chromium() {
+    local pref_file="/etc/chromium/master_preferences"
+    local pref_dir="/etc/chromium"
+
+    if [ -f "$pref_file" ]; then
+        print_info "Configuração do Chromium já existe, mantendo"
+        return 0
+    fi
+
+    print_step "Configurando Chromium para pular EULA..."
+
+    if sudo mkdir -p "$pref_dir" && \
+       echo '{"distribution":{"require_eula":false}}' | sudo tee "$pref_file" > /dev/null; then
+        sudo chmod 644 "$pref_file"
+        print_success "EULA do Chromium desabilitada ($pref_file)"
+    else
+        print_warning "Não foi possível criar $pref_file — EULA pode aparecer"
+    fi
 }
 
 verificar_dependencias() {
@@ -915,6 +977,7 @@ chmod +x "$BIN_DIR/fap-container"
 fi
 print_success "Symlinks atualizados"
 
+desabilitar_eula_chromium
 verificar_arquivos_instalados
 reaplicar_permissoes
 criar_atalhos
@@ -996,6 +1059,7 @@ verificar_dependencias
 migrar_esquema_antigo
 
 instalar_fap
+desabilitar_eula_chromium
 verificar_arquivos_instalados
 instalar_dependencias_container
 compilar_container_install

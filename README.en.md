@@ -2,7 +2,7 @@
 
 **🌐 Language:** [Português (BR)](README.md) | English | [Español](README.es.md)
 
-![Version](https://img.shields.io/badge/Version-v1.0.0--10132026-orange?style=flat-square)
+![Version](https://img.shields.io/badge/Version-v1.0.0--10142026-orange?style=flat-square)
 ![Fedora](https://img.shields.io/badge/Fedora-44+-294172?style=flat-square&logo=fedora)
 ![License](https://img.shields.io/badge/License-GPL--3.0-green?style=flat-square)
 ![Languages](https://img.shields.io/badge/Languages-PT--BR%20%7C%20EN%20%7C%20ES-3c67e3?style=flat-square)
@@ -26,54 +26,114 @@ fap-compat                # Launch (compatibility mode — older GPUs)
 
 ## 📖 About
 
-Visual automation panel for Fedora Linux. Turns a clean installation into a complete system — codecs, drivers, repositories, tools — through clicks, without opening the terminal.
+Fedora Advantage Panel (FAP) is a visual automation panel for Fedora Linux. It turns a clean installation into a complete system — codecs, drivers, repositories, tools — through clicks, without opening the terminal.
 
-**Single entry point**: the **"Start"** button walks you through the 14 sessions step by step. Each button remembers its own state. Closing and reopening FAP shows exactly where you stopped.
+**Single entry point.** The **"Start"** button walks you through 14 guided sessions step by step. Each button remembers its own state. Closing and reopening FAP shows exactly where you stopped.
 
-## ✨ Sessions
+## ✨ The 14 Sessions
 
 | # | Session | What it does |
 |---|---|---|
-| 1 | 🚀 First Steps | System update, RPM Fusion, Flathub, Terra |
-| 2 | 🔤 Codecs | Multimedia codecs, commercial DVD, MS fonts |
-| 3 | 🖥️ Hardware | AMD/NVIDIA/Intel drivers, CoreCtrl, LACT, overclock |
-| 4 | 🔌 Devices | Auto-detection, COPRs, controllers, firmware |
+| 1 | 🚀 First Steps | System update, RPM Fusion, Flathub, Terra Repository (with warnings about optional subrepositories) |
+| 2 | 🔤 Codecs | Complete multimedia codecs (official RPM Fusion `multimedia` group), commercial DVD, Microsoft fonts |
+| 3 | 🖥️ Hardware | AMD/NVIDIA/Intel drivers, CoreCtrl, LACT, GPU overclocking |
+| 4 | 🔌 Devices | Automatic hardware detection, community COPR drivers, controllers, firmware |
 | 5 | 🎬 Media Production | OBS Studio, virtual camera, EasyEffects |
-| 6 | 📦 Recommended Apps | Flatpaks (Flathub), dnf apps (Fedora repos) and browsers via official RPM |
-| 7 | 🏠 Home and Office | CUPS, Samba, LocalSend, KeePassXC, OCR |
+| 6 | 📦 Apps | 20+ Flatpaks, 20+ `dnf` apps, browsers via official RPM, **ArtCraft Suite (13 apps)** and remote access tools |
+| 7 | 🏠 Home and Office | CUPS, Samba, LocalSend, KeePassXC, OCR (Okular + Tesseract) |
 | 8 | 🎮 Gaming | Native Steam, Heroic, Lutris, Wine, GameMode, Gamescope Session, emulators |
 | 9 | 📱 Waydroid | Android on Linux via container |
 | 10 | 🖥️ Virtualization | QEMU/KVM, VirtualBox, GNOME Boxes |
-| 11 | 📊 Diagnostics | System panel, disk health, temperatures |
-| 12 | 🛠️ Tunings and Maintenance | Performance tunings, DNF, GRUB, kernels |
-| 13 | 🐧 Fedora Status | Version, Atomic/Silverblue, SELinux |
-| 14 | 📖 About FAP | Update/uninstall, dynamic changelog |
+| 11 | 📊 Diagnostics | System panel, disk health (SMART), temperatures, error journal |
+| 12 | 🛠️ Tunings and Maintenance | Performance tunings, DNF, interactive GRUB configuration, kernels |
+| 13 | 🐧 Fedora Status | Version, Atomic/Silverblue detection, SELinux management |
+| 14 | 📖 About FAP | Update/uninstall, dynamic changelog, change history |
 
-## 🎨 Highlights
+## 🎨 Features
 
-- **Dark/light theme** with real-time toggle
-- **Multilingual** (PT-BR, EN, ES) with real-time switching
-- **Real-time logs** via SSE
-- **Unified trash icon** for Flatpaks, dnf apps and RPM browsers
-- **"Open" button** on every GUI app — launches in its own session (survives FAP closing)
-- **Browsers via official RPM** — Opera, Brave, Vivaldi and Edge installed from each vendor's own repository, with automatic updates through `dnf`. Chromium via the official Fedora package. The trash icon removes the package **and** disables the repository
-- **Origin by app type** — the Apps session automatically picks the best install method: Flatpak when there's no official repo, `dnf` when Fedora packages it, vendor RPM when available
-- **Native Steam** via RPM Fusion — required for the Gamescope session
-- **Official Gamescope Session** — launcher and `.desktop` created following the Fedora Docs recipe, with `TryExec` (plasmalogin-compatible), dynamic resolution detection and a diagnostic log at `/tmp/fap-gamescope-session.log`
-- **ArtCraft Suite** — 7 creative apps (PhotoCraft, VectorCraft, FilmCraft, LightCraft, PrintCraft, EffectCraft, DesignCraft) developed in Rust, open source, with buttons that always download the latest `.x86_64` RPM straight from each project's GitHub Releases
-- **Remote Access Tools** — RustDesk, Remmina, GNOME Connections and KRDC, with automatic desktop detection to hide the "Install" button when the native app is already present
-- **GRUB configurator** — interactive panel that reads the current configuration, explains each parameter in plain language, auto-detects the monitor resolution and the presence of dual boot, and applies a recommended set with automatic backup and easy reversion
-- **Terra Repository** — community repository that complements RPM Fusion, enableable in one click
-- **Install queue** for Flatpaks — click on multiple in sequence
-- **Smart lock** — prevents `rpm` lock conflicts and blocks session navigation during execution
-- **Automatic hardware detection** — GPUs, Wi-Fi, Ethernet
-- **Detection of externally installed apps** — recognized on session load
-- **Native WebKitGTK container** (no external browser)
-- **Secure authentication** via pkexec/kdesu
+### Interface and usability
+
+- **Dark and light interface** with real-time toggle, no page reload
+- **Multilingual** (PT-BR, EN, ES) with a header selector
+- **Real-time logs** per command, with colors distinguishing normal output, success, and real errors
+- **Smart lock** — prevents `rpm` lock conflicts and freezes session navigation while a command is running
+- **Resumable session** — each button remembers its state in `.progresso.json`; close and reopen shows where you stopped
+
+### App installation
+
+- **Unified trash icon** — every installable app has a removal icon next to it, which removes the package and, when applicable, disables the source repository
+- **Origin by app type** — FAP automatically picks the best install method:
+  - **Flatpak (Flathub)** — when there's no official Fedora repo nor package in the distro repos
+  - **`dnf` (official Fedora repos)** — when the distro packages the software
+  - **RPM via vendor's official repo** — when the vendor ships for Fedora (browsers)
+  - **RPM downloaded from URL** — when that's the only option (ArtCraft Suite, Lightworks, Rclone Manager), with `--setopt=localpkg_gpgcheck=0` required
+- **Flatpak queue** — clicking on multiple apps in sequence enqueues and installs them one at a time, avoiding Flathub lock errors
+- **"Open" button** on all GUI apps — launches in its own session, surviving FAP closing
+- **Detection of externally installed apps** — if you already have an app installed before FAP, the button appears as "Open" from the start
+
+### Native WebKitGTK container
+
+- **Own interface**, no dependency on external browsers
+- **Native container in WebKitGTK 4.1 + GTK3**, compiled at install time
+- **Compatibility mode** (`fap-compat`) for GPUs without 3D acceleration — forces software rendering via Mesa/llvmpipe
+- **No annoying popups** — Chromium EULA suppressed and WebKit permissions (geolocation, camera, microphone) automatically denied
+
+### Authentication and security
+
+- **Universal `pkexec`** — integrated password dialog on all desktops (KDE uses `polkit-kde-agent`, GNOME uses `polkit-gnome`, etc.), no need to type the password in the terminal
+- **Read-only commands in whitelist** — `rpm -q`, `uname -r`, `gtk-launch`, `flatpak`, `systemctl --user` and similar run without asking for a password
+- **Shell injection blocking** — commands with `;`, `&&`, `|`, `$(...)` or `&` are rejected by the whitelist and require authentication
+
+### Lifecycle
+
+- **Clean shutdown** — closing the FAP window ends the Node.js server and frees port 3000 automatically. Nothing is left in memory.
+- **Protected process tree** — if a `dnf` command is running when FAP closes, the entire process tree is killed via PGID, avoiding orphan locks on `rpm`
+- **Persistent log** — each session writes a `/tmp/fap-YYYYMMDD-HHMMSS.log` file, with automatic cleanup of logs older than 7 days
+
+### ArtCraft Suite
+
+Open-source alternatives (written in Rust) to Adobe and Microsoft Office products. Each app has its own GitHub repository and its `.x86_64` RPM in the latest release — FAP resolves the URL at runtime, always downloading the latest published version:
+
+- 🖼️ **PhotoCraft** — photo editing
+- ✏️ **VectorCraft** — vector illustration
+- 🎬 **FilmCraft** — video editing
+- 💡 **LightCraft** — 3D lighting
+- 📄 **PDFCraft** — PDF editing
+- ✨ **EffectCraft** — visual effects
+- 🎨 **DesignCraft** — graphic design
+- 🖌️ **FigCraft** — vectors and illustration
+- 📽️ **DeckCraft** — presentations
+- 📊 **GridCraft** — spreadsheets
+- 📝 **WordCraft** — text editor
+- 📐 **CadCraft** — CAD
+- 🔊 **SoundCraft** — audio editing
+
+### Automatic hardware detection
+
+- **Hardware scanner** via `lspci` / `lsusb`, cross-referenced with a community-maintained vendor map
+- **NVIDIA detection** with heuristics to suggest the correct driver series (`akmod-nvidia`, `580xx`, `470xx`, or `390xx`)
+- **RPM Fusion check** — warns if the repository isn't active before trying to install drivers that depend on it
+- **Secure Boot check** — warns if it's enabled and the NVIDIA driver will need MOK signing
 
 ## 🖥️ Supported Desktops
 
 GNOME, KDE Plasma, XFCE, Cinnamon, MATE, LXQt, LXDE, Budgie, Sway, Hyprland, i3 and other tiling WMs.
+
+The `pkexec` authentication works on all of them — the password dialog is managed by the desktop's polkit agent.
+
+## 🔄 Update and uninstall
+
+**Update:**
+```bash
+./install.sh --update
+```
+Or click the update badge (appears automatically when a new version is on GitHub) or use the button in the **About FAP** session.
+
+**Uninstall:**
+```bash
+./install.sh --uninstall
+```
+Or use the button in the **About FAP** session (with double confirmation).
 
 ## 📄 License
 

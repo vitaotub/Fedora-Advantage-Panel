@@ -47,13 +47,13 @@ const LOCALES_DIR = path.join(__dirname, 'locales');
 // - 'waydroid' (prefixo puro) — cobriria `waydroid init`, que
 //   precisa de root. Só liberamos os subcomandos de leitura/abrir.
 // - 'bash <(curl ...)' — executava qualquer URL. Update/uninstall
-//   agora exigem autenticação (pkexec/kdesu). O install.sh invoca
+//   agora exigem autenticação (pkexec). O install.sh invoca
 //   sudo internamente e o usuário vê o comando na janela de senha
 //   antes de autorizar — comportamento correto.
 //
 // SOBRE O FLATPAK:
-// - Flatpak NUNCA deve rodar via kdesu/pkexec. Rodar como root
-//   quebra o session bus (D-BUS), porque o `sudo`/`pkexec` aponta
+// - Flatpak NUNCA deve rodar via pkexec. Rodar como root
+//   quebra o session bus (D-BUS), porque o `pkexec` aponta
 //   DBUS_SESSION_BUS_ADDRESS para o bus do root, não do usuário.
 // - O Polkit do Fedora já resolve a autenticação automaticamente
 //   quando o usuário está no grupo wheel (o caso comum). Não há
@@ -96,10 +96,10 @@ const COMANDOS_SEM_AUTENTICACAO = [
 // `setsid -f` — lançar apps GUI em nova sessão
 // ============================================================
 //
-// Desde v1.0.0-10052026, TODOS os botões "Abrir X" usam
-// `setsid -f <comando>` para que o app ganhe uma sessão própria,
-// desacoplada do FAP. Isso resolve o bug em que o app era morto
-// junto quando o usuário fechava o FAP (mesmo PGID).
+// TODOS os botões "Abrir X" usam `setsid -f <comando>` para que
+// o app ganhe uma sessão própria, desacoplada do FAP. Isso
+// resolve o bug em que o app era morto junto quando o usuário
+// fechava o FAP (mesmo PGID).
 //
 // Estes comandos são read-only do ponto de vista do sistema —
 // apenas abrem GUIs já instaladas, como se o usuário clicasse
@@ -117,9 +117,15 @@ const COMANDOS_SEM_AUTENTICACAO = [
 'setsid -f vectorcraft',
 'setsid -f filmcraft',
 'setsid -f lightcraft',
-'setsid -f printcraft',
+'setsid -f pdfcraft',
 'setsid -f effectcraft',
 'setsid -f designcraft',
+'setsid -f figcraft',
+'setsid -f deckcraft',
+'setsid -f gridcraft',
+'setsid -f wordcraft',
+'setsid -f cadcraft',
+'setsid -f soundcraft',
 // Flatpak roda como usuário; a autenticação (quando necessária)
 // é resolvida pelo Polkit do sistema, não pelo FAP.
 'flatpak install',
@@ -233,8 +239,7 @@ const SSE_BUFFER_TTL_MS = 10000;
 //
 // O motivo de precisar matar a árvore: entre o bash que o Node
 // criou e o comando real (dnf, apt, etc.) há camadas (pkexec,
-// script root). Matar só o bash deixa o dnf órfão — foi o bug do
-// teste 8.
+// script root). Matar só o bash deixa o dnf órfão.
 //
 // A solução tem duas partes:
 //   1. `detached: true` no spawn/exec — o bash vira líder de sessão
@@ -253,10 +258,6 @@ function _registrarProcesso(proc) {
 function _matarArvoreProcessos(proc) {
     if (!proc || !proc.pid) return;
 
-    // Tenta matar o grupo inteiro (o `-` é o sinal de "grupo do PID").
-    // Se por algum motivo o processo não é líder de sessão (ex.: algum
-    // caminho antigo que não passa por detached), cai no fallback de
-    // matar só ele mesmo.
     let grupoMorto = false;
     try {
         process.kill(-proc.pid, 'SIGTERM');
@@ -690,12 +691,6 @@ function detectarDesktop() {
 }
 
 function obterMetodoAutenticacao() {
-    const desktop = detectarDesktop();
-
-    if (desktop === 'KDE' && commandExists('kdesu')) {
-        return { tipo: 'kdesu', comando: 'kdesu', descricao: 'kdesu (KDE)' };
-    }
-
     if (commandExists('pkexec')) {
         return { tipo: 'pkexec', comando: 'pkexec', descricao: 'pkexec (PolicyKit)' };
     }
@@ -777,7 +772,17 @@ function executarComandoComStream(comandoFinal, idComando, isReversao, callback)
             if (stderr) {
                 const stderrFiltrado = stderr.replace(/\[sudo\] password for .+: /g, '');
                 if (stderrFiltrado.trim()) {
-                    enviarLog(idComando, stderrFiltrado, 'error');
+                    // stderr NÃO significa erro. O `dnf`, `flatpak` e
+                    // a maioria das ferramentas CLI escrevem logs
+                    // informativos (download, progresso, avisos de
+                    // GPG, etc.) em stderr por convenção Unix. Marcar
+                    // tudo como 'error' pinta o log inteiro de
+                    // vermelho mesmo quando tudo deu certo.
+                    //
+                    // Só o próprio server.js emite 'error' — quando
+                    // o comando termina com código != 0 (bloco
+                    // abaixo).
+                    enviarLog(idComando, stderrFiltrado, 'output');
                 }
             }
             if (error) {
@@ -828,7 +833,12 @@ function executarComandoComStream(comandoFinal, idComando, isReversao, callback)
             erros += texto;
             const textoFiltrado = texto.replace(/\[sudo\] password for .+: /g, '');
             if (textoFiltrado.trim()) {
-                enviarLog(idComando, textoFiltrado, 'error');
+                // Mesmo motivo do bloco anterior: stderr é canal de
+                // log, não de erro. O pkexec repassa stdout/stderr do
+                // script, e o dnf escreve progresso em stderr. Marcar
+                // como 'error' deixava o log inteiro vermelho mesmo em
+                // sucesso. Enviamos como 'output'.
+                enviarLog(idComando, textoFiltrado, 'output');
             }
         });
 
@@ -861,10 +871,35 @@ function executarComandoComStream(comandoFinal, idComando, isReversao, callback)
 }
 
 // ============================================================
-// AUTENTICAÇÃO SEGURA (kdesu / pkexec / fallback)
+// AUTENTICAÇÃO SEGURA (pkexec / fallback kdialog+zenity)
 // ============================================================
+//
+// ============================================================
+// NOTA: kdesu DESABILITADO
+// ============================================================
+//
+// O kdesu do Plasma 6 tem dois problemas que o tornam inviável
+// para o FAP:
+//
+//   1. O client `kdesu` NÃO retorna depois que a autenticação
+//      tem sucesso — fica pendurado esperando o kdesud daemon
+//      mandar um sinal de conclusão que nunca chega. Um `exec`
+//      bloqueante trava o server.js por 5 minutos.
+//
+//   2. O script é executado pelo kdesud num contexto onde o
+//      redirecionamento de saída falha silenciosamente — o
+//      comando roda (o Terra é instalado, por exemplo), mas
+//      nada chega ao arquivo de output.
+//
+// O pkexec NÃO tem nenhum desses problemas: bloqueia até o
+// comando terminar, retorna o exit code correto, e o stdout/stderr
+// flui normalmente pelo pipe do processo. No Fedora KDE, o
+// `polkit-kde-agent-1` (instalado por padrão) faz o pkexec abrir
+// o diálogo nativo do KDE — mesma UX do kdesu, sem os bugs.
+//
+// Por isso: usamos pkexec sempre. O branch kdesu foi removido.
 
-function _construirScripts(timestamp, random, comandoCorrigido, descricao, outputTemp) {
+function _construirScripts(timestamp, random, comandoCorrigido, descricao) {
     const scriptTemp = `/tmp/fap-cmd-${timestamp}-${random}.sh`;
     const homeDir = HOME_DIR_USUARIO;
 
@@ -872,12 +907,35 @@ function _construirScripts(timestamp, random, comandoCorrigido, descricao, outpu
     .replace(/\r\n/g, '\n')
     .replace(/\r/g, '\n');
 
-    const scriptContent = [
+    // ============================================================
+    // ESTRUTURA DO SCRIPT
+    // ============================================================
+    //
+    // O script NÃO redireciona stdout/stderr para um arquivo. O
+    // processo Node (que invoca o pkexec) captura a saída via pipe
+    // diretamente — mesma estratégia que sempre funcionou no modo
+    // "sem autenticação".
+    //
+    // Por que não usar arquivo:
+    //   • O redirecionamento `>> arquivo` falha com "Permissão
+    //     negada" quando o script roda via pkexec no Fedora com
+    //     SELinux enforcing — o processo no contexto root não
+    //     consegue escrever no arquivo pré-criado pelo usuário
+    //     em /tmp.
+    //   • O pipe já é o mecanismo usado em todo o resto do FAP,
+    //     e funciona consistentemente.
+    //   • Sem arquivo, não há corrida entre o comando terminar e
+    //     o reader ler a última linha.
+    //
+    // O `exit $?` no final propaga o código de saída real do
+    // comando para o pkexec, que repassa para o Node.
+
+    const scriptLines = [
         '#!/bin/bash',
         '# Fedora Advantage Panel - ' + descricao,
         '# Executado em: ' + new Date().toLocaleString('pt-BR'),
                                                        '',
-                                                       '# Exports obrigatórios quando roda via pkexec/kdesu (root).',
+                                                       '# Exports obrigatórios quando roda via pkexec (root).',
                                                        '# Sem HOME/USER corretos, scripts como install.sh --uninstall',
                                                        '# procurariam o FAP em /root/.local/share em vez de',
                                                        '# /home/<user>/.local/share.',
@@ -887,68 +945,21 @@ function _construirScripts(timestamp, random, comandoCorrigido, descricao, outpu
                                                        'export HOME=' + homeDir,
                                                        'export USER=' + USUARIO_REAL,
                                                        'export LOGNAME=' + USUARIO_REAL,
-                                                       'exec > ' + outputTemp + ' 2>&1',
                                                        '',
+                                                       '# Executa o comando. O stdout/stderr vão para o pipe do',
+                                                       '# processo pai (Node), que os transmite em tempo real via SSE.',
                                                        comandoLimpo,
-                                                       ''
-    ].join('\n');
+                                                       '',
+                                                       '# Propaga o código de saída real do comando.',
+                                                       'exit $?'
+    ];
+
+    const scriptContent = scriptLines.join('\n');
 
     return { scriptTemp, scriptContent };
 }
 
-const MAX_READER_DURATION_MS = 30 * 60 * 1000;
-
-function _criarReaderOutput(idComando, outputTemp) {
-    let bytesLidos = 0;
-    const inicioReader = Date.now();
-
-    const readerInterval = setInterval(() => {
-        if (Date.now() - inicioReader > MAX_READER_DURATION_MS) {
-            console.warn(`[READER] Timeout de ${MAX_READER_DURATION_MS/60000}min atingido para ${idComando}`);
-            enviarLog(idComando, `\n⚠️ Leitor de saída atingiu o tempo máximo (30min). Abortando.\n`, 'warning');
-            clearInterval(readerInterval);
-            return;
-        }
-
-        if (!fs.existsSync(outputTemp)) return;
-        try {
-            const conteudo = fs.readFileSync(outputTemp);
-            if (conteudo.length > bytesLidos) {
-                const novoConteudo = conteudo.slice(bytesLidos).toString('utf8');
-                bytesLidos = conteudo.length;
-                if (novoConteudo) {
-                    enviarLog(idComando, novoConteudo, 'output');
-                    var prog = _detectarProgressoPacotes(novoConteudo);
-                    if (prog) enviarProgresso(idComando, prog.atual, prog.total);
-                }
-            }
-        } catch (e) {
-            // ignora erros de leitura (EACCES momentâneo, arquivo em escrita)
-        }
-    }, 500);
-
-    const cleanupReader = () => {
-        clearInterval(readerInterval);
-        if (fs.existsSync(outputTemp)) {
-            try {
-                const conteudo = fs.readFileSync(outputTemp);
-                if (conteudo.length > bytesLidos) {
-                    const resto = conteudo.slice(bytesLidos).toString('utf8');
-                    if (resto) {
-                        enviarLog(idComando, resto, 'output');
-                        var prog = _detectarProgressoPacotes(resto);
-                        if (prog) enviarProgresso(idComando, prog.atual, prog.total);
-                    }
-                }
-            } catch (e) {}
-            try { fs.unlinkSync(outputTemp); } catch (e) {}
-        }
-    };
-
-    return cleanupReader;
-}
-
-function executarComAutenticacaoSegura(comandoOriginal, idComando, isReversao, callback) {
+async function executarComAutenticacaoSegura(comandoOriginal, idComando, isReversao, callback) {
     const desktop = detectarDesktop();
 
     const descricoesComandos = {
@@ -995,53 +1006,17 @@ function executarComAutenticacaoSegura(comandoOriginal, idComando, isReversao, c
     const comandoCorrigido = _substituirCaminhosUsuario(comandoSemSudo);
 
     const hasPkexec = commandExists('pkexec');
-    const hasKdesu = commandExists('kdesu');
     const hasZenity = commandExists('zenity');
     const hasKdialog = commandExists('kdialog');
 
-    console.log(`[AUTH] Desktop: ${desktop}, pkexec: ${hasPkexec}, kdesu: ${hasKdesu}`);
-    console.log(`[AUTH] HOME do usuário: ${HOME_DIR_USUARIO}, usuário: ${USUARIO_REAL}`);
-
-    if (desktop === 'KDE' && hasKdesu) {
-        enviarLog(idComando, '🪟 Usando kdesu (KDE) com interface gráfica...\n', 'info');
-
-        const timestamp = Date.now();
-        const random = Math.random().toString(36).substring(7);
-        const outputTemp = `/tmp/fap-out-${timestamp}-${random}.log`;
-        const { scriptTemp, scriptContent } = _construirScripts(timestamp, random, comandoCorrigido, descricao, outputTemp);
-
-        try {
-            fs.writeFileSync(scriptTemp, scriptContent, { mode: 0o755 });
-            console.log(`[KDESU] Script criado: ${scriptTemp}`);
-        } catch (err) {
-            enviarLog(idComando, `❌ Erro ao criar script: ${err.message}\n`, 'error');
-            return callback(err, "", "");
-        }
-
-        const comandoFinal = `kdesu -c "${scriptTemp}" && rm -f ${scriptTemp} || { rm -f ${scriptTemp}; exit 1; }`;
-        const cleanupReader = _criarReaderOutput(idComando, outputTemp);
-
-        setTimeout(() => {
-            if (fs.existsSync(scriptTemp)) {
-                try { fs.unlinkSync(scriptTemp); } catch (e) {}
-            }
-        }, 60000);
-
-        executarComandoComStream(comandoFinal, idComando, isReversao, (err, stdout, stderr) => {
-            cleanupReader();
-            callback(err, stdout, stderr);
-        });
-
-        return;
-    }
+    console.log(`[AUTH] Desktop: ${desktop}, pkexec: ${hasPkexec}`);
 
     if (hasPkexec) {
         enviarLog(idComando, '🔑 Usando pkexec com interface gráfica...\n', 'info');
 
         const timestamp = Date.now();
         const random = Math.random().toString(36).substring(7);
-        const outputTemp = `/tmp/fap-out-${timestamp}-${random}.log`;
-        const { scriptTemp, scriptContent } = _construirScripts(timestamp, random, comandoCorrigido, descricao, outputTemp);
+        const { scriptTemp, scriptContent } = _construirScripts(timestamp, random, comandoCorrigido, descricao);
 
         try {
             fs.writeFileSync(scriptTemp, scriptContent, { mode: 0o755 });
@@ -1051,17 +1026,25 @@ function executarComAutenticacaoSegura(comandoOriginal, idComando, isReversao, c
             return callback(err, "", "");
         }
 
-        const comandoFinal = `pkexec ${scriptTemp} && rm -f ${scriptTemp} || { rm -f ${scriptTemp}; exit 1; }`;
-        const cleanupReader = _criarReaderOutput(idComando, outputTemp);
-
+        // Limpa o script temp após 60s, caso o `rm -f` no comandoFinal
+        // não rode (ex.: usuário cancelou a autenticação).
         setTimeout(() => {
             if (fs.existsSync(scriptTemp)) {
                 try { fs.unlinkSync(scriptTemp); } catch (e) {}
             }
         }, 60000);
 
+        // O comando é executado via `executarComandoComStream`, que:
+        //   • captura stdout/stderr via pipe em tempo real
+        //   • emite eventos SSE para o frontend
+        //   • propaga o exit code do pkexec (que é o exit code do script)
+        //   • marca sucesso/falha no progresso corretamente
+        //
+        // É o MESMO mecanismo do modo sem autenticação — sempre
+        // funcionou, sem dependência de arquivo intermediário.
+        const comandoFinal = `pkexec ${scriptTemp} && rm -f ${scriptTemp} || { rm -f ${scriptTemp}; exit 1; }`;
+
         executarComandoComStream(comandoFinal, idComando, isReversao, (err, stdout, stderr) => {
-            cleanupReader();
             callback(err, stdout, stderr);
         });
 
@@ -1117,7 +1100,10 @@ function executarComAutenticacaoSegura(comandoOriginal, idComando, isReversao, c
             erros += texto;
             const textoFiltrado = texto.replace(/\[sudo\] password for .+: /g, '');
             if (textoFiltrado.trim()) {
-                enviarLog(idComando, textoFiltrado, 'error');
+                // stderr tratado como output. O `sudo` é só o
+                // wrapper — o que sai no stderr é o próprio
+                // comando, e a convenção Unix manda logs para lá.
+                enviarLog(idComando, textoFiltrado, 'output');
             }
         });
 
@@ -2173,8 +2159,29 @@ server.on('error', (e) => {
     }
 });
 
-process.on('SIGINT', () => {
-    console.log('\n🛑 Encerrando servidor...');
+// ============================================================
+// ENCERRAMENTO GRACIOSO (SIGINT + SIGTERM)
+// ============================================================
+//
+// O servidor precisa responder aos dois sinais:
+//
+//   • SIGINT  — Ctrl+C no terminal onde o FAP foi iniciado
+//   • SIGTERM — `kill` enviado pelo cleanup() do iniciar_fap.sh
+//               quando o usuário fecha a janela do container
+//
+// Em ambos os casos, a ação é a MESMA: matar as árvores de
+// processos filho (para não deixar `dnf install` órfão segurando
+// o lock do rpm), fechar as conexões SSE, e sair.
+
+let _encerrando = false;
+
+function _encerrarGraciosamente(sinal) {
+    // Guarda contra múltiplos sinais (SIGINT seguido de SIGTERM,
+    // por exemplo). Só a primeira chamada executa.
+    if (_encerrando) return;
+    _encerrando = true;
+
+    console.log(`\n🛑 Encerrando servidor (${sinal})...`);
 
     // Mata a árvore de cada processo filho (grupo inteiro, não só
     // o bash pai). Sem isso, o `dnf upgrade` continua rodando como
@@ -2192,7 +2199,19 @@ process.on('SIGINT', () => {
         console.log('✅ Servidor encerrado');
         process.exit(0);
     });
-});
+
+    // Rede de segurança: se o server.close() não resolver em 3s
+    // (conexões penduradas, handles abertos), força a saída. Sem
+    // isso, o node poderia travar esperando conexões SSE que não
+    // fecharam.
+    setTimeout(function() {
+        console.log('⚠️ Forçando saída após timeout');
+        process.exit(0);
+    }, 3000);
+}
+
+process.on('SIGINT', function() { _encerrarGraciosamente('SIGINT'); });
+process.on('SIGTERM', function() { _encerrarGraciosamente('SIGTERM'); });
 
 const HOST = '127.0.0.1';
 
@@ -2226,7 +2245,6 @@ server.listen(PORT, HOST, () => {
     console.log(` 💾 Uso de disco: /disk-usage`);
     console.log(` 📋 Erros do journal: /journal-errors`);
     console.log(` 🔁 Buffer SSE: ${SSE_BUFFER_MAX} mensagens por comando, TTL ${SSE_BUFFER_TTL_MS/1000}s`);
-    console.log(` ⏱️ Timeout do reader de output: ${MAX_READER_DURATION_MS/60000}min`);
     console.log(` 🚦 Rate limit: ${RATE_LIMIT_MS}ms por idComando`);
     console.log(`====================================================`);
 });

@@ -2,7 +2,7 @@
 
 **🌐 Idioma:** [Português (BR)](README.md) | [English](README.en.md) | Español
 
-![Versión](https://img.shields.io/badge/Versi%C3%B3n-v1.0.0--10132026-orange?style=flat-square)
+![Versión](https://img.shields.io/badge/Versi%C3%B3n-v1.0.0--10142026-orange?style=flat-square)
 ![Fedora](https://img.shields.io/badge/Fedora-44+-294172?style=flat-square&logo=fedora)
 ![Licencia](https://img.shields.io/badge/Licencia-GPL--3.0-green?style=flat-square)
 ![Idiomas](https://img.shields.io/badge/Idiomas-PT--BR%20%7C%20EN%20%7C%20ES-3c67e3?style=flat-square)
@@ -26,54 +26,114 @@ fap-compat                # Iniciar (modo compatibilidad — GPUs antiguas)
 
 ## 📖 Sobre
 
-Panel de automatización visual para Fedora Linux. Transforma una instalación limpia en un sistema completo — códecs, controladores, repositorios, herramientas — a través de clics, sin abrir la terminal.
+Fedora Advantage Panel (FAP) es un panel de automatización visual para Fedora Linux. Transforma una instalación limpia en un sistema completo — códecs, controladores, repositorios, herramientas — a través de clics, sin abrir la terminal.
 
-**Un único punto de entrada**: el botón **"Iniciar"** te lleva por las 14 sesiones paso a paso. Cada botón recuerda su propio estado. Cerrar y reabrir FAP muestra exactamente dónde te detuviste.
+**Un único punto de entrada.** El botón **"Iniciar"** te lleva por 14 sesiones guiadas paso a paso. Cada botón recuerda su propio estado. Cerrar y reabrir FAP muestra exactamente dónde te detuviste.
 
-## ✨ Sesiones
+## ✨ Las 14 Sesiones
 
 | # | Sesión | Qué hace |
 |---|---|---|
-| 1 | 🚀 Primeros Pasos | Actualización del sistema, RPM Fusion, Flathub, Terra |
-| 2 | 🔤 Códecs | Códecs multimedia, DVD comercial, fuentes MS |
-| 3 | 🖥️ Hardware | Controladores AMD/NVIDIA/Intel, CoreCtrl, LACT, overclock |
-| 4 | 🔌 Dispositivos | Detección automática, COPRs, mandos, firmware |
+| 1 | 🚀 Primeros Pasos | Actualización del sistema, RPM Fusion, Flathub, Terra Repository (con avisos sobre subrepositorios opcionales) |
+| 2 | 🔤 Códecs | Códecs multimedia completos (grupo `multimedia` oficial de RPM Fusion), DVD comercial, fuentes Microsoft |
+| 3 | 🖥️ Hardware | Controladores AMD/NVIDIA/Intel, CoreCtrl, LACT, overclock de GPU |
+| 4 | 🔌 Dispositivos | Detección automática de hardware, controladores COPR de la comunidad, mandos, firmware |
 | 5 | 🎬 Producción Multimedia | OBS Studio, cámara virtual, EasyEffects |
-| 6 | 📦 Aplicaciones | Flatpaks (Flathub), apps dnf (repos de Fedora) y navegadores vía RPM oficial |
-| 7 | 🏠 Hogar y Oficina | CUPS, Samba, LocalSend, KeePassXC, OCR |
+| 6 | 📦 Aplicaciones | 20+ Flatpaks, 20+ apps `dnf`, navegadores vía RPM oficial, **Suite ArtCraft (13 apps)** y herramientas de acceso remoto |
+| 7 | 🏠 Hogar y Oficina | CUPS, Samba, LocalSend, KeePassXC, OCR (Okular + Tesseract) |
 | 8 | 🎮 Gaming | Steam nativo, Heroic, Lutris, Wine, GameMode, Gamescope Session, emuladores |
 | 9 | 📱 Waydroid | Android en Linux vía contenedor |
 | 10 | 🖥️ Virtualización | QEMU/KVM, VirtualBox, GNOME Boxes |
-| 11 | 📊 Diagnóstico | Panel del sistema, salud del disco, temperaturas |
-| 12 | 🛠️ Ajustes y Mantenimiento | Ajustes de rendimiento, DNF, GRUB, kernels |
-| 13 | 🐧 Estado de Fedora | Versión, Atomic/Silverblue, SELinux |
-| 14 | 📖 Acerca de FAP | Actualizar/desinstalar, changelog dinámico |
+| 11 | 📊 Diagnóstico | Panel del sistema, salud del disco (SMART), temperaturas, journal de errores |
+| 12 | 🛠️ Ajustes y Mantenimiento | Ajustes de rendimiento, DNF, configuración interactiva del GRUB, kernels |
+| 13 | 🐧 Estado de Fedora | Versión, detección de Atomic/Silverblue, gestión de SELinux |
+| 14 | 📖 Acerca de FAP | Actualizar/desinstalar, changelog dinámico, historial de cambios |
 
-## 🎨 Destaques
+## 🎨 Características
 
-- **Tema claro/oscuro** con alternancia en tiempo real
-- **Multiidioma** (PT-BR, EN, ES) con cambio en tiempo real
-- **Registros en tiempo real** vía SSE
-- **Papelera unificada** para Flatpaks, apps dnf y navegadores RPM
-- **Botón "Abrir"** en cada app GUI — se inicia en sesión propia (sobrevive al cierre de FAP)
-- **Navegadores vía RPM oficial** — Opera, Brave, Vivaldi y Edge instalados desde el repositorio del propio fabricante, con actualización automática por `dnf`. Chromium vía paquete oficial de Fedora. La papelera elimina el paquete **y** desactiva el repositorio
-- **Origen por tipo de app** — la sesión de Aplicaciones elige automáticamente la mejor forma de instalación: Flatpak cuando no hay repo oficial, `dnf` cuando Fedora lo empaqueta, RPM del fabricante cuando existe
-- **Steam nativo** vía RPM Fusion — necesario para la sesión Gamescope
-- **Sesión Gamescope oficial** — launcher y `.desktop` creados siguiendo la receta oficial de Fedora Docs, con `TryExec` (compatible con plasmalogin), detección dinámica de resolución y log de diagnóstico en `/tmp/fap-gamescope-session.log`
-- **Suite ArtCraft** — 7 apps de creación (PhotoCraft, VectorCraft, FilmCraft, LightCraft, PrintCraft, EffectCraft, DesignCraft) desarrolladas en Rust, código abierto, con botones que siempre descargan el RPM `.x86_64` más reciente directamente desde los GitHub Releases de cada proyecto
-- **Herramientas de Acceso Remoto** — RustDesk, Remmina, GNOME Connections y KRDC, con detección automática del escritorio para ocultar el botón "Instalar" cuando la app nativa ya está presente
-- **Configurador de GRUB** — panel interactivo que lee la configuración actual, explica cada parámetro en lenguaje claro, detecta automáticamente la resolución del monitor y la presencia de dual boot, y aplica un conjunto recomendado con copia de seguridad automática y reversión fácil
-- **Terra Repository** — repositorio comunitario que complementa RPM Fusion, habilitable en un clic
-- **Cola de instalación** de Flatpaks — haz clic en varios en secuencia
-- **Bloqueo inteligente** — evita conflictos de lock en `rpm` y bloquea la navegación entre sesiones durante la ejecución
-- **Detección automática de hardware** — GPUs, Wi-Fi, Ethernet
-- **Detección de apps instaladas por fuera** — reconocidas al cargar la sesión
-- **Contenedor WebKitGTK nativo** (sin navegador externo)
-- **Autenticación segura** vía pkexec/kdesu
+### Interfaz y usabilidad
+
+- **Interfaz oscura y clara** con cambio en tiempo real, sin recargar la página
+- **Multiidioma** (PT-BR, EN, ES) con selector en el encabezado
+- **Registros en tiempo real** por comando, con colores que distinguen salida normal, éxito y errores reales
+- **Bloqueo inteligente** — evita conflictos de lock en `rpm` y bloquea la navegación entre sesiones mientras un comando está en ejecución
+- **Sesión reanudable** — cada botón recuerda su estado en `.progresso.json`, cerrar y reabrir muestra dónde te detuviste
+
+### Instalación de aplicaciones
+
+- **Papelera unificada** — cada app instalable tiene un ícono de eliminación al lado, que elimina el paquete y, cuando aplica, desactiva el repositorio de origen
+- **Origen por tipo de app** — FAP elige automáticamente la mejor forma de instalación:
+  - **Flatpak (Flathub)** — cuando no existe repo oficial en Fedora ni paquete en los repos de la distro
+  - **`dnf` (repos oficiales de Fedora)** — cuando la propia distro empaqueta el software
+  - **RPM vía repo oficial del fabricante** — cuando el fabricante distribuye para Fedora (navegadores)
+  - **RPM descargado de URL** — cuando es la única opción (Suite ArtCraft, Lightworks, Rclone Manager), con `--setopt=localpkg_gpgcheck=0` obligatorio
+- **Cola de Flatpaks** — hacer clic en varias apps en secuencia las encola y las instala de a una, sin errores de lock de Flathub
+- **Botón "Abrir"** en todas las apps GUI — se inicia en sesión propia, sobreviviendo al cierre de FAP
+- **Detección de apps instaladas por fuera** — si ya tienes una app instalada antes de FAP, el botón aparece como "Abrir" desde el principio
+
+### Contenedor WebKitGTK nativo
+
+- **Interfaz propia**, sin depender de navegador externo
+- **Contenedor nativo en WebKitGTK 4.1 + GTK3**, compilado en la instalación
+- **Modo compatibilidad** (`fap-compat`) para GPUs sin aceleración 3D — fuerza renderizado por software vía Mesa/llvmpipe
+- **Sin popups molestas** — EULA de Chromium suprimida y permisos de WebKit (geolocalización, cámara, micrófono) denegados automáticamente
+
+### Autenticación y seguridad
+
+- **`pkexec` universal** — diálogo de contraseña integrado en todos los escritorios (KDE usa `polkit-kde-agent`, GNOME usa `polkit-gnome`, etc.), sin necesidad de escribir la contraseña en la terminal
+- **Comandos read-only en whitelist** — `rpm -q`, `uname -r`, `gtk-launch`, `flatpak`, `systemctl --user` y similares se ejecutan sin pedir contraseña
+- **Bloqueo de inyección de shell** — comandos con `;`, `&&`, `|`, `$(...)` o `&` son rechazados por la whitelist y requieren autenticación
+
+### Ciclo de vida
+
+- **Cierre limpio** — al cerrar la ventana de FAP, el servidor Node.js se cierra y el puerto 3000 se libera automáticamente. Nada queda en memoria.
+- **Árbol de procesos protegido** — si un comando `dnf` está en ejecución cuando FAP se cierra, todo el árbol de procesos es terminado vía PGID, evitando locks huérfanos en `rpm`
+- **Registro persistente** — cada sesión escribe un archivo `/tmp/fap-YYYYMMDD-HHMMSS.log`, con limpieza automática de registros mayores a 7 días
+
+### Suite ArtCraft
+
+Alternativas open-source (escritas en Rust) a los productos Adobe y Microsoft Office. Cada app tiene su propio repositorio en GitHub y su RPM `.x86_64` en la release más reciente — FAP resuelve la URL en runtime, siempre descargando la última versión publicada:
+
+- 🖼️ **PhotoCraft** — edición de fotos
+- ✏️ **VectorCraft** — ilustración vectorial
+- 🎬 **FilmCraft** — edición de vídeo
+- 💡 **LightCraft** — iluminación 3D
+- 📄 **PDFCraft** — edición de PDF
+- ✨ **EffectCraft** — efectos visuales
+- 🎨 **DesignCraft** — diseño gráfico
+- 🖌️ **FigCraft** — vectores e ilustración
+- 📽️ **DeckCraft** — presentaciones
+- 📊 **GridCraft** — hojas de cálculo
+- 📝 **WordCraft** — editor de texto
+- 📐 **CadCraft** — CAD
+- 🔊 **SoundCraft** — edición de audio
+
+### Detección automática de hardware
+
+- **Escáner de hardware** vía `lspci` / `lsusb`, cruzado con un mapa de vendors mantenido por la comunidad
+- **Detección de NVIDIA** con heurística para sugerir la serie correcta de controlador (`akmod-nvidia`, `580xx`, `470xx` o `390xx`)
+- **Verificación de RPM Fusion** — avisa si el repositorio no está activo antes de intentar instalar controladores que dependen de él
+- **Verificación de Secure Boot** — avisa si está activo y el controlador NVIDIA necesitará firma MOK
 
 ## 🖥️ Escritorios soportados
 
 GNOME, KDE Plasma, XFCE, Cinnamon, MATE, LXQt, LXDE, Budgie, Sway, Hyprland, i3 y otros tiling WMs.
+
+La autenticación `pkexec` funciona en todos — el diálogo de contraseña lo gestiona el agente polkit del escritorio en uso.
+
+## 🔄 Actualizar y desinstalar
+
+**Actualizar:**
+```bash
+./install.sh --update
+```
+O haz clic en el badge de actualización (aparece automáticamente cuando hay nueva versión en GitHub) o usa el botón en la sesión **Acerca de FAP**.
+
+**Desinstalar:**
+```bash
+./install.sh --uninstall
+```
+O usa el botón en la sesión **Acerca de FAP** (con doble confirmación).
 
 ## 📄 Licencia
 

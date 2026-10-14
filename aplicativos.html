@@ -265,13 +265,14 @@ data-i18n="sessoes.aplicativos.btn_abrir_instalador">
 BLOCO 4 — SUÍTE ARTCRAFT (Adobe no Linux)
 ============================================================ -->
 <details class="acordeao">
-<summary data-i18n="sessoes.aplicativos.bloco_artcraft_titulo">🎨 Suíte ArtCraft (Adobe no Linux)</summary>
+<summary data-i18n="sessoes.aplicativos.bloco_artcraft_titulo">🎨 Suíte ArtCraft (Adobe e Office no Linux)</summary>
 <div class="acordeao-conteudo">
 
 <p data-i18n-html="sessoes.aplicativos.bloco_artcraft_desc">
 Estes softwares são desenvolvidos em <strong>Rust</strong>, são <strong>código livre</strong>
-e são alternativas recentes aos produtos da Adobe. Cada aplicativo tem sua própria
-especialidade (edição de fotos, vetores, vídeo, iluminação, impressão, efeitos e design).
+e são alternativas recentes aos produtos da Adobe e do Microsoft Office. Cada aplicativo
+tem sua própria especialidade (edição de fotos, vetores, vídeo, áudio, design, PDF,
+apresentações, planilhas, editor de texto e CAD).
 </p>
 
 <div class="aviso-caixa" data-i18n-html="sessoes.aplicativos.bloco_artcraft_aviso">
@@ -330,15 +331,15 @@ projeto afetado — o FAP apenas instala os pacotes oficiais publicados por eles
 </button>
 </div>
 
-<!-- PrintCraft -->
+<!-- PDFCraft (substitui PrintCraft) -->
 <div class="launcher-item">
 <div class="btn-flatpak-wrapper">
-<button class="btn-executar" onclick="executarArtCraft('printcraft')" data-comando="instalar-printcraft" data-logbox="log-sessao-aplicativos" id="btn-instalar-printcraft" data-i18n="sessoes.aplicativos.btn_printcraft">
-🖨️ PrintCraft
+<button class="btn-executar" onclick="executarArtCraft('pdfcraft')" data-comando="instalar-pdfcraft" data-logbox="log-sessao-aplicativos" id="btn-instalar-pdfcraft" data-i18n="sessoes.aplicativos.btn_pdfcraft">
+📄 PDFCraft
 </button>
 </div>
-<button class="btn-executar verde" style="display: none;" onclick="abrirArtCraft('printcraft')" data-comando="abrir-printcraft" data-logbox="log-sessao-aplicativos" id="btn-abrir-printcraft" data-i18n="sessoes.aplicativos.btn_abrir_printcraft">
-🚀 Abrir PrintCraft
+<button class="btn-executar verde" style="display: none;" onclick="abrirArtCraft('pdfcraft')" data-comando="abrir-pdfcraft" data-logbox="log-sessao-aplicativos" id="btn-abrir-pdfcraft" data-i18n="sessoes.aplicativos.btn_abrir_pdfcraft">
+🚀 Abrir PDFCraft
 </button>
 </div>
 
@@ -366,15 +367,93 @@ projeto afetado — o FAP apenas instala os pacotes oficiais publicados por eles
 </button>
 </div>
 
+<!-- FigCraft -->
+<div class="launcher-item">
+<div class="btn-flatpak-wrapper">
+<button class="btn-executar" onclick="executarArtCraft('figcraft')" data-comando="instalar-figcraft" data-logbox="log-sessao-aplicativos" id="btn-instalar-figcraft" data-i18n="sessoes.aplicativos.btn_figcraft">
+🖌️ FigCraft
+</button>
+</div>
+<button class="btn-executar verde" style="display: none;" onclick="abrirArtCraft('figcraft')" data-comando="abrir-figcraft" data-logbox="log-sessao-aplicativos" id="btn-abrir-figcraft" data-i18n="sessoes.aplicativos.btn_abrir_figcraft">
+🚀 Abrir FigCraft
+</button>
+</div>
+
+<!-- DeckCraft -->
+<div class="launcher-item">
+<div class="btn-flatpak-wrapper">
+<button class="btn-executar" onclick="executarArtCraft('deckcraft')" data-comando="instalar-deckcraft" data-logbox="log-sessao-aplicativos" id="btn-instalar-deckcraft" data-i18n="sessoes.aplicativos.btn_deckcraft">
+📽️ DeckCraft
+</button>
+</div>
+<button class="btn-executar verde" style="display: none;" onclick="abrirArtCraft('deckcraft')" data-comando="abrir-deckcraft" data-logbox="log-sessao-aplicativos" id="btn-abrir-deckcraft" data-i18n="sessoes.aplicativos.btn_abrir_deckcraft">
+🚀 Abrir DeckCraft
+</button>
+</div>
+
+<!-- GridCraft -->
+<div class="launcher-item">
+<div class="btn-flatpak-wrapper">
+<button class="btn-executar" onclick="executarArtCraft('gridcraft')" data-comando="instalar-gridcraft" data-logbox="log-sessao-aplicativos" id="btn-instalar-gridcraft" data-i18n="sessoes.aplicativos.btn_gridcraft">
+📊 GridCraft
+</button>
+</div>
+<button class="btn-executar verde" style="display: none;" onclick="abrirArtCraft('gridcraft')" data-comando="abrir-gridcraft" data-logbox="log-sessao-aplicativos" id="btn-abrir-gridcraft" data-i18n="sessoes.aplicativos.btn_abrir_gridcraft">
+🚀 Abrir GridCraft
+</button>
+</div>
+
+<!-- WordCraft -->
+<div class="launcher-item">
+<div class="btn-flatpak-wrapper">
+<button class="btn-executar" onclick="executarArtCraft('wordcraft')" data-comando="instalar-wordcraft" data-logbox="log-sessao-aplicativos" id="btn-instalar-wordcraft" data-i18n="sessoes.aplicativos.btn_wordcraft">
+📝 WordCraft
+</button>
+</div>
+<button class="btn-executar verde" style="display: none;" onclick="abrirArtCraft('wordcraft')" data-comando="abrir-wordcraft" data-logbox="log-sessao-aplicativos" id="btn-abrir-wordcraft" data-i18n="sessoes.aplicativos.btn_abrir_wordcraft">
+🚀 Abrir WordCraft
+</button>
+</div>
+
+<!-- CadCraft -->
+<div class="launcher-item">
+<div class="btn-flatpak-wrapper">
+<button class="btn-executar" onclick="executarArtCraft('cadcraft')" data-comando="instalar-cadcraft" data-logbox="log-sessao-aplicativos" id="btn-instalar-cadcraft" data-i18n="sessoes.aplicativos.btn_cadcraft">
+📐 CadCraft
+</button>
+</div>
+<button class="btn-executar verde" style="display: none;" onclick="abrirArtCraft('cadcraft')" data-comando="abrir-cadcraft" data-logbox="log-sessao-aplicativos" id="btn-abrir-cadcraft" data-i18n="sessoes.aplicativos.btn_abrir_cadcraft">
+🚀 Abrir CadCraft
+</button>
+</div>
+
+<!-- SoundCraft -->
+<div class="launcher-item">
+<div class="btn-flatpak-wrapper">
+<button class="btn-executar" onclick="executarArtCraft('soundcraft')" data-comando="instalar-soundcraft" data-logbox="log-sessao-aplicativos" id="btn-instalar-soundcraft" data-i18n="sessoes.aplicativos.btn_soundcraft">
+🔊 SoundCraft
+</button>
+</div>
+<button class="btn-executar verde" style="display: none;" onclick="abrirArtCraft('soundcraft')" data-comando="abrir-soundcraft" data-logbox="log-sessao-aplicativos" id="btn-abrir-soundcraft" data-i18n="sessoes.aplicativos.btn_abrir_soundcraft">
+🚀 Abrir SoundCraft
+</button>
+</div>
+
 </div>
 
 <div class="progress-container" id="progress-instalar-photocraft"><div class="progress-bar"><div class="progress-fill" id="progress-fill-instalar-photocraft"></div></div><div class="progress-text"><span class="status" id="progress-status-instalar-photocraft">⏳ Iniciando...</span><span class="percentage" id="progress-percent-instalar-photocraft">0%</span></div></div>
 <div class="progress-container" id="progress-instalar-vectorcraft"><div class="progress-bar"><div class="progress-fill" id="progress-fill-instalar-vectorcraft"></div></div><div class="progress-text"><span class="status" id="progress-status-instalar-vectorcraft">⏳ Iniciando...</span><span class="percentage" id="progress-percent-instalar-vectorcraft">0%</span></div></div>
 <div class="progress-container" id="progress-instalar-filmcraft"><div class="progress-bar"><div class="progress-fill" id="progress-fill-instalar-filmcraft"></div></div><div class="progress-text"><span class="status" id="progress-status-instalar-filmcraft">⏳ Iniciando...</span><span class="percentage" id="progress-percent-instalar-filmcraft">0%</span></div></div>
 <div class="progress-container" id="progress-instalar-lightcraft"><div class="progress-bar"><div class="progress-fill" id="progress-fill-instalar-lightcraft"></div></div><div class="progress-text"><span class="status" id="progress-status-instalar-lightcraft">⏳ Iniciando...</span><span class="percentage" id="progress-percent-instalar-lightcraft">0%</span></div></div>
-<div class="progress-container" id="progress-instalar-printcraft"><div class="progress-bar"><div class="progress-fill" id="progress-fill-instalar-printcraft"></div></div><div class="progress-text"><span class="status" id="progress-status-instalar-printcraft">⏳ Iniciando...</span><span class="percentage" id="progress-percent-instalar-printcraft">0%</span></div></div>
+<div class="progress-container" id="progress-instalar-pdfcraft"><div class="progress-bar"><div class="progress-fill" id="progress-fill-instalar-pdfcraft"></div></div><div class="progress-text"><span class="status" id="progress-status-instalar-pdfcraft">⏳ Iniciando...</span><span class="percentage" id="progress-percent-instalar-pdfcraft">0%</span></div></div>
 <div class="progress-container" id="progress-instalar-effectcraft"><div class="progress-bar"><div class="progress-fill" id="progress-fill-instalar-effectcraft"></div></div><div class="progress-text"><span class="status" id="progress-status-instalar-effectcraft">⏳ Iniciando...</span><span class="percentage" id="progress-percent-instalar-effectcraft">0%</span></div></div>
 <div class="progress-container" id="progress-instalar-designcraft"><div class="progress-bar"><div class="progress-fill" id="progress-fill-instalar-designcraft"></div></div><div class="progress-text"><span class="status" id="progress-status-instalar-designcraft">⏳ Iniciando...</span><span class="percentage" id="progress-percent-instalar-designcraft">0%</span></div></div>
+<div class="progress-container" id="progress-instalar-figcraft"><div class="progress-bar"><div class="progress-fill" id="progress-fill-instalar-figcraft"></div></div><div class="progress-text"><span class="status" id="progress-status-instalar-figcraft">⏳ Iniciando...</span><span class="percentage" id="progress-percent-instalar-figcraft">0%</span></div></div>
+<div class="progress-container" id="progress-instalar-deckcraft"><div class="progress-bar"><div class="progress-fill" id="progress-fill-instalar-deckcraft"></div></div><div class="progress-text"><span class="status" id="progress-status-instalar-deckcraft">⏳ Iniciando...</span><span class="percentage" id="progress-percent-instalar-deckcraft">0%</span></div></div>
+<div class="progress-container" id="progress-instalar-gridcraft"><div class="progress-bar"><div class="progress-fill" id="progress-fill-instalar-gridcraft"></div></div><div class="progress-text"><span class="status" id="progress-status-instalar-gridcraft">⏳ Iniciando...</span><span class="percentage" id="progress-percent-instalar-gridcraft">0%</span></div></div>
+<div class="progress-container" id="progress-instalar-wordcraft"><div class="progress-bar"><div class="progress-fill" id="progress-fill-instalar-wordcraft"></div></div><div class="progress-text"><span class="status" id="progress-status-instalar-wordcraft">⏳ Iniciando...</span><span class="percentage" id="progress-percent-instalar-wordcraft">0%</span></div></div>
+<div class="progress-container" id="progress-instalar-cadcraft"><div class="progress-bar"><div class="progress-fill" id="progress-fill-instalar-cadcraft"></div></div><div class="progress-text"><span class="status" id="progress-status-instalar-cadcraft">⏳ Iniciando...</span><span class="percentage" id="progress-percent-instalar-cadcraft">0%</span></div></div>
+<div class="progress-container" id="progress-instalar-soundcraft"><div class="progress-bar"><div class="progress-fill" id="progress-fill-instalar-soundcraft"></div></div><div class="progress-text"><span class="status" id="progress-status-instalar-soundcraft">⏳ Iniciando...</span><span class="percentage" id="progress-percent-instalar-soundcraft">0%</span></div></div>
 
 </div>
 </details>
@@ -1072,14 +1151,32 @@ registrarAppRemovivel('instalar-filmcraft', {
 registrarAppRemovivel('instalar-lightcraft', {
     tipo: 'dnf', pacotes: ['lightcraft'], nome: 'LightCraft'
 });
-registrarAppRemovivel('instalar-printcraft', {
-    tipo: 'dnf', pacotes: ['printcraft'], nome: 'PrintCraft'
+registrarAppRemovivel('instalar-pdfcraft', {
+    tipo: 'dnf', pacotes: ['pdfcraft'], nome: 'PDFCraft'
 });
 registrarAppRemovivel('instalar-effectcraft', {
     tipo: 'dnf', pacotes: ['effectcraft'], nome: 'EffectCraft'
 });
 registrarAppRemovivel('instalar-designcraft', {
     tipo: 'dnf', pacotes: ['designcraft'], nome: 'DesignCraft'
+});
+registrarAppRemovivel('instalar-figcraft', {
+    tipo: 'dnf', pacotes: ['figcraft'], nome: 'FigCraft'
+});
+registrarAppRemovivel('instalar-deckcraft', {
+    tipo: 'dnf', pacotes: ['deckcraft'], nome: 'DeckCraft'
+});
+registrarAppRemovivel('instalar-gridcraft', {
+    tipo: 'dnf', pacotes: ['gridcraft'], nome: 'GridCraft'
+});
+registrarAppRemovivel('instalar-wordcraft', {
+    tipo: 'dnf', pacotes: ['wordcraft'], nome: 'WordCraft'
+});
+registrarAppRemovivel('instalar-cadcraft', {
+    tipo: 'dnf', pacotes: ['cadcraft'], nome: 'CadCraft'
+});
+registrarAppRemovivel('instalar-soundcraft', {
+    tipo: 'dnf', pacotes: ['soundcraft'], nome: 'SoundCraft'
 });
 
 // ============================================================
@@ -1423,9 +1520,15 @@ var ARTCRAFT_REPOS = {
     'vectorcraft': { repo: 'storytold/vectorcraft', bin: 'vectorcraft', nome: 'VectorCraft' },
     'filmcraft':   { repo: 'storytold/filmcraft',   bin: 'filmcraft',   nome: 'FilmCraft' },
     'lightcraft':  { repo: 'storytold/lightcraft',  bin: 'lightcraft',  nome: 'LightCraft' },
-    'printcraft':  { repo: 'storytold/printcraft',  bin: 'printcraft',  nome: 'PrintCraft' },
+    'pdfcraft':    { repo: 'storytold/pdfcraft',    bin: 'pdfcraft',    nome: 'PDFCraft' },
     'effectcraft': { repo: 'storytold/effectcraft', bin: 'effectcraft', nome: 'EffectCraft' },
-    'designcraft': { repo: 'storytold/designcraft', bin: 'designcraft', nome: 'DesignCraft' }
+    'designcraft': { repo: 'storytold/designcraft', bin: 'designcraft', nome: 'DesignCraft' },
+    'figcraft':    { repo: 'storytold/figcraft',    bin: 'figcraft',    nome: 'FigCraft' },
+    'deckcraft':   { repo: 'storytold/deckcraft',   bin: 'deckcraft',   nome: 'DeckCraft' },
+    'gridcraft':   { repo: 'storytold/gridcraft',   bin: 'gridcraft',   nome: 'GridCraft' },
+    'wordcraft':   { repo: 'storytold/wordcraft',   bin: 'wordcraft',   nome: 'WordCraft' },
+    'cadcraft':    { repo: 'storytold/cadcraft',    bin: 'cadcraft',    nome: 'CadCraft' },
+    'soundcraft':  { repo: 'storytold/soundcraft',  bin: 'soundcraft',  nome: 'SoundCraft' }
 };
 
 async function executarArtCraft(appId) {

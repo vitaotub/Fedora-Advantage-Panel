@@ -513,6 +513,18 @@ var SESSOES = [
                 textoConcluido: '✅ Terra Repository ativado',
                 textoConcluidoKey: 'sessoes.primeiros-passos.texto_concluido_terra'
             },
+            'terra-repo-remove': {
+                textoConcluido: '✅ Terra Repository removido',
+                textoConcluidoKey: 'sessoes.primeiros-passos.texto_concluido_terra_remove'
+            },
+            'terra-extras-install': {
+                textoConcluido: '✅ Terra Extras ativado',
+                textoConcluidoKey: 'sessoes.primeiros-passos.texto_concluido_terra_extras'
+            },
+            'terra-extras-remove': {
+                textoConcluido: '✅ Terra Extras removido',
+                textoConcluidoKey: 'sessoes.primeiros-passos.texto_concluido_terra_extras_remove'
+            },
             'remover-repo-fedora-flatpak': {
                 textoConcluido: '✅ Repositório Fedora Flatpak removido',
                 textoConcluidoKey: 'sessoes.primeiros-passos.texto_concluido_remover_fedora_flatpak'
@@ -799,9 +811,15 @@ var SESSOES = [
         'instalar-vectorcraft': { textoConcluido: '✅ VectorCraft instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_vectorcraft' },
         'instalar-filmcraft':   { textoConcluido: '✅ FilmCraft instalado',   textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_filmcraft' },
         'instalar-lightcraft':  { textoConcluido: '✅ LightCraft instalado',  textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_lightcraft' },
-        'instalar-printcraft':  { textoConcluido: '✅ PrintCraft instalado',  textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_printcraft' },
+        'instalar-pdfcraft':    { textoConcluido: '✅ PDFCraft instalado',    textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_pdfcraft' },
         'instalar-effectcraft': { textoConcluido: '✅ EffectCraft instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_effectcraft' },
         'instalar-designcraft': { textoConcluido: '✅ DesignCraft instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_designcraft' },
+        'instalar-figcraft':    { textoConcluido: '✅ FigCraft instalado',    textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_figcraft' },
+        'instalar-deckcraft':   { textoConcluido: '✅ DeckCraft instalado',   textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_deckcraft' },
+        'instalar-gridcraft':   { textoConcluido: '✅ GridCraft instalado',   textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_gridcraft' },
+        'instalar-wordcraft':   { textoConcluido: '✅ WordCraft instalado',   textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_wordcraft' },
+        'instalar-cadcraft':    { textoConcluido: '✅ CadCraft instalado',    textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_cadcraft' },
+        'instalar-soundcraft':  { textoConcluido: '✅ SoundCraft instalado',  textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_soundcraft' },
 
         // --- RPM baixado de URL (localpkg) ---
         'instalar-lightworks': { textoConcluido: '✅ Lightworks instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_lightworks' },

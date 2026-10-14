@@ -95,15 +95,72 @@ Atualiza o índice de repositórios, sincroniza as chaves de segurança e baixa 
 ℹ️ <strong>Sobre o Terra:</strong> é mantido pela comunidade, não pela Red Hat nem pelo RPM Fusion. O FAP instala apenas o repositório — os pacotes só são baixados quando você instala um software que vive lá.
 </div>
 
+<div class="aviso-caixa" data-i18n-html="sessoes.primeiros-passos.terra_aviso_subrepos">
+⚠️ <strong>Sobre os subrepositórios do Terra:</strong> além do repositório principal (<code>terra</code>), o projeto também mantém subrepositórios opcionais (<code>terra-extras</code>, <code>terra-mesa</code>, <code>terra-nvidia</code>, <code>terra-multimedia</code>). Esses subrepositórios contêm pacotes que <strong>podem entrar em conflito com o RPM Fusion</strong> — especialmente bibliotecas de codecs como <code>x265-libs</code>, <code>libavcodec</code> e <code>ffmpeg-libs</code>. Conflitos entre esses repositórios podem travar atualizações do sistema (<code>dnf update</code>) e exigir intervenção manual para resolver.
+</div>
+
+<div class="info-extra" data-i18n-html="sessoes.primeiros-passos.terra_info_prioridade">
+ℹ️ <strong>Como o FAP lida com isso:</strong> este botão instala apenas o repositório <strong>principal</strong> do Terra, e o configura com <strong>prioridade baixa</strong> (prioridade 150, enquanto o padrão do Fedora é 99). Isso significa que, em caso de um pacote existir tanto no Fedora/RPM Fusion quanto no Terra, o <strong>Fedora e o RPM Fusion sempre vêm primeiro</strong>. O Terra só é usado quando o pacote não existe em nenhum dos dois.
+</div>
+
 <div class="grupo-botoes">
 <button class="btn-executar" onclick="executarTerra()" data-comando="terra-repo" data-logbox="log-sessao-primeiros-passos" id="btn-terra-repo" data-i18n="sessoes.primeiros-passos.btn_ativar_terra">
 📦 Ativar Terra Repository
+</button>
+<button class="btn-executar vermelho" onclick="executarTerraRemove()" data-comando="terra-repo-remove" data-logbox="log-sessao-primeiros-passos" id="btn-terra-repo-remove" data-i18n="sessoes.primeiros-passos.btn_remover_terra" style="display: none;">
+↩️ Remover Terra Repository
 </button>
 </div>
 </div>
 <div class="progress-container" id="progress-terra-repo">
 <div class="progress-bar"><div class="progress-fill" id="progress-fill-terra-repo"></div></div>
 <div class="progress-text"><span class="status" id="progress-status-terra-repo">⏳ Iniciando...</span><span class="percentage" id="progress-percent-terra-repo">0%</span></div>
+</div>
+<div class="progress-container" id="progress-terra-repo-remove">
+<div class="progress-bar"><div class="progress-fill" id="progress-fill-terra-repo-remove"></div></div>
+<div class="progress-text"><span class="status" id="progress-status-terra-repo-remove">⏳ Iniciando...</span><span class="percentage" id="progress-percent-terra-repo-remove">0%</span></div>
+</div>
+</div>
+
+<!-- Terra Extras (subrepositórios opcionais — perigoso) -->
+<div class="bloco-comando" style="border-left: 4px solid #ef4444;">
+<div class="comando-info">
+<h3 data-i18n="sessoes.primeiros-passos.terra_extras_titulo">⚠️ Terra Extras (subrepositórios opcionais)</h3>
+<p data-i18n="sessoes.primeiros-passos.terra_extras_desc">Habilita <strong>todos</strong> os subrepositórios do Terra: <code>terra-extras</code>, <code>terra-mesa</code>, <code>terra-nvidia</code> e <code>terra-multimedia</code>. Esses repositórios trazem pacotes que <strong>substituem</strong> os do Fedora e do RPM Fusion — versões patchadas, alternativas, ou builds com recursos extras.</p>
+
+<div class="aviso-caixa" style="border-color: #ef4444; color: #ef4444;" data-i18n-html="sessoes.primeiros-passos.terra_extras_aviso_perigo">
+❌ <strong>ATENÇÃO: este é um recurso avançado e perigoso.</strong><br><br>
+Os subrepositórios do Terra <strong>vão causar conflitos</strong> com o RPM Fusion e com os repositórios oficiais do Fedora. Isso não é hipotético — é esperado. Os conflitos mais comuns envolvem bibliotecas de codecs (<code>x265-libs</code>, <code>libavcodec</code>, <code>ffmpeg-libs</code>), e podem:
+<ul style="margin: 0.5rem 0 0 1.25rem; padding: 0;">
+<li>Travar o <code>dnf update</code> com erros de conflito de dependências</li>
+<li>Exigir intervenção manual (<code>dnf swap</code>, remoção de pacotes) para resolver</li>
+<li>Quebrar a reprodução de vídeo ou áudio até que os conflitos sejam resolvidos</li>
+<li>Impedir atualizações do sistema até que tudo seja reconciliado</li>
+</ul>
+<br>
+O FAP <strong>não recomenda</strong> habilitar esses repositórios para uso geral. Este botão existe para quem <strong>realmente sabe o que está fazendo</strong> e aceita os riscos — desenvolvedores testando builds específicos, usuários avançados que precisam de uma versão exata de um pacote, ou quem foi instruído por um mantenedor do Terra a fazer isso.
+</div>
+
+<div class="info-extra" data-i18n-html="sessoes.primeiros-passos.terra_extras_info_remocao">
+ℹ️ <strong>Se algo der errado depois de ativar:</strong> use o botão <strong>"Remover Terra Extras"</strong> abaixo. Ele desabilita os subrepositórios, mas <strong>não reverte pacotes já instalados</strong> — se um pacote do Terra Extras já substituiu um do RPM Fusion, você precisará reinstalar o pacote original manualmente (o FAP não faz isso automaticamente para evitar efeitos colaterais piores).
+</div>
+
+<div class="grupo-botoes">
+<button class="btn-executar destrutivo" onclick="executarTerraExtras()" data-comando="terra-extras-install" data-logbox="log-sessao-primeiros-passos" id="btn-terra-extras-install" data-i18n="sessoes.primeiros-passos.btn_ativar_terra_extras">
+⚠️ Ativar Terra Extras (perigoso)
+</button>
+<button class="btn-executar vermelho" onclick="executarTerraExtrasRemove()" data-comando="terra-extras-remove" data-logbox="log-sessao-primeiros-passos" id="btn-terra-extras-remove" data-i18n="sessoes.primeiros-passos.btn_remover_terra_extras" style="display: none;">
+↩️ Remover Terra Extras
+</button>
+</div>
+</div>
+<div class="progress-container" id="progress-terra-extras-install">
+<div class="progress-bar"><div class="progress-fill" id="progress-fill-terra-extras-install"></div></div>
+<div class="progress-text"><span class="status" id="progress-status-terra-extras-install">⏳ Iniciando...</span><span class="percentage" id="progress-percent-terra-extras-install">0%</span></div>
+</div>
+<div class="progress-container" id="progress-terra-extras-remove">
+<div class="progress-bar"><div class="progress-fill" id="progress-fill-terra-extras-remove"></div></div>
+<div class="progress-text"><span class="status" id="progress-status-terra-extras-remove">⏳ Iniciando...</span><span class="percentage" id="progress-percent-terra-extras-remove">0%</span></div>
 </div>
 </div>
 
@@ -278,18 +335,187 @@ async function executarFlatpak() {
     await executarComandoGenerico(idComando, comando, _t('sessoes.primeiros-passos.btn_configurar_flatpak', '📦 Configurar Flatpak'));
 }
 
+// ============================================================
+// VISIBILIDADE DOS BOTÕES DE REMOÇÃO — TERRA
+// ============================================================
+//
+// Os botões "Remover Terra Repository" e "Remover Terra Extras"
+// só devem aparecer DEPOIS que o repositório correspondente foi
+// ativado. Antes disso, ficam escondidos com `display: none` —
+// mesma lógica dos botões "Abrir X" das outras sessões.
+//
+// O `aplicarEstadoToggle` cuida do estado visual (cores,
+// disabled, cursor, texto), mas NÃO controla visibilidade. Esta
+// função complementa, baseando-se no estado persistido.
+//
+// Chamada em três lugares:
+//   1. restaurarEstadoSessao() — ao carregar a página
+//   2. onSucesso de executarTerra() / executarTerraExtras()
+//   3. onSucesso de executarTerraRemove() / executarTerraExtrasRemove()
+
+function _atualizarVisibilidadeTerra() {
+    var btnRemoveTerra = document.getElementById('btn-terra-repo-remove');
+    if (btnRemoveTerra) {
+        btnRemoveTerra.style.display = isExecutado('terra-repo') ? '' : 'none';
+    }
+
+    var btnRemoveExtras = document.getElementById('btn-terra-extras-remove');
+    if (btnRemoveExtras) {
+        btnRemoveExtras.style.display = isExecutado('terra-extras-install') ? '' : 'none';
+    }
+}
+
 async function executarTerra() {
-    // O RPM de release do Terra não é assinado pelo Fedora —
-    // `--nogpgcheck` permite a instalação. Após ele ser instalado,
-    // o repo Terra é adicionado em /etc/yum.repos.d/ e passa a ser
-    // usado para instalar os pacotes dele, que são verificados
-    // pelas chaves próprias do Terra (cuidadas pelo próprio repo).
+    // O pacote `terra-release` não é assinado pelo Fedora e a URL
+    // do RPM não é fixa — ele é resolvido a partir de um
+    // repositório TEMPORÁRIO (`--repofrompath`), criado só para
+    // esta transação. É assim que a própria documentação do Terra
+    // e o fórum oficial do Fedora recomendam.
+    //
+    // Por que a URL direta não funciona mais: o caminho antigo
+    // (`terra.fyralabs.com/terra-release-*.noarch.rpm`) foi
+    // descontinuado. O correto agora é `repos.fyralabs.com/terra$releasever`,
+    // e o `dnf` resolve o pacote lá dentro.
+    //
+    // Após instalar, baixamos a prioridade do repo `terra` para
+    // 150 (o padrão do Fedora é 99, e menor prioridade numérica =
+    // maior precedência). Isso garante que Fedora e RPM Fusion
+    // sempre ganhem em caso de conflito de pacote — o Terra só
+    // é consultado quando o pacote não existe nos dois.
     var idComando = 'terra-repo';
     var comando =
-        'sudo dnf install -y --nogpgcheck ' +
-        '"https://terra.fyralabs.com/terra-release-$(rpm -E %fedora).noarch.rpm"';
+        "sudo dnf install -y --nogpgcheck --repofrompath 'terra,https://repos.fyralabs.com/terra$releasever' terra-release && " +
+        "sudo dnf config-manager setopt terra.priority=150";
     await executarComandoGenerico(idComando, comando,
-        _t('sessoes.primeiros-passos.btn_ativar_terra', '📦 Ativar Terra Repository'));
+        _t('sessoes.primeiros-passos.btn_ativar_terra', '📦 Ativar Terra Repository'),
+        function() {
+            aplicarEstadoToggle('terra-repo', 'terra-repo-remove');
+            _atualizarVisibilidadeTerra();
+        });
+}
+
+async function executarTerraRemove() {
+    var idComando = 'terra-repo-remove';
+
+    if (!confirm(_t('sessoes.primeiros-passos.terra_remove_confirmar',
+        '⚠️ Remover o repositório Terra?\n\n' +
+        'Isso desinstala o pacote terra-release e remove os arquivos de repositório do Terra.\n\n' +
+        'Pacotes que você instalou do Terra NÃO serão removidos automaticamente — eles permanecerão instalados. ' +
+        'Se você quiser removê-los também, precisará fazer isso manualmente.\n\n' +
+        'Continuar?'))) return;
+
+    var comando = 'sudo dnf remove -y terra-release && sudo rm -f /etc/yum.repos.d/terra*.repo';
+    await executarComandoGenerico(idComando, comando,
+        _t('sessoes.primeiros-passos.btn_remover_terra', '↩️ Remover Terra Repository'),
+        function() {
+            // Reverte o estado do par: o install volta a ser clicável
+            // e o remove volta a ficar escondido.
+            desmarcarComoExecutado('terra-repo').then(function() {
+                aplicarEstadoToggle('terra-repo', 'terra-repo-remove');
+                _atualizarVisibilidadeTerra();
+            }).catch(function(e) {
+                console.warn('[toggle] Erro ao limpar estado do terra-repo:', e);
+                aplicarEstadoToggle('terra-repo', 'terra-repo-remove');
+                _atualizarVisibilidadeTerra();
+            });
+        });
+}
+
+async function executarTerraExtras() {
+    var idComando = 'terra-extras-install';
+
+    if (!confirm(_t('sessoes.primeiros-passos.terra_extras_confirmar1',
+        '⚠️ ATENÇÃO — LEIA ANTES DE CONTINUAR\n\n' +
+        'Você está prestes a habilitar os subrepositórios do Terra ' +
+        '(terra-extras, terra-mesa, terra-nvidia, terra-multimedia).\n\n' +
+        'Esses repositórios contêm pacotes que ENTRAM EM CONFLITO com o RPM Fusion ' +
+        'e com os repositórios oficiais do Fedora. Isso pode:\n\n' +
+        '• Travar o dnf update com erros de dependência\n' +
+        '• Exigir intervenção manual para resolver\n' +
+        '• Quebrar a reprodução de vídeo/áudio até resolver\n' +
+        '• Impedir atualizações do sistema\n\n' +
+        'O FAP NÃO RECOMENDA este recurso para uso geral. ' +
+        'Só continue se você realmente sabe o que está fazendo.\n\n' +
+        'Continuar?'))) return;
+
+    var confirm2 = confirm(_t('sessoes.primeiros-passos.terra_extras_confirmar2',
+        '🔄 ÚLTIMA CONFIRMAÇÃO\n\n' +
+        'Tem certeza ABSOLUTA de que quer habilitar os subrepositórios do Terra?\n\n' +
+        'Se algo der errado, a recuperação pode ser manual e trabalhosa.'));
+    if (!confirm2) return;
+
+            // Os subrepositórios do Terra são habilitados por PACOTES
+    // SEPARADOS — um para cada subrepo:
+    //
+    //   • terra-release-extras     → terra-extras
+    //   • terra-release-mesa       → terra-mesa
+    //   • terra-release-nvidia     → terra-nvidia
+    //   • terra-release-multimedia → terra-multimedia
+    //
+    // Cada pacote registra seu próprio arquivo `.repo` em
+    // /etc/yum.repos.d/. Não existe um "mega pacote" que habilite
+    // todos de uma vez — o botão instala os quatro individualmente.
+    //
+    // NÃO usamos `--repofrompath` aqui: o `terra-release` (do passo
+    // anterior) já registrou o repo `terra` permanentemente. Se
+    // tentássemos criar um repo temporário com o ID 'terra',
+    // colidiríamos com o existente (erro "o ID está presente mais
+    // de uma vez"). O temporário não é necessário — os pacotes
+    // `terra-release-*` vivem no repo `terra` principal.
+    var comando =
+        'sudo dnf install -y --nogpgcheck ' +
+        'terra-release-extras ' +
+        'terra-release-mesa ' +
+        'terra-release-nvidia ' +
+        'terra-release-multimedia';
+    await executarComandoGenerico(idComando, comando,
+        _t('sessoes.primeiros-passos.btn_ativar_terra_extras', '⚠️ Ativar Terra Extras (perigoso)'),
+        function() {
+            aplicarEstadoToggle('terra-extras-install', 'terra-extras-remove');
+            _atualizarVisibilidadeTerra();
+        });
+}
+
+async function executarTerraExtrasRemove() {
+    var idComando = 'terra-extras-remove';
+
+    if (!confirm(_t('sessoes.primeiros-passos.terra_extras_remove_confirmar',
+        '⚠️ Remover os subrepositórios do Terra?\n\n' +
+        'Isso desinstala o pacote terra-release-extras e desabilita os subrepositórios.\n\n' +
+        'IMPORTANTE: pacotes que já foram instalados a partir desses subrepositórios ' +
+        'NÃO serão revertidos automaticamente. Se um pacote do Terra Extras ' +
+        'substituiu um do RPM Fusion, você precisará reinstalar o original ' +
+        'manualmente (o FAP não faz isso para evitar efeitos colaterais piores).\n\n' +
+        'Continuar?'))) return;
+
+        // Remove os 4 pacotes de subrepo. O `rm -f` explícito cobre o
+    // caso dos arquivos `.repo` sobreviverem ao `dnf remove` (se
+    // estiverem marcados como %config(noreplace) no pacote).
+    // Listamos os arquivos nomeadamente para NÃO tocar em
+    // /etc/yum.repos.d/terra.repo, que é o repo principal.
+    var comando =
+        'sudo dnf remove -y ' +
+        'terra-release-extras ' +
+        'terra-release-mesa ' +
+        'terra-release-nvidia ' +
+        'terra-release-multimedia; ' +
+        'sudo rm -f ' +
+        '/etc/yum.repos.d/terra-extras.repo ' +
+        '/etc/yum.repos.d/terra-mesa.repo ' +
+        '/etc/yum.repos.d/terra-nvidia.repo ' +
+        '/etc/yum.repos.d/terra-multimedia.repo';
+    await executarComandoGenerico(idComando, comando,
+        _t('sessoes.primeiros-passos.btn_remover_terra_extras', '↩️ Remover Terra Extras'),
+        function() {
+            desmarcarComoExecutado('terra-extras-install').then(function() {
+                aplicarEstadoToggle('terra-extras-install', 'terra-extras-remove');
+                _atualizarVisibilidadeTerra();
+            }).catch(function(e) {
+                console.warn('[toggle] Erro ao limpar estado do terra-extras:', e);
+                aplicarEstadoToggle('terra-extras-install', 'terra-extras-remove');
+                _atualizarVisibilidadeTerra();
+            });
+        });
 }
 
 async function executarRemoverRepoFedoraFlatpak() {
@@ -330,8 +556,8 @@ async function executarRemoverRepoFedoraFlatpak() {
 }
 
 function restaurarEstadoSessao() {
-    // One-shot: RPM Fusion, Flatpak, Terra e remoção do repo Fedora
-    ['rpm-fusion', 'flatpak-setup', 'terra-repo', 'remover-repo-fedora-flatpak'].forEach(function(id) {
+    // One-shot: RPM Fusion, Flatpak, remoção do repo Fedora
+    ['rpm-fusion', 'flatpak-setup', 'remover-repo-fedora-flatpak'].forEach(function(id) {
         if (isExecutado(id)) {
             var btn = document.getElementById('btn-' + id);
             if (btn) {
@@ -342,6 +568,14 @@ function restaurarEstadoSessao() {
             }
         }
     });
+
+    // Pares install/revert: Terra e Terra Extras.
+    // aplicarEstadoToggle cuida de cores/disabled/texto;
+    // _atualizarVisibilidadeTerra controla o display:none dos
+    // botões de remoção (que só aparecem após a ativação).
+    aplicarEstadoToggle('terra-repo', 'terra-repo-remove');
+    aplicarEstadoToggle('terra-extras-install', 'terra-extras-remove');
+    _atualizarVisibilidadeTerra();
 
     // Sempre clicável: atualização
     var btnAtualizacao = document.getElementById('btn-atualizacao-inicial');

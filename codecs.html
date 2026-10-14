@@ -176,16 +176,56 @@ registrarAppRemovivel('fontes-ms-all', {
 // ------------------------------------------------------------
 
 async function executarCodecs() {
+    // Segue a receita oficial do RPM Fusion (Howto/Multimedia) e da
+    // documentação do Fedora (Quick Docs):
+    //
+    //   1. Swap ffmpeg-free → ffmpeg (RPM Fusion)
+    //   2. Grupo 'multimedia' do RPM Fusion, que traz os codecs
+    //      restritos do GStreamer (bad-freeworld, ugly) e as
+    //      bibliotecas complementares (libavcodec-freeworld,
+    //      libheif-freeworld, pipewire-codec-aptx, etc.)
+    //   3. OpenH264 do repo fedora-cisco-openh264 (Fedora oficial)
+    //   4. ffmpegthumbnailer para thumbnails de vídeo
+    //
+    // A abordagem anterior (instalar gstreamer1-plugins-good,
+    // gstreamer1-plugins-bad-free, gstreamer1-plugin-libav à mão)
+    // era incompleta: faltavam bad-freeworld, ugly, libheif e
+    // codecs de áudio Bluetooth (aptX). E misturava pacotes -free
+    // do Fedora com os freeworld do RPM Fusion sem o tratamento
+    // de substituição que o grupo multimedia faz.
+    //
+    // NOTA sobre sintaxe: Fedora 44+ usa DNF5, que NÃO reconhece a
+    // sintaxe `@multimedia` do DNF4. A forma correta é
+    // `dnf group install multimedia` (ou `dnf install @multimedia`
+    // via shim de compatibilidade — mas a forma nativa é mais
+    // robusta).
     const idComando = 'codecs-essenciais';
 
     const comando =
-        'if rpm -q ffmpeg-free > /dev/null 2>&1; then ' +
+        // 1. Swap do ffmpeg (idempotente: se já é o completo, o
+        //    `dnf swap` sai com código 0 sem fazer nada).
         'sudo dnf swap ffmpeg-free ffmpeg --allowerasing -y; ' +
-        'else ' +
-        'sudo dnf install ffmpeg --allowerasing -y; ' +
-        'fi && ' +
-        'sudo dnf install --setopt=\'install_weak_deps=False\' gstreamer1-plugins-good gstreamer1-plugins-bad-free gstreamer1-plugin-openh264 gstreamer1-plugin-libav --exclude=PackageKit-gstreamer-plugin -y && ' +
-        'sudo dnf config-manager setopt fedora-cisco-openh264.enabled=1';
+
+        // 2. Grupo multimedia do RPM Fusion. É a fonte da verdade
+        //    dos codecs restritos — o grupo é atualizado pelos
+        //    mantenedores do RPM Fusion a cada release do Fedora.
+        //    `install_weak_deps=False` evita puxar recomendados
+        //    desnecessários; `--exclude=PackageKit-gstreamer-plugin`
+        //    evita conflito com o PackageKit.
+        'sudo dnf group install multimedia ' +
+        '--setopt="install_weak_deps=False" ' +
+        '--exclude=PackageKit-gstreamer-plugin -y; ' +
+
+        // 3. OpenH264 do Fedora. Habilita o repo (já vem habilitado
+        //    por padrão no Fedora 44+, mas o setopt é idempotente)
+        //    e instala os dois plugins: GStreamer (para apps GTK) e
+        //    Firefox (para WebRTC).
+        'sudo dnf config-manager setopt fedora-cisco-openh264.enabled=1; ' +
+        'sudo dnf install -y gstreamer1-plugin-openh264 mozilla-openh264; ' +
+
+        // 4. ffmpegthumbnailer para thumbnails de vídeo em
+        //    gerenciadores de arquivos (Nautilus, Dolphin).
+        'sudo dnf install -y ffmpegthumbnailer';
 
     await executarComandoGenerico(idComando, comando,
         _t('sessoes.codecs.btn_instalar_codecs', '📦 Instalar Codecs'));
