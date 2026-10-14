@@ -145,9 +145,9 @@
             "codecs_info": "ℹ️ <strong>What this solves:</strong> videos in MP4, MKV, AVI, WebM and other formats play in any player (VLC, MPV, Firefox, Chromium). Without these codecs, many files simply won't open or will play without audio/video. It's also a prerequisite for video editing in tools like Kdenlive and Shotcut.",
             "btn_instalar_codecs": "📦 Install Codecs",
             "texto_concluido_codecs": "✅ Codecs installed",
-            "extras_titulo": "Commercial DVD Playback and Additional Firmware",
-            "extras_desc": "Enables the restricted sub-repositories (tainted) that bring the libdvdcss library for reading commercial DVDs and proprietary firmware for some hardware.",
-            "extras_info": "ℹ️ <strong>What this solves:</strong> without libdvdcss, Fedora can't read commercial DVDs (with CSS protection) — only homemade DVDs or video files. This item also enables proprietary firmware for some devices that lack a free driver.",
+            "extras_titulo": "Commercial DVD Playback and Tainted Repositories",
+            "extras_desc": "Installs the libdvdcss library (for reading commercial DVDs) and enables the RPM Fusion tainted repositories, which provide access to packages with redistribution restrictions.",
+            "extras_info": "ℹ️ <strong>What this solves:</strong> without libdvdcss, Fedora can't read commercial DVDs (with CSS protection) — only homemade DVDs or video files. By enabling the tainted repositories, packages with proprietary firmware (and others with license restrictions) become available for manual installation later.",
             "btn_instalar_extras": "📦 Install Extras",
             "texto_concluido_extras": "✅ Extras installed",
             "fontes_titulo": "Microsoft Fonts for Compatibility",
@@ -516,7 +516,7 @@
             "btn_abrir_lmms": "🚀 Open LMMS",
             "btn_abrir_audacity": "🚀 Open Audacity",
 
-'            "bloco_artcraft_titulo": "🎨 ArtCraft Suite (Adobe and Office on Linux)",
+            "bloco_artcraft_titulo": "🎨 ArtCraft Suite (Adobe and Office on Linux)",
             "bloco_artcraft_desc": "These apps are developed in <strong>Rust</strong>, are <strong>open source</strong>, and are recent alternatives to Adobe and Microsoft Office products. Each app has its own specialty (photo editing, vector, video, audio, design, PDF, presentations, spreadsheets, text editor and CAD).",
             "bloco_artcraft_aviso": "ℹ️ <strong>About support:</strong> these are independent projects, maintained by community developers. If something doesn't work, report the bug directly in the GitHub repository of the affected project — FAP only installs the official packages published by them.",
             "btn_photocraft": "🖼️ PhotoCraft",
@@ -558,7 +558,7 @@
             "btn_soundcraft": "🔊 SoundCraft",
             "texto_concluido_soundcraft": "✅ SoundCraft installed",
             "btn_abrir_soundcraft": "🚀 Open SoundCraft"
-        },'
+        },
 
         "casa-escritorio": {
             "nome": "Home and Office",
