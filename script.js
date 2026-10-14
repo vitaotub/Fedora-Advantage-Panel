@@ -1,3 +1,4 @@
+    var comando, idRemocao;
 /**
  * Fedora Advantage Panel (FAP) - Script Compartilhado
  *
@@ -3285,7 +3286,32 @@ async function _executarRemocaoApp(idComando) {
     if (!confirm(msg)) return;
 
     var comando, idRemocao;
-    if (info.tipo === 'flatpak') {
+
+    // ============================================================
+    // OVERRIDE POR `comandoRemocao`
+    // ============================================================
+    //
+    // Antes de olhar o `tipo`, verifica se o registro definiu um
+    // `comandoRemocao` completo. Quando presente, esse comando é
+    // usado como está, ignorando `pacotes`/`appId` — o registro
+    // assume total controle sobre a operação de remoção.
+    //
+    // Casos de uso:
+    //   • tipo 'arquivos' (Gamescope Session) — sempre usa comandoRemocao
+    //   • tipo 'dnf' com remoção complexa (Codecs) — precisa fazer
+    //     swap de volta (ffmpeg → ffmpeg-free) e reinstalar pacotes
+    //     base do Fedora que o grupo multimedia substituiu. Uma
+    //     lista simples de `pacotes` não dá conta.
+    //
+    // Sem este override, o branch 'dnf' tentava acessar
+    // `info.pacotes.join()` — e quebrava com TypeError quando o
+    // registro só tinha `comandoRemocao`.
+    if (info.comandoRemocao) {
+        comando = info.comandoRemocao;
+        idRemocao = (info.tipo === 'flatpak')
+        ? idComando + '-revert'
+        : _idRemocaoDe(idComando);
+    } else if (info.tipo === 'flatpak') {
         comando = 'flatpak uninstall -y ' + info.appId;
         idRemocao = idComando + '-revert';
     } else if (info.tipo === 'dnf') {
@@ -3303,17 +3329,6 @@ async function _executarRemocaoApp(idComando) {
             comando += '; sudo rm -f ' + repos;
         }
 
-        idRemocao = _idRemocaoDe(idComando);
-    } else if (info.tipo === 'arquivos') {
-        // Remoção de ARQUIVOS criados pelo FAP em diretórios do
-        // sistema (ex.: /usr/bin/gamescope-session,
-        // /usr/share/wayland-sessions/*). Diferente de 'flatpak' e
-        // 'dnf', aqui não há pacote: o próprio registro em
-        // registrarAppRemovivel() traz o comandoRemocao completo.
-        //
-        // Usado por Gamescope Session, que cria seus arquivos
-        // manualmente em vez de instalar um pacote de terceiros.
-        comando = info.comandoRemocao;
         idRemocao = _idRemocaoDe(idComando);
     } else {
         console.warn('[remove-icon] tipo inválido:', info.tipo);

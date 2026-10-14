@@ -12,6 +12,25 @@ que exibe a seção da versão atual dentro do FAP, na sessão **Sobre o FAP**.
 
 ---
 
+## v1.0.0-10142026.b
+
+### 🔧 Correções
+
+- **"Ativar Terra Extras" só aparece depois que o Terra principal está ativo.** Antes, o botão ficava visível desde o início da sessão. Se o usuário clicasse nele antes de ativar o Terra principal, o comando falhava silenciosamente — os pacotes `terra-release-*` só existem no repo `terra`, que ainda não estava configurado. Agora o botão só é exibido depois que o Terra principal foi ativado, seguindo a mesma lógica visual dos outros botões da sessão.
+- **Codecs agora reportam falha corretamente.** O comando de instalação usava `;` como separador, que não propaga o exit code — se o `dnf swap ffmpeg-free ffmpeg` falhasse (por exemplo, RPM Fusion não ativo), o shell continuava para os próximos comandos e o FAP via apenas o código do último, reportando "✅ Tarefa concluída" mesmo com falha no meio. Adicionado `set -e` no início do comando para abortar na primeira falha.
+- **`--allowerasing` no `dnf group install multimedia`.** O grupo `multimedia` do RPM Fusion traz `gstreamer1-plugins-bad-freeworld`, que **substitui** o `gstreamer1-plugins-bad-free` do Fedora. Sem `--allowerasing`, o `dnf` podia recusar a transação com erro de conflito de pacotes.
+- **Remoção de codecs agora é inteligente.** A lixeira do "Codecs Multimídia Essenciais" fazia um `dnf remove` simples dos pacotes instalados — o que deixava o sistema **sem ffmpeg nenhum** (o `ffmpeg` foi instalado via swap de `ffmpeg-free`) e **sem os plugins base** (o grupo `multimedia` havia substituído `gstreamer1-plugins-bad-free` por `-freeworld`). Agora a remoção usa um comando customizado que faz o swap de volta (`ffmpeg` → `ffmpeg-free`), remove os pacotes `-freeworld`, e reinstala os plugins base do Fedora.
+- **`_executarRemocaoApp` suporta `comandoRemocao` para qualquer tipo.** Antes, o campo `comandoRemocao` só era respeitado no tipo `arquivos`. Agora funciona como override universal — permite que apps do tipo `dnf` (como os codecs) usem um comando de remoção complexo em vez de uma lista simples de `pacotes`.
+- **Descrição do bloco "DVD Comercial" reescrita.** O texto prometia "firmware proprietário para alguns hardwares", mas o comando só instala a `libdvdcss` e habilita os repos `tainted` (que apenas **dão acesso** a firmware, não instalam). O texto agora reflete com precisão o que o comando faz.
+- **`vulkan-amd` não passa mais `idAbrir` inexistente.** A função `aplicarEstadoInstalavel()` recebia `'abrir-vulkan-amd'` mesmo não existindo esse botão no HTML — o código caía no estado 3 (cinza) por acidente, mas era frágil. Corrigido para `null`, deixando explícito que Vulkan não tem "Abrir".
+- **`en.json` corrigido.** Dois caracteres `'` (aspas simples) que sobraram após uma edição manual quebravam o JSON — o arquivo não era parseável pelo `JSON.parse`, e o FAP caía no fallback PT-BR ao trocar para inglês. Removidos.
+
+### 🎯 Melhorias
+
+- **Aspas corretas em `--setopt='install_weak_deps=False'`.** Estava com aspas duplas, funcionava por acidente mas era frágil. Agora usa aspas simples, forma canônica.
+
+---
+
 ## v1.0.0-10142026
 
 ### ✨ Novidades

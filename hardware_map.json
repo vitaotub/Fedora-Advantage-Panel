@@ -12,7 +12,7 @@
             "detection": "nvidia-detect",
             "packages": ["akmod-nvidia"],
             "repo_required": "rpmfusion-nonfree",
-            "notes": "Requer RPM Fusion nonfree. O FOF tenta usar nvidia-detect para identificar a geração exata e sugerir o pacote correto (akmod-nvidia, akmod-nvidia-470xx ou akmod-nvidia-390xx).",
+            "notes": "Requer RPM Fusion nonfree. O FAP tenta usar nvidia-detect para identificar a geração exata e sugerir o pacote correto (akmod-nvidia, akmod-nvidia-470xx ou akmod-nvidia-390xx).",
             "notesKey": "sessoes.dispositivos-perifericos.notes.nvidia"
         },
         "1002": {

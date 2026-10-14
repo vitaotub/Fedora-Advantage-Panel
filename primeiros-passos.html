@@ -146,7 +146,7 @@ O FAP <strong>não recomenda</strong> habilitar esses repositórios para uso ger
 </div>
 
 <div class="grupo-botoes">
-<button class="btn-executar destrutivo" onclick="executarTerraExtras()" data-comando="terra-extras-install" data-logbox="log-sessao-primeiros-passos" id="btn-terra-extras-install" data-i18n="sessoes.primeiros-passos.btn_ativar_terra_extras">
+<button class="btn-executar destrutivo" onclick="executarTerraExtras()" data-comando="terra-extras-install" data-logbox="log-sessao-primeiros-passos" id="btn-terra-extras-install" data-i18n="sessoes.primeiros-passos.btn_ativar_terra_extras" style="display: none;">
 ⚠️ Ativar Terra Extras (perigoso)
 </button>
 <button class="btn-executar vermelho" onclick="executarTerraExtrasRemove()" data-comando="terra-extras-remove" data-logbox="log-sessao-primeiros-passos" id="btn-terra-extras-remove" data-i18n="sessoes.primeiros-passos.btn_remover_terra_extras" style="display: none;">
@@ -354,14 +354,27 @@ async function executarFlatpak() {
 //   3. onSucesso de executarTerraRemove() / executarTerraExtrasRemove()
 
 function _atualizarVisibilidadeTerra() {
+    var terraAtivo = isExecutado('terra-repo');
+    var extrasAtivo = isExecutado('terra-extras-install');
+
+    // Remover Terra Repository: só aparece se o Terra está ativo.
     var btnRemoveTerra = document.getElementById('btn-terra-repo-remove');
     if (btnRemoveTerra) {
-        btnRemoveTerra.style.display = isExecutado('terra-repo') ? '' : 'none';
+        btnRemoveTerra.style.display = terraAtivo ? '' : 'none';
     }
 
+    // Ativar Terra Extras: só aparece se o Terra principal está
+    // ativo. Sem ele, os pacotes `terra-release-*` não existem em
+    // nenhum repo configurado, e o botão falharia silenciosamente.
+    var btnExtras = document.getElementById('btn-terra-extras-install');
+    if (btnExtras) {
+        btnExtras.style.display = terraAtivo ? '' : 'none';
+    }
+
+    // Remover Terra Extras: só aparece se o Extras está ativo.
     var btnRemoveExtras = document.getElementById('btn-terra-extras-remove');
     if (btnRemoveExtras) {
-        btnRemoveExtras.style.display = isExecutado('terra-extras-install') ? '' : 'none';
+        btnRemoveExtras.style.display = extrasAtivo ? '' : 'none';
     }
 }
 
@@ -444,7 +457,7 @@ async function executarTerraExtras() {
         'Se algo der errado, a recuperação pode ser manual e trabalhosa.'));
     if (!confirm2) return;
 
-            // Os subrepositórios do Terra são habilitados por PACOTES
+    // Os subrepositórios do Terra são habilitados por PACOTES
     // SEPARADOS — um para cada subrepo:
     //
     //   • terra-release-extras     → terra-extras
@@ -488,7 +501,7 @@ async function executarTerraExtrasRemove() {
         'manualmente (o FAP não faz isso para evitar efeitos colaterais piores).\n\n' +
         'Continuar?'))) return;
 
-        // Remove os 4 pacotes de subrepo. O `rm -f` explícito cobre o
+    // Remove os 4 pacotes de subrepo. O `rm -f` explícito cobre o
     // caso dos arquivos `.repo` sobreviverem ao `dnf remove` (se
     // estiverem marcados como %config(noreplace) no pacote).
     // Listamos os arquivos nomeadamente para NÃO tocar em

@@ -2,7 +2,7 @@
 
 **🌐 Language:** [Português (BR)](README.md) | English | [Español](README.es.md)
 
-![Version](https://img.shields.io/badge/Version-v1.0.0--10142026-orange?style=flat-square)
+![Version](https://img.shields.io/badge/Version-v1.0.0--10142026.b-orange?style=flat-square)
 ![Fedora](https://img.shields.io/badge/Fedora-44+-294172?style=flat-square&logo=fedora)
 ![License](https://img.shields.io/badge/License-GPL--3.0-green?style=flat-square)
 ![Languages](https://img.shields.io/badge/Languages-PT--BR%20%7C%20EN%20%7C%20ES-3c67e3?style=flat-square)
@@ -70,6 +70,7 @@ Fedora Advantage Panel (FAP) is a visual automation panel for Fedora Linux. It t
 - **Flatpak queue** — clicking on multiple apps in sequence enqueues and installs them one at a time, avoiding Flathub lock errors
 - **"Open" button** on all GUI apps — launches in its own session, surviving FAP closing
 - **Detection of externally installed apps** — if you already have an app installed before FAP, the button appears as "Open" from the start
+- **Smart codec removal** — the trash icon for codecs swaps `ffmpeg` back to `ffmpeg-free` and reinstalls base Fedora plugins, instead of leaving the system without any codecs
 
 ### Native WebKitGTK container
 

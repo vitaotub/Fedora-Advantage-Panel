@@ -57,11 +57,11 @@ data-i18n="sessoes.codecs.btn_instalar_codecs">
 <!-- Extras tainted / DVD -->
 <div class="bloco-comando">
 <div class="comando-info">
-<h3 data-i18n="sessoes.codecs.extras_titulo">Reprodução de DVD Comercial e Firmware Adicional</h3>
-<p data-i18n="sessoes.codecs.extras_desc">Habilita os sub-repositórios restritos (tainted) que trazem a biblioteca libdvdcss para leitura de DVDs comerciais e firmware proprietário para alguns hardwares.</p>
+<h3 data-i18n="sessoes.codecs.extras_titulo">Reprodução de DVD Comercial e Repositórios Tainted</h3>
+<p data-i18n="sessoes.codecs.extras_desc">Instala a biblioteca libdvdcss (para leitura de DVDs comerciais) e habilita os repositórios tainted do RPM Fusion, que dão acesso a pacotes com restrições de redistribuição.</p>
 
 <div class="info-extra" data-i18n-html="sessoes.codecs.extras_info">
-ℹ️ <strong>O que isso resolve:</strong> sem a libdvdcss, o Fedora não consegue ler DVDs comerciais (com proteção CSS) — apenas DVDs caseiros ou arquivos de vídeo. Este item também habilita firmware proprietário para alguns dispositivos que não têm driver livre.
+ℹ️ <strong>O que isso resolve:</strong> sem a libdvdcss, o Fedora não consegue ler DVDs comerciais (com proteção CSS) — apenas DVDs caseiros ou arquivos de vídeo. Ao habilitar os repositórios tainted, pacotes com firmware proprietário (e outros com restrição de licença) passam a ficar disponíveis para instalação manual posterior.
 </div>
 
 <div class="grupo-botoes">
@@ -150,8 +150,47 @@ function _t(chave, fallback) {
 // `tipo` abaixo.
 
 registrarAppRemovivel('codecs-essenciais', {
+    // A remoção dos codecs precisa ser mais cuidadosa que um
+    // `dnf remove` simples:
+    //
+    //   1. O `ffmpeg` foi instalado via SWAP de `ffmpeg-free` — se
+    //      apenas o removermos, o sistema fica sem nenhum dos dois.
+    //      O correto é fazer o swap de volta.
+    //   2. O grupo multimedia traz pacotes -freeworld do RPM Fusion
+    //      que NÃO são removíveis por lista simples: eles substituem
+    //      versões do Fedora, e removê-los sem restaurar os originais
+    //      deixaria o sistema quebrado (ex.: sem `gstreamer1-plugins-bad`).
+    //
+    // Por isso usamos `comandoRemocao` customizado em vez de lista de
+    // `pacotes`. Isso dá controle total sobre a ordem e as flags.
     tipo: 'dnf',
-    pacotes: ['ffmpeg', 'gstreamer1-plugins-good', 'gstreamer1-plugins-bad-free', 'gstreamer1-plugin-openh264', 'gstreamer1-plugin-libav'],
+    modo: 'comandoLivre',
+    comandoRemocao:
+        // 1. Swap de volta: ffmpeg → ffmpeg-free
+        'sudo dnf swap ffmpeg ffmpeg-free --allowerasing -y; ' +
+        // 2. Remove os pacotes freeworld do grupo multimedia
+        //    (que substituem equivalentes do Fedora).
+        'sudo dnf remove -y ' +
+        'gstreamer1-plugins-bad-freeworld ' +
+        'gstreamer1-plugins-ugly ' +
+        'libavcodec-freeworld ' +
+        'libheif-freeworld ' +
+        'pipewire-codec-aptx ' +
+        'vlc-plugins-freeworld ' +
+        'obs-studio-freeworld ' +
+        'qmmp-plugins-freeworld ' +
+        'xpra-codecs-freeworld ' +
+        'ffmpegthumbnailer ' +
+        'gstreamer1-plugin-openh264 ' +
+        'mozilla-openh264 ' +
+        '--skip-broken; ' +
+        // 3. Reinstala os plugins base do Fedora que o grupo
+        //    multimedia havia substituído — mantém a reprodução
+        //    básica funcionando.
+        'sudo dnf install -y ' +
+        'gstreamer1-plugins-good ' +
+        'gstreamer1-plugins-bad-free ' +
+        'gstreamer1-plugins-base',
     nome: 'Codecs Multimídia Essenciais'
 });
 
@@ -187,44 +226,41 @@ async function executarCodecs() {
     //   3. OpenH264 do repo fedora-cisco-openh264 (Fedora oficial)
     //   4. ffmpegthumbnailer para thumbnails de vídeo
     //
-    // A abordagem anterior (instalar gstreamer1-plugins-good,
-    // gstreamer1-plugins-bad-free, gstreamer1-plugin-libav à mão)
-    // era incompleta: faltavam bad-freeworld, ugly, libheif e
-    // codecs de áudio Bluetooth (aptX). E misturava pacotes -free
-    // do Fedora com os freeworld do RPM Fusion sem o tratamento
-    // de substituição que o grupo multimedia faz.
+    // PROTEÇÃO CONTRA FALHA SILENCIOSA:
+    //   Os comandos são separados por `;`, que NÃO propaga o
+    //   exit code. Se o swap do ffmpeg falhasse, o shell continuava
+    //   para os próximos comandos e o FAP via apenas o exit code
+    //   do último — reportando sucesso mesmo com falha no meio.
     //
-    // NOTA sobre sintaxe: Fedora 44+ usa DNF5, que NÃO reconhece a
-    // sintaxe `@multimedia` do DNF4. A forma correta é
-    // `dnf group install multimedia` (ou `dnf install @multimedia`
-    // via shim de compatibilidade — mas a forma nativa é mais
-    // robusta).
+    //   O `set -e` no início faz o shell abortar na PRIMEIRA falha.
+    //   Combinado com os `;`, o exit code que chega ao FAP é o do
+    //   comando que de fato falhou.
+    //
+    // `--allowerasing` no group install: o grupo multimedia traz
+    //   `gstreamer1-plugins-bad-freeworld`, que SUBSTITUI o
+    //   `gstreamer1-plugins-bad-free` do Fedora. Sem essa flag, o
+    //   dnf pode recusar a transação com "conflito de pacotes".
     const idComando = 'codecs-essenciais';
 
     const comando =
-        // 1. Swap do ffmpeg (idempotente: se já é o completo, o
-        //    `dnf swap` sai com código 0 sem fazer nada).
+        // Aborta na primeira falha. Todos os comandos abaixo usam
+        // `;` como separador, então o `set -e` é o que garante
+        // propagação correta do exit code.
+        'set -e; ' +
+
+        // 1. Swap do ffmpeg.
         'sudo dnf swap ffmpeg-free ffmpeg --allowerasing -y; ' +
 
-        // 2. Grupo multimedia do RPM Fusion. É a fonte da verdade
-        //    dos codecs restritos — o grupo é atualizado pelos
-        //    mantenedores do RPM Fusion a cada release do Fedora.
-        //    `install_weak_deps=False` evita puxar recomendados
-        //    desnecessários; `--exclude=PackageKit-gstreamer-plugin`
-        //    evita conflito com o PackageKit.
-        'sudo dnf group install multimedia ' +
-        '--setopt="install_weak_deps=False" ' +
-        '--exclude=PackageKit-gstreamer-plugin -y; ' +
+        // 2. Grupo multimedia do RPM Fusion.
+        "sudo dnf group install multimedia --allowerasing " +
+        "--setopt='install_weak_deps=False' " +
+        "--exclude=PackageKit-gstreamer-plugin -y; " +
 
-        // 3. OpenH264 do Fedora. Habilita o repo (já vem habilitado
-        //    por padrão no Fedora 44+, mas o setopt é idempotente)
-        //    e instala os dois plugins: GStreamer (para apps GTK) e
-        //    Firefox (para WebRTC).
+        // 3. OpenH264 do Fedora.
         'sudo dnf config-manager setopt fedora-cisco-openh264.enabled=1; ' +
         'sudo dnf install -y gstreamer1-plugin-openh264 mozilla-openh264; ' +
 
-        // 4. ffmpegthumbnailer para thumbnails de vídeo em
-        //    gerenciadores de arquivos (Nautilus, Dolphin).
+        // 4. ffmpegthumbnailer para thumbnails de vídeo.
         'sudo dnf install -y ffmpegthumbnailer';
 
     await executarComandoGenerico(idComando, comando,

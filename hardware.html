@@ -765,7 +765,8 @@ async function executarIntelMedia() {
 async function restaurarEstadoSessao() {
     // Aplica o estado unificado (instalado-sem-abrir) em todos os
     // botões que instalam pacotes dnf.
-    aplicarEstadoInstalavel('vulkan-amd',      'abrir-vulkan-amd');
+    // vulkan-amd: pacote sem GUI (bibliotecas) — null no idAbrir.
+    aplicarEstadoInstalavel('vulkan-amd',      null);
     aplicarEstadoInstalavel('vaapi-amd',       null);
     aplicarEstadoInstalavel('vaapi-swap',      null);
     aplicarEstadoInstalavel('corectrl-install', 'abrir-corectrl');
