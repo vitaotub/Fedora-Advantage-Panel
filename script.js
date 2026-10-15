@@ -1938,7 +1938,6 @@ async function _sincronizarEstadoFlatpaks() {
                 ? _derivarIdAbrir(marcados[k])
                 : null;
                 aplicarEstadoInstalavel(marcados[k], idAbrirMarc);
-                _atualizarIconeDesinstalarSeExistir(marcados[k]);
             } catch (e) { /* ignora */ }
         }
 
@@ -1980,14 +1979,10 @@ function marcarFlatpaksJaInstalados() {
     return _sincronizarEstadoFlatpaks();
 }
 
-// Helper que tenta chamar _atualizarIconeDesinstalar se ele
-// existir no escopo global. Existe nas sessões que importam o
-// helper via <script> inline. Não existe no script.js.
-function _atualizarIconeDesinstalarSeExistir(idComando) {
-    if (typeof _atualizarIconeDesinstalar === 'function') {
-        try { _atualizarIconeDesinstalar(idComando); } catch (e) { /* ignora */ }
-    }
-}
+// (função _atualizarIconeDesinstalarSeExistir removida — era código
+// morto. O trabalho de atualizar a lixeira após sincronização é
+// feito por `aplicarEstadoInstalavel`, que já chama `_mostrarLixeira`
+// ou `_esconderLixeira` conforme o estado.)
 
 // ============================================================
 // BARRA DE PROGRESSO
@@ -3063,53 +3058,9 @@ function _idRemocaoDe(idComando) {
     return idComando + '-remove';
 }
 
-function atualizarIconeRemover(idComando) {
-    var btn = document.getElementById('btn-' + idComando);
-    if (!btn) return;
-
-    var wrapper = btn.closest('.btn-flatpak-wrapper');
-    if (!wrapper) {
-        console.warn('[remove-icon] Botão sem wrapper .btn-flatpak-wrapper:', idComando);
-        return;
-    }
-
-    var info = APPS_REMOVIVEIS[idComando];
-    if (!info) {
-        console.warn('[remove-icon] App não registrado:', idComando);
-        return;
-    }
-
-    var nomeExibicao = info.nome || idComando;
-
-    var icone = wrapper.querySelector('.btn-flatpak-uninstall');
-    if (!icone) {
-        icone = document.createElement('button');
-        icone.type = 'button';
-        icone.className = 'btn-flatpak-uninstall';
-        icone.setAttribute('data-comando-alvo', idComando);
-        icone.innerHTML = FAP_SVG_LIXEIRA;
-        icone.title = _tVars('comum.desinstalar_app', 'Remover ' + nomeExibicao, { nome: nomeExibicao });
-        icone.setAttribute('aria-label', icone.title);
-
-        icone.addEventListener('click', function(e) {
-            e.stopPropagation();
-            _executarRemocaoApp(this.getAttribute('data-comando-alvo'));
-        });
-
-        wrapper.appendChild(icone);
-    }
-
-    icone.style.display = '';
-}
-
-function esconderIconeRemover(idComando) {
-    var btn = document.getElementById('btn-' + idComando);
-    if (!btn) return;
-    var wrapper = btn.closest('.btn-flatpak-wrapper');
-    if (!wrapper) return;
-    var icone = wrapper.querySelector('.btn-flatpak-uninstall');
-    if (icone) icone.style.display = 'none';
-}
+// (funções `atualizarIconeRemover` e `esconderIconeRemover` foram
+// removidas — código morto. O trabalho é feito por `_mostrarLixeira`
+// e `_esconderLixeira`, chamadas a partir de `aplicarEstadoInstalavel`.)
 
 // ============================================================
 // ESCONDER BOTÃO "ABRIR" APÓS REMOÇÃO
@@ -3359,9 +3310,10 @@ function _executarRemocaoPeloWrapper(idInstall) {
 // DOM) para o log, e usa um idRemocao separado para a stream SSE
 // (assim o servidor sabe que é uma execução distinta).
 //
-// Este é o mesmo padrão já usado por `desinstalarAppFlatpak` nas
-// sessões de aplicativos/casa-escritorio/gaming — que funciona
-// justamente porque não passa pelo executarComandoGenerico.
+// Este é o mesmo padrão usado pelas funções de remoção das sessões
+// (aplicativos, casa-escritorio, gaming) — que funcionam justamente
+// porque não passam pelo `executarComandoGenerico`, cuja validação
+// de `_getLogBox(idComando)` rejeitaria o id dinâmico `-remove`.
 
 async function _executarRemocaoApp(idComando) {
     var info = APPS_REMOVIVEIS[idComando];

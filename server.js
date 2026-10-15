@@ -78,6 +78,20 @@ const LOCALES_DIR = path.join(__dirname, 'locales');
 //   Waydroid — mesmo comportamento de abrir pelo menu do Fedora.
 // - O comando entra na whitelist para não exigir senha a cada
 //   abertura do Waydroid (é uma ação de usuário, não administrativa).
+//
+// SOBRE AS ENTRADAS `setsid -f <app>`:
+// - Todos os botões "Abrir X" usam `setsid -f <comando>` para que
+//   o app ganhe uma sessão própria, desacoplada do FAP. Isso
+//   resolve o bug em que o app era morto junto quando o usuário
+//   fechava o FAP (mesmo PGID).
+// - Estes comandos são read-only do ponto de vista do sistema —
+//   apenas abrem GUIs já instaladas, como se o usuário clicasse
+//   no atalho do menu. Whitelist explícita para não permitir
+//   `setsid -f rm -rf ~` ou similar.
+// - Cada app aberto via `abrirFerramentaExterna` precisa de uma
+//   entrada própria. Os que usam `gtk-launch` já estão cobertos
+//   pela entrada única `'setsid -f gtk-launch'`; os que usam o
+//   binário direto (vlc, krita, gimp, ...) precisam da sua.
 
 const COMANDOS_SEM_AUTENTICACAO = [
     'rpm -q',
@@ -92,27 +106,21 @@ const COMANDOS_SEM_AUTENTICACAO = [
 'lact',
 'waydroid status',
 'waydroid show-full-ui',
-// ============================================================
-// `setsid -f` — lançar apps GUI em nova sessão
-// ============================================================
-//
-// TODOS os botões "Abrir X" usam `setsid -f <comando>` para que
-// o app ganhe uma sessão própria, desacoplada do FAP. Isso
-// resolve o bug em que o app era morto junto quando o usuário
-// fechava o FAP (mesmo PGID).
-//
-// Estes comandos são read-only do ponto de vista do sistema —
-// apenas abrem GUIs já instaladas, como se o usuário clicasse
-// no atalho do menu. Whitelist explícita para não permitir
-// `setsid -f rm -rf ~` ou similar.
+
+// --- setsid -f: abertura de GUI em sessão própria ---
+// App aberto via `gtk-launch` (cobre a maioria).
 'setsid -f gtk-launch',
+// Apps com binário próprio (não usam gtk-launch).
 'setsid -f corectrl',
 'setsid -f lact',
 'setsid -f rclone-manager',
 'setsid -f steam',
+'setsid -f heroic',
+'setsid -f rustdesk',
 'setsid -f waydroid show-full-ui',
 'setsid -f keepassxc',
 'setsid -f okular',
+// Suíte ArtCraft.
 'setsid -f photocraft',
 'setsid -f vectorcraft',
 'setsid -f filmcraft',
@@ -126,6 +134,29 @@ const COMANDOS_SEM_AUTENTICACAO = [
 'setsid -f wordcraft',
 'setsid -f cadcraft',
 'setsid -f soundcraft',
+// Players de mídia, editores gráficos e de vídeo/áudio.
+'setsid -f vlc',
+'setsid -f krita',
+'setsid -f inkscape',
+'setsid -f gimp',
+'setsid -f darktable',
+'setsid -f freecad',
+'setsid -f librecad',
+'setsid -f kdenlive',
+'setsid -f pitivi',
+'setsid -f shotcut',
+'setsid -f avidemux',
+'setsid -f blender',
+'setsid -f ardour8',
+'setsid -f lmms',
+'setsid -f audacity',
+// Navegadores via repo oficial do fabricante.
+'setsid -f chromium-browser',
+'setsid -f opera',
+'setsid -f brave-browser',
+'setsid -f vivaldi-stable',
+'setsid -f microsoft-edge-stable',
+
 // Flatpak roda como usuário; a autenticação (quando necessária)
 // é resolvida pelo Polkit do sistema, não pelo FAP.
 'flatpak install',
@@ -602,14 +633,25 @@ function escreverProgresso(progresso) {
 }
 
 function salvarProgresso(idComando) {
-    // Ids terminados em `-open` são comandos de abertura de app
-    // (gerados por `abrirFerramentaExterna`). São transientes: não
-    // representam um estado persistente, só o ato de abrir um app
-    // nesta sessão. Gravá-los polui o .progresso.json com entradas
-    // que o `_limparIdsOrfaos` (frontend) sempre remove no próximo
-    // boot — mas enquanto isso, engordam o arquivo e fazem o
-    // contador global de sessões concluídas oscilar.
-    if (!idComando || idComando.endsWith('-open')) return;
+    // Ids "transientes" não devem poluir o .progresso.json:
+    //
+    //   • `-open`   — abertura de app GUI (gerado por
+    //                 `abrirFerramentaExterna`). Não representa um
+    //                 estado persistente, só o ato de abrir o app
+    //                 nesta sessão.
+    //
+    //   • `-remove` — remoção de pacote/app via lixeira ou botão
+    //                 "desfazer tudo". Também é transiente: o que
+    //                 importa é que o comando de INSTALL associado
+    //                 seja desmarcado (o frontend faz isso via
+    //                 POST /progress). Gravar `-remove` só polui.
+    //
+    // Sem esse filtro, o arquivo engorda e o contador global de
+    // sessões concluídas oscila, porque `_limparIdsOrfaos` (frontend)
+    // remove esses ids no próximo boot.
+    if (!idComando || idComando.endsWith('-open') || idComando.endsWith('-remove')) {
+        return;
+    }
     try {
         const progresso = lerProgresso();
         if (!progresso.executados.includes(idComando)) {
@@ -2426,7 +2468,7 @@ server.listen(PORT, HOST, () => {
     console.log(` 📈 Top processos: /top-processes`);
     console.log(` 💾 Uso de disco: /disk-usage`);
     console.log(` 📋 Erros do journal: /journal-errors`);
-    console.log(` 🔁 Buffer SSE: ${SSE_BUFFER_MAX} mensagens por comando, TTL ${SSE_BUFFER_TTL_MS/1000}s`);
+    console.log(` 🔊 Buffer SSE: ${SSE_BUFFER_MAX} mensagens por comando, TTL ${SSE_BUFFER_TTL_MS/1000}s`);
     console.log(` 🚦 Rate limit: ${RATE_LIMIT_MS}ms por idComando`);
     console.log(`====================================================`);
 });

@@ -246,10 +246,22 @@ async function carregarChangelog() {
 
     if (!container) return;
 
-    var versaoAtual = window.FAP_VERSION_UI18N || '?';
+    var versaoAtual = window.FAP_VERSION_UI18N;
     if (summary) {
-        summary.textContent = '🆕 ' + _t('sessoes.sobre-fap.changelog_atual_titulo',
-            'Versão atual') + ' — v' + versaoAtual;
+        var rotuloBase = '🆕 ' + _t('sessoes.sobre-fap.changelog_atual_titulo',
+            'Versão atual');
+        // Se a versão ainda não chegou (fetch de /info pendente),
+        // mostra só o rótulo base e agenda a atualização para quando
+        // o evento `fap-versao-pronta` disparar. Evita o "v?" feio.
+        if (versaoAtual) {
+            summary.textContent = rotuloBase + ' — v' + versaoAtual;
+        } else {
+            summary.textContent = rotuloBase;
+            document.addEventListener('fap-versao-pronta', function() {
+                var v = window.FAP_VERSION_UI18N;
+                if (v) summary.textContent = rotuloBase + ' — v' + v;
+            }, { once: true });
+        }
     }
 
     try {
