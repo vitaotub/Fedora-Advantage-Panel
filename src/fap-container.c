@@ -179,6 +179,7 @@ static gboolean on_permission_request(WebKitWebView *web_view,
                                               g_print("[FAP] 🌐 Navegando para: %s\n", uri);
 
                                               if (g_str_has_prefix(uri, "http://localhost:") ||
+                                                  g_str_has_prefix(uri, "http://127.0.0.1:") ||
                                                   g_str_has_prefix(uri, "file://") ||
                                                   g_str_has_prefix(uri, "about:")) {
                                                   webkit_policy_decision_use(decision);
@@ -210,16 +211,20 @@ static gboolean on_permission_request(WebKitWebView *web_view,
                                                                                                         // CALLBACKS DA JANELA
                                                                                                         // ============================================================
                                                                                                         void on_close(GtkWidget *widget, gpointer user_data) {
+                                                                                                            (void)widget;
+                                                                                                            (void)user_data;
                                                                                                             g_print("[FAP] 📦 Encerrando container...\n");
                                                                                                             gtk_main_quit();
                                                                                                         }
 
                                                                                                         gboolean on_window_delete(GtkWidget *widget, GdkEvent *event, gpointer user_data) {
+                                                                                                            (void)event;
                                                                                                             on_close(widget, user_data);
                                                                                                             return FALSE;
                                                                                                         }
 
                                                                                                         gboolean on_window_key_press(GtkWidget *widget, GdkEventKey *event, gpointer user_data) {
+                                                                                                            (void)widget;
                                                                                                             AppData *data = (AppData*)user_data;
 
                                                                                                             if ((event->state & GDK_CONTROL_MASK) && event->keyval == GDK_KEY_r) {
@@ -242,7 +247,7 @@ static gboolean on_permission_request(WebKitWebView *web_view,
                                                                                                                 }
 
                                                                                                                 if ((event->state & GDK_CONTROL_MASK) && event->keyval == GDK_KEY_q) {
-                                                                                                                    on_close(widget, user_data);
+                                                                                                                    on_close(NULL, user_data);
                                                                                                                     return TRUE;
                                                                                                                 }
 
@@ -333,6 +338,42 @@ static gboolean on_permission_request(WebKitWebView *web_view,
                                                                                                             gtk_widget_set_tooltip_text(quit_btn, "Sair (Ctrl+Q)");
                                                                                                             g_signal_connect(quit_btn, "clicked", G_CALLBACK(on_close), data);
                                                                                                             gtk_header_bar_pack_end(GTK_HEADER_BAR(data->header_bar), quit_btn);
+                                                                                                        }
+
+                                                                                                        // ============================================================
+                                                                                                        // HANDLER DE SINAIS (async-signal-safe)
+                                                                                                        // ============================================================
+                                                                                                        //
+                                                                                                        // Versão anterior fazia:
+                                                                                                        //
+                                                                                                        //   sa.sa_handler = (void(*)(int))gtk_main_quit;
+                                                                                                        //
+                                                                                                        // Isso é UB: `gtk_main_quit` NÃO é async-signal-safe — toca em
+                                                                                                        // mutexes internos do GLib, aloca memória e dispara callbacks que
+                                                                                                        // podem entrar em deadlock se o sinal chegou no meio de uma
+                                                                                                        // operação do GLib (o caso mais comum, aliás).
+                                                                                                        //
+                                                                                                        // O padrão correto é: o handler apenas seta um flag atômico, e a
+                                                                                                        // main loop (via g_idle_add) percebe e chama gtk_main_quit() no
+                                                                                                        // contexto normal do GLib.
+                                                                                                        //
+                                                                                                        // `volatile sig_atomic_t` é o único tipo garantidamente seguro
+                                                                                                        // para comunicação entre handler e código normal.
+
+                                                                                                        static volatile sig_atomic_t _sinal_recebido = 0;
+
+                                                                                                        static void _on_signal(int signum) {
+                                                                                                            _sinal_recebido = signum;
+                                                                                                        }
+
+                                                                                                        static gboolean _checar_sinal(gpointer user_data) {
+                                                                                                            (void)user_data;
+                                                                                                            if (_sinal_recebido != 0) {
+                                                                                                                g_print("[FAP] 📦 Sinal %d recebido. Encerrando...\n", (int)_sinal_recebido);
+                                                                                                                gtk_main_quit();
+                                                                                                                return G_SOURCE_REMOVE;
+                                                                                                            }
+                                                                                                            return G_SOURCE_CONTINUE;
                                                                                                         }
 
                                                                                                         // ============================================================
@@ -427,7 +468,20 @@ static gboolean on_permission_request(WebKitWebView *web_view,
 
                                                                                                             set_app_icon(GTK_WINDOW(data.window), icon_path);
 
+                                                                                                            // ============================================================
+                                                                                                            // NULL CHECKS
+                                                                                                            // ============================================================
+                                                                                                            //
+                                                                                                            // `webkit_settings_new()` retorna NULL apenas se o backend
+                                                                                                            // WebKitGTK estiver completamente quebrado (build sem
+                                                                                                            // implementação, biblioteca incompatível). Na prática não
+                                                                                                            // acontece, mas o check evita um segfault obscuro no
+                                                                                                            // `webkit_settings_set_*` logo abaixo se acontecer.
                                                                                                             WebKitSettings *settings = webkit_settings_new();
+                                                                                                            if (!settings) {
+                                                                                                                g_printerr("[FAP] ❌ Falha ao criar WebKitSettings. Abortando.\n");
+                                                                                                                return 1;
+                                                                                                            }
 
                                                                                                             webkit_settings_set_enable_developer_extras(settings, debug_mode);
                                                                                                             webkit_settings_set_enable_javascript(settings, TRUE);
@@ -442,6 +496,15 @@ static gboolean on_permission_request(WebKitWebView *web_view,
 
                                                                                                             data.webview = webkit_web_view_new_with_settings(settings);
                                                                                                             g_object_unref(settings);
+
+                                                                                                            // `webkit_web_view_new_with_settings` retorna NULL se o contexto
+                                                                                                            // WebKit não puder ser criado (disco cheio, /tmp sem permissão,
+                                                                                                            // sandbox bloqueando). Sem o check, os `g_signal_connect` abaixo
+                                                                                                            // passariam NULL e o GTK abortaria com "invalid cast".
+                                                                                                            if (!data.webview) {
+                                                                                                                g_printerr("[FAP] ❌ Falha ao criar WebKitWebView. Verifique /tmp e o sandbox.\n");
+                                                                                                                return 1;
+                                                                                                            }
 
                                                                                                             g_signal_connect(data.webview, "load-changed",
                                                                                                                              G_CALLBACK(on_webview_load_changed), &data);
@@ -483,12 +546,25 @@ static gboolean on_permission_request(WebKitWebView *web_view,
 
                                                                                                             gtk_widget_show_all(data.window);
 
+                                                                                                            // ============================================================
+                                                                                                            // SINAIS — HANDLER ASYNC-SIGNAL-SAFE
+                                                                                                            // ============================================================
+                                                                                                            //
+                                                                                                            // O handler APENAS seta um flag atômico. O `g_timeout_add`
+                                                                                                            // abaixo checa esse flag a cada 100ms (na main loop, contexto
+                                                                                                            // GLib normal) e dispara `gtk_main_quit` com segurança.
+                                                                                                            //
+                                                                                                            // Antes, `sa.sa_handler = gtk_main_quit` era UB: o GLib toca
+                                                                                                            // mutexes internos dentro do handler, e se o sinal chegasse
+                                                                                                            // no meio de uma operação do próprio GLib, podia dar deadlock.
                                                                                                             struct sigaction sa;
-                                                                                                            sa.sa_handler = (void(*)(int))gtk_main_quit;
+                                                                                                            sa.sa_handler = _on_signal;
                                                                                                             sigemptyset(&sa.sa_mask);
                                                                                                             sa.sa_flags = 0;
                                                                                                             sigaction(SIGINT, &sa, NULL);
                                                                                                             sigaction(SIGTERM, &sa, NULL);
+
+                                                                                                            g_timeout_add(100, _checar_sinal, NULL);
 
                                                                                                             g_print("============================================================\n");
                                                                                                             g_print(" 🐧 Fedora Advantage Panel - Container WebKitGTK %s\n", FAP_VERSION);
