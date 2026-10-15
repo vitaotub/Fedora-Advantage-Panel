@@ -2,7 +2,7 @@
 
 **🌐 Idioma:** Português (BR) | [English](README.en.md) | [Español](README.es.md)
 
-![Versão](https://img.shields.io/badge/Vers%C3%A3o-v1.0.0--10152026-orange?style=flat-square)
+![Versão](https://img.shields.io/badge/Vers%C3%A3o-v1.0.0--10152026.b-orange?style=flat-square)
 ![Fedora](https://img.shields.io/badge/Fedora-44+-294172?style=flat-square&logo=fedora)
 ![Licença](https://img.shields.io/badge/Licen%C3%A7a-GPL--3.0-green?style=flat-square)
 ![Idiomas](https://img.shields.io/badge/Idiomas-PT--BR%20%7C%20EN%20%7C%20ES-3c67e3?style=flat-square)
@@ -83,6 +83,7 @@ O Fedora Advantage Panel (FAP) é um painel de automação visual para o Fedora 
 
 - **`pkexec` universal** — diálogo de senha integrado em todos os desktops (KDE usa `polkit-kde-agent`, GNOME usa `polkit-gnome`, etc.), sem precisar digitar senha no terminal
 - **Comandos read-only em whitelist** — `rpm -q`, `uname -r`, `gtk-launch`, `flatpak`, `systemctl --user` e afins rodam sem pedir senha
+- **Update e uninstall do FAP rodam como usuário**, com `SUDO_ASKPASS` (zenity/kdialog) para os passos privilegiados internos — evita que arquivos fiquem com owner root
 - **Bloqueio de injeção de shell** — comandos com `;`, `&&`, `|`, `$(...)` ou `&` são rejeitados pela whitelist e exigem autenticação
 
 ### Ciclo de vida
@@ -90,6 +91,7 @@ O Fedora Advantage Panel (FAP) é um painel de automação visual para o Fedora 
 - **Fechamento limpo** — ao fechar a janela do FAP, o servidor Node.js é encerrado e a porta 3000 é liberada automaticamente. Não sobra nada na memória.
 - **Árvore de processos protegida** — se um comando `dnf` está rodando quando o FAP é fechado, a árvore inteira de processos é morta via PGID, evitando locks órfãos no `rpm`
 - **Log persistente** — cada sessão escreve um arquivo `/tmp/fap-YYYYMMDD-HHMMSS.log`, com limpeza automática de logs com mais de 7 dias
+- **`install.sh` recusa execução como root** — instala em `$HOME` do usuário, com `sudo` interno apenas para os passos que precisam
 
 ### Suíte ArtCraft
 
@@ -112,7 +114,7 @@ Alternativas open-source (desenvolvidas em Rust) aos produtos Adobe e Microsoft 
 ### Detecção automática de hardware
 
 - **Escaner de hardware** via `lspci` / `lsusb`, cruzado com um mapa de vendors mantido pela comunidade
-- **Detecção de NVIDIA** com heurística para sugerir a série correta de driver (`akmod-nvidia`, `580xx`, `470xx` ou `390xx`)
+- **Detecção de NVIDIA** com heurística para sugerir a série correta de driver (`akmod-nvidia`, `580xx`, `470xx` ou `390xx`), com tratamento especial para a GTX 745 (que é Maxwell, não Kepler)
 - **Verificação de RPM Fusion** — avisa se o repositório não está ativo antes de tentar instalar drivers que dependem dele
 - **Verificação de Secure Boot** — avisa se está ativo e o driver NVIDIA precisará de assinatura MOK
 

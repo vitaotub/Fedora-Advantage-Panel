@@ -5,6 +5,35 @@
 
 set -e
 
+# ============================================================
+# REFUSE-AS-ROOT
+# ============================================================
+#
+# O FAP instala em $HOME do usuário e usa `sudo` internamente para
+# os passos que precisam de root (dnf install, /etc/default/grub,
+# etc.). Rodar o script inteiro como root faz duas coisas ruins:
+#
+#   1. ~/.local/share do root é usado em vez do ~ do usuário real,
+#      então o FAP é instalado no lugar errado.
+#   2. Os arquivos ficam com owner root, e a PRÓXIMA atualização
+#      (que roda como usuário, via SUDO_ASKPASS) falha por
+#      permissão.
+#
+# O update/uninstall agora roda como usuário por design — o
+# server.js whitelista esses idComandos e usa o askpass do sudo
+# para os passos privilegiados. Portanto, rodar o install.sh
+# inteiro como root é sempre um erro.
+if [ "$(id -u)" -eq 0 ]; then
+    echo "❌ Não rode este script como root (sudo)."
+    echo ""
+    echo "O FAP instala em \$HOME do seu usuário e usa sudo apenas"
+    echo "internamente, para os passos que precisam de privilégio."
+    echo ""
+    echo "Rode sem sudo:"
+    echo "  ./install.sh"
+    exit 1
+fi
+
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
@@ -23,6 +52,36 @@ BIN_DIR="$HOME/.local/bin"
 # toda a instalação antiga antes de instalar o FAP. É uma migração
 # limpa — nenhum dado é preservado (progresso, tema, idioma).
 OLD_INSTALL_DIR="$HOME/.local/share/fedora-only-fans"
+
+# ============================================================
+# LEITURA INTERATIVA SEGURA
+# ============================================================
+#
+# `read -p` bloqueia se o stdin não for um TTY (CI, `bash <(...)`
+# redirecionando entrada, `< /dev/null`). Em vez de travar, essa
+# função responde automaticamente com um default.
+#
+# Uso:
+#   _perguntar "Continuar?" "s"    → retorna 0 se default for "s"
+#   _perguntar "Continuar?" "n"    → retorna 0 se default for "n"
+#
+# Se o stdin for TTY, mostra o prompt real e lê a resposta.
+_perguntar_sim_nao() {
+    local prompt="$1"
+    local default="$2"  # "s" ou "n"
+
+    # stdin não é TTY → usa o default, sem bloquear.
+    if [ ! -t 0 ]; then
+        echo "$prompt (não-interativo, usando padrão: $default)"
+        [ "$default" = "s" ]
+        return $?
+    fi
+
+    local resposta
+    read -p "$prompt (s/N): " -n 1 -r resposta
+    echo
+    [[ $resposta =~ ^[Ss]$ ]]
+}
 
 # ============================================================
 # VERSÃO DO FAP — fonte única: package.json
@@ -388,12 +447,18 @@ _migrar_via_update() {
     echo ""
 
     # Encerra o servidor antigo (node server.js) que ainda está
-    # rodando com o código do FOF. Sem isso, o usuário pode
-    # continuar vendo a UI antiga por trás do container.
-    if pgrep -f "node server.js" > /dev/null 2>&1; then
+    # rodando com o código do FOF. O `pkill` agora é CIRÚRGICO:
+    # casa apenas o server.js dentro do $OLD_INSTALL_DIR ou do
+    # $INSTALL_DIR do FAP — outros projetos Node do usuário não
+    # são tocados.
+    #
+    # Sem esse cuidado, `pkill -f "node server.js"` mataria TODOS
+    # os processos node do usuário que tivessem "server.js" na
+    # linha de comando (projetos próprios, dev servers, etc.).
+    if pgrep -f "node .*/(fedora-only-fans|fedora-advantage-panel)/server\.js" > /dev/null 2>&1; then
         print_info "🔄 Encerrando o servidor antigo em 3 segundos..."
         print_info "   A janela do FOF vai fechar automaticamente."
-        nohup bash -c 'sleep 3 && pkill -f "node server.js" 2>/dev/null' > /dev/null 2>&1 &
+        nohup bash -c 'sleep 3 && pkill -f "node .*/(fedora-only-fans|fedora-advantage-panel)/server\.js" 2>/dev/null' > /dev/null 2>&1 &
     fi
 }
 
@@ -514,9 +579,7 @@ log "Sistema: Fedora $version"
 else
 print_warning "Sistema não identificado como Fedora"
 print_warning "A instalação pode não funcionar corretamente"
-read -p "Continuar mesmo assim? (s/N): " -n 1 -r
-echo
-if [[ ! $REPLY =~ ^[Ss]$ ]]; then
+if ! _perguntar_sim_nao "Continuar mesmo assim?" "n"; then
 print_error "Instalação cancelada"
 exit 1
 fi
@@ -783,9 +846,7 @@ desinstalar() {
 print_header
 print_warning "Desinstalando Fedora Advantage Panel..."
 
-read -p "Tem certeza? (s/N): " -n 1 -r
-echo
-if [[ ! $REPLY =~ ^[Ss]$ ]]; then
+if ! _perguntar_sim_nao "Tem certeza?" "n"; then
 print_info "Desinstalação cancelada"
 exit 0
 fi
@@ -853,13 +914,15 @@ fi
 # ─── 6. Logs temporários ────────────────────────────────────
 # Os arquivos /tmp/fap-out-*.log são criados pelo kdesu/pkexec
 # (que rodam como root) e ficam com owner root. O `rm -f` como
-# usuário comum falha com "Operação não permitida", o que faz o# `set -e` abortar o script inteiro. Solução: tentar como user
+# usuário comum falha com "Operação não permitida", o que faz o
+# `set -e` abortar o script inteiro. Solução: tentar como user
 # primeiro, e escalar para sudo apenas se sobrar algo.
 print_step "Removendo logs temporários..."
 
 # Logs do usuário (sempre removíveis)
 rm -f /tmp/fap-install-*.log 2>/dev/null || true
 rm -f /tmp/fap-waydroid-ui.log 2>/dev/null || true
+rm -f /tmp/fap-askpass-*.sh 2>/dev/null || true
 
 # Logs de comandos autenticados — podem pertencer ao root
 if ls /tmp/fap-out-*.log >/dev/null 2>&1; then
@@ -938,6 +1001,24 @@ fi
 print_step "Atualizando Fedora Advantage Panel..."
 cd "$INSTALL_DIR"
 
+# ============================================================
+# LIMPEZA DO ESQUEMA ANTIGO (FOF) DURANTE UPDATE
+# ============================================================
+#
+# Antes, o `--update` só chamava `migrar_esquema_antigo` no
+# cenário `_migrar_via_update` (quando $INSTALL_DIR/.git NÃO
+# existia). Isso deixava um caso descoberto:
+#
+#   • Usuário tinha FOF + FAP instalados (raro, mas possível
+#     após uma migração parcial que falhou no meio).
+#   • Roda `./install.sh --update`.
+#   • O FAP é atualizado, mas o FOF continua ocupando espaço e
+#     brigando pelo symlink `fof` em ~/.local/bin.
+#
+# Agora rodamos a migração ANTES do git pull em qualquer update.
+# Se não houver FOF, a função é no-op (só faz o scan e retorna).
+migrar_esquema_antigo
+
 # git stash push -m é o substituto moderno do git stash save (que foi
 # deprecado no Git 2.13+, 2017). O -m define a mensagem, preservando o
 # comportamento do save.
@@ -1003,12 +1084,18 @@ print_success "✅ FAP atualizado para a versão mais recente!"
 # Solução: encerrar o servidor antigo automaticamente ao fim do
 # update. O usuário só precisa reabrir o FAP com `fap`, e o novo
 # servidor sobe com a versão nova.
+#
+# O `pkill` é CIRÚRGICO: casa apenas o server.js dentro do
+# $INSTALL_DIR do FAP. Sem isso, `pkill -f "node server.js"`
+# mataria TODOS os processos node do usuário que tivessem
+# "server.js" na linha de comando (projetos próprios, dev
+# servers, etc.).
 
-if pgrep -f "node server.js" > /dev/null 2>&1; then
+if pgrep -f "node .*$INSTALL_DIR/server\.js" > /dev/null 2>&1; then
 print_info "🔄 Encerrando o servidor antigo em 3 segundos..."
 print_info "💡 Reabra o FAP com o comando 'fap' para usar a versão nova."
 
-nohup bash -c 'sleep 3 && pkill -f "node server.js" 2>/dev/null' > /dev/null 2>&1 &
+nohup bash -c "sleep 3 && pkill -f 'node .*$INSTALL_DIR/server\.js' 2>/dev/null" > /dev/null 2>&1 &
 fi
 }
 
@@ -1035,6 +1122,12 @@ Nota sobre desktops:
   pkexec+zenity (instalado automaticamente se faltar).
 - O FAP NÃO fixa atalhos na barra de tarefas. Faça manualmente
   pelo menu do seu desktop (botão direito no ícone do FAP).
+
+Nota sobre execução como root:
+- NÃO rode este script com sudo. O FAP instala em \$HOME do
+  usuário e usa sudo internamente apenas para os passos que
+  precisam de privilégio. Rodar como root quebra as permissões
+  do diretório de instalação.
 
 EOF
 exit 0

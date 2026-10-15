@@ -2,7 +2,7 @@
 
 **🌐 Idioma:** [Português (BR)](README.md) | [English](README.en.md) | Español
 
-![Versión](https://img.shields.io/badge/Versi%C3%B3n-v1.0.0--10152026-orange?style=flat-square)
+![Versión](https://img.shields.io/badge/Versi%C3%B3n-v1.0.0--10152026.b-orange?style=flat-square)
 ![Fedora](https://img.shields.io/badge/Fedora-44+-294172?style=flat-square&logo=fedora)
 ![Licencia](https://img.shields.io/badge/Licencia-GPL--3.0-green?style=flat-square)
 ![Idiomas](https://img.shields.io/badge/Idiomas-PT--BR%20%7C%20EN%20%7C%20ES-3c67e3?style=flat-square)
@@ -83,6 +83,7 @@ Fedora Advantage Panel (FAP) es un panel de automatización visual para Fedora L
 
 - **`pkexec` universal** — diálogo de contraseña integrado en todos los escritorios (KDE usa `polkit-kde-agent`, GNOME usa `polkit-gnome`, etc.), sin necesidad de escribir la contraseña en la terminal
 - **Comandos read-only en whitelist** — `rpm -q`, `uname -r`, `gtk-launch`, `flatpak`, `systemctl --user` y similares se ejecutan sin pedir contraseña
+- **Actualización y desinstalación del FAP corren como usuario**, con `SUDO_ASKPASS` (zenity/kdialog) para los pasos privilegiados internos — evita que los archivos queden con dueño root
 - **Bloqueo de inyección de shell** — comandos con `;`, `&&`, `|`, `$(...)` o `&` son rechazados por la whitelist y requieren autenticación
 
 ### Ciclo de vida
@@ -90,6 +91,7 @@ Fedora Advantage Panel (FAP) es un panel de automatización visual para Fedora L
 - **Cierre limpio** — al cerrar la ventana de FAP, el servidor Node.js se cierra y el puerto 3000 se libera automáticamente. Nada queda en memoria.
 - **Árbol de procesos protegido** — si un comando `dnf` está en ejecución cuando FAP se cierra, todo el árbol de procesos es terminado vía PGID, evitando locks huérfanos en `rpm`
 - **Registro persistente** — cada sesión escribe un archivo `/tmp/fap-YYYYMMDD-HHMMSS.log`, con limpieza automática de registros mayores a 7 días
+- **`install.sh` rechaza ejecución como root** — instala en `$HOME` del usuario, con `sudo` interno solo para los pasos que lo necesitan
 
 ### Suite ArtCraft
 
@@ -112,7 +114,7 @@ Alternativas open-source (escritas en Rust) a los productos Adobe y Microsoft Of
 ### Detección automática de hardware
 
 - **Escáner de hardware** vía `lspci` / `lsusb`, cruzado con un mapa de vendors mantenido por la comunidad
-- **Detección de NVIDIA** con heurística para sugerir la serie correcta de controlador (`akmod-nvidia`, `580xx`, `470xx` o `390xx`)
+- **Detección de NVIDIA** con heurística para sugerir la serie correcta de controlador (`akmod-nvidia`, `580xx`, `470xx` o `390xx`), con tratamiento especial para la GTX 745 (que es Maxwell, no Kepler)
 - **Verificación de RPM Fusion** — avisa si el repositorio no está activo antes de intentar instalar controladores que dependen de él
 - **Verificación de Secure Boot** — avisa si está activo y el controlador NVIDIA necesitará firma MOK
 

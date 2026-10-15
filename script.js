@@ -1,4 +1,4 @@
-    var comando, idRemocao;
+var comando, idRemocao;
 /**
  * Fedora Advantage Panel (FAP) - Script Compartilhado
  *
@@ -154,12 +154,64 @@ async function verificarAtualizacoesForcado() {
     }
 }
 
+// ============================================================
+// COMPARAÇÃO DE VERSÕES
+// ============================================================
+//
+// O FAP versiona no formato `1.0.0-10152026.b` (semver-like com
+// sufixo de data + letra). A comparação lexicográfica de strings
+// funciona POR SORTE quando todos os componentes têm tamanho fixo,
+// mas quebra quando:
+//
+//   • Uma versão futura tem sufixo alfabético maior ('b' vs 'c').
+//   • O sufixo de data cresce em número de dígitos.
+//
+// Solução: parsing semântico. Cada parte da versão é convertida
+// para um número (partes puramente numéricas viram int; partes
+// alfanuméricas viram código ordenável via charCodeAt). A
+// comparação é feita componente a componente, preenchendo com 0
+// quando um lado tem menos partes que o outro.
+
+function _parseVersao(v) {
+    if (!v || v === '?') return null;
+    var cleaned = String(v).replace(/^[vV]/, '').trim();
+    if (!cleaned) return null;
+
+    var partes = cleaned.split(/[.\-]/).filter(function(p) { return p.length > 0; });
+    var resultado = [];
+
+    for (var i = 0; i < partes.length; i++) {
+        var p = partes[i];
+        if (/^\d+$/.test(p)) {
+            resultado.push(parseInt(p, 10));
+        } else {
+            // Sufixo alfanumérico ('b', 'hotfix-2', etc.) — converte
+            // para um número ordenável. O deslocamento por 256 garante
+            // que 'ab' > 'aa', e 'b' (98) > 'a' (97).
+            var num = 0;
+            for (var j = 0; j < p.length; j++) {
+                num = num * 256 + p.charCodeAt(j);
+            }
+            resultado.push(num);
+        }
+    }
+
+    return resultado;
+}
+
 function temAtualizacao(versaoLocal, versaoRemota) {
-    var local = (versaoLocal || '').replace(/^[vV]/, '').trim();
-    var remota = (versaoRemota || '').replace(/^[vV]/, '').trim();
+    var local = _parseVersao(versaoLocal);
+    var remota = _parseVersao(versaoRemota);
     if (!local || !remota) return false;
-    if (local === '?' || remota === '?') return false;
-    return remota > local;
+
+    var max = Math.max(local.length, remota.length);
+    for (var i = 0; i < max; i++) {
+        var a = (i < local.length)  ? local[i]  : 0;
+        var b = (i < remota.length) ? remota[i] : 0;
+        if (b > a) return true;
+        if (b < a) return false;
+    }
+    return false;
 }
 
 // ============================================================
@@ -1253,6 +1305,15 @@ function _separadorLog(logBox, nomeAcao) {
 // ============================================================
 // BLOQUEIO DE SESSÃO DURANTE EXECUÇÃO
 // ============================================================
+//
+// Atributos separados dos usados pelo bloqueio entre sessões:
+//   - `data-sessao-bloqueado` + `data-was-disabled-sessao`
+//   - `data-cross-sessao-bloqueado` + `data-was-disabled-cross`
+//
+// Antes, os dois compartilhavam `data-was-disabled`, o que causava
+// uma race entre `_liberarSessao` e `_liberarOutrasSessoes`: o
+// primeiro consumia o atributo e o segundo lia `disabled=false`,
+// habilitando botões que deveriam continuar desabilitados.
 
 function _bloquearSessao(idComando) {
     var btn = document.getElementById('btn-' + idComando);
@@ -1266,7 +1327,7 @@ function _bloquearSessao(idComando) {
     botoes.forEach(function(b) {
         if (b.id === 'btn-' + idComando) return;
         if (b.hasAttribute('data-sessao-bloqueado')) return;
-        b.setAttribute('data-was-disabled', b.disabled ? '1' : '0');
+        b.setAttribute('data-was-disabled-sessao', b.disabled ? '1' : '0');
         b.setAttribute('data-sessao-bloqueado', '1');
         b.disabled = true;
         b.style.opacity = '0.4';
@@ -1282,9 +1343,9 @@ function _liberarSessao(idComando) {
 
     var botoes = sessaoContainer.querySelectorAll('[data-sessao-bloqueado="1"]');
     botoes.forEach(function(b) {
-        var wasDisabled = b.getAttribute('data-was-disabled') === '1';
+        var wasDisabled = b.getAttribute('data-was-disabled-sessao') === '1';
         b.removeAttribute('data-sessao-bloqueado');
-        b.removeAttribute('data-was-disabled');
+        b.removeAttribute('data-was-disabled-sessao');
         b.disabled = wasDisabled;
         b.style.opacity = '';
         b.style.pointerEvents = '';
@@ -1302,7 +1363,6 @@ function _liberarSessao(idComando) {
 //
 // O bloqueio NÃO afeta:
 // - Botões de flatpak (a fila cuida deles).
-// - Botões "abrir app" (idComando terminando em `-open`).
 // - Botões com `flatpakId` no registro (instalam flatpak).
 // - Botões com `sempreClicavel: true` (read-only ou reexecutáveis).
 //
@@ -1347,11 +1407,21 @@ function _bloquearOutrasSessoes(idComandoDnf) {
         if (!id) return;
         if (!_deveBloquearDuranteDnf(id)) return;
 
-        // Ignora os que já estão marcados (para não sobrescrever o
-        // `data-was-disabled` original).
+        // Ignora os que já estão bloqueados pelo sistema cruzado.
         if (b.hasAttribute('data-cross-sessao-bloqueado')) return;
 
-        b.setAttribute('data-was-disabled', b.disabled ? '1' : '0');
+        // Ignora os que já estão bloqueados pelo sistema DA SESSÃO.
+        // Sem este guard, um botão da sessão atual (não o que está
+        // rodando) seria bloqueado pelos DOIS sistemas: o de sessão
+        // captura `data-was-disabled-sessao='0'` corretamente, mas
+        // este bloco sobrescreve a percepção do estado — capturando
+        // `data-was-disabled-cross='1'` porque o botão JÁ está
+        // desabilitado quando este loop roda. Na liberação, o
+        // `_liberarOutrasSessoes` leria `'1'` e re-desabilitaria o
+        // botão, deixando-o travado até reload.
+        if (b.hasAttribute('data-sessao-bloqueado')) return;
+
+        b.setAttribute('data-was-disabled-cross', b.disabled ? '1' : '0');
         b.setAttribute('data-cross-sessao-bloqueado', '1');
         b.disabled = true;
         b.style.opacity = '0.4';
@@ -1365,9 +1435,9 @@ function _liberarOutrasSessoes() {
 
     var botoes = document.querySelectorAll('[data-cross-sessao-bloqueado="1"]');
     botoes.forEach(function(b) {
-        var wasDisabled = b.getAttribute('data-was-disabled') === '1';
+        var wasDisabled = b.getAttribute('data-was-disabled-cross') === '1';
         b.removeAttribute('data-cross-sessao-bloqueado');
-        b.removeAttribute('data-was-disabled');
+        b.removeAttribute('data-was-disabled-cross');
         b.disabled = wasDisabled;
         b.style.opacity = '';
         b.style.pointerEvents = '';
@@ -1390,9 +1460,15 @@ function _reaplicarBloqueioSeNecessario() {
         var id = b.getAttribute('data-comando');
         if (!id) return;
         if (!_deveBloquearDuranteDnf(id)) return;
-        if (b.hasAttribute('data-cross-sessao-bloqueado')) return;
 
-        b.setAttribute('data-was-disabled', b.disabled ? '1' : '0');
+        // Mesmos guards do `_bloquearOutrasSessoes`. Botões já
+        // bloqueados por qualquer um dos dois sistemas são
+        // ignorados — evita capturar o estado "errado" no
+        // `data-was-disabled-cross`.
+        if (b.hasAttribute('data-cross-sessao-bloqueado')) return;
+        if (b.hasAttribute('data-sessao-bloqueado')) return;
+
+        b.setAttribute('data-was-disabled-cross', b.disabled ? '1' : '0');
         b.setAttribute('data-cross-sessao-bloqueado', '1');
         b.disabled = true;
         b.style.opacity = '0.4';
@@ -1663,29 +1739,48 @@ async function carregarProgressoInicial() {
 // o contador global de sessões concluídas passa a mentir.
 //
 // Chamada em carregarProgressoInicial(), que roda no boot e a cada
-// sessão carregada. Se nada foi limpo, é no-op.
+// sessão carregada. Como é chamada 3x no boot (DOMContentLoaded,
+// sessao-carregada com timeout, todas-sessoes-carregadas), usa um
+// throttle de 5s para evitar fetches redundantes.
+
+var _ultimaLimpezaOrfaos = 0;
+var _limpezaOrfaosRodando = false;
 
 async function _limparIdsOrfaos() {
-    var validos = _construirIdsValidos();
-    var progress = await getProgress();
+    // Throttle: se rodou nos últimos 5s, ignora. O progresso não
+    // muda em rajada durante o boot, então repetir a limpeza é
+    // desnecessário.
+    var agora = Date.now();
+    if (agora - _ultimaLimpezaOrfaos < 5000) return;
+    if (_limpezaOrfaosRodando) return;
 
-    var execAntes = progress.executados.length;
-    var pulAntes = progress.pulados.length;
+    _limpezaOrfaosRodando = true;
+    _ultimaLimpezaOrfaos = agora;
 
-    var execNovos = progress.executados.filter(function(id) { return validos.has(id); });
-    var pulNovos = progress.pulados.filter(function(id) { return validos.has(id); });
+    try {
+        var validos = _construirIdsValidos();
+        var progress = await getProgress();
 
-    if (execNovos.length === execAntes && pulNovos.length === pulAntes) {
-        return; // nada a fazer
+        var execAntes = progress.executados.length;
+        var pulAntes = progress.pulados.length;
+
+        var execNovos = progress.executados.filter(function(id) { return validos.has(id); });
+        var pulNovos = progress.pulados.filter(function(id) { return validos.has(id); });
+
+        if (execNovos.length === execAntes && pulNovos.length === pulAntes) {
+            return; // nada a fazer
+        }
+
+        progress.executados = execNovos;
+        progress.pulados = pulNovos;
+        await saveProgress(progress);
+
+        console.log('🧹 IDs órfãos removidos: ' +
+        (execAntes - execNovos.length) + ' executados, ' +
+        (pulAntes - pulNovos.length) + ' pulados');
+    } finally {
+        _limpezaOrfaosRodando = false;
     }
-
-    progress.executados = execNovos;
-    progress.pulados = pulNovos;
-    await saveProgress(progress);
-
-    console.log('🧹 IDs órfãos removidos: ' +
-    (execAntes - execNovos.length) + ' executados, ' +
-    (pulAntes - pulNovos.length) + ' pulados');
 }
 
 // Usa progressCache quando já populado (evita JSON.parse a cada
@@ -2084,7 +2179,7 @@ function completarProgresso(idComando, sucesso) {
         // comando rodando da sessão atual, libera os chips e os
         // botões Anterior/Próximo.
         _atualizarBloqueioNavegacao();
-        };
+    };
 
     if (sucesso && !SEMPRE_CLICAVEIS.includes(idComando)) {
         marcarComoExecutado(idComando).then(aplicarUI, aplicarUI);
@@ -2853,22 +2948,6 @@ async function desinstalarPacote(idComando, comandoRemover, nomeExibicao) {
 // ABRIR FERRAMENTA EXTERNA
 // ============================================================
 //
-// Todos os botões "Abrir X" usam `setsid -f` para que o app ganhe
-// uma SESSÃO PRÓPRIA, desacoplada do FAP. Sem isso, o app morre
-// quando o FAP é fechado — porque o processo compartilha o mesmo
-// PGID do bash spawnado pelo server.js (que tem `detached: true`).
-//
-// Com `setsid -f`, o comportamento é idêntico a clicar no atalho
-// do menu do Fedora: o app sobrevive ao fechamento do FAP.
-//
-// Os redirecionamentos `> /dev/null 2>&1 < /dev/null` desacoplam
-// stdin/stdout/stderr do terminal do FAP — sem isso, o Node ficaria
-// preso ao buffer do app e o bash só sairia quando o app fechasse.
-
-// ============================================================
-// ABRIR FERRAMENTA EXTERNA
-// ============================================================
-//
 // Ponto ÚNICO de abertura de apps GUI no FAP. Todas as sessões
 // devem chamar esta função em vez de montar o comando sozinhas —
 // assim garantimos três invariantes em um só lugar:
@@ -2886,10 +2965,14 @@ async function desinstalarPacote(idComando, comandoRemover, nomeExibicao) {
 //      o `setsid -f` e pode confundir o bash. O helper rejeita
 //      qualquer `&` final antes de adicionar o `setsid`.
 //
-// A chamada também escreve uma linha no log da sessão. Essa linha
-// é puramente informativa — o SSE para o id `<id>-open` NÃO é
+// O idComando enviado ao backend termina em `-open` (ex.:
+// `steam-install-open`). Esses ids NÃO são gravados no
+// .progresso.json — o server.js ignora explicitamente ids com
+// esse sufixo (ver `salvarProgresso`). A linha no log da sessão
+// é puramente informativa; o SSE para o id `<id>-open` NÃO é
 // aberto porque o servidor já mata o processo pai do app (o
-// `setsid -f` cria a sessão nova e o `-open` termina na hora).
+// `setsid -f` cria a sessão nova e o comando `-open` termina na
+// hora).
 
 function abrirFerramentaExterna(comando, idLog, nomeExibicao) {
     var cmdFinal = (comando || '').trim();
@@ -3240,25 +3323,23 @@ function _esconderLixeira(idInstall) {
  * botão registrado via `registrarAppRemovivel`. Cobre os três
  * tipos (`flatpak`, `dnf`, `arquivos`) e o modo `desfazerTudo`.
  *
- * Se o app não estiver registrado, cai no fluxo genérico (idRemover
- * derivado). Isso permite que a lixeira funcione mesmo em apps
- * ainda não migrados para `registrarAppRemovivel`.
+ * Se o app não estiver registrado, `_executarRemocaoApp` retorna
+ * silenciosamente — o app não pode ser removido pela lixeira.
  */
 function _executarRemocaoPeloWrapper(idInstall) {
     var info = APPS_REMOVIVEIS[idInstall];
-
-    if (info) {
-        if (info.modo === 'desfazerTudo') {
-            _executarDesfazerTudo(idInstall);
-        } else {
-            _executarRemocaoApp(idInstall);
-        }
+    if (!info) {
+        // Botão sem registro — a lixeira não deveria ter aparecido,
+        // mas se apareceu, o clique é ignorado com um log.
+        console.warn('[remove-icon] App não registrado:', idInstall);
         return;
     }
 
-    // Fallback: sem registro, derivar idRemover e chamar o fluxo
-    // antigo. Isso mantém a compatibilidade com apps ainda não
-    // migrados para o novo padrão.
+    if (info.modo === 'desfazerTudo') {
+        _executarDesfazerTudo(idInstall);
+        return;
+    }
+
     _executarRemocaoApp(idInstall);
 }
 
@@ -3493,7 +3574,6 @@ async function _executarDesfazerTudo(idInstall) {
                                   async function() {
                                       await desmarcarComoExecutado(idInstall);
                                       aplicarEstadoToggle(idInstall, idDesfazer);
-
                                       esconderBotoesAbrirDe(idInstall);
                                   });
 }

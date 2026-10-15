@@ -26,7 +26,11 @@ LAUNCHERS
 
 <div class="bloco-comando">
 <div class="comando-info">
-<h3 data-i18n="sessoes.gaming.launchers_titulo">🎮 Launchers</h3>
+<!-- NOTA: o <h3> interno NÃO tem data-i18n próprio. O <summary>
+     do <details> pai já carrega essa chave; aplicar de novo no <h3>
+     faria o mesmo texto ser traduzido duas vezes (sem efeito
+     visual, mas redundante). O texto visível vem do <summary>. -->
+<h3>🎮 Launchers</h3>
 <p data-i18n="sessoes.gaming.launchers_desc">Instale os principais launchers de jogos para o Fedora.</p>
 <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.25rem;" data-i18n="sessoes.gaming.launchers_info">
 ℹ️ O Steam é instalado nativamente via RPM Fusion (necessário para a sessão Gamescope). Heroic é instalado via RPM oficial do projeto. Lutris via Flatpak.
@@ -96,7 +100,8 @@ COMPATIBILIDADE
 
 <div class="bloco-comando">
 <div class="comando-info">
-<h3 data-i18n="sessoes.gaming.compat_titulo">🍷 Compatibilidade (Wine/Proton)</h3>
+<!-- NOTA: <h3> sem data-i18n próprio. Texto vem do <summary>. -->
+<h3>🍷 Compatibilidade (Wine/Proton)</h3>
 <p data-i18n="sessoes.gaming.compat_desc">Ferramentas pra rodar jogos e programas do Windows fora da Steam, e recursos que ajudam na compatibilidade.</p>
 
 <div class="grid-launchers">
@@ -200,7 +205,8 @@ DESEMPENHO E MONITORAMENTO
 
 <div class="bloco-comando">
 <div class="comando-info">
-<h3 data-i18n="sessoes.gaming.performance_titulo">⚡ Desempenho e Monitoramento</h3>
+<!-- NOTA: <h3> sem data-i18n próprio. Texto vem do <summary>. -->
+<h3>⚡ Desempenho e Monitoramento</h3>
 <p data-i18n="sessoes.gaming.performance_desc">Ferramentas que otimizam o desempenho durante o jogo e permitem monitorar FPS, uso de CPU/GPU e outras métricas.</p>
 
 <div class="grid-launchers">
@@ -585,7 +591,8 @@ DICAS E TRUQUES
 
 <div class="bloco-comando">
 <div class="comando-info">
-<h3 data-i18n="sessoes.gaming.dicas_titulo">💡 Dicas e Truques</h3>
+<!-- NOTA: <h3> sem data-i18n próprio. Texto vem do <summary>. -->
+<h3>💡 Dicas e Truques</h3>
 <p data-i18n="sessoes.gaming.dicas_desc">Configurações recomendadas para tirar o máximo dos jogos no Fedora.</p>
 
 <div class="aviso-caixa" data-i18n-html="sessoes.gaming.dicas_aviso_steam">

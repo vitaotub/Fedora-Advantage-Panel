@@ -34,30 +34,45 @@ endif
 # necessária para o Make passar as aspas literais ao gcc.
 CPPFLAGS += -DFAP_VERSION='"$(FAP_VERSION)"'
 
-# Detecção de WebKitGTK 4.1 (base GTK3). Este é o único pacote
-# válido em qualquer Fedora suportado por este projeto (40+).
-# O pacote 4.0 (API antiga, webkit2gtk2.0) foi removido da
-# distribuição e não é mais uma opção — o build-container.sh
-# segue a mesma decisão, para manter os dois caminhos de build
-# consistentes.
-WEBKIT_PKG := $(shell pkg-config --exists webkit2gtk-4.1 && echo webkit2gtk-4.1)
-
-ifeq ($(WEBKIT_PKG),)
-$(error WebKitGTK 4.1 não encontrado. Instale: sudo dnf install webkit2gtk4.1-devel gtk3-devel)
-endif
-
-PKG_CFLAGS := $(shell pkg-config --cflags $(WEBKIT_PKG) gtk+-3.0)
-PKG_LIBS := $(shell pkg-config --libs $(WEBKIT_PKG) gtk+-3.0)
+# ============================================================
+# DETECÇÃO DE WEBKITGTK — SOB DEMANDA
+# ============================================================
+#
+# Antes, a checagem do WebKitGTK rodava no topo do Makefile via
+# `$(error ...)`. Isso fazia QUALQUER alvo (`clean`, `version`,
+# `check`, `help`) falhar sem WebKitGTK instalado — inclusive os
+# que não precisam dele.
+#
+# Agora a checagem roda SÓ quando o alvo `$(TARGET)` é construído,
+# dentro da receita do próprio alvo. Os demais alvos funcionam
+# sem WebKitGTK.
+#
+# Detecção: preferimos `webkit2gtk-4.1` (base GTK3, pacote atual).
+# O 4.0 foi removido dos Fedora suportados e não é opção.
+WEBKIT_PKG := $(shell pkg-config --exists webkit2gtk-4.1 2>/dev/null && echo webkit2gtk-4.1)
 
 TARGET = fap-container
 SRC = src/fap-container.c
 
-.PHONY: all clean install uninstall run version check check-basico
+.PHONY: all clean install uninstall run version check check-basico help
 
 all: $(TARGET)
 
 $(TARGET): $(SRC)
-	$(CC) $(CFLAGS) $(CPPFLAGS) $(PKG_CFLAGS) -o $(TARGET) $(SRC) $(PKG_LIBS) $(LDFLAGS)
+	@if [ -z "$(WEBKIT_PKG)" ]; then \
+		echo "❌ WebKitGTK 4.1 não encontrado."; \
+		echo ""; \
+		echo "Instale com:"; \
+		echo "  sudo dnf install webkit2gtk4.1-devel gtk3-devel"; \
+		echo ""; \
+		echo "Se você instalou webkitgtk6.0-devel (base GTK4), ele NÃO serve:"; \
+		echo "este programa é escrito para GTK3 e precisa do webkit2gtk4.1."; \
+		exit 1; \
+	fi
+	$(CC) $(CFLAGS) $(CPPFLAGS) \
+		$(shell pkg-config --cflags $(WEBKIT_PKG) gtk+-3.0) \
+		-o $(TARGET) $(SRC) \
+		$(shell pkg-config --libs $(WEBKIT_PKG) gtk+-3.0) $(LDFLAGS)
 
 clean:
 	rm -f $(TARGET)
@@ -111,3 +126,14 @@ check-basico:
 	"
 	@echo ""
 	@echo "✅ Todos os checks básicos passaram."
+
+# Ajuda rápida. Não depende de WebKitGTK.
+help:
+	@echo "Alvos disponíveis:"
+	@echo "  all / fap-container   Compila o container (requer WebKitGTK 4.1)"
+	@echo "  clean                 Remove o binário"
+	@echo "  install / uninstall   Instala/remove em \$$PREFIX"
+	@echo "  run                   Roda o container apontando para localhost:3000"
+	@echo "  version               Mostra a versão (lida do package.json)"
+	@echo "  check / check-basico  Validação de sintaxe + consistência"
+	@echo "  help                  Mostra esta ajuda"

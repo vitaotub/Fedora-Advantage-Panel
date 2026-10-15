@@ -890,10 +890,14 @@ function _criarBotoesAbrir() {
 // ============================================================
 // COMANDOS DE ABERTURA POR TIPO
 // ============================================================
+//
+// NOTA: removidas as entradas `instalar-onlyoffice` e
+// `instalar-rustdesk` — elas pertenciam a uma versão anterior em
+// que esses apps vinham de DNF. Hoje vivem em APPS_URL_RPM e o
+// dispatcher `abrirAppGenerico` os trata ANTES de chegar ao mapa
+// DNF. Mantê-las aqui era código morto (nunca alcançado).
 
 var _CMD_ABRIR_DNF = {
-    'instalar-onlyoffice':  'desktopeditors',
-    'instalar-rustdesk':    'rustdesk',
     'instalar-thunderbird': 'gtk-launch thunderbird',
     'instalar-okular':      'okular',
     'instalar-foliate':     'gtk-launch com.github.johnfactotum.Foliate',

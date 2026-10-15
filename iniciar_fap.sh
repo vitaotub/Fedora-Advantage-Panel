@@ -769,8 +769,17 @@ iniciar_servidor() {
 
     log_info "Aguardando servidor iniciar..."
 
+    # ============================================================
+    # HEALTHCHECK EM 127.0.0.1 (NÃO `localhost`)
+    # ============================================================
+    #
+    # O server.js escuta apenas em IPv4 (127.0.0.1). Em alguns
+    # sistemas, `localhost` resolve primeiro para `::1` (IPv6),
+    # e o curl ficaria esperando o timeout IPv6 antes de tentar
+    # IPv4 — desperdiçando ~1s por tentativa. Usar `127.0.0.1`
+    # elimina a ambiguidade.
     while [ $tentativas -lt $max_tentativas ]; do
-        if curl -s --max-time 1 http://localhost:3000/status > /dev/null 2>&1; then
+        if curl -s --max-time 1 http://127.0.0.1:3000/status > /dev/null 2>&1; then
             log_success "Servidor iniciado (PID: $server_pid)"
             log_info "🌐 http://localhost:3000"
             return 0

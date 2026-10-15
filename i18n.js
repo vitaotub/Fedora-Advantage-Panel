@@ -84,9 +84,15 @@
     //
     // `window.FAP_VERSION_UI18N` é populado por carregarVersaoServidor()
     // do script.js, que roda DEPOIS do i18n.js na primeira carga. Por
-    // isso não podemos depender dele para o cache-buster. Usamos como
-    // fallback um timestamp atual — que sempre dribla o cache HTTP,
-    // ao custo de uma requisição a mais na primeira carga.
+    // isso não podemos depender dele para o cache-buster na primeira
+    // chamada — usamos um timestamp como fallback. Isso sempre dribla
+    // o cache HTTP, ao custo de uma requisição a mais.
+    //
+    // IMPORTANTE: quando a versão AINDA NÃO está disponível
+    // (primeira carga), NÃO gravamos o resultado no localStorage.
+    // A chave do cache incluiria `_unknown`, e o `_limparCachesAntigos`
+    // (chamado quando `fap-versao-pronta` chega) descartaria logo em
+    // seguida. Isso economiza uma gravação inútil.
     function _versaoParaCacheBuster() {
         var v = window.FAP_VERSION_UI18N;
         if (v && typeof v === 'string' && v.length > 0) {
@@ -139,6 +145,10 @@
     }
 
     function salvarNoCache(lang, dados) {
+        // Não grava se a versão ainda é desconhecida — a chave seria
+        // `..._unknown` e seria descartada em seguida pelo
+        // `_limparCachesAntigos`. Gravar e apagar é I/O inútil.
+        if (!window.FAP_VERSION_UI18N) return;
         try {
             localStorage.setItem(_chaveCache(lang), JSON.stringify(dados));
         } catch (e) { /* quota cheia ou localStorage desabilitado */ }

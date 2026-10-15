@@ -213,6 +213,26 @@ async function carregarSessao(index) {
             });
         }
 
+        // ============================================================
+        // GUARD DE GERAÇÃO ANTES DE RESTAURAR ESTADO
+        // ============================================================
+        //
+        // Entre o `container.innerHTML = conteudoSemScripts` e este
+        // ponto, rodamos o `eval` dos `<script>` inline da sessão.
+        // Esse eval pode ter chamado `setTimeout`/`await` internos
+        // e, se outra sessão começou a carregar NESSE MEIO, nosso
+        // DOM já foi substituído.
+        //
+        // Sem este guard, `restaurarEstadoSessao` (e as chamadas
+        // seguintes: `inicializarLogsDaSessao`, `numerarSessao`,
+        // `I18N.aplicarTraducoes`) rodariam sobre o DOM da sessão
+        // NOVA, corrompendo-a.
+        //
+        // A checagem já existe antes do `container.innerHTML`, mas
+        // o `await fetch` pode resolver depois de uma segunda
+        // `carregarSessao()` — daí a redundância estratégica aqui.
+        if (minhaGeracao !== _geracaoCarregamento) return;
+
         if (typeof restaurarEstadoSessao === 'function') {
             try {
                 restaurarEstadoSessao();
@@ -240,7 +260,7 @@ async function carregarSessao(index) {
         document.dispatchEvent(event);
         console.log('✅ Sessão carregada: ' + nomeSessao);
 
-        } catch (e) {
+    } catch (e) {
         // Se fomos cancelados por uma geração mais nova, não sobrescreve
         // o conteúdo que a chamada nova está montando.
         if (minhaGeracao !== _geracaoCarregamento) return;

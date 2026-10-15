@@ -643,6 +643,32 @@ async function executarWaydroidUninstall() {
                         btn.style.cursor = 'pointer';
                         btn.disabled = false;
                         btn.style.opacity = '1';
+
+                        // ============================================================
+                        // LIMPEZA DO ATRIBUTO data-estado
+                        // ============================================================
+                        //
+                        // `aplicarEstadoInstalavel` (script.js) marca
+                        // os botões com `data-estado="instalado-sem-abrir"`
+                        // ou `data-estado="instalado-abrir"` quando o
+                        // app está instalado. O CSS tem regras com
+                        // `!important` para esses atributos:
+                        //
+                        //   [data-estado="instalado-sem-abrir"] {
+                        //     background-color: #4b5563 !important;
+                        //   }
+                        //
+                        // Sem remover o atributo, o `!important` vence
+                        // o `btn.style.backgroundColor = ''` inline
+                        // acima, e o botão CONTINUA cinza mesmo depois
+                        // do reset. Texto e cursor voltam, mas a cor
+                        // fica errada.
+                        //
+                        // Remover o atributo permite que o inline
+                        // (vazio, no caso) prevaleça e o botão volte
+                        // à cor original definida pela classe
+                        // `.btn-executar`.
+                        btn.removeAttribute('data-estado');
                     }
                 } catch (e) {
                     console.warn('[waydroid-uninstall] Erro ao limpar', idsWaydroid[i], ':', e);
@@ -731,7 +757,7 @@ var comando = 'sudo dnf copr enable cuteneko/waydroid-helper -y && sudo dnf inst
 await executarComandoGenerico(idComando, comando,
 _t('sessoes.waydroid.btn_helper_install', '📦 Instalar waydroid-helper'),
 function() {
-atualizarBotaoAbrirWaydroidHelper();
+aplicarEstadoInstalavel('waydroid-helper-install', 'waydroid-helper-open');
 });
 }
 

@@ -66,11 +66,28 @@ async function _pacoteInstalado(pkg) {
     return true;
 }
 
-async function _repositorioAtivo(repo) {
-    if (!repo) return false;
+// ============================================================
+// ESTADO DOS REPOSITÓRIOS
+// ============================================================
+//
+// Antes, cada chamada a `_repositorioAtivo('rpmfusion-free')` e
+// `_repositorioAtivo('rpmfusion-nonfree')` disparava um
+// `dnf repolist` independente — dois processos `dnf` (cada um
+// ~500ms-1s de startup) só para checar dois prefixos.
+//
+// Agora, `_repositoriosAtivos()` roda o `dnf repolist` UMA vez,
+// guarda o output bruto e deixa o chamador fazer `includes()`
+// sobre ele quantas vezes quiser.
+
+async function _repositoriosAtivos() {
     var r = await _exec('dnf repolist 2>/dev/null');
-    if (!r.ok) return false;
-    return r.stdout.includes(repo);
+    if (!r.ok) return '';
+    return r.stdout;
+}
+
+async function _repositorioAtivoEm(repo, outputRepolist) {
+    if (!repo || !outputRepolist) return false;
+    return outputRepolist.includes(repo);
 }
 
 async function _driverKernelEmUso(pciAddress) {
@@ -140,9 +157,11 @@ async function scanHardware() {
     var mapa = _lerMapa();
     var devices = [];
 
-    // Estado dos repositórios (para o frontend mostrar banner de RPM Fusion)
-    var rpmfusionFree = await _repositorioAtivo('rpmfusion-free');
-    var rpmfusionNonfree = await _repositorioAtivo('rpmfusion-nonfree');
+    // Estado dos repositórios — UMA chamada a `dnf repolist` para
+    // checar todos os prefixos (antes eram duas chamadas).
+    var repolistOutput = await _repositoriosAtivos();
+    var rpmfusionFree = await _repositorioAtivoEm('rpmfusion-free', repolistOutput);
+    var rpmfusionNonfree = await _repositorioAtivoEm('rpmfusion-nonfree', repolistOutput);
     var secureBoot = await _checkSecureBoot();
 
     // ---------- PCI ----------

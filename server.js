@@ -138,6 +138,96 @@ const COMANDOS_SEM_AUTENTICACAO = [
 ];
 
 // ============================================================
+// WHITELIST POR idComando — atualização/desinstalação do FAP
+// ============================================================
+//
+// O comando de atualização (`bash <(curl ...) --update`) contém
+// process substitution (`<(`), que é bloqueado por
+// `_CARACTERES_ENCADEAMENTO` — então ele nunca passaria pela
+// whitelist de prefixo.
+//
+// Por outro lado, rodar esse comando via pkexec é um problema
+// real: o `install.sh --update` faz `git pull` e `npm install`
+// em `~/.local/share/fedora-advantage-panel`. Rodando como root,
+// esses arquivos passam a pertencer ao root — e a PRÓXIMA
+// atualização (rodando como usuário) falha por permissão.
+//
+// A solução correta é rodar o update/desinstalação como USUÁRIO,
+// e resolver as operações privilegiadas via `SUDO_ASKPASS` (o
+// sudo do Fedora usa automaticamente o askpass quando não há
+// TTY e a variável está setada). Isso é feito em
+// `_criarAskpassHelper()` + `executarComandoComStream`.
+//
+// Por segurança, não liberamos QUALQUER comando com estes
+// idComandos: casamos o comando contra um regex ESTRITO. Um
+// cliente malicioso não pode reusar o id `atualizar-fap` para
+// rodar `rm -rf ~`.
+const IDS_SEM_AUTENTICACAO = new Set(['atualizar-fap', 'desinstalar-fap']);
+
+const PADROES_UPDATE_WHITELIST = [
+    /^bash <\(curl -s https:\/\/raw\.githubusercontent\.com\/vitaotub\/Fedora-Advantage-Panel\/main\/install\.sh\) --update$/,
+    /^echo "s" \| bash <\(curl -s https:\/\/raw\.githubusercontent\.com\/vitaotub\/Fedora-Advantage-Panel\/main\/install\.sh\) --uninstall$/
+];
+
+function _idSemAuthValido(idComando, comando) {
+    if (!IDS_SEM_AUTENTICACAO.has(idComando)) return false;
+    var trimmed = (comando || '').trim();
+    for (var i = 0; i < PADROES_UPDATE_WHITELIST.length; i++) {
+        if (PADROES_UPDATE_WHITELIST[i].test(trimmed)) return true;
+    }
+    return false;
+}
+
+// ============================================================
+// SUDO_ASKPASS — helper gráfico para sudo sem TTY
+// ============================================================
+//
+// Quando o update/desinstalação do FAP roda como usuário (que é o
+// comportamento correto), o `install.sh` faz várias chamadas a
+// `sudo` internamente. Como o processo não tem TTY (é filho do
+// node), o sudo padrão falharia esperando senha.
+//
+// O sudo do Fedora (>= 1.8.x) usa SUDO_ASKPASS automaticamente
+// quando: (a) não há TTY disponível, OU (b) a flag -A foi passada.
+// Só precisamos apontar SUDO_ASKPASS para um helper que devolva a
+// senha na stdout.
+//
+// Criamos o helper uma única vez (idempotente) em /tmp, com
+// prefixo `fap-`, para que a limpeza de logs antigos o encontre.
+
+let _askpassHelperPath = null;
+
+function _criarAskpassHelper() {
+    if (_askpassHelperPath && fs.existsSync(_askpassHelperPath)) {
+        return _askpassHelperPath;
+    }
+
+    const helperPath = path.join('/tmp', 'fap-askpass-' + process.pid + '.sh');
+    const conteudo = [
+        '#!/bin/bash',
+        '# Fedora Advantage Panel — askpass helper (auto-gerado)',
+        '# Usado pelo sudo quando o FAP roda sem TTY.',
+        'if command -v zenity >/dev/null 2>&1; then',
+        '  exec zenity --password --title="Fedora Advantage Panel" 2>/dev/null',
+        'elif command -v kdialog >/dev/null 2>&1; then',
+        '  exec kdialog --password "Senha de administrador (Fedora Advantage Panel)" 2>/dev/null',
+        'else',
+        '  echo "❌ Nenhum helper gráfico disponível (zenity/kdialog)." >&2',
+        '  exit 1',
+        'fi'
+    ].join('\n');
+
+    try {
+        fs.writeFileSync(helperPath, conteudo, { mode: 0o755 });
+        _askpassHelperPath = helperPath;
+        return helperPath;
+    } catch (e) {
+        console.warn('[askpass] Falha ao criar helper:', e.message);
+        return null;
+    }
+}
+
+// ============================================================
 // COMANDOS QUE RODAM NO CONTEXTO DO USUÁRIO
 // ============================================================
 //
@@ -375,11 +465,22 @@ function _inlineMd(s) {
     //
     // Sem isso, um CHANGELOG.md com `<script>alert(1)</script>`
     // injetaria HTML/JS arbitrário no FAP via /changelog.
+    //
+    // Links com esquemas perigosos (javascript:, data:, vbscript:,
+    // file:) são rebaixados para texto puro. O CHANGELOG é editado
+    // pelo próprio projeto, mas se um dia aceitar PRs externos,
+    // isso evita que um link malicioso vire um vetor de XSS.
     var escaped = _escapeHTML(s);
     return escaped
     .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
     .replace(/`([^`]+)`/g, '<code>$1</code>')
-    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, function(match, texto, href) {
+        var hrefTrim = String(href).trim();
+        if (/^(?:javascript|data|vbscript|file|blob):/i.test(hrefTrim)) {
+            return texto;
+        }
+        return '<a href="' + hrefTrim + '" target="_blank" rel="noopener noreferrer">' + texto + '</a>';
+    });
 }
 
 function _markdownParaHTML(md) {
@@ -501,6 +602,14 @@ function escreverProgresso(progresso) {
 }
 
 function salvarProgresso(idComando) {
+    // Ids terminados em `-open` são comandos de abertura de app
+    // (gerados por `abrirFerramentaExterna`). São transientes: não
+    // representam um estado persistente, só o ato de abrir um app
+    // nesta sessão. Gravá-los polui o .progresso.json com entradas
+    // que o `_limparIdsOrfaos` (frontend) sempre remove no próximo
+    // boot — mas enquanto isso, engordam o arquivo e fazem o
+    // contador global de sessões concluídas oscilar.
+    if (!idComando || idComando.endsWith('-open')) return;
     try {
         const progresso = lerProgresso();
         if (!progresso.executados.includes(idComando)) {
@@ -738,7 +847,8 @@ function commandExists(cmd) {
 // ============================================================
 
 function executarComandoComStream(comandoFinal, idComando, isReversao, callback) {
-    const precisaAutenticacao = !_cmdSemAutenticacao(comandoFinal);
+    const precisaAutenticacao = !_cmdSemAutenticacao(comandoFinal) &&
+    !_idSemAuthValido(idComando, comandoFinal);
 
     if (!precisaAutenticacao) {
         console.log(`[INFO] Comando SEM autenticação: ${comandoFinal.substring(0, 50)}...`);
@@ -765,6 +875,20 @@ function executarComandoComStream(comandoFinal, idComando, isReversao, callback)
             console.log(`[USER-CTX] XDG_RUNTIME_DIR=${env.XDG_RUNTIME_DIR}`);
             console.log(`[USER-CTX] DBUS_SESSION_BUS_ADDRESS=${env.DBUS_SESSION_BUS_ADDRESS}`);
             console.log(`[USER-CTX] HOME=${env.HOME}`);
+        }
+
+        // Update/uninstall do FAP: roda como usuário, mas precisa
+        // do SUDO_ASKPASS configurado porque o install.sh faz
+        // várias chamadas a `sudo` internamente — e o processo
+        // do node não tem TTY.
+        if (IDS_SEM_AUTENTICACAO.has(idComando)) {
+            const askpass = _criarAskpassHelper();
+            if (askpass) {
+                env.SUDO_ASKPASS = askpass;
+                console.log(`[USER-CTX] SUDO_ASKPASS=${askpass}`);
+            } else {
+                console.warn(`[USER-CTX] SUDO_ASKPASS não pôde ser criado — sudo pode falhar`);
+            }
         }
 
         _registrarProcesso(exec(comandoFinal, {
@@ -955,6 +1079,8 @@ function _construirScripts(timestamp, random, comandoCorrigido, descricao) {
                                                        '# /home/<user>/.local/share.',
                                                        'export DISPLAY=' + (process.env.DISPLAY || ':0'),
                                                        'export XAUTHORITY=' + (process.env.XAUTHORITY || homeDir + '/.Xauthority'),
+                                                       'export WAYLAND_DISPLAY=' + (process.env.WAYLAND_DISPLAY || ''),
+                                                       'export XDG_RUNTIME_DIR=' + (process.env.XDG_RUNTIME_DIR || '/run/user/' + (process.getuid ? process.getuid() : 1000)),
                                                        'export DBUS_SESSION_BUS_ADDRESS=' + (process.env.DBUS_SESSION_BUS_ADDRESS || ''),
                                                        'export HOME=' + homeDir,
                                                        'export USER=' + USUARIO_REAL,
@@ -1158,7 +1284,16 @@ function procederComExecucao(comando, idComando, isReversao, res) {
     }));
 
     setImmediate(() => {
-        const precisaAutenticacao = !_cmdSemAutenticacao(comando);
+        // Duas formas de rodar sem auth:
+        //   1. Comando read-only (whitelist de prefixo) — `_cmdSemAutenticacao`
+        //   2. idComando whitelisted + comando no formato exato — `_idSemAuthValido`
+        //
+        // A #2 existe só para `atualizar-fap` e `desinstalar-fap`, que
+        // são scripts que gerenciam seu próprio `sudo` internamente.
+        // Rodar como root (via pkexec) quebraria as permissões do
+        // diretório de instalação do usuário.
+        const semAuth = _cmdSemAutenticacao(comando) || _idSemAuthValido(idComando, comando);
+        const precisaAutenticacao = !semAuth;
 
         console.log(`[AUTH] ${idComando}: PrecisaAuth=${precisaAutenticacao}`);
 
@@ -1529,7 +1664,26 @@ const server = http.createServer((req, res) => {
     //   3. Parse de EDID cru via /sys/class/drm/card*-*/edid
     //      Fallback para drivers que expõem o EDID mas não a
     //      lista de modos. Extrai a resolução preferida
-    //      (bytes 54-71 do EDID = Detailed Timing Descriptor 1).
+    //      (Detailed Timing Descriptor 1) do EDID.
+    //
+    //      IMPORTANTE — offsets corretos do EDID (spec VESA 1.4,
+    //      seção 3.10.2 "Detailed Timing Descriptor"):
+    //        byte 54-55  = pixel clock (LSB, MSB)
+    //        byte 56     = H active, LSB (bits 0-7)
+    //        byte 57     = H blank, LSB
+    //        byte 58     = H active (bits 8-11) no nibble ALTO
+    //                      + H blank (bits 8-11) no nibble BAIXO
+    //        byte 59     = V active, LSB
+    //        byte 60     = V blank, LSB
+    //        byte 61     = V active (bits 8-11) no nibble ALTO
+    //                      + V blank (bits 8-11) no nibble BAIXO
+    //
+    //      A versão anterior deste script lia bytes 54/55 como se
+    //      fossem H active — mas esses bytes são pixel clock.
+    //      Também lia 58/59 como V active, quando 58 é H active
+    //      (nibble alto) e 59 é V active (LSB). O resultado era
+    //      um valor errado, que só aparecia quando as camadas 1
+    //      e 2 falhavam (raro, mas acontecia em GPUs exóticas).
     //
     //   4. 1024x768 — fallback final.
     //
@@ -1583,9 +1737,11 @@ const server = http.createServer((req, res) => {
                                  '  done',
                                  'fi',
                                  '',
-                                 '# CAMADA 3: parse do EDID (bytes 54-56 = resolução horizontal,',
-                                 '# bytes 58-59 = vertical, no Detailed Timing Descriptor 1).',
-                                 '# O EDID é binário; usamos od/xxd para extrair bytes.',
+                                 '# CAMADA 3: parse do EDID (offsets corretos da spec VESA)',
+                                 '#   byte 56 = H active LSB',
+                                 '#   byte 58 = H active MSB (nibble alto)',
+                                 '#   byte 59 = V active LSB',
+                                 '#   byte 61 = V active MSB (nibble alto)',
                                  'if [ "$DETECTED_W" = "0" ]; then',
                                  '  echo "---DRM_LAYER_3---"',
                                  '  for f in /sys/class/drm/card*-*/edid; do',
@@ -1595,13 +1751,10 @@ const server = http.createServer((req, res) => {
                                  '    [ "$CONN_STATUS" = "connected" ] || continue',
                                  '    SIZE=$(wc -c < "$f" 2>/dev/null)',
                                  '    [ "$SIZE" -ge 128 ] || continue',
-                                 '    # Bytes 54,55 = H active (little-endian, 8 bits low + 4 bits high)',
-                                 '    # Bytes 56,57 = H blank (ignorado)',
-                                 '    # Bytes 58,59 = V active (little-endian)',
-                                 '    H_LO=$(od -An -tu1 -j54 -N1 "$f" 2>/dev/null | tr -d " ")',
-                                 '    H_HI=$(od -An -tu1 -j55 -N1 "$f" 2>/dev/null | tr -d " ")',
-                                 '    V_LO=$(od -An -tu1 -j58 -N1 "$f" 2>/dev/null | tr -d " ")',
-                                 '    V_HI=$(od -An -tu1 -j59 -N1 "$f" 2>/dev/null | tr -d " ")',
+                                 '    H_LO=$(od -An -tu1 -j56 -N1 "$f" 2>/dev/null | tr -d " ")',
+                                 '    H_HI=$(od -An -tu1 -j58 -N1 "$f" 2>/dev/null | tr -d " ")',
+                                 '    V_LO=$(od -An -tu1 -j59 -N1 "$f" 2>/dev/null | tr -d " ")',
+                                 '    V_HI=$(od -An -tu1 -j61 -N1 "$f" 2>/dev/null | tr -d " ")',
                                  '    if [ -n "$H_LO" ] && [ -n "$H_HI" ] && [ -n "$V_LO" ] && [ -n "$V_HI" ]; then',
                                  '      HW=$(( H_LO + (H_HI & 0xF0) * 16 ))',
                                  '      VH=$(( V_LO + (V_HI & 0xF0) * 16 ))',
@@ -2108,6 +2261,15 @@ const server = http.createServer((req, res) => {
         req.on('end', () => {
             try {
                 const { comando, idComando } = JSON.parse(body);
+
+                // `isReversao` sempre foi `false` no fluxo HTTP. Toda a
+                // marcação de "revertido" é feita pelo frontend via
+                // POST /progress (removendo o id do array de
+                // executados). O parâmetro continua existindo como
+                // contrato interno de `executarComandoComStream` (que
+                // o usa para decidir entre salvar e remover progresso
+                // quando rodado internamente), mas o handler HTTP não
+                // o expõe.
                 const isReversao = false;
 
                 if (!comando || !idComando) {
@@ -2202,6 +2364,11 @@ function _encerrarGraciosamente(sinal) {
     // órfão depois que o servidor morre.
     _processosAtivos.forEach(_matarArvoreProcessos);
 
+    // Limpa o askpass helper, se foi criado nesta sessão.
+    if (_askpassHelperPath && fs.existsSync(_askpassHelperPath)) {
+        try { fs.unlinkSync(_askpassHelperPath); } catch (e) {}
+    }
+
     sseClients.forEach((clients) => {
         clients.forEach(client => {
             client.end();
@@ -2248,6 +2415,7 @@ server.listen(PORT, HOST, () => {
     console.log(` 📄 Páginas: index.html, guiado.html + 14 sessões dinâmicas`);
     console.log(` 📝 Changelog: /changelog (lê CHANGELOG.md)`);
     console.log(` 🔧 Comandos SEM autenticação: rpm -q, uname -r, gtk-launch, flatpak, systemctl --user, etc`);
+    console.log(` 🔧 idComandos sem auth: atualizar-fap, desinstalar-fap (com SUDO_ASKPASS)`);
     console.log(` 🎯 Comandos USER-CONTEXT (env ajustado): ${COMANDOS_USER_CONTEXT.join(', ')}`);
     console.log(` 📊 Progresso: .progresso.json (persistente no servidor)`);
     console.log(` 📱 Waydroid status: /waydroid-status`);

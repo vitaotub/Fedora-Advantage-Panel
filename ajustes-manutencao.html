@@ -132,6 +132,12 @@ data-i18n="sessoes.ajustes-manutencao.btn_realtime_setup">
 ⚙️ Ativar Prioridade de Tempo Real
 </button>
 </div>
+<!--
+Botão "Reverter" manual mantido para compatibilidade com HTMLs
+antigos (par instalado/apagado pelo CSS via `display: none`). O
+fluxo de reversão ativo agora é o ícone de lixeira SVG, criado
+por `aplicarEstadoInstalavel` via `registrarAppRemovivel`.
+-->
 <button class="btn-executar vermelho"
 onclick="executarRealtimeSetupRemove()"
 data-comando="realtime-setup-remove"
@@ -370,25 +376,35 @@ disabled>
 function _t(chave, fallback) {
     return (typeof tOr === 'function') ? tOr(chave, fallback) : fallback;
 }
+function _tVars(chave, fallback, vars) {
+    return (typeof tOr === 'function') ? tOr(chave, fallback, vars) : fallback;
+}
 
 // ============================================================
 // REGISTRO DE APPS REMOVÍVEIS (lixeira unificada)
 // ============================================================
 //
-// Único item desta sessão que instala pacote no sistema. Os
-// demais tunings alteram kernel/sysctl/configs locais — nesses
-// casos, a lixeira não se aplica (não há pacote para remover) e
-// o padrão de texto continua em uso.
+// `realtime-setup` é o único item desta sessão que instala pacote
+// no sistema. Os demais tunings alteram kernel/sysctl/configs
+// locais — nesses casos, a lixeira não se aplica (não há pacote
+// para remover) e o padrão de texto continua em uso.
+//
+// `realtime-setup` precisa de `comandoRemocao` custom: a instalação
+// faz DUAS coisas (instala o pacote E adiciona o usuário ao grupo
+// `realtime`), então a remoção precisa desfazer as DUAS. Antes,
+// o ícone de lixeira (que usa `pacotes`) removia apenas o pacote,
+// deixando o usuário órfão no grupo. O botão manual de "Reverter"
+// (agora oculto) fazia certo, mas as duas interfaces divergiam.
 
 registrarAppRemovivel('realtime-setup', {
     tipo: 'dnf',
-    pacotes: ['realtime-setup'],
-    nome: 'Prioridade de Tempo Real'
+    comandoRemocao: 'sudo gpasswd -d $USER realtime; sudo dnf remove -y realtime-setup',
+    nome: 'Prioridade de Tempo Real',
+    confirmMsg: '⚠️ Reverter o ajuste de Prioridade de Tempo Real?\n\n' +
+                'Isso remove o pacote realtime-setup E remove seu usuário do grupo realtime.\n\n' +
+                'Requer logout/login para o grupo deixar de valer na sessão atual.\n\n' +
+                'Continuar?'
 });
-
-function _tVars(chave, fallback, vars) {
-    return (typeof tOr === 'function') ? tOr(chave, fallback, vars) : fallback;
-}
 
 // ------------------------------------------------------------
 // HELPERS DE TOGGLE
@@ -502,10 +518,12 @@ async function executarTcpBbrRemove() {
 // ------------------------------------------------------------
 //
 // Este é o único tuning da sessão que instala um PACOTE no
-// sistema (`realtime-setup`). Os demais configuram kernel,
-// sysctl ou arquivos locais — nesses casos, o padrão de texto
-// (aplicar/reverter) continua sendo o correto, porque não há
-// pacote para colocar na lixeira.
+// sistema (`realtime-setup`) E altera grupo (`usermod -aG
+// realtime`). A remoção correspondente é feita pelo ícone de
+// lixeira via `comandoRemocao` (registrado acima) — que
+// desfaz as DUAS operações. A função abaixo (executarRealtimeSetup)
+// só executa a instalação; a reversão fica a cargo do registro
+// global para manter uma interface única.
 
 async function executarRealtimeSetup() {
     var idComando = 'realtime-setup';
@@ -515,6 +533,10 @@ async function executarRealtimeSetup() {
         function() { aplicarEstadoInstalavel('realtime-setup', null); });
 }
 
+// Mantida para compatibilidade: se algum HTML antigo ainda tiver o
+// botão manual `realtime-setup-remove` visível, ele continua
+// funcionando. O fluxo principal agora é a lixeira (que usa
+// `comandoRemocao` com gpasswd + dnf remove).
 async function executarRealtimeSetupRemove() {
     var idComando = 'realtime-setup-remove';
     var comando = 'sudo gpasswd -d $USER realtime; sudo dnf remove -y realtime-setup';
@@ -670,7 +692,9 @@ async function executarLimpeza() {
 
     var header = document.createElement('div');
     header.className = 'log-line info';
-    header.textContent = '🧹 Executando limpeza do sistema...';
+    // Traduzido via chave i18n (antes era PT-BR hardcoded).
+    header.textContent = _t('sessoes.ajustes-manutencao.log_executando_limpeza',
+        '🧹 Executando limpeza do sistema...');
     logBox.appendChild(header);
     logBox.scrollTop = logBox.scrollHeight;
 
@@ -737,7 +761,9 @@ async function listarKernels() {
 
     var header = document.createElement('div');
     header.className = 'log-line info';
-    header.textContent = '📋 Verificando kernels instalados...';
+    // Traduzido via chave i18n (antes era PT-BR hardcoded).
+    header.textContent = _t('sessoes.ajustes-manutencao.log_verificando_kernels',
+        '📋 Verificando kernels instalados...');
     logBox.appendChild(header);
     logBox.scrollTop = logBox.scrollHeight;
 
@@ -771,9 +797,14 @@ async function listarKernels() {
 
             var successLine = document.createElement('div');
             successLine.className = 'log-line success';
+            // Traduzido via chave i18n (antes era PT-BR hardcoded).
             successLine.textContent = kernels.length === 1
-                ? '✅ ' + kernels.length + ' kernel encontrado'
-                : '✅ ' + kernels.length + ' kernels encontrados';
+                ? _tVars('sessoes.ajustes-manutencao.kernel_singular_encontrado',
+                    '✅ ' + kernels.length + ' kernel encontrado',
+                    { n: kernels.length })
+                : _tVars('sessoes.ajustes-manutencao.kernel_plural_encontrado',
+                    '✅ ' + kernels.length + ' kernels encontrados',
+                    { n: kernels.length });
             logBox.appendChild(successLine);
             logBox.scrollTop = logBox.scrollHeight;
         } else {
@@ -868,7 +899,10 @@ async function removerKernel() {
 
         var infoLine = document.createElement('div');
         infoLine.className = 'log-line info';
-        infoLine.textContent = '🗑️ Removendo kernel: ' + kernel + '...';
+        // Traduzido via chave i18n (antes era PT-BR hardcoded).
+        infoLine.textContent = _tVars('sessoes.ajustes-manutencao.kernel_log_removendo',
+            '🗑️ Removendo kernel: ' + kernel + '...',
+            { kernel: kernel });
         logBox.appendChild(infoLine);
         logBox.scrollTop = logBox.scrollHeight;
     }
@@ -903,7 +937,10 @@ async function removerKernel() {
                 if (logBox) {
                     var successLine = document.createElement('div');
                     successLine.className = 'log-line success';
-                    successLine.textContent = '✅ Kernel ' + kernel + ' removido com sucesso!';
+                    // Traduzido via chave i18n (antes era PT-BR hardcoded).
+                    successLine.textContent = _tVars('sessoes.ajustes-manutencao.kernel_log_sucesso',
+                        '✅ Kernel ' + kernel + ' removido com sucesso!',
+                        { kernel: kernel });
                     logBox.appendChild(successLine);
                     logBox.scrollTop = logBox.scrollHeight;
                 }
@@ -912,9 +949,12 @@ async function removerKernel() {
                 if (logBox) {
                     var errorLine = document.createElement('div');
                     errorLine.className = 'log-line error';
+                    // Traduzido via chave i18n (antes era PT-BR hardcoded).
                     errorLine.textContent = sucesso === null
-                        ? '❌ Tempo esgotado esperando a remoção.'
-                        : '❌ Falha ao remover kernel.';
+                        ? _t('sessoes.ajustes-manutencao.kernel_log_timeout',
+                            '❌ Tempo esgotado esperando a remoção.')
+                        : _t('sessoes.ajustes-manutencao.kernel_log_falha',
+                            '❌ Falha ao remover kernel.');
                     logBox.appendChild(errorLine);
                     logBox.scrollTop = logBox.scrollHeight;
                 }
@@ -925,7 +965,10 @@ async function removerKernel() {
         if (logBox) {
             var errorLine2 = document.createElement('div');
             errorLine2.className = 'log-line error';
-            errorLine2.textContent = '❌ Erro ao remover kernel: ' + e.message;
+            // Traduzido via chave i18n (antes era PT-BR hardcoded).
+            errorLine2.textContent = _tVars('sessoes.ajustes-manutencao.kernel_log_erro',
+                '❌ Erro ao remover kernel: ' + e.message,
+                { msg: e.message });
             logBox.appendChild(errorLine2);
             logBox.scrollTop = logBox.scrollHeight;
         }
@@ -958,7 +1001,10 @@ async function removerKernel() {
 //      regenera o grub.cfg.
 //
 // O botão "Reverter" só é habilitado depois que o "Aplicar" roda
-// com sucesso — assim o usuário nunca reverte sem ter um backup.
+// com sucesso — E TAMBÉM quando o "Aplicar" FALHA (a falha pode
+// ocorrer após o `cp -n` já ter criado o backup; nesse caso, o
+// usuário precisa do Revert para recuperar a config original sem
+// `sudo` manual).
 
 var _grubInfoCache = null;
 
@@ -1072,7 +1118,6 @@ async function executarGrubAplicarRecomendado() {
     var idComando = 'grub-aplicar-recomendado';
     var logBox = _getLogBox(idComando);
     var btn = document.getElementById('btn-' + idComando);
-    var btnRevert = document.getElementById('btn-grub-restaurar-backup');
     var statusDiv = document.getElementById('grub-status');
 
     if (!logBox) return;
@@ -1103,7 +1148,6 @@ async function executarGrubAplicarRecomendado() {
         }))) return;
 
     var nomeAcao = _t('sessoes.ajustes-manutencao.btn_grub_recomendado', '⚙️ Aplicar Configuração Recomendada');
-    var textoConcluido = getTextoAposExecucao('grub-aplicar-recomendado');
 
     if (btn) {
         btn.disabled = true;
@@ -1153,7 +1197,7 @@ async function executarGrubAplicarRecomendado() {
             'GRUB_DISABLE_RECOVERY="true"\n' +
             'GRUB_ENABLE_BLSCFG=true\n';
 
-                // Além de reescrever /etc/default/grub e regenerar o grub.cfg,
+        // Além de reescrever /etc/default/grub e regenerar o grub.cfg,
         // limpamos a variável `menu_auto_hide` do grubenv. O Fedora
         // define essa variável automaticamente quando o boot anterior
         // foi bem-sucedido, e ela se sobrepõe ao `GRUB_TIMEOUT_STYLE=menu`
@@ -1222,13 +1266,32 @@ async function executarGrubAplicarRecomendado() {
             statusDiv.innerHTML = '❌ Erro: ' + e.message;
         }
     } finally {
-        // Só reabilita o botão se o comando NÃO teve sucesso.
-        // Se teve, ele fica cinza/desabilitado permanentemente até
-        // o usuário clicar em "Reverter".
-        if (!sucesso && btn) {
-            btn.disabled = false;
-            btn.textContent = nomeAcao;
-            btn.style.opacity = '1';
+        // ============================================================
+        // RECUPERAÇÃO EM CASO DE FALHA PARCIAL
+        // ============================================================
+        //
+        // Se o apply falha no meio (ex.: `grub2-mkconfig` retorna
+        // erro DEPOIS do `cp -n` já ter criado /etc/default/grub.fap-backup),
+        // o sistema fica num estado ambíguo: o backup existe, mas
+        // ninguém sabe disso pela UI.
+        //
+        // A versão anterior deixava o botão "Reverter" DESABILITADO
+        // após a falha. Sem ele, o usuário tinha que rodar o
+        // `cp`/`grub2-mkconfig` na mão para recuperar.
+        //
+        // Agora: em qualquer falha, reabilitamos o "Reverter". A
+        // função `executarGrubRestaurarBackup` já valida se o backup
+        // existe — se não existir, mostra uma mensagem clara em vez
+        // de tentar rodar.
+        if (!sucesso) {
+            _aplicarEstadoBotoesGrub(false);
+
+            var btnRevertRecuperacao = document.getElementById('btn-grub-restaurar-backup');
+            if (btnRevertRecuperacao) {
+                btnRevertRecuperacao.disabled = false;
+                btnRevertRecuperacao.style.cursor = 'pointer';
+                btnRevertRecuperacao.style.opacity = '1';
+            }
         }
     }
 }
@@ -1365,8 +1428,7 @@ async function executarGrubRestaurarBackup() {
 //
 // Chamada por executarGrubAplicarRecomendado e executarGrubRestaurarBackup
 // após o sucesso da operação. Também chamada em restaurarEstadoSessao()
-// no boot da sessão (sempre com `false` — o FAP não persiste "aplicado"
-// no .progresso.json, então sempre assume o estado A ao carregar).
+// no boot da sessão.
 
 function _aplicarEstadoBotoesGrub(aplicado) {
     var btnAplicar = document.getElementById('btn-grub-aplicar-recomendado');
@@ -1503,7 +1565,7 @@ async function restaurarEstadoSessao() {
                 btnReverter.style.opacity = '0.5';
             }
         }
-        }
+    }
 
     // --- Limpeza e kernels: sempre clicáveis ---
     ['limpeza-sistema', 'listar-kernels', 'remover-kernel'].forEach(function(id) {
@@ -1515,7 +1577,7 @@ async function restaurarEstadoSessao() {
         }
     });
 
-        // --- GRUB: estado persistido no .progresso.json ---
+    // --- GRUB: estado persistido no .progresso.json ---
     // O FAP marca 'grub-aplicar-recomendado' quando a config
     // recomendada é aplicada com sucesso, e desmarca ao reverter.
     // Aqui só lemos o estado — a UI reflete o que foi persistido.

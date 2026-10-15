@@ -2,7 +2,7 @@
 
 **🌐 Language:** [Português (BR)](README.md) | English | [Español](README.es.md)
 
-![Version](https://img.shields.io/badge/Version-v1.0.0--10152026-orange?style=flat-square)
+![Version](https://img.shields.io/badge/Version-v1.0.0--10152026.b-orange?style=flat-square)
 ![Fedora](https://img.shields.io/badge/Fedora-44+-294172?style=flat-square&logo=fedora)
 ![License](https://img.shields.io/badge/License-GPL--3.0-green?style=flat-square)
 ![Languages](https://img.shields.io/badge/Languages-PT--BR%20%7C%20EN%20%7C%20ES-3c67e3?style=flat-square)
@@ -83,6 +83,7 @@ Fedora Advantage Panel (FAP) is a visual automation panel for Fedora Linux. It t
 
 - **Universal `pkexec`** — integrated password dialog on all desktops (KDE uses `polkit-kde-agent`, GNOME uses `polkit-gnome`, etc.), no need to type the password in the terminal
 - **Read-only commands in whitelist** — `rpm -q`, `uname -r`, `gtk-launch`, `flatpak`, `systemctl --user` and similar run without asking for a password
+- **FAP update and uninstall run as the user**, with `SUDO_ASKPASS` (zenity/kdialog) for internal privileged steps — avoids files ending up owned by root
 - **Shell injection blocking** — commands with `;`, `&&`, `|`, `$(...)` or `&` are rejected by the whitelist and require authentication
 
 ### Lifecycle
@@ -90,6 +91,7 @@ Fedora Advantage Panel (FAP) is a visual automation panel for Fedora Linux. It t
 - **Clean shutdown** — closing the FAP window ends the Node.js server and frees port 3000 automatically. Nothing is left in memory.
 - **Protected process tree** — if a `dnf` command is running when FAP closes, the entire process tree is killed via PGID, avoiding orphan locks on `rpm`
 - **Persistent log** — each session writes a `/tmp/fap-YYYYMMDD-HHMMSS.log` file, with automatic cleanup of logs older than 7 days
+- **`install.sh` refuses to run as root** — installs into the user's `$HOME`, with internal `sudo` only for the steps that need it
 
 ### ArtCraft Suite
 
@@ -112,7 +114,7 @@ Open-source alternatives (written in Rust) to Adobe and Microsoft Office product
 ### Automatic hardware detection
 
 - **Hardware scanner** via `lspci` / `lsusb`, cross-referenced with a community-maintained vendor map
-- **NVIDIA detection** with heuristics to suggest the correct driver series (`akmod-nvidia`, `580xx`, `470xx`, or `390xx`)
+- **NVIDIA detection** with heuristics to suggest the correct driver series (`akmod-nvidia`, `580xx`, `470xx`, or `390xx`), with special handling for the GTX 745 (which is Maxwell, not Kepler)
 - **RPM Fusion check** — warns if the repository isn't active before trying to install drivers that depend on it
 - **Secure Boot check** — warns if it's enabled and the NVIDIA driver will need MOK signing
 

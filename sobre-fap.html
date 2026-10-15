@@ -171,7 +171,9 @@ async function desinstalarFAP() {
 
     var header = document.createElement('div');
     header.className = 'log-line info';
-    header.textContent = '🗑️ Desinstalando FAP... (' + new Date().toLocaleTimeString() + ')';
+    // Log inicial traduzido via chave i18n (antes era PT-BR hardcoded).
+    header.textContent = _t('sessoes.sobre-fap.desinstalar_log_iniciando',
+        '🗑️ Desinstalando FAP...') + ' (' + new Date().toLocaleTimeString() + ')';
     logBox.appendChild(header);
     logBox.scrollTop = logBox.scrollHeight;
 
@@ -206,7 +208,9 @@ async function desinstalarFAP() {
             if (sucesso) {
                 var successLine = document.createElement('div');
                 successLine.className = 'log-line success';
-                successLine.textContent = '✅ FAP desinstalado com sucesso!';
+                // Log final traduzido via chave i18n (antes era PT-BR hardcoded).
+                successLine.textContent = _t('sessoes.sobre-fap.desinstalar_log_sucesso',
+                    '✅ FAP desinstalado com sucesso!');
                 logBox.appendChild(successLine);
                 logBox.scrollTop = logBox.scrollHeight;
 
