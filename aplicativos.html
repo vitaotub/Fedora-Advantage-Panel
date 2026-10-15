@@ -7,27 +7,12 @@
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<!-- ============================================================
-     SESSÃO 6 — APLICATIVOS RECOMENDADOS
-
-     CORREÇÃO ESTRUTURAL (v1.0.0-10062026.b):
-     - Removido </div> órfão que fechava o .sessao-container cedo.
-     - Removido </details> órfão que sobrava após os progress-container.
-     - "Suíte Affinity" deixou de ser sub-acordeão dentro de
-       "Ferramentas Gráficas" — agora é um bloco próprio, irmão dos
-       demais, posicionado logo após "Ferramentas Gráficas".
-     - Todos os .progress-container foram movidos para DENTRO do
-       .acordeao-conteudo de seus respectivos blocos, garantindo
-       que a barra de progresso desapareça quando o acordeão é
-       fechado (comportamento já correto nas outras sessões).
-     ============================================================ -->
 <div class="sessao-container" id="sessao-aplicativos">
 <div class="sessao-titulo">
 <span class="sessao-label">Sessão</span>
 <span data-i18n="sessoes.aplicativos.titulo">📦 Aplicativos Recomendados</span>
 </div>
 
-<!-- Acórdeão principal — descrição da sessão -->
 <div class="acordeao-principal">
 <span data-i18n="sessoes.aplicativos.descricao">Softwares recomendados para uso no dia-a-dia.</span>
 </div>
@@ -44,12 +29,7 @@ BLOCO 1 — PRODUTIVIDADE E ESCRITÓRIO
 <div class="grid-launchers">
 <div class="launcher-item">
 <div class="btn-flatpak-wrapper">
-<button class="btn-executar" onclick="instalarFlatpak('instalar-onlyoffice')" data-comando="instalar-onlyoffice" data-logbox="log-sessao-aplicativos" id="btn-instalar-onlyoffice" data-i18n="sessoes.aplicativos.btn_onlyoffice">📝 OnlyOffice</button>
-</div>
-</div>
-<div class="launcher-item">
-<div class="btn-flatpak-wrapper">
-<button class="btn-executar" onclick="instalarFlatpak('instalar-libreoffice')" data-comando="instalar-libreoffice" data-logbox="log-sessao-aplicativos" id="btn-instalar-libreoffice" data-i18n="sessoes.aplicativos.btn_libreoffice">📄 LibreOffice</button>
+<button class="btn-executar" onclick="instalarUrlRpm('instalar-onlyoffice')" data-comando="instalar-onlyoffice" data-logbox="log-sessao-aplicativos" id="btn-instalar-onlyoffice" data-i18n="sessoes.aplicativos.btn_onlyoffice">📝 OnlyOffice</button>
 </div>
 </div>
 <div class="launcher-item">
@@ -80,7 +60,6 @@ BLOCO 1 — PRODUTIVIDADE E ESCRITÓRIO
 </div>
 
 <div class="progress-container" id="progress-instalar-onlyoffice"><div class="progress-bar"><div class="progress-fill" id="progress-fill-instalar-onlyoffice"></div></div><div class="progress-text"><span class="status" id="progress-status-instalar-onlyoffice">⏳ Iniciando...</span><span class="percentage" id="progress-percent-instalar-onlyoffice">0%</span></div></div>
-<div class="progress-container" id="progress-instalar-libreoffice"><div class="progress-bar"><div class="progress-fill" id="progress-fill-instalar-libreoffice"></div></div><div class="progress-text"><span class="status" id="progress-status-instalar-libreoffice">⏳ Iniciando...</span><span class="percentage" id="progress-percent-instalar-libreoffice">0%</span></div></div>
 <div class="progress-container" id="progress-instalar-obsidian"><div class="progress-bar"><div class="progress-fill" id="progress-fill-instalar-obsidian"></div></div><div class="progress-text"><span class="status" id="progress-status-instalar-obsidian">⏳ Iniciando...</span><span class="percentage" id="progress-percent-instalar-obsidian">0%</span></div></div>
 <div class="progress-container" id="progress-instalar-thunderbird"><div class="progress-bar"><div class="progress-fill" id="progress-fill-instalar-thunderbird"></div></div><div class="progress-text"><span class="status" id="progress-status-instalar-thunderbird">⏳ Iniciando...</span><span class="percentage" id="progress-percent-instalar-thunderbird">0%</span></div></div>
 <div class="progress-container" id="progress-instalar-okular"><div class="progress-bar"><div class="progress-fill" id="progress-fill-instalar-okular"></div></div><div class="progress-text"><span class="status" id="progress-status-instalar-okular">⏳ Iniciando...</span><span class="percentage" id="progress-percent-instalar-okular">0%</span></div></div>
@@ -219,7 +198,7 @@ BLOCO 3 — FERRAMENTAS GRÁFICAS
 </details>
 
 <!-- ============================================================
-SUÍTE AFFINITY — bloco próprio, irmão dos demais
+SUÍTE AFFINITY
 ============================================================ -->
 <details class="acordeao">
 <summary data-i18n="sessoes.aplicativos.affinity_titulo">🎨 Suíte Affinity (Photo, Designer, Publisher)</summary>
@@ -262,7 +241,7 @@ data-i18n="sessoes.aplicativos.btn_abrir_instalador">
 </details>
 
 <!-- ============================================================
-BLOCO 4 — SUÍTE ARTCRAFT (Adobe no Linux)
+BLOCO 4 — SUÍTE ARTCRAFT
 ============================================================ -->
 <details class="acordeao">
 <summary data-i18n="sessoes.aplicativos.bloco_artcraft_titulo">🎨 Suíte ArtCraft (Adobe e Office no Linux)</summary>
@@ -283,7 +262,6 @@ projeto afetado — o FAP apenas instala os pacotes oficiais publicados por eles
 
 <div class="grid-launchers">
 
-<!-- PhotoCraft -->
 <div class="launcher-item">
 <div class="btn-flatpak-wrapper">
 <button class="btn-executar" onclick="executarArtCraft('photocraft')" data-comando="instalar-photocraft" data-logbox="log-sessao-aplicativos" id="btn-instalar-photocraft" data-i18n="sessoes.aplicativos.btn_photocraft">
@@ -295,7 +273,6 @@ projeto afetado — o FAP apenas instala os pacotes oficiais publicados por eles
 </button>
 </div>
 
-<!-- VectorCraft -->
 <div class="launcher-item">
 <div class="btn-flatpak-wrapper">
 <button class="btn-executar" onclick="executarArtCraft('vectorcraft')" data-comando="instalar-vectorcraft" data-logbox="log-sessao-aplicativos" id="btn-instalar-vectorcraft" data-i18n="sessoes.aplicativos.btn_vectorcraft">
@@ -307,7 +284,6 @@ projeto afetado — o FAP apenas instala os pacotes oficiais publicados por eles
 </button>
 </div>
 
-<!-- FilmCraft -->
 <div class="launcher-item">
 <div class="btn-flatpak-wrapper">
 <button class="btn-executar" onclick="executarArtCraft('filmcraft')" data-comando="instalar-filmcraft" data-logbox="log-sessao-aplicativos" id="btn-instalar-filmcraft" data-i18n="sessoes.aplicativos.btn_filmcraft">
@@ -319,7 +295,6 @@ projeto afetado — o FAP apenas instala os pacotes oficiais publicados por eles
 </button>
 </div>
 
-<!-- LightCraft -->
 <div class="launcher-item">
 <div class="btn-flatpak-wrapper">
 <button class="btn-executar" onclick="executarArtCraft('lightcraft')" data-comando="instalar-lightcraft" data-logbox="log-sessao-aplicativos" id="btn-instalar-lightcraft" data-i18n="sessoes.aplicativos.btn_lightcraft">
@@ -331,7 +306,6 @@ projeto afetado — o FAP apenas instala os pacotes oficiais publicados por eles
 </button>
 </div>
 
-<!-- PDFCraft (substitui PrintCraft) -->
 <div class="launcher-item">
 <div class="btn-flatpak-wrapper">
 <button class="btn-executar" onclick="executarArtCraft('pdfcraft')" data-comando="instalar-pdfcraft" data-logbox="log-sessao-aplicativos" id="btn-instalar-pdfcraft" data-i18n="sessoes.aplicativos.btn_pdfcraft">
@@ -343,7 +317,6 @@ projeto afetado — o FAP apenas instala os pacotes oficiais publicados por eles
 </button>
 </div>
 
-<!-- EffectCraft -->
 <div class="launcher-item">
 <div class="btn-flatpak-wrapper">
 <button class="btn-executar" onclick="executarArtCraft('effectcraft')" data-comando="instalar-effectcraft" data-logbox="log-sessao-aplicativos" id="btn-instalar-effectcraft" data-i18n="sessoes.aplicativos.btn_effectcraft">
@@ -355,7 +328,6 @@ projeto afetado — o FAP apenas instala os pacotes oficiais publicados por eles
 </button>
 </div>
 
-<!-- DesignCraft -->
 <div class="launcher-item">
 <div class="btn-flatpak-wrapper">
 <button class="btn-executar" onclick="executarArtCraft('designcraft')" data-comando="instalar-designcraft" data-logbox="log-sessao-aplicativos" id="btn-instalar-designcraft" data-i18n="sessoes.aplicativos.btn_designcraft">
@@ -367,7 +339,6 @@ projeto afetado — o FAP apenas instala os pacotes oficiais publicados por eles
 </button>
 </div>
 
-<!-- FigCraft -->
 <div class="launcher-item">
 <div class="btn-flatpak-wrapper">
 <button class="btn-executar" onclick="executarArtCraft('figcraft')" data-comando="instalar-figcraft" data-logbox="log-sessao-aplicativos" id="btn-instalar-figcraft" data-i18n="sessoes.aplicativos.btn_figcraft">
@@ -379,7 +350,6 @@ projeto afetado — o FAP apenas instala os pacotes oficiais publicados por eles
 </button>
 </div>
 
-<!-- DeckCraft -->
 <div class="launcher-item">
 <div class="btn-flatpak-wrapper">
 <button class="btn-executar" onclick="executarArtCraft('deckcraft')" data-comando="instalar-deckcraft" data-logbox="log-sessao-aplicativos" id="btn-instalar-deckcraft" data-i18n="sessoes.aplicativos.btn_deckcraft">
@@ -391,7 +361,6 @@ projeto afetado — o FAP apenas instala os pacotes oficiais publicados por eles
 </button>
 </div>
 
-<!-- GridCraft -->
 <div class="launcher-item">
 <div class="btn-flatpak-wrapper">
 <button class="btn-executar" onclick="executarArtCraft('gridcraft')" data-comando="instalar-gridcraft" data-logbox="log-sessao-aplicativos" id="btn-instalar-gridcraft" data-i18n="sessoes.aplicativos.btn_gridcraft">
@@ -403,7 +372,6 @@ projeto afetado — o FAP apenas instala os pacotes oficiais publicados por eles
 </button>
 </div>
 
-<!-- WordCraft -->
 <div class="launcher-item">
 <div class="btn-flatpak-wrapper">
 <button class="btn-executar" onclick="executarArtCraft('wordcraft')" data-comando="instalar-wordcraft" data-logbox="log-sessao-aplicativos" id="btn-instalar-wordcraft" data-i18n="sessoes.aplicativos.btn_wordcraft">
@@ -415,7 +383,6 @@ projeto afetado — o FAP apenas instala os pacotes oficiais publicados por eles
 </button>
 </div>
 
-<!-- CadCraft -->
 <div class="launcher-item">
 <div class="btn-flatpak-wrapper">
 <button class="btn-executar" onclick="executarArtCraft('cadcraft')" data-comando="instalar-cadcraft" data-logbox="log-sessao-aplicativos" id="btn-instalar-cadcraft" data-i18n="sessoes.aplicativos.btn_cadcraft">
@@ -427,7 +394,6 @@ projeto afetado — o FAP apenas instala os pacotes oficiais publicados por eles
 </button>
 </div>
 
-<!-- SoundCraft -->
 <div class="launcher-item">
 <div class="btn-flatpak-wrapper">
 <button class="btn-executar" onclick="executarArtCraft('soundcraft')" data-comando="instalar-soundcraft" data-logbox="log-sessao-aplicativos" id="btn-instalar-soundcraft" data-i18n="sessoes.aplicativos.btn_soundcraft">
@@ -480,11 +446,6 @@ BLOCO 5 — INTERNET E COMUNICAÇÃO
 </div>
 <div class="launcher-item">
 <div class="btn-flatpak-wrapper">
-<button class="btn-executar" onclick="instalarFlatpak('instalar-zen')" data-comando="instalar-zen" data-logbox="log-sessao-aplicativos" id="btn-instalar-zen" data-i18n="sessoes.aplicativos.btn_zen">🧘 Zen Browser</button>
-</div>
-</div>
-<div class="launcher-item">
-<div class="btn-flatpak-wrapper">
 <button class="btn-executar" onclick="instalarRpmRepo('instalar-edge')" data-comando="instalar-edge" data-logbox="log-sessao-aplicativos" id="btn-instalar-edge" data-i18n="sessoes.aplicativos.btn_edge">🌊 Microsoft Edge</button>
 </div>
 </div>
@@ -513,23 +474,16 @@ BLOCO 5 — INTERNET E COMUNICAÇÃO
 <button class="btn-executar" onclick="instalarFlatpak('instalar-telegram')" data-comando="instalar-telegram" data-logbox="log-sessao-aplicativos" id="btn-instalar-telegram" data-i18n="sessoes.aplicativos.btn_telegram">✈️ Telegram</button>
 </div>
 </div>
-<div class="launcher-item">
-<div class="btn-flatpak-wrapper">
-<button class="btn-executar" onclick="instalarFlatpak('instalar-signal')" data-comando="instalar-signal" data-logbox="log-sessao-aplicativos" id="btn-instalar-signal" data-i18n="sessoes.aplicativos.btn_signal">🔒 Signal</button>
-</div>
-</div>
 </div>
 
 <div class="progress-container" id="progress-instalar-opera"><div class="progress-bar"><div class="progress-fill" id="progress-fill-instalar-opera"></div></div><div class="progress-text"><span class="status" id="progress-status-instalar-opera">⏳ Iniciando...</span><span class="percentage" id="progress-percent-instalar-opera">0%</span></div></div>
 <div class="progress-container" id="progress-instalar-brave"><div class="progress-bar"><div class="progress-fill" id="progress-fill-instalar-brave"></div></div><div class="progress-text"><span class="status" id="progress-status-instalar-brave">⏳ Iniciando...</span><span class="percentage" id="progress-percent-instalar-brave">0%</span></div></div>
-<div class="progress-container" id="progress-instalar-zen"><div class="progress-bar"><div class="progress-fill" id="progress-fill-instalar-zen"></div></div><div class="progress-text"><span class="status" id="progress-status-instalar-zen">⏳ Iniciando...</span><span class="percentage" id="progress-percent-instalar-zen">0%</span></div></div>
 <div class="progress-container" id="progress-instalar-edge"><div class="progress-bar"><div class="progress-fill" id="progress-fill-instalar-edge"></div></div><div class="progress-text"><span class="status" id="progress-status-instalar-edge">⏳ Iniciando...</span><span class="percentage" id="progress-percent-instalar-edge">0%</span></div></div>
 <div class="progress-container" id="progress-instalar-chromium"><div class="progress-bar"><div class="progress-fill" id="progress-fill-instalar-chromium"></div></div><div class="progress-text"><span class="status" id="progress-status-instalar-chromium">⏳ Iniciando...</span><span class="percentage" id="progress-percent-instalar-chromium">0%</span></div></div>
 <div class="progress-container" id="progress-instalar-zoom"><div class="progress-bar"><div class="progress-fill" id="progress-fill-instalar-zoom"></div></div><div class="progress-text"><span class="status" id="progress-status-instalar-zoom">⏳ Iniciando...</span><span class="percentage" id="progress-percent-instalar-zoom">0%</span></div></div>
 <div class="progress-container" id="progress-instalar-vivaldi"><div class="progress-bar"><div class="progress-fill" id="progress-fill-instalar-vivaldi"></div></div><div class="progress-text"><span class="status" id="progress-status-instalar-vivaldi">⏳ Iniciando...</span><span class="percentage" id="progress-percent-instalar-vivaldi">0%</span></div></div>
 <div class="progress-container" id="progress-instalar-discord"><div class="progress-bar"><div class="progress-fill" id="progress-fill-instalar-discord"></div></div><div class="progress-text"><span class="status" id="progress-status-instalar-discord">⏳ Iniciando...</span><span class="percentage" id="progress-percent-instalar-discord">0%</span></div></div>
 <div class="progress-container" id="progress-instalar-telegram"><div class="progress-bar"><div class="progress-fill" id="progress-fill-instalar-telegram"></div></div><div class="progress-text"><span class="status" id="progress-status-instalar-telegram">⏳ Iniciando...</span><span class="percentage" id="progress-percent-instalar-telegram">0%</span></div></div>
-<div class="progress-container" id="progress-instalar-signal"><div class="progress-bar"><div class="progress-fill" id="progress-fill-instalar-signal"></div></div><div class="progress-text"><span class="status" id="progress-status-instalar-signal">⏳ Iniciando...</span><span class="percentage" id="progress-percent-instalar-signal">0%</span></div></div>
 
 </div>
 </details>
@@ -555,7 +509,7 @@ BLOCO 6 — EDIÇÃO DE VÍDEO, ÁUDIO E MODELAGEM 3D
 </div>
 <div class="launcher-item">
 <div class="btn-flatpak-wrapper">
-<button class="btn-executar" onclick="instalarFlatpak('instalar-shotcut')" data-comando="instalar-shotcut" data-logbox="log-sessao-aplicativos" id="btn-instalar-shotcut" data-i18n="sessoes.aplicativos.btn_shotcut">✂️ Shotcut</button>
+<button class="btn-executar" onclick="instalarDnf('instalar-shotcut')" data-comando="instalar-shotcut" data-logbox="log-sessao-aplicativos" id="btn-instalar-shotcut" data-i18n="sessoes.aplicativos.btn_shotcut">✂️ Shotcut</button>
 </div>
 </div>
 <div class="launcher-item">
@@ -570,7 +524,7 @@ BLOCO 6 — EDIÇÃO DE VÍDEO, ÁUDIO E MODELAGEM 3D
 </div>
 <div class="launcher-item">
 <div class="btn-flatpak-wrapper">
-<button class="btn-executar" onclick="instalarFlatpak('instalar-avidemux')" data-comando="instalar-avidemux" data-logbox="log-sessao-aplicativos" id="btn-instalar-avidemux" data-i18n="sessoes.aplicativos.btn_avidemux">✂️ Avidemux</button>
+<button class="btn-executar" onclick="instalarDnf('instalar-avidemux')" data-comando="instalar-avidemux" data-logbox="log-sessao-aplicativos" id="btn-instalar-avidemux" data-i18n="sessoes.aplicativos.btn_avidemux">✂️ Avidemux</button>
 </div>
 </div>
 <div class="launcher-item">
@@ -655,7 +609,6 @@ data-i18n="sessoes.aplicativos.btn_abrir_rclone_manager">
 </button>
 </div>
 
-<!-- Botão "Desfazer tudo" — remove rclone-manager + rclone + resíduos -->
 <div class="aviso-caixa" style="margin-top: 1rem;" data-i18n-html="sessoes.aplicativos.rclone_uninstall_aviso">
 ⚠️ <strong>Remover completamente o Rclone Manager?</strong> Este botão remove os pacotes <code>rclone-manager</code> e <code>rclone</code> do sistema, incluindo qualquer versão do Rclone que o próprio Rclone Manager tenha instalado. <strong>Suas contas de nuvem ficam salvas em <code>~/.config/rclone</code> e NÃO são apagadas</strong> — se reinstalar depois, suas contas continuam lá. Ação irreversível em relação aos pacotes.
 </div>
@@ -693,10 +646,10 @@ BLOCO 8 — FERRAMENTAS DE ACESSO REMOTO
 
 <div class="grid-launchers">
 
-<!-- RustDesk (Flatpak) -->
+<!-- RustDesk (RPM via GitHub Releases) -->
 <div class="launcher-item">
 <div class="btn-flatpak-wrapper">
-<button class="btn-executar" onclick="executarRustDesk()" data-comando="instalar-rustdesk" data-logbox="log-sessao-aplicativos" id="btn-instalar-rustdesk" data-i18n="sessoes.aplicativos.btn_rustdesk">
+<button class="btn-executar" onclick="instalarUrlRpm('instalar-rustdesk')" data-comando="instalar-rustdesk" data-logbox="log-sessao-aplicativos" id="btn-instalar-rustdesk" data-i18n="sessoes.aplicativos.btn_rustdesk">
 🖥️ RustDesk
 </button>
 </div>
@@ -705,7 +658,6 @@ BLOCO 8 — FERRAMENTAS DE ACESSO REMOTO
 </button>
 </div>
 
-<!-- Remmina (dnf) -->
 <div class="launcher-item">
 <div class="btn-flatpak-wrapper">
 <button class="btn-executar" onclick="executarRemmina()" data-comando="instalar-remmina" data-logbox="log-sessao-aplicativos" id="btn-instalar-remmina" data-i18n="sessoes.aplicativos.btn_remmina">
@@ -717,7 +669,6 @@ BLOCO 8 — FERRAMENTAS DE ACESSO REMOTO
 </button>
 </div>
 
-<!-- GNOME Connections (dnf) -->
 <div class="launcher-item">
 <div class="btn-flatpak-wrapper">
 <button class="btn-executar" onclick="executarGnomeConnections()" data-comando="instalar-gnome-connections" data-logbox="log-sessao-aplicativos" id="btn-instalar-gnome-connections" data-i18n="sessoes.aplicativos.btn_gnome_connections">
@@ -729,7 +680,6 @@ BLOCO 8 — FERRAMENTAS DE ACESSO REMOTO
 </button>
 </div>
 
-<!-- KRDC (dnf) -->
 <div class="launcher-item">
 <div class="btn-flatpak-wrapper">
 <button class="btn-executar" onclick="executarKrdc()" data-comando="instalar-krdc" data-logbox="log-sessao-aplicativos" id="btn-instalar-krdc" data-i18n="sessoes.aplicativos.btn_krdc">
@@ -751,11 +701,9 @@ BLOCO 8 — FERRAMENTAS DE ACESSO REMOTO
 </div>
 </details>
 
-<!-- Log único da sessão -->
 <div class="terminal-log sessao-compartilhado" id="log-sessao-aplicativos"></div>
 </div>
 
-<!-- ===== JAVASCRIPT ESPECÍFICO DA SESSÃO ===== -->
 <script>
 // ============================================================
 // SESSÃO 09: APLICATIVOS RECOMENDADOS
@@ -771,14 +719,8 @@ function _tVars(chave, fallback, vars) {
 // ============================================================
 // REGISTRY DE APPS FLATPAK (Flathub)
 // ============================================================
-//
-// Apenas apps sem repo oficial no Fedora nem pacote nos repos da
-// distro. Os apps que migraram para dnf/rpm estão em APPS_DNF e
-// APPS_RPM_REPO (abaixo).
 
 var APPS_FLATPAK = {
-    'instalar-onlyoffice': { appId: 'org.onlyoffice.desktopeditors', fallback: '📝 OnlyOffice' },
-    'instalar-libreoffice': { appId: 'org.libreoffice.LibreOffice', fallback: '📄 LibreOffice' },
     'instalar-obsidian': { appId: 'md.obsidian.Obsidian', fallback: '💎 Obsidian' },
     'instalar-joplin': { appId: 'net.cozic.joplin_desktop', fallback: '📝 Joplin' },
     'instalar-spotify': { appId: 'com.spotify.Client', fallback: '🎵 Spotify' },
@@ -788,25 +730,16 @@ var APPS_FLATPAK = {
     'instalar-cura': { appId: 'com.ultimaker.cura', fallback: '🖨️ Cura' },
     'instalar-upscayl': { appId: 'org.upscayl.Upscayl', fallback: '🔍 Upscayl' },
     'instalar-xnviewmp': { appId: 'com.xnview.XnViewMP', fallback: '🖼️ XnView MP' },
-    'instalar-zen': { appId: 'app.zen_browser.zen', fallback: '🧘 Zen Browser' },
     'instalar-zoom': { appId: 'us.zoom.Zoom', fallback: '📹 Zoom' },
     'instalar-discord': { appId: 'com.discordapp.Discord', fallback: '💬 Discord' },
     'instalar-telegram': { appId: 'org.telegram.desktop', fallback: '✈️ Telegram' },
-    'instalar-signal': { appId: 'org.signal.Signal', fallback: '🔒 Signal' },
-    'instalar-shotcut': { appId: 'org.shotcut.Shotcut', fallback: '✂️ Shotcut' },
     'instalar-openshot': { appId: 'org.openshot.OpenShot', fallback: '🎬 OpenShot' },
-    'instalar-avidemux': { appId: 'org.avidemux.Avidemux', fallback: '✂️ Avidemux' },
-    'instalar-drift': { appId: 'org.cutwire.Drift', fallback: '🎬 Drift' },
-    'instalar-rustdesk': { appId: 'com.rustdesk.RustDesk', fallback: '🖥️ RustDesk' }
+    'instalar-drift': { appId: 'org.cutwire.Drift', fallback: '🎬 Drift' }
 };
 
 // ============================================================
 // REGISTRY DE APPS DNF (repos oficiais do Fedora)
 // ============================================================
-//
-// Pacotes mantidos pela própria distro. Sem `flatpakId` no
-// script.js. A remoção via lixeira chama `dnf remove` pelos
-// nomes em `pacotes`.
 
 var APPS_DNF = {
     'instalar-thunderbird': { pacotes: ['thunderbird'],                    fallback: '📧 Thunderbird' },
@@ -823,6 +756,8 @@ var APPS_DNF = {
     'instalar-librecad':    { pacotes: ['librecad'],                       fallback: '📐 LibreCAD' },
     'instalar-kdenlive':    { pacotes: ['kdenlive'],                       fallback: '🎬 Kdenlive' },
     'instalar-pitivi':      { pacotes: ['pitivi'],                         fallback: '🎞️ Pitivi' },
+    'instalar-shotcut':     { pacotes: ['shotcut'],                        fallback: '✂️ Shotcut' },
+    'instalar-avidemux':    { pacotes: ['avidemux'],                       fallback: '✂️ Avidemux' },
     'instalar-blender':     { pacotes: ['blender'],                        fallback: '🧊 Blender' },
     'instalar-ardour':      { pacotes: ['ardour8'],                        fallback: '🎵 Ardour' },
     'instalar-lmms':        { pacotes: ['lmms'],                           fallback: '🎹 LMMS' },
@@ -831,16 +766,39 @@ var APPS_DNF = {
 };
 
 // ============================================================
-// REGISTRY DE APPS RPM VIA REPO OFICIAL DO FABRICANTE
+// REGISTRY DE APPS RPM VIA URL DIRETA DE RELEASE
 // ============================================================
 //
-// Navegadores. Cada um configura um repositório próprio (via
-// arquivo .repo ou comando `dnf config-manager`), instala o
-// pacote, e — na remoção — remove o pacote E desativa o repo.
+// Dois modos:
+//   • `url`        — URL estática (OnlyOffice mantém o mesmo path).
+//   • `resolveUrl` — comando shell que imprime a URL em runtime
+//                    (RustDesk versiona cada release).
 //
-// `repoSetup`: comando que adiciona o repo (roda como root).
-// `repoRemove`: comando que remove o arquivo .repo do sistema.
-// `pacote`: nome do pacote RPM instalado.
+// `--setopt=localpkg_gpgcheck=0` é obrigatório no Fedora 44/45:
+// RPMs baixados de URL (localpkg) são rejeitados por padrão se
+// não tiverem assinatura verificada no keyring do sistema.
+
+var APPS_URL_RPM = {
+    'instalar-onlyoffice': {
+        url: 'https://download.onlyoffice.com/install/desktop/editors/linux/onlyoffice-desktopeditors.x86_64.rpm',
+        pacote: 'onlyoffice-desktopeditors',
+        binAbrir: 'desktopeditors',
+        fallback: '📝 OnlyOffice'
+    },
+    'instalar-rustdesk': {
+        resolveUrl:
+            'curl -s https://api.github.com/repos/rustdesk/rustdesk/releases/latest ' +
+            '| grep -oP \'"browser_download_url":\\s*"\\K[^"]*\\.x86_64\\.rpm\' ' +
+            '| head -1',
+        pacote: 'rustdesk',
+        binAbrir: 'rustdesk',
+        fallback: '🖥️ RustDesk'
+    }
+};
+
+// ============================================================
+// REGISTRY DE APPS RPM VIA REPO OFICIAL DO FABRICANTE
+// ============================================================
 
 var APPS_RPM_REPO = {
     'instalar-opera': {
@@ -883,31 +841,15 @@ var APPS_RPM_REPO = {
 };
 
 // ============================================================
-// CORREÇÃO v1.0.0-10062026.b — BOTÕES "ABRIR X" DINÂMICOS
+// BOTÕES "ABRIR X" DINÂMICOS
 // ============================================================
 //
-// PROBLEMA: apps instalados FORA do FAP (via terminal, GNOME
-// Software, etc.) eram detectados corretamente — a lixeira
-// aparecia — mas o botão de instalar NÃO era trocado pelo botão
-// de abrir. Motivo: `aplicarEstadoInstalavel` só faz o swap se
-// encontrar `btn-abrir-<nome>` no DOM, e o HTML desta sessão não
-// tinha esses botões para a maioria dos Flatpaks.
-//
-// SOLUÇÃO: criar os botões "Abrir X" dinamicamente a partir do
-// registry APPS_FLATPAK. Vantagens:
-//   1. Cobre TODOS os Flatpaks atuais e futuros sem editar o HTML.
-//   2. Mantém o comportamento consistente com o resto do FAP.
-//   3. Cada botão ganha data-i18n próprio (traduzível).
-//
-// Os botões ficam escondidos por padrão (display: none) e são
-// mostrados por `aplicarEstadoInstalavel` quando o app é marcado
-// como instalado.
+// Cria dinamicamente os botões "Abrir X" para todos os apps
+// registrados que ainda não os têm no HTML. Roda uma vez, antes
+// de `restaurarEstadoSessao()`.
 
 function _criarBotoesAbrir() {
-    // Cobre TODOS os registries: Flatpak, DNF e RPM-com-repo.
-    // O idAbrir derivado é sempre 'abrir-<nome>' a partir de
-    // 'instalar-<nome>', igual ao padrão histórico da sessão.
-    var todos = Object.assign({}, APPS_FLATPAK, APPS_DNF, APPS_RPM_REPO);
+    var todos = Object.assign({}, APPS_FLATPAK, APPS_DNF, APPS_RPM_REPO, APPS_URL_RPM);
 
     Object.keys(todos).forEach(function(idInstall) {
         var idAbrir = 'abrir-' + idInstall.replace(/^instalar-/, '');
@@ -945,26 +887,13 @@ function _criarBotoesAbrir() {
     });
 }
 
-// Abre um Flatpak pelo seu install ID, resolvendo o appId via
-// APPS_FLATPAK. Usado pelos botões "Abrir X" criados dinamicamente.
-//
-// Usa `gtk-launch <appId>` (em vez de `flatpak run`) porque:
-//   - `gtk-launch` já está na whitelist de comandos sem
-//     autenticação do server.js (evita pedir senha ao abrir).
-//   - `flatpak run` exigiria autenticação (pkexec/kdesu) toda
-//     vez — UX ruim.
-//   - O `setsid -f` aplicado por `abrirFerramentaExterna` garante
-//     que o app sobreviva ao fechamento do FAP.
 // ============================================================
 // COMANDOS DE ABERTURA POR TIPO
 // ============================================================
-//
-// Cada tipo de instalação tem seu comando de "abrir":
-//   • Flatpak  → gtk-launch <appId>
-//   • DNF      → gtk-launch <comando> ou binário direto
-//   • RPM-repo → gtk-launch <comando> ou binário direto
 
 var _CMD_ABRIR_DNF = {
+    'instalar-onlyoffice':  'desktopeditors',
+    'instalar-rustdesk':    'rustdesk',
     'instalar-thunderbird': 'gtk-launch thunderbird',
     'instalar-okular':      'okular',
     'instalar-foliate':     'gtk-launch com.github.johnfactotum.Foliate',
@@ -979,6 +908,8 @@ var _CMD_ABRIR_DNF = {
     'instalar-librecad':    'librecad',
     'instalar-kdenlive':    'kdenlive',
     'instalar-pitivi':      'pitivi',
+    'instalar-shotcut':     'shotcut',
+    'instalar-avidemux':    'avidemux',
     'instalar-blender':     'blender',
     'instalar-ardour':      'ardour8',
     'instalar-lmms':        'lmms',
@@ -996,7 +927,6 @@ var _CMD_ABRIR_RPM_REPO = {
 function abrirAppGenerico(idInstall) {
     var nome = idInstall;
 
-    // Flatpak?
     if (APPS_FLATPAK[idInstall]) {
         var infoFlat = APPS_FLATPAK[idInstall];
         nome = (infoFlat.fallback || 'App').replace(/^[^\s]+\s*/, '');
@@ -1004,7 +934,6 @@ function abrirAppGenerico(idInstall) {
         return;
     }
 
-    // DNF?
     if (APPS_DNF[idInstall]) {
         var infoDnf = APPS_DNF[idInstall];
         nome = (infoDnf.fallback || 'App').replace(/^[^\s]+\s*/, '');
@@ -1015,7 +944,15 @@ function abrirAppGenerico(idInstall) {
         return;
     }
 
-    // RPM via repo oficial?
+    if (APPS_URL_RPM[idInstall]) {
+        var infoUrl = APPS_URL_RPM[idInstall];
+        nome = (infoUrl.fallback || 'App').replace(/^[^\s]+\s*/, '');
+        if (infoUrl.binAbrir) {
+            abrirFerramentaExterna(infoUrl.binAbrir, idInstall, nome);
+        }
+        return;
+    }
+
     if (APPS_RPM_REPO[idInstall]) {
         var infoRpm = APPS_RPM_REPO[idInstall];
         nome = (infoRpm.fallback || 'App').replace(/^[^\s]+\s*/, '');
@@ -1027,28 +964,52 @@ function abrirAppGenerico(idInstall) {
     }
 }
 
-// Chama a criação dos botões "Abrir" ANTES de restaurar estado —
-// assim `aplicarEstadoInstalavel` já os encontra no DOM e faz o
-// swap corretamente para apps instalados.
 _criarBotoesAbrir();
 
 // ============================================================
-// REGISTRO DE APPS REMOVÍVEIS (não-Flatpak)
+// REGISTRO DE APPS REMOVÍVEIS
 // ============================================================
 //
-// Lightworks baixa um RPM do site oficial. A lixeira remove o
-// pacote via dnf. NÃO removemos nada além do que este botão
-// instalou — regra do projeto para não quebrar pacotes do Fedora.
-//
-// Rclone Manager usa "Desfazer tudo" porque remove DOIS pacotes
-// (rclone-manager + rclone). Suas contas de nuvem em
-// ~/.config/rclone NÃO são tocadas.
+// Flatpaks, DNF, RPM-repo e URL-RPM: todos seguem o mesmo padrão
+// de lixeira unificada. `_mostrarLixeira` (script.js) consulta
+// esta tabela para saber o tipo e os identificadores de remoção.
+
+// --- Flatpaks (Flathub) ---
+
+registrarAppRemovivel('instalar-obsidian', { tipo: 'flatpak', appId: 'md.obsidian.Obsidian',            nome: 'Obsidian' });
+registrarAppRemovivel('instalar-joplin',   { tipo: 'flatpak', appId: 'net.cozic.joplin_desktop',        nome: 'Joplin' });
+registrarAppRemovivel('instalar-spotify',  { tipo: 'flatpak', appId: 'com.spotify.Client',             nome: 'Spotify' });
+registrarAppRemovivel('instalar-plex',     { tipo: 'flatpak', appId: 'tv.plex.PlexDesktop',            nome: 'Plex' });
+registrarAppRemovivel('instalar-stremio',  { tipo: 'flatpak', appId: 'com.stremio.Stremio',            nome: 'Stremio' });
+registrarAppRemovivel('instalar-pinta',    { tipo: 'flatpak', appId: 'com.github.PintaProject.Pinta',  nome: 'Pinta' });
+registrarAppRemovivel('instalar-cura',     { tipo: 'flatpak', appId: 'com.ultimaker.cura',             nome: 'Cura' });
+registrarAppRemovivel('instalar-upscayl',  { tipo: 'flatpak', appId: 'org.upscayl.Upscayl',            nome: 'Upscayl' });
+registrarAppRemovivel('instalar-xnviewmp', { tipo: 'flatpak', appId: 'com.xnview.XnViewMP',            nome: 'XnView MP' });
+registrarAppRemovivel('instalar-zoom',     { tipo: 'flatpak', appId: 'us.zoom.Zoom',                   nome: 'Zoom' });
+registrarAppRemovivel('instalar-discord',  { tipo: 'flatpak', appId: 'com.discordapp.Discord',         nome: 'Discord' });
+registrarAppRemovivel('instalar-telegram', { tipo: 'flatpak', appId: 'org.telegram.desktop',           nome: 'Telegram' });
+registrarAppRemovivel('instalar-openshot', { tipo: 'flatpak', appId: 'org.openshot.OpenShot',          nome: 'OpenShot' });
+registrarAppRemovivel('instalar-drift',    { tipo: 'flatpak', appId: 'org.cutwire.Drift',              nome: 'Drift' });
+
+// --- RPM baixado de URL ---
 
 registrarAppRemovivel('instalar-lightworks', {
     tipo: 'dnf',
     pacotes: ['lightworks'],
     nome: 'Lightworks'
 });
+registrarAppRemovivel('instalar-onlyoffice', {
+    tipo: 'dnf',
+    pacotes: ['onlyoffice-desktopeditors'],
+    nome: 'OnlyOffice'
+});
+registrarAppRemovivel('instalar-rustdesk', {
+    tipo: 'dnf',
+    pacotes: ['rustdesk'],
+    nome: 'RustDesk'
+});
+
+// --- Rclone Manager ("desfazer tudo") ---
 
 registrarAppRemovivel('instalar-rclone-manager', {
     modo: 'desfazerTudo',
@@ -1064,7 +1025,7 @@ registrarAppRemovivel('instalar-rclone-manager', {
     nome: 'Rclone Manager'
 });
 
-// --- Apps migrados para DNF (repos oficiais do Fedora) ---
+// --- DNF (repos oficiais do Fedora) ---
 
 registrarAppRemovivel('instalar-thunderbird', { tipo: 'dnf', pacotes: ['thunderbird'], nome: 'Thunderbird' });
 registrarAppRemovivel('instalar-okular',      { tipo: 'dnf', pacotes: ['okular'],      nome: 'Okular' });
@@ -1080,6 +1041,8 @@ registrarAppRemovivel('instalar-freecad',     { tipo: 'dnf', pacotes: ['freecad'
 registrarAppRemovivel('instalar-librecad',    { tipo: 'dnf', pacotes: ['librecad'],    nome: 'LibreCAD' });
 registrarAppRemovivel('instalar-kdenlive',    { tipo: 'dnf', pacotes: ['kdenlive'],    nome: 'Kdenlive' });
 registrarAppRemovivel('instalar-pitivi',      { tipo: 'dnf', pacotes: ['pitivi'],      nome: 'Pitivi' });
+registrarAppRemovivel('instalar-shotcut',     { tipo: 'dnf', pacotes: ['shotcut'],     nome: 'Shotcut' });
+registrarAppRemovivel('instalar-avidemux',    { tipo: 'dnf', pacotes: ['avidemux'],    nome: 'Avidemux' });
 registrarAppRemovivel('instalar-blender',     { tipo: 'dnf', pacotes: ['blender'],     nome: 'Blender' });
 registrarAppRemovivel('instalar-ardour',      { tipo: 'dnf', pacotes: ['ardour8'],     nome: 'Ardour' });
 registrarAppRemovivel('instalar-lmms',        { tipo: 'dnf', pacotes: ['lmms'],        nome: 'LMMS' });
@@ -1087,10 +1050,6 @@ registrarAppRemovivel('instalar-audacity',    { tipo: 'dnf', pacotes: ['audacity
 registrarAppRemovivel('instalar-chromium',    { tipo: 'dnf', pacotes: ['chromium'],    nome: 'Chromium' });
 
 // --- Navegadores via repo oficial do fabricante ---
-//
-// Campo `reposRemover`: lista de arquivos .repo a apagar junto
-// com o pacote. `_executarRemocaoApp` (script.js) detecta este
-// campo e acrescenta o `rm` ao comando de remoção.
 
 registrarAppRemovivel('instalar-opera', {
     tipo: 'dnf',
@@ -1117,71 +1076,47 @@ registrarAppRemovivel('instalar-edge', {
     nome: 'Microsoft Edge'
 });
 
-// --- Ferramentas de acesso remoto (não-Flatpak) ---
+// --- Ferramentas de acesso remoto ---
 
 registrarAppRemovivel('instalar-remmina', {
     tipo: 'dnf',
     pacotes: ['remmina', 'remmina-plugins-rdp', 'remmina-plugins-vnc'],
     nome: 'Remmina'
 });
-
 registrarAppRemovivel('instalar-gnome-connections', {
     tipo: 'dnf',
     pacotes: ['gnome-connections'],
     nome: 'GNOME Connections'
 });
-
 registrarAppRemovivel('instalar-krdc', {
     tipo: 'dnf',
     pacotes: ['krdc'],
     nome: 'KRDC'
 });
 
-// --- Suíte ArtCraft (RPMs do GitHub oficial) ---
+// --- Suíte ArtCraft ---
 
-registrarAppRemovivel('instalar-photocraft', {
-    tipo: 'dnf', pacotes: ['photocraft'], nome: 'PhotoCraft'
-});
-registrarAppRemovivel('instalar-vectorcraft', {
-    tipo: 'dnf', pacotes: ['vectorcraft'], nome: 'VectorCraft'
-});
-registrarAppRemovivel('instalar-filmcraft', {
-    tipo: 'dnf', pacotes: ['filmcraft'], nome: 'FilmCraft'
-});
-registrarAppRemovivel('instalar-lightcraft', {
-    tipo: 'dnf', pacotes: ['lightcraft'], nome: 'LightCraft'
-});
-registrarAppRemovivel('instalar-pdfcraft', {
-    tipo: 'dnf', pacotes: ['pdfcraft'], nome: 'PDFCraft'
-});
-registrarAppRemovivel('instalar-effectcraft', {
-    tipo: 'dnf', pacotes: ['effectcraft'], nome: 'EffectCraft'
-});
-registrarAppRemovivel('instalar-designcraft', {
-    tipo: 'dnf', pacotes: ['designcraft'], nome: 'DesignCraft'
-});
-registrarAppRemovivel('instalar-figcraft', {
-    tipo: 'dnf', pacotes: ['figcraft'], nome: 'FigCraft'
-});
-registrarAppRemovivel('instalar-deckcraft', {
-    tipo: 'dnf', pacotes: ['deckcraft'], nome: 'DeckCraft'
-});
-registrarAppRemovivel('instalar-gridcraft', {
-    tipo: 'dnf', pacotes: ['gridcraft'], nome: 'GridCraft'
-});
-registrarAppRemovivel('instalar-wordcraft', {
-    tipo: 'dnf', pacotes: ['wordcraft'], nome: 'WordCraft'
-});
-registrarAppRemovivel('instalar-cadcraft', {
-    tipo: 'dnf', pacotes: ['cadcraft'], nome: 'CadCraft'
-});
-registrarAppRemovivel('instalar-soundcraft', {
-    tipo: 'dnf', pacotes: ['soundcraft'], nome: 'SoundCraft'
-});
+registrarAppRemovivel('instalar-photocraft',  { tipo: 'dnf', pacotes: ['photocraft'],  nome: 'PhotoCraft' });
+registrarAppRemovivel('instalar-vectorcraft', { tipo: 'dnf', pacotes: ['vectorcraft'], nome: 'VectorCraft' });
+registrarAppRemovivel('instalar-filmcraft',   { tipo: 'dnf', pacotes: ['filmcraft'],   nome: 'FilmCraft' });
+registrarAppRemovivel('instalar-lightcraft',  { tipo: 'dnf', pacotes: ['lightcraft'],  nome: 'LightCraft' });
+registrarAppRemovivel('instalar-pdfcraft',    { tipo: 'dnf', pacotes: ['pdfcraft'],    nome: 'PDFCraft' });
+registrarAppRemovivel('instalar-effectcraft', { tipo: 'dnf', pacotes: ['effectcraft'], nome: 'EffectCraft' });
+registrarAppRemovivel('instalar-designcraft', { tipo: 'dnf', pacotes: ['designcraft'], nome: 'DesignCraft' });
+registrarAppRemovivel('instalar-figcraft',    { tipo: 'dnf', pacotes: ['figcraft'],    nome: 'FigCraft' });
+registrarAppRemovivel('instalar-deckcraft',   { tipo: 'dnf', pacotes: ['deckcraft'],   nome: 'DeckCraft' });
+registrarAppRemovivel('instalar-gridcraft',   { tipo: 'dnf', pacotes: ['gridcraft'],   nome: 'GridCraft' });
+registrarAppRemovivel('instalar-wordcraft',   { tipo: 'dnf', pacotes: ['wordcraft'],   nome: 'WordCraft' });
+registrarAppRemovivel('instalar-cadcraft',    { tipo: 'dnf', pacotes: ['cadcraft'],    nome: 'CadCraft' });
+registrarAppRemovivel('instalar-soundcraft',  { tipo: 'dnf', pacotes: ['soundcraft'],  nome: 'SoundCraft' });
 
 // ============================================================
-// FLATPAKS — INSTALAÇÃO VIA FILA
+// INSTALADORES
 // ============================================================
+//
+// Todos usam `aplicarEstadoInstalavel` no onSucesso — isso faz o
+// swap para "🚀 Abrir X" + criação da lixeira via `_mostrarLixeira`
+// (script.js), em uníssono para Flatpak, DNF, RPM-repo e URL-RPM.
 
 async function instalarFlatpak(idComando) {
     var info = APPS_FLATPAK[idComando];
@@ -1198,7 +1133,7 @@ async function instalarFlatpak(idComando) {
     var nomeAcao = _t(chaveI18n, info.fallback);
 
     await executarComandoGenerico(idComando, comando, nomeAcao, function() {
-        _atualizarIconeDesinstalar(idComando);
+        aplicarEstadoInstalavel(idComando, _derivarIdAbrir(idComando));
     });
 }
 
@@ -1217,7 +1152,7 @@ async function instalarDnf(idComando) {
     var nomeAcao = _t(chaveI18n, info.fallback);
 
     await executarComandoGenerico(idComando, comando, nomeAcao, function() {
-        _atualizarIconeDesinstalar(idComando);
+        aplicarEstadoInstalavel(idComando, _derivarIdAbrir(idComando));
     });
 }
 
@@ -1227,8 +1162,6 @@ async function instalarRpmRepo(idComando) {
         console.error('[aplicativos] App RPM-repo não mapeado:', idComando);
         return;
     }
-    // Configura o repo (idempotente) e instala. O `dnf config-manager
-    // addrepo` sobrescreve o .repo se já existir — sem quebrar nada.
     var comando = info.repoSetup + ' && sudo dnf install -y ' + info.pacote;
 
     var chaveI18n = 'sessoes.aplicativos.btn_' +
@@ -1238,148 +1171,40 @@ async function instalarRpmRepo(idComando) {
     var nomeAcao = _t(chaveI18n, info.fallback);
 
     await executarComandoGenerico(idComando, comando, nomeAcao, function() {
-        _atualizarIconeDesinstalar(idComando);
+        aplicarEstadoInstalavel(idComando, _derivarIdAbrir(idComando));
     });
 }
 
-// ============================================================
-// DESINSTALAÇÃO DE FLATPAKS
-// ============================================================
-
-async function desinstalarAppFlatpak(idComando, appId, nomeExibicao) {
-    if (!isExecutado(idComando)) {
-        alert(_tVars('comum.nao_instalado', nomeExibicao + ' não está instalado.', { nome: nomeExibicao }));
+async function instalarUrlRpm(idComando) {
+    var info = APPS_URL_RPM[idComando];
+    if (!info) {
+        console.error('[aplicativos] App URL-RPM não mapeado:', idComando);
         return;
     }
 
-    if (!confirm(_tVars('comum.confirmar_desinstalar', 'Deseja desinstalar o ' + nomeExibicao + '?', { nome: nomeExibicao }))) return;
-
-    var logBox = _getLogBox(idComando);
-    var btn = document.getElementById('btn-' + idComando);
-    var idRevert = idComando + '-revert';
-
-    if (logBox) {
-        logBox.style.display = 'block';
-        _separadorLog(logBox, '🗑️ Desinstalar ' + nomeExibicao);
-        var infoLine = document.createElement('div');
-        infoLine.className = 'log-line info';
-        infoLine.textContent = '🗑️ Desinstalando ' + nomeExibicao + '...';
-        logBox.appendChild(infoLine);
-        logBox.scrollTop = logBox.scrollHeight;
+    var comando;
+    if (info.resolveUrl) {
+        comando =
+            'URL=$(' + info.resolveUrl + ') && ' +
+            '[ -n "$URL" ] || { ' +
+            '  echo "❌ Nenhum RPM .x86_64 encontrado na release mais recente."; ' +
+            '  echo "   Tente novamente em alguns minutos ou verifique manualmente."; ' +
+            '  exit 1; ' +
+            '} && ' +
+            'echo "📦 Baixando: $URL" && ' +
+            'sudo dnf install -y --setopt=localpkg_gpgcheck=0 "$URL"';
+    } else {
+        comando = 'sudo dnf install -y --setopt=localpkg_gpgcheck=0 ' + info.url;
     }
 
-    conectarSSE(idRevert, logBox);
+    var chaveI18n = 'sessoes.aplicativos.btn_' +
+        (idComando.indexOf('instalar-') === 0
+            ? idComando.substring('instalar-'.length)
+            : idComando);
+    var nomeAcao = _t(chaveI18n, info.fallback);
 
-    try {
-        await fetch(API_URL + '/executar', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                comando: 'flatpak uninstall -y ' + appId,
-                idComando: idRevert
-            })
-        });
-
-        var sucesso = await aguardarConclusaoReal(idRevert, 180000);
-
-        if (!sucesso) {
-            if (logBox) {
-                var errorLine = document.createElement('div');
-                errorLine.className = 'log-line error';
-                errorLine.textContent = sucesso === null
-                    ? _t('comum.erro_timeout_desinstalar', '❌ Tempo esgotado esperando a desinstalação.')
-                    : _tVars('comum.erro_falha_desinstalar', '❌ Falha ao desinstalar ' + nomeExibicao + '.', { nome: nomeExibicao });
-                logBox.appendChild(errorLine);
-                logBox.scrollTop = logBox.scrollHeight;
-            }
-            return;
-        }
-
-        await desmarcarComoExecutado(idComando);
-
-        // Aplica o estado inicial (botão original + esconde a
-        // lixeira) via helper unificado — cobre o botão de
-        // instalar, o botão de abrir e a lixeira em uníssono.
-        var idAbrir = _derivarIdAbrir(idComando);
-        aplicarEstadoInstalavel(idComando, idAbrir, idComando);
-
-        if (logBox) {
-            var successLine = document.createElement('div');
-            successLine.className = 'log-line success';
-            successLine.textContent = _tVars('comum.sucesso_desinstalar', '✅ ' + nomeExibicao + ' desinstalado com sucesso!', { nome: nomeExibicao });
-            logBox.appendChild(successLine);
-            logBox.scrollTop = logBox.scrollHeight;
-        }
-
-    } catch (e) {
-        if (logBox) {
-            var errorLine2 = document.createElement('div');
-            errorLine2.className = 'log-line error';
-            errorLine2.textContent = _tVars('comum.erro_desinstalar', '❌ Erro ao desinstalar: ' + e.message, { msg: e.message });
-            logBox.appendChild(errorLine2);
-            logBox.scrollTop = logBox.scrollHeight;
-        }
-    }
-}
-
-// ------------------------------------------------------------
-// ÍCONES DE DESINSTALAR — FLATPAK (local desta sessão)
-// ------------------------------------------------------------
-
-var _svgLixeira = '<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>';
-
-function _atualizarIconeDesinstalar(idComando) {
-    var btn = document.getElementById('btn-' + idComando);
-    if (!btn) return;
-
-    var wrapper = btn.closest('.btn-flatpak-wrapper');
-    if (!wrapper) return;
-
-    var info = APPS_FLATPAK[idComando];
-    if (!info) return;
-
-    var nomeExibicao = (btn.textContent || '').replace(/^[✅\s]+/, '').trim() || info.fallback;
-
-    var icone = wrapper.querySelector('.btn-flatpak-uninstall');
-    if (!icone) {
-        icone = document.createElement('button');
-        icone.type = 'button';
-        icone.className = 'btn-flatpak-uninstall';
-        icone.setAttribute('data-comando-alvo', idComando);
-        icone.innerHTML = _svgLixeira;
-        icone.title = _tVars('comum.desinstalar_flatpak', 'Desinstalar ' + nomeExibicao, { nome: nomeExibicao });
-        icone.setAttribute('aria-label', icone.title);
-
-        icone.addEventListener('click', function(e) {
-            e.stopPropagation();
-            var alvo = this.getAttribute('data-comando-alvo');
-            var alvoInfo = APPS_FLATPAK[alvo];
-            if (!alvoInfo) return;
-            var alvoBtn = document.getElementById('btn-' + alvo);
-            var alvoNome = alvoBtn ? (alvoBtn.textContent || '').replace(/^[✅\s]+/, '').trim() : alvoInfo.fallback;
-            desinstalarAppFlatpak(alvo, alvoInfo.appId, alvoNome || alvoInfo.fallback);
-        });
-
-        wrapper.appendChild(icone);
-    }
-
-    icone.style.display = '';
-}
-
-function _esconderIconeDesinstalar(idComando) {
-    var btn = document.getElementById('btn-' + idComando);
-    if (!btn) return;
-    var wrapper = btn.closest('.btn-flatpak-wrapper');
-    if (!wrapper) return;
-    var icone = wrapper.querySelector('.btn-flatpak-uninstall');
-    if (icone) icone.style.display = 'none';
-}
-
-function _restaurarIconesFlatpak() {
-    Object.keys(APPS_FLATPAK).forEach(function(idComando) {
-        if (isExecutado(idComando)) {
-            _atualizarIconeDesinstalar(idComando);
-        }
+    await executarComandoGenerico(idComando, comando, nomeAcao, function() {
+        aplicarEstadoInstalavel(idComando, _derivarIdAbrir(idComando));
     });
 }
 
@@ -1388,11 +1213,6 @@ function _restaurarIconesFlatpak() {
 // ============================================================
 
 async function instalarLightworks() {
-    // `--setopt=localpkg_gpgcheck=0` é obrigatório no Fedora 44/45:
-    // RPMs baixados de URL (localpkg) são rejeitados por padrão se
-    // não tiverem assinatura verificada no keyring do sistema.
-    // O RPM do Lightworks é assinado pela própria LWKS com uma
-    // chave que não está no keyring do Fedora — daí a flag.
     var comando =
         'sudo dnf install --setopt=localpkg_gpgcheck=0 -y ' +
         'https://cdn.lwks.com/releases/latest/lightworks_linux_rpm.rpm';
@@ -1406,9 +1226,6 @@ async function instalarLightworks() {
 // ============================================================
 
 async function instalarRcloneManager() {
-    // O Rclone Manager já usa `--setopt=localpkg_gpgcheck=0`,
-    // obrigatório no Fedora 44/45 para RPMs baixados de URL.
-    // Mantido como referência do padrão de instalação localpkg.
     var comando =
         'RPM_URL=$(curl -s https://api.github.com/repos/Zarestia-Dev/rclone-manager/releases/latest ' +
         '| grep -oP \'"browser_download_url":\\s*"\\K[^"]*\\.x86_64\\.rpm\' ' +
@@ -1512,7 +1329,7 @@ async function abrirInstaladorAffinity() {
 }
 
 // ============================================================
-// SUÍTE ARTCRAFT (apps Rust, RPM do GitHub oficial)
+// SUÍTE ARTCRAFT
 // ============================================================
 
 var ARTCRAFT_REPOS = {
@@ -1544,16 +1361,11 @@ async function executarArtCraft(appId) {
 
     var comando =
         'JSON=$(curl -sL --max-time 30 "https://api.github.com/repos/' + info.repo + '/releases/latest") && ' +
-        // 1. Rede fora / DNS falhou / timeout → JSON vazio.
-        //    Mensagem específica para o usuário saber que é
-        //    problema de conexão, não de release inexistente.
         'if [ -z "$JSON" ]; then ' +
         '  echo "❌ Falha ao contatar a API do GitHub."; ' +
         '  echo "   Verifique sua conexão de rede e tente novamente."; ' +
         '  exit 1; ' +
         'fi && ' +
-        // 2. API retornou erro (rate limit, 404, repositório movido).
-        //    A API do GitHub devolve um JSON com a chave "message".
         'if echo "$JSON" | grep -q \'"message"\'; then ' +
         '  echo "⚠️ API do GitHub respondeu com erro:"; ' +
         '  echo "$JSON" | head -3; ' +
@@ -1561,9 +1373,6 @@ async function executarArtCraft(appId) {
         '  echo "   Alternativa: https://github.com/' + info.repo + '/releases/latest"; ' +
         '  exit 1; ' +
         'fi && ' +
-        // 3. Extrai a URL do asset x86_64 via regex flexível.
-        //    Aceita tanto "-x86_64.rpm" (padrão dos projetos
-        //    storytold/*) quanto ".x86_64.rpm" (outros projetos).
         'URL=$(echo "$JSON" | node -e "' +
         '  let d=\'\';' +
         '  process.stdin.on(\'data\', c => d += c);' +
@@ -1575,16 +1384,11 @@ async function executarArtCraft(appId) {
         '    } catch (e) { process.exit(1); }' +
         '  });' +
         '") && ' +
-        // 4. JSON é válido e tem release, mas nenhum asset
-        //    .x86_64.rpm foi publicado (só AppImage, .deb, etc.).
         '[ -n "$URL" ] || { ' +
         '  echo "❌ Release encontrada, mas sem arquivo .x86_64.rpm."; ' +
         '  echo "   Consulte: https://github.com/' + info.repo + '/releases/latest"; ' +
         '  exit 1; ' +
         '} && ' +
-        // 5. Instala. O `--setopt=localpkg_gpgcheck=0` é obrigatório
-        //    no Fedora 44/45 para qualquer RPM baixado de URL — os
-        //    RPMs do GitHub Releases não são assinados pelo Fedora.
         'echo "📦 Baixando: $URL" && ' +
         'sudo dnf install -y --setopt=localpkg_gpgcheck=0 "$URL"';
 
@@ -1599,34 +1403,12 @@ function abrirArtCraft(appId) {
 }
 
 // ============================================================
-// HELPER: VISIBILIDADE DO BOTÃO "ABRIR X"
-// ============================================================
-
-function _atualizarBotaoAbrir(idInstalacao, idBotaoAbrir) {
-    var btn = document.getElementById(idBotaoAbrir);
-    if (!btn) return;
-    btn.style.display = isExecutado(idInstalacao) ? '' : 'none';
-}
-
-// ============================================================
 // FERRAMENTAS DE ACESSO REMOTO
 // ============================================================
 
-async function executarRustDesk() {
-    var idComando = 'instalar-rustdesk';
-    var info = APPS_FLATPAK[idComando];
-    if (!info) return;
-    var comando = 'flatpak install flathub ' + info.appId + ' -y';
-    await executarComandoGenerico(idComando, comando,
-        _t('sessoes.aplicativos.btn_rustdesk', '🖥️ RustDesk'),
-        function() {
-            _atualizarIconeDesinstalar(idComando);
-            _atualizarBotaoAbrir('instalar-rustdesk', 'btn-abrir-rustdesk');
-        });
-}
-
 function abrirRustDesk() {
-    abrirFerramentaExterna('gtk-launch com.rustdesk.RustDesk', 'instalar-rustdesk', 'RustDesk');
+    // RPM nativo — binário /usr/bin/rustdesk.
+    abrirFerramentaExterna('rustdesk', 'instalar-rustdesk', 'RustDesk');
 }
 
 async function executarRemmina() {
@@ -1634,10 +1416,7 @@ async function executarRemmina() {
     var comando = 'sudo dnf install -y remmina remmina-plugins-rdp remmina-plugins-vnc';
     await executarComandoGenerico(idComando, comando,
         _t('sessoes.aplicativos.btn_remmina', '🖥️ Remmina'),
-        function() {
-            atualizarIconeRemover(idComando);
-            _atualizarBotaoAbrir('instalar-remmina', 'btn-abrir-remmina');
-        });
+        function() { aplicarEstadoInstalavel(idComando, _derivarIdAbrir(idComando)); });
 }
 
 function abrirRemmina() {
@@ -1649,10 +1428,7 @@ async function executarGnomeConnections() {
     var comando = 'sudo dnf install -y gnome-connections';
     await executarComandoGenerico(idComando, comando,
         _t('sessoes.aplicativos.btn_gnome_connections', '🖥️ GNOME Connections'),
-        function() {
-            atualizarIconeRemover(idComando);
-            _atualizarBotaoAbrir('instalar-gnome-connections', 'btn-abrir-gnome-connections');
-        });
+        function() { aplicarEstadoInstalavel(idComando, _derivarIdAbrir(idComando)); });
 }
 
 function abrirGnomeConnections() {
@@ -1664,10 +1440,7 @@ async function executarKrdc() {
     var comando = 'sudo dnf install -y krdc';
     await executarComandoGenerico(idComando, comando,
         _t('sessoes.aplicativos.btn_krdc', '🖥️ KRDC'),
-        function() {
-            atualizarIconeRemover(idComando);
-            _atualizarBotaoAbrir('instalar-krdc', 'btn-abrir-krdc');
-        });
+        function() { aplicarEstadoInstalavel(idComando, _derivarIdAbrir(idComando)); });
 }
 
 function abrirKrdc() {
@@ -1740,13 +1513,18 @@ async function restaurarEstadoSessao() {
         aplicarEstadoInstalavel(idComando, _derivarIdAbrir(idComando));
     });
 
-    // DNF (repos oficiais do Fedora).
+    // DNF (repos oficiais do Fedora e RPM Fusion).
     Object.keys(APPS_DNF).forEach(function(idComando) {
         aplicarEstadoInstalavel(idComando, _derivarIdAbrir(idComando));
     });
 
     // RPM via repo oficial do fabricante (navegadores).
     Object.keys(APPS_RPM_REPO).forEach(function(idComando) {
+        aplicarEstadoInstalavel(idComando, _derivarIdAbrir(idComando));
+    });
+
+    // RPM via URL direta (OnlyOffice, RustDesk).
+    Object.keys(APPS_URL_RPM).forEach(function(idComando) {
         aplicarEstadoInstalavel(idComando, _derivarIdAbrir(idComando));
     });
 
@@ -1776,8 +1554,6 @@ async function restaurarEstadoSessao() {
 
     atualizarBotaoAbrirRclone();
     aplicarEstadoToggle('instalar-rclone-manager', 'desfazer-rclone-manager');
-
-    _restaurarIconesFlatpak();
 
     await _ajustarFerramentasPorDesktop();
 }

@@ -2,7 +2,7 @@
 
 **🌐 Language:** [Português (BR)](README.md) | English | [Español](README.es.md)
 
-![Version](https://img.shields.io/badge/Version-v1.0.0--10142026.b-orange?style=flat-square)
+![Version](https://img.shields.io/badge/Version-v1.0.0--10152026-orange?style=flat-square)
 ![Fedora](https://img.shields.io/badge/Fedora-44+-294172?style=flat-square&logo=fedora)
 ![License](https://img.shields.io/badge/License-GPL--3.0-green?style=flat-square)
 ![Languages](https://img.shields.io/badge/Languages-PT--BR%20%7C%20EN%20%7C%20ES-3c67e3?style=flat-square)
@@ -39,9 +39,9 @@ Fedora Advantage Panel (FAP) is a visual automation panel for Fedora Linux. It t
 | 3 | 🖥️ Hardware | AMD/NVIDIA/Intel drivers, CoreCtrl, LACT, GPU overclocking |
 | 4 | 🔌 Devices | Automatic hardware detection, community COPR drivers, controllers, firmware |
 | 5 | 🎬 Media Production | OBS Studio, virtual camera, EasyEffects |
-| 6 | 📦 Apps | 20+ Flatpaks, 20+ `dnf` apps, browsers via official RPM, **ArtCraft Suite (13 apps)** and remote access tools |
+| 6 | 📦 Apps | Curated Flatpaks, 20+ `dnf` apps, browsers via official RPM, **ArtCraft Suite (13 apps)** and remote access tools |
 | 7 | 🏠 Home and Office | CUPS, Samba, LocalSend, KeePassXC, OCR (Okular + Tesseract) |
-| 8 | 🎮 Gaming | Native Steam, Heroic, Lutris, Wine, GameMode, Gamescope Session, emulators |
+| 8 | 🎮 Gaming | Native Steam, Heroic (official RPM), Lutris, Wine, GameMode, Gamescope Session, emulators |
 | 9 | 📱 Waydroid | Android on Linux via container |
 | 10 | 🖥️ Virtualization | QEMU/KVM, VirtualBox, GNOME Boxes |
 | 11 | 📊 Diagnostics | System panel, disk health (SMART), temperatures, error journal |
@@ -64,9 +64,9 @@ Fedora Advantage Panel (FAP) is a visual automation panel for Fedora Linux. It t
 - **Unified trash icon** — every installable app has a removal icon next to it, which removes the package and, when applicable, disables the source repository
 - **Origin by app type** — FAP automatically picks the best install method:
   - **Flatpak (Flathub)** — when there's no official Fedora repo nor package in the distro repos
-  - **`dnf` (official Fedora repos)** — when the distro packages the software
-  - **RPM via vendor's official repo** — when the vendor ships for Fedora (browsers)
-  - **RPM downloaded from URL** — when that's the only option (ArtCraft Suite, Lightworks, Rclone Manager), with `--setopt=localpkg_gpgcheck=0` required
+  - **`dnf` (official Fedora repos or RPM Fusion)** — when the distro packages the software
+  - **RPM via vendor's official repo** — when the vendor ships for Fedora (browsers, Heroic)
+  - **RPM downloaded from URL** — when that's the only option. Supports both a static URL (OnlyOffice) and a URL resolved at runtime via the GitHub API (ArtCraft Suite, RustDesk, Lightworks, Rclone Manager). `--setopt=localpkg_gpgcheck=0` required on Fedora 44/45
 - **Flatpak queue** — clicking on multiple apps in sequence enqueues and installs them one at a time, avoiding Flathub lock errors
 - **"Open" button** on all GUI apps — launches in its own session, surviving FAP closing
 - **Detection of externally installed apps** — if you already have an app installed before FAP, the button appears as "Open" from the start

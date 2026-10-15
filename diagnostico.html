@@ -497,7 +497,7 @@ async function atualizarPainelDiagnostico() {
     _setDiagValor(dash, 'processos', sys && sys.processos != null ? sys.processos : '—');
 
     await _atualizarTopProcessos();
-    await _atualizarParticiones();
+    await _atualizarParticoes();
     _atualizarOtimizacoes(sys);
     _aplicarCoresCondicionais(dash, sys);
 }
@@ -680,7 +680,7 @@ function _escapeHTML(s) {
 // PARTIÇÕES
 // ============================================================
 
-async function _atualizarParticiones() {
+async function _atualizarParticoes() {
     var ul = document.getElementById('diag-particiones');
     if (!ul) return;
 

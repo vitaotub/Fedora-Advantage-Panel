@@ -2,7 +2,7 @@
 
 **🌐 Idioma:** [Português (BR)](README.md) | [English](README.en.md) | Español
 
-![Versión](https://img.shields.io/badge/Versi%C3%B3n-v1.0.0--10142026.b-orange?style=flat-square)
+![Versión](https://img.shields.io/badge/Versi%C3%B3n-v1.0.0--10152026-orange?style=flat-square)
 ![Fedora](https://img.shields.io/badge/Fedora-44+-294172?style=flat-square&logo=fedora)
 ![Licencia](https://img.shields.io/badge/Licencia-GPL--3.0-green?style=flat-square)
 ![Idiomas](https://img.shields.io/badge/Idiomas-PT--BR%20%7C%20EN%20%7C%20ES-3c67e3?style=flat-square)
@@ -39,9 +39,9 @@ Fedora Advantage Panel (FAP) es un panel de automatización visual para Fedora L
 | 3 | 🖥️ Hardware | Controladores AMD/NVIDIA/Intel, CoreCtrl, LACT, overclock de GPU |
 | 4 | 🔌 Dispositivos | Detección automática de hardware, controladores COPR de la comunidad, mandos, firmware |
 | 5 | 🎬 Producción Multimedia | OBS Studio, cámara virtual, EasyEffects |
-| 6 | 📦 Aplicaciones | 20+ Flatpaks, 20+ apps `dnf`, navegadores vía RPM oficial, **Suite ArtCraft (13 apps)** y herramientas de acceso remoto |
+| 6 | 📦 Aplicaciones | Flatpaks seleccionados, 20+ apps `dnf`, navegadores vía RPM oficial, **Suite ArtCraft (13 apps)** y herramientas de acceso remoto |
 | 7 | 🏠 Hogar y Oficina | CUPS, Samba, LocalSend, KeePassXC, OCR (Okular + Tesseract) |
-| 8 | 🎮 Gaming | Steam nativo, Heroic, Lutris, Wine, GameMode, Gamescope Session, emuladores |
+| 8 | 🎮 Gaming | Steam nativo, Heroic (RPM oficial), Lutris, Wine, GameMode, Gamescope Session, emuladores |
 | 9 | 📱 Waydroid | Android en Linux vía contenedor |
 | 10 | 🖥️ Virtualización | QEMU/KVM, VirtualBox, GNOME Boxes |
 | 11 | 📊 Diagnóstico | Panel del sistema, salud del disco (SMART), temperaturas, journal de errores |
@@ -64,9 +64,9 @@ Fedora Advantage Panel (FAP) es un panel de automatización visual para Fedora L
 - **Papelera unificada** — cada app instalable tiene un ícono de eliminación al lado, que elimina el paquete y, cuando aplica, desactiva el repositorio de origen
 - **Origen por tipo de app** — FAP elige automáticamente la mejor forma de instalación:
   - **Flatpak (Flathub)** — cuando no existe repo oficial en Fedora ni paquete en los repos de la distro
-  - **`dnf` (repos oficiales de Fedora)** — cuando la propia distro empaqueta el software
-  - **RPM vía repo oficial del fabricante** — cuando el fabricante distribuye para Fedora (navegadores)
-  - **RPM descargado de URL** — cuando es la única opción (Suite ArtCraft, Lightworks, Rclone Manager), con `--setopt=localpkg_gpgcheck=0` obligatorio
+  - **`dnf` (repos oficiales de Fedora o RPM Fusion)** — cuando la propia distro empaqueta el software
+  - **RPM vía repo oficial del fabricante** — cuando el fabricante distribuye para Fedora (navegadores, Heroic)
+  - **RPM descargado de URL** — cuando es la única opción. Soporta tanto URL estática (OnlyOffice) como URL resuelta en runtime vía API de GitHub (Suite ArtCraft, RustDesk, Lightworks, Rclone Manager). `--setopt=localpkg_gpgcheck=0` obligatorio en Fedora 44/45
 - **Cola de Flatpaks** — hacer clic en varias apps en secuencia las encola y las instala de a una, sin errores de lock de Flathub
 - **Botón "Abrir"** en todas las apps GUI — se inicia en sesión propia, sobreviviendo al cierre de FAP
 - **Detección de apps instaladas por fuera** — si ya tienes una app instalada antes de FAP, el botón aparece como "Abrir" desde el principio

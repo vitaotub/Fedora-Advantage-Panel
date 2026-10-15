@@ -237,30 +237,12 @@ function abrirGnomeBoxes() {
     abrirFerramentaExterna('gtk-launch org.gnome.Boxes', 'gnome-boxes-install', 'GNOME Boxes');
 }
 
-// Os três helpers abaixo foram mantidos para compatibilidade com
-// chamadas antigas (caso alguma sessão externa chame estas funções).
-// Após a migração para `aplicarEstadoInstalavel`, eles ficam como
-// no-op porque o próprio botão de instalar é reaproveitado como
-// botão de abrir. O `<button>` verde original é escondido pelo
-// helper `aplicarEstadoInstalavel`.
-
-function atualizarBotaoAbrirVirtManager() {
-    var btn = document.getElementById('btn-abrir-virt-manager');
-    if (!btn) return;
-    btn.style.display = 'none';
-}
-
-function atualizarBotaoAbrirVirtualBox() {
-    var btn = document.getElementById('btn-abrir-virtualbox');
-    if (!btn) return;
-    btn.style.display = 'none';
-}
-
-function atualizarBotaoAbrirGnomeBoxes() {
-    var btn = document.getElementById('btn-abrir-gnome-boxes');
-    if (!btn) return;
-    btn.style.display = 'none';
-}
+// NOTA: os helpers `atualizarBotaoAbrirVirtManager`,
+// `atualizarBotaoAbrirVirtualBox` e `atualizarBotaoAbrirGnomeBoxes`
+// foram REMOVIDOS. Eles só escondiam os botões "Abrir" originais,
+// mas esse trabalho já é feito por `aplicarEstadoInstalavel`
+// (em script.js) — que esconde o botão verde original e reusa o
+// próprio botão de instalar como botão de abrir.
 
 // ------------------------------------------------------------
 // RESTAURAR ESTADO DA SESSÃO

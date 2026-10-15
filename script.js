@@ -600,6 +600,11 @@ var SESSOES = [
             textoConcluido: '✅ Driver Nvidia instalado',
             textoConcluidoKey: 'sessoes.hardware.texto_concluido_nvidia_driver'
         },
+        // Botão de reverter — sempre clicável (reexecutável),
+        // nunca "concluído". Precisa estar aqui para que
+        // `_construirIdsValidos()` o conheça e `_limparIdsOrfaos()`
+        // não o trate como fantasma se algum dia ele for gravado.
+        'nvidia-driver-remove': { sempreClicavel: true },
         'nvidia-modeset-on': { sempreClicavel: true },
         'nvidia-modeset-off': { sempreClicavel: true },
         // --- Intel ---
@@ -751,9 +756,7 @@ var SESSOES = [
     nome: 'Aplicativos Recomendados',
     nomeKey: 'sessoes.aplicativos.nome',
     comandos: {
-        // --- Flatpak (Flathub) ---
-        'instalar-onlyoffice': { textoConcluido: '✅ OnlyOffice instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_onlyoffice', flatpakId: 'org.onlyoffice.desktopeditors' },
-        'instalar-libreoffice': { textoConcluido: '✅ LibreOffice instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_libreoffice', flatpakId: 'org.libreoffice.LibreOffice' },
+        'instalar-onlyoffice': { textoConcluido: '✅ OnlyOffice instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_onlyoffice' },
         'instalar-obsidian': { textoConcluido: '✅ Obsidian instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_obsidian', flatpakId: 'md.obsidian.Obsidian' },
         'instalar-joplin': { textoConcluido: '✅ Joplin instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_joplin', flatpakId: 'net.cozic.joplin_desktop' },
         'instalar-spotify': { textoConcluido: '✅ Spotify instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_spotify', flatpakId: 'com.spotify.Client' },
@@ -763,16 +766,16 @@ var SESSOES = [
         'instalar-cura': { textoConcluido: '✅ Cura instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_cura', flatpakId: 'com.ultimaker.cura' },
         'instalar-upscayl': { textoConcluido: '✅ Upscayl instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_upscayl', flatpakId: 'org.upscayl.Upscayl' },
         'instalar-xnviewmp': { textoConcluido: '✅ XnView MP instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_xnviewmp', flatpakId: 'com.xnview.XnViewMP' },
-        'instalar-zen': { textoConcluido: '✅ Zen Browser instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_zen', flatpakId: 'app.zen_browser.zen' },
         'instalar-zoom': { textoConcluido: '✅ Zoom instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_zoom', flatpakId: 'us.zoom.Zoom' },
         'instalar-discord': { textoConcluido: '✅ Discord instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_discord', flatpakId: 'com.discordapp.Discord' },
         'instalar-telegram': { textoConcluido: '✅ Telegram instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_telegram', flatpakId: 'org.telegram.desktop' },
-        'instalar-signal': { textoConcluido: '✅ Signal instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_signal', flatpakId: 'org.signal.Signal' },
-        'instalar-shotcut': { textoConcluido: '✅ Shotcut instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_shotcut', flatpakId: 'org.shotcut.Shotcut' },
+        // Shotcut e Avidemux migrados para DNF (v1.0.0-10152026).
+        'instalar-shotcut': { textoConcluido: '✅ Shotcut instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_shotcut' },
         'instalar-openshot': { textoConcluido: '✅ OpenShot instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_openshot', flatpakId: 'org.openshot.OpenShot' },
-        'instalar-avidemux': { textoConcluido: '✅ Avidemux instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_avidemux', flatpakId: 'org.avidemux.Avidemux' },
+        'instalar-avidemux': { textoConcluido: '✅ Avidemux instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_avidemux' },
         'instalar-drift': { textoConcluido: '✅ Drift instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_drift', flatpakId: 'org.cutwire.Drift' },
-        'instalar-rustdesk': { textoConcluido: '✅ RustDesk instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_rustdesk', flatpakId: 'com.rustdesk.RustDesk' },
+        // RustDesk migrado para RPM via URL direta do GitHub (v1.0.0-10152026).
+        'instalar-rustdesk': { textoConcluido: '✅ RustDesk instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_rustdesk' },
 
         // --- DNF (repos oficiais do Fedora) ---
         'instalar-thunderbird': { textoConcluido: '✅ Thunderbird instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_thunderbird' },
@@ -890,8 +893,7 @@ var SESSOES = [
         },
         'heroic-install': {
             textoConcluido: '✅ Heroic instalado',
-            textoConcluidoKey: 'sessoes.gaming.texto_concluido_heroic',
-            flatpakId: 'com.heroicgameslauncher.hgl'
+            textoConcluidoKey: 'sessoes.gaming.texto_concluido_heroic'
         },
         'lutris-install': {
             textoConcluido: '✅ Lutris instalado',
@@ -1325,10 +1327,12 @@ function _deveBloquearDuranteDnf(idComando) {
     // Sempre clicável → não bloqueia (read-only ou reexecutável).
     if (info.sempreClicavel) return false;
 
-    // É um "abrir app" (idComando terminando em `-open`)? Não bloqueia.
-    if (idComando.slice(-5) === '-open') return false;
-
     // Todo o resto é dnf/rpm/copr → bloqueia.
+    //
+    // NOTA: o check antigo `idComando.slice(-5) === '-open'` foi
+    // removido — nenhum `data-comando` no DOM termina em `-open`.
+    // O sufixo `-open` só existe no idComando enviado ao backend
+    // por `abrirFerramentaExterna`, nunca como atributo no HTML.
     return true;
 }
 
@@ -2910,10 +2914,16 @@ function abrirFerramentaExterna(comando, idLog, nomeExibicao) {
     // Envia para o servidor. Como o `setsid -f` cria uma sessão
     // nova, o bash do servidor sai imediatamente — o app sobrevive
     // ao fechamento do FAP.
+    //
+    // O fetch NÃO é awaited de propósito: a UI de "abrir" não deve
+    // travar esperando a resposta do servidor. O catch evita erro
+    // silencioso se a porta 3000 estiver offline.
     fetch(API_URL + '/executar', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ comando: cmdFinal, idComando: idLog + '-open' })
+    }).catch(function(e) {
+        console.warn('[abrir] Falha ao enviar comando de abertura:', e.message);
     });
 
     // Registra a abertura no log da sessão (informativo).
@@ -3199,7 +3209,10 @@ function _mostrarLixeira(idInstall, idRemover) {
         icone.innerHTML = FAP_SVG_LIXEIRA;
 
         var nomeAcao = (APPS_REMOVIVEIS[idInstall] && APPS_REMOVIVEIS[idInstall].nome) || idInstall;
-        icone.title = 'Remover ' + nomeAcao;
+        // Usa a chave i18n 'comum.desinstalar_app' — mesma string
+        // usada pelos ícones de lixeira das sessões (aplicativos,
+        // casa-escritorio, gaming). Antes era PT-BR hardcoded.
+        icone.title = _tVars('comum.desinstalar_app', 'Remover ' + nomeAcao, { nome: nomeAcao });
         icone.setAttribute('aria-label', icone.title);
 
         icone.addEventListener('click', function(e) {

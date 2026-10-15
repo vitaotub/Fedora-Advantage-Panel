@@ -183,7 +183,16 @@ function abrirOBSStudio() {
 
 async function executarOBSCam() {
     var idComando = 'obs-cam';
-    var comando = 'sudo dnf install akmod-v4l2loopback v4l-utils -y || sudo dnf install v4l2loopback v4l-utils -y';
+    // `akmod-` (não `kmod-`): recompila automaticamente a cada
+    // kernel novo — o usuário recebe kernel novo com frequência
+    // em Fedora, então essa é a única opção que "instala e
+    // esquece". `kmod-` quebraria silenciosamente após o primeiro
+    // `dnf upgrade`.
+    //
+    // Sem fallback para `v4l2loopback` bare: esse pacote não
+    // existe no Fedora nem no RPM Fusion — o ramo antigo era
+    // morto. Se o `akmod-` falhar, o erro aparece no log.
+    var comando = 'sudo dnf install akmod-v4l2loopback v4l-utils -y';
     await executarComandoGenerico(idComando, comando,
         _t('sessoes.producao-multimidia.btn_ativar_cam', '🎥 Ativar Câmera Virtual'),
         function() {

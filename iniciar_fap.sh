@@ -329,6 +329,12 @@ if [ "$PRECISA_REINVOCAR" = true ]; then
     SCRIPT_PATH="$(realpath "${BASH_SOURCE[0]}")"
     # FAP_LOG_FILE já foi exportado acima; o filho herda o mesmo
     # arquivo de log, então tudo fica registrado num lugar só.
+    #
+    # Desabilita o trap EXIT antes de sair: o `cleanup` imprime
+    # "Encerrando o servidor..." mesmo quando nenhum servidor foi
+    # iniciado ainda (o filho é quem sobe o node). Sem o `trap -`,
+    # a mensagem enganosa polui o log do processo pai.
+    trap - EXIT INT TERM
     abrir_no_terminal_nativo "$SCRIPT_PATH"
     exit 0
 fi

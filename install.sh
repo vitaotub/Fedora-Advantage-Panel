@@ -358,6 +358,12 @@ _migrar_via_update() {
     # recompila o container e cria os atalhos.
     migrar_esquema_antigo
 
+    # Garante node/npm/git/curl antes de clonar. Sem isso, uma
+    # máquina limpa (sem Node instalado) falharia dentro de
+    # `instalar_fap` com erro obscuro do `git clone`, sem que
+    # o usuário entenda que a causa é dependência faltante.
+    verificar_dependencias
+
     instalar_fap
     desabilitar_eula_chromium
     verificar_arquivos_instalados

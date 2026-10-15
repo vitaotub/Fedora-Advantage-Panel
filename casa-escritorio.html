@@ -13,7 +13,6 @@
 <span data-i18n="sessoes.casa-escritorio.titulo">🏠 Casa e Escritório</span>
 </div>
 
-<!-- Acórdeão principal — descrição da sessão -->
 <div class="acordeao-principal">
 <span data-i18n="sessoes.casa-escritorio.descricao">Configurações para deixar o Fedora pronto para uso doméstico: impressora, compartilhamento de arquivos com Windows/celular, gerenciador de senhas e leitura de PDF com OCR. Tudo em blocos independentes — use só o que precisar.</span>
 </div>
@@ -282,11 +281,9 @@ data-i18n="sessoes.casa-escritorio.btn_abrir_okular">
 </div>
 </details>
 
-<!-- Log único da sessão -->
 <div class="terminal-log sessao-compartilhado" id="log-sessao-casa-escritorio"></div>
 </div>
 
-<!-- ===== JAVASCRIPT ESPECÍFICO DA SESSÃO ===== -->
 <script>
 // ============================================================
 // SESSÃO 7: CASA E ESCRITÓRIO
@@ -300,7 +297,7 @@ function _tVars(chave, fallback, vars) {
 }
 
 // ------------------------------------------------------------
-// Flatpaks desta sessão (LocalSend, Warpinator)
+// Flatpaks desta sessão
 // ------------------------------------------------------------
 
 var APPS_FLATPAK = {
@@ -309,8 +306,12 @@ var APPS_FLATPAK = {
 };
 
 // ------------------------------------------------------------
-// Registro de apps não-Flatpak removíveis (lixeira)
+// Registro de apps removíveis (lixeira unificada)
 // ------------------------------------------------------------
+//
+// DNF e Flatpak, todos registrados no mesmo formato. A lixeira
+// criada por `_mostrarLixeira` (script.js) consulta esta tabela
+// para saber o tipo e os identificadores de remoção.
 
 registrarAppRemovivel('cups-install', {
     tipo: 'dnf',
@@ -334,6 +335,19 @@ registrarAppRemovivel('okular-tesseract-install', {
     tipo: 'dnf',
     pacotes: ['okular', 'tesseract', 'tesseract-langpack-por', 'tesseract-langpack-eng', 'ocrmypdf'],
     nome: 'Okular + Tesseract'
+});
+
+// --- Flatpaks (Flathub) ---
+
+registrarAppRemovivel('localsend-install', {
+    tipo: 'flatpak',
+    appId: 'org.localsend.localsend_app',
+    nome: 'LocalSend'
+});
+registrarAppRemovivel('warpinator-install', {
+    tipo: 'flatpak',
+    appId: 'org.x.Warpinator',
+    nome: 'Warpinator'
 });
 
 // ------------------------------------------------------------
@@ -364,24 +378,6 @@ async function executarSamba() {
     await executarComandoGenerico(idComando, comando,
         _t('sessoes.casa-escritorio.btn_samba', '📦 Instalar Samba'),
         function() { aplicarEstadoInstalavel(idComando, null); });
-}
-
-// ------------------------------------------------------------
-// Helper: visibilidade dos botões "Abrir X"
-// ------------------------------------------------------------
-//
-// Mantido para compatibilidade — as chamadas desta sessão foram
-// migradas para `aplicarEstadoInstalavel` (em script.js), que
-// reaproveita o próprio botão de instalar como botão de abrir.
-//
-// Este helper continua sendo usado pelos handlers de abrir, para
-// esconder o `<button>` original do HTML (o "abrir" verdadeiro
-// fica dentro do botão de instalar depois da substituição).
-
-function _atualizarBotaoAbrir(idInstalacao, idBotaoAbrir) {
-    var btn = document.getElementById(idBotaoAbrir);
-    if (!btn) return;
-    btn.style.display = 'none';
 }
 
 async function executarLocalSend() {
@@ -442,152 +438,6 @@ function abrirOkular() {
 }
 
 // ------------------------------------------------------------
-// DESINSTALAÇÃO DE FLATPAKS (LocalSend / Warpinator)
-// ------------------------------------------------------------
-
-async function desinstalarAppFlatpak(idComando, appId, nomeExibicao) {
-    if (!isExecutado(idComando)) {
-        alert(_tVars('comum.nao_instalado', nomeExibicao + ' não está instalado.', { nome: nomeExibicao }));
-        return;
-    }
-
-    if (!confirm(_tVars('comum.confirmar_desinstalar', 'Deseja desinstalar o ' + nomeExibicao + '?', { nome: nomeExibicao }))) return;
-
-    var logBox = _getLogBox(idComando);
-    var btn = document.getElementById('btn-' + idComando);
-    var idRevert = idComando + '-revert';
-
-    if (logBox) {
-        logBox.style.display = 'block';
-        _separadorLog(logBox, '🗑️ Desinstalar ' + nomeExibicao);
-        var infoLine = document.createElement('div');
-        infoLine.className = 'log-line info';
-        infoLine.textContent = '🗑️ Desinstalando ' + nomeExibicao + '...';
-        logBox.appendChild(infoLine);
-        logBox.scrollTop = logBox.scrollHeight;
-    }
-
-    conectarSSE(idRevert, logBox);
-
-    try {
-        await fetch(API_URL + '/executar', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                comando: 'flatpak uninstall -y ' + appId,
-                idComando: idRevert
-            })
-        });
-
-        var sucesso = await aguardarConclusaoReal(idRevert, 180000);
-
-        if (!sucesso) {
-            if (logBox) {
-                var errorLine = document.createElement('div');
-                errorLine.className = 'log-line error';
-                errorLine.textContent = sucesso === null
-                    ? _t('comum.erro_timeout_desinstalar', '❌ Tempo esgotado esperando a desinstalação.')
-                    : _tVars('comum.erro_falha_desinstalar', '❌ Falha ao desinstalar ' + nomeExibicao + '.', { nome: nomeExibicao });
-                logBox.appendChild(errorLine);
-                logBox.scrollTop = logBox.scrollHeight;
-            }
-            return;
-        }
-
-        await desmarcarComoExecutado(idComando);
-
-        if (btn) {
-            btn.textContent = _textoOriginalTraduzido(btn) || nomeExibicao;
-            btn.style.backgroundColor = _corOriginalDoBotao(btn);
-            btn.style.cursor = 'pointer';
-            btn.style.opacity = '1';
-            btn.disabled = false;
-        }
-
-        _esconderIconeDesinstalar(idComando);
-        esconderBotoesAbrirDe(idComando);
-
-        if (logBox) {
-            var successLine = document.createElement('div');
-            successLine.className = 'log-line success';
-            successLine.textContent = _tVars('comum.sucesso_desinstalar', '✅ ' + nomeExibicao + ' desinstalado com sucesso!', { nome: nomeExibicao });
-            logBox.appendChild(successLine);
-            logBox.scrollTop = logBox.scrollHeight;
-        }
-
-    } catch (e) {
-        if (logBox) {
-            var errorLine2 = document.createElement('div');
-            errorLine2.className = 'log-line error';
-            errorLine2.textContent = _tVars('comum.erro_desinstalar', '❌ Erro ao desinstalar: ' + e.message, { msg: e.message });
-            logBox.appendChild(errorLine2);
-            logBox.scrollTop = logBox.scrollHeight;
-        }
-    }
-}
-
-// ------------------------------------------------------------
-// ÍCONES DE DESINSTALAR — FLATPAK (locais desta sessão)
-// ------------------------------------------------------------
-
-var _svgLixeira = '<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>';
-
-function _atualizarIconeDesinstalar(idComando) {
-    var btn = document.getElementById('btn-' + idComando);
-    if (!btn) return;
-
-    var wrapper = btn.closest('.btn-flatpak-wrapper');
-    if (!wrapper) return;
-
-    var info = APPS_FLATPAK[idComando];
-    if (!info) return;
-
-    var nomeExibicao = (btn.textContent || '').replace(/^[✅\s]+/, '').trim() || info.fallback;
-
-    var icone = wrapper.querySelector('.btn-flatpak-uninstall');
-    if (!icone) {
-        icone = document.createElement('button');
-        icone.type = 'button';
-        icone.className = 'btn-flatpak-uninstall';
-        icone.setAttribute('data-comando-alvo', idComando);
-        icone.innerHTML = _svgLixeira;
-        icone.title = _tVars('comum.desinstalar_flatpak', 'Desinstalar ' + nomeExibicao, { nome: nomeExibicao });
-        icone.setAttribute('aria-label', icone.title);
-
-        icone.addEventListener('click', function(e) {
-            e.stopPropagation();
-            var alvo = this.getAttribute('data-comando-alvo');
-            var alvoInfo = APPS_FLATPAK[alvo];
-            if (!alvoInfo) return;
-            var alvoBtn = document.getElementById('btn-' + alvo);
-            var alvoNome = alvoBtn ? (alvoBtn.textContent || '').replace(/^[✅\s]+/, '').trim() : alvoInfo.fallback;
-            desinstalarAppFlatpak(alvo, alvoInfo.appId, alvoNome || alvoInfo.fallback);
-        });
-
-        wrapper.appendChild(icone);
-    }
-
-    icone.style.display = '';
-}
-
-function _esconderIconeDesinstalar(idComando) {
-    var btn = document.getElementById('btn-' + idComando);
-    if (!btn) return;
-    var wrapper = btn.closest('.btn-flatpak-wrapper');
-    if (!wrapper) return;
-    var icone = wrapper.querySelector('.btn-flatpak-uninstall');
-    if (icone) icone.style.display = 'none';
-}
-
-function _restaurarIconesFlatpak() {
-    Object.keys(APPS_FLATPAK).forEach(function(idComando) {
-        if (isExecutado(idComando)) {
-            _atualizarIconeDesinstalar(idComando);
-        }
-    });
-}
-
-// ------------------------------------------------------------
 // RESTAURAR ESTADO DA SESSÃO
 // ------------------------------------------------------------
 
@@ -606,11 +456,8 @@ function restaurarEstadoSessao() {
     // `_derivarIdAbrir`, mas aqui passamos explícito.
     aplicarEstadoInstalavel('keepassxc-install', 'abrir-keepassxc');
     aplicarEstadoInstalavel('okular-tesseract-install', 'abrir-okular');
-
-    _restaurarIconesFlatpak();
 }
 
-// ===== INICIALIZAÇÃO =====
 (function() {
     document.querySelectorAll('.btn-executar').forEach(function(btn) {
         if (!btn.hasAttribute('data-texto-original')) {

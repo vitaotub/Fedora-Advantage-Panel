@@ -410,10 +410,22 @@
     function initI18n() {
         estado.lang = detectarIdiomaInicial();
 
-        // Remove caches de versões anteriores do FAP assim que
-        // sabemos o idioma atual. Faz isso antes de qualquer load
-        // para não competir com o carregamento do JSON.
-        _limparCachesAntigos(estado.lang);
+        // A limpeza de caches antigos depende de _chaveCache(), que
+        // usa window.FAP_VERSION_UI18N. Esse valor é populado por
+        // carregarVersaoServidor() (script.js), que roda DEPOIS
+        // deste i18n.js. Na primeira carga após uma atualização, a
+        // versão ainda é undefined — a chave fica 'unknown' e o
+        // cache antigo não é limpo até a próxima recarga.
+        //
+        // Solução: se a versão já estiver disponível, limpa agora.
+        // Senão, agenda para o evento 'fap-versao-pronta'.
+        if (window.FAP_VERSION_UI18N) {
+            _limparCachesAntigos(estado.lang);
+        } else {
+            document.addEventListener('fap-versao-pronta', function() {
+                _limparCachesAntigos(estado.lang);
+            }, { once: true });
+        }
 
         // Sempre define lang no <html> imediatamente
         document.documentElement.setAttribute('lang', estado.lang);

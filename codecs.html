@@ -163,8 +163,10 @@ registrarAppRemovivel('codecs-essenciais', {
     //
     // Por isso usamos `comandoRemocao` customizado em vez de lista de
     // `pacotes`. Isso dá controle total sobre a ordem e as flags.
+    //
+    // NOTA: o campo `modo: 'comandoLivre'` foi removido — ele não
+    // é lido por `_executarRemocaoApp` (que só checa `comandoRemocao`).
     tipo: 'dnf',
-    modo: 'comandoLivre',
     comandoRemocao:
         // 1. Swap de volta: ffmpeg → ffmpeg-free
         'sudo dnf swap ffmpeg ffmpeg-free --allowerasing -y; ' +

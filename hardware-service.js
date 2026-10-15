@@ -248,7 +248,7 @@ async function scanHardware() {
             return {
                 type: 'USB',
                 category: dev.category,
-                vendor: 'Realtek',
+                vendor: dev.vendor || 'Desconhecido',
                 name: dev.name,
                 device_id: parsedUsb.vendor_id + ':' + parsedUsb.product_id,
                 driver_in_use: null,

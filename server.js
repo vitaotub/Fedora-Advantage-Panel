@@ -361,11 +361,25 @@ function _parseChaveValor(texto) {
 const CHANGELOG_CACHE_TTL_MS = 12 * 60 * 60 * 1000;
 let _changelogCache = { versao: null, corpo: null, ts: 0 };
 
+function _escapeHTML(s) {
+    if (s == null) return '';
+    return String(s).replace(/[&<>"']/g, function(c) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+}
+
 function _inlineMd(s) {
-    return s
+    // Escapa primeiro, depois aplica markdown. A ordem importa:
+    // se aplicássemos o markdown antes, os `<strong>` gerados
+    // seriam escapados na sequência.
+    //
+    // Sem isso, um CHANGELOG.md com `<script>alert(1)</script>`
+    // injetaria HTML/JS arbitrário no FAP via /changelog.
+    var escaped = _escapeHTML(s);
+    return escaped
     .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
     .replace(/`([^`]+)`/g, '<code>$1</code>')
-    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank">$1</a>');
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
 }
 
 function _markdownParaHTML(md) {

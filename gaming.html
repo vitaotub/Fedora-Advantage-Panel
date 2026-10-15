@@ -13,7 +13,6 @@
 <span data-i18n="sessoes.gaming.titulo">🎮 Gaming</span>
 </div>
 
-<!-- Acórdeão principal — descrição da sessão -->
 <div class="acordeao-principal">
 <span data-i18n="sessoes.gaming.descricao">Instala os principais launchers, ferramentas de compatibilidade com Windows (Wine/Proton), utilitários de desempenho e monitoramento, e traz dicas prontas para otimizar a experiência de jogos no Fedora.</span>
 </div>
@@ -30,7 +29,7 @@ LAUNCHERS
 <h3 data-i18n="sessoes.gaming.launchers_titulo">🎮 Launchers</h3>
 <p data-i18n="sessoes.gaming.launchers_desc">Instale os principais launchers de jogos para o Fedora.</p>
 <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 0.25rem;" data-i18n="sessoes.gaming.launchers_info">
-ℹ️ O Steam é instalado nativamente via RPM Fusion (necessário para a sessão Gamescope). Heroic e Lutris via Flatpak.
+ℹ️ O Steam é instalado nativamente via RPM Fusion (necessário para a sessão Gamescope). Heroic é instalado via RPM oficial do projeto. Lutris via Flatpak.
 </p>
 <div class="info-extra" data-i18n-html="sessoes.gaming.steam_nativo_info">
 ℹ️ <strong>Steam nativo:</strong> requer RPM Fusion ativo (Sessão 1). Se você tinha o Steam via Flatpak em versões anteriores do FAP, remova-o manualmente com <code>flatpak uninstall -y com.valvesoftware.Steam</code> para evitar duplicidade. Seus jogos ficam em <code>~/.steam/</code> e são preservados.
@@ -614,11 +613,9 @@ DICAS E TRUQUES
 </div>
 </details>
 
-<!-- Log único da sessão -->
 <div class="terminal-log sessao-compartilhado" id="log-sessao-gaming"></div>
 </div>
 
-<!-- ===== JAVASCRIPT ESPECÍFICO DA SESSÃO ===== -->
 <script>
 // ============================================================
 // SESSÃO: GAMING
@@ -636,7 +633,6 @@ function _tVars(chave, fallback, vars) {
 // ------------------------------------------------------------
 
 var APPS_FLATPAK = {
-    'heroic-install': { appId: 'com.heroicgameslauncher.hgl', fallback: '⚡ Heroic Games' },
     'lutris-install': { appId: 'net.lutris.Lutris', fallback: '🎯 Lutris' },
     'bottles-install': { appId: 'com.usebottles.bottles', fallback: '🍾 Bottles' },
     'protonup-qt-install': { appId: 'net.davidotek.pupgui2', fallback: '📦 Instalar ProtonUp-Qt' },
@@ -647,22 +643,27 @@ var APPS_FLATPAK = {
     'duckstation-install': { appId: 'org.duckstation.DuckStation', fallback: '📦 Instalar Duckstation' }
 };
 
-// ------------------------------------------------------------
-// Registro de apps não-Flatpak removíveis (lixeira)
-// ------------------------------------------------------------
+// ============================================================
+// REGISTRY DE APPS RPM VIA REPO OFICIAL DO FABRICANTE
+// ============================================================
+//
+// Heroic mantém repositório RPM oficial. O repo é adicionado via
+// `dnf install <url-do-repo>` e o pacote vem dele. A remoção
+// apaga o pacote E o arquivo .repo.
 
-// ============================================================
-// Steam — nativo via RPM Fusion
-// ============================================================
-//
-// O FAP instala o Steam nativo (não Flatpak) para que a sessão
-// Gamescope funcione. O pacote `gamescope-session-steam` só
-// reconhece o Steam nativo — o Flatpak roda em sandbox e a
-// sessão não consegue iniciá-lo.
-//
-// A remoção via lixeira usa `dnf remove -y steam` e NÃO apaga
-// os jogos: eles ficam em ~/.steam/ e ~/.local/share/Steam/,
-// preservados para uma futura reinstalação.
+var APPS_RPM_REPO = {
+    'heroic-install': {
+        pacote: 'heroic-games-launcher',
+        repoSetup:
+            'sudo dnf install -y https://heroicgameslauncher.com/linux/heroic-games-launcher.repo',
+        repoRemove: 'sudo rm -f /etc/yum.repos.d/heroic-games-launcher.repo',
+        fallback: '⚡ Heroic Games'
+    }
+};
+
+// ------------------------------------------------------------
+// Registro de apps removíveis (lixeira unificada)
+// ------------------------------------------------------------
 
 registrarAppRemovivel('steam-install', {
     tipo: 'dnf',
@@ -673,6 +674,31 @@ registrarAppRemovivel('steam-install', {
                 'Se você reinstalar o Steam depois, seus jogos continuarão lá.\n\n' +
                 'Continuar?'
 });
+
+// Heroic — RPM via repo oficial do fabricante.
+registrarAppRemovivel('heroic-install', {
+    tipo: 'dnf',
+    pacotes: ['heroic-games-launcher'],
+    reposRemover: ['/etc/yum.repos.d/heroic-games-launcher.repo'],
+    nome: 'Heroic Games',
+    confirmMsg: '⚠️ Desinstalar o Heroic?\n\n' +
+                'Seus jogos e prefixos Wine NÃO serão apagados.\n\n' +
+                'Continuar?'
+});
+
+// --- Flatpaks (Flathub) ---
+
+registrarAppRemovivel('lutris-install',       { tipo: 'flatpak', appId: 'net.lutris.Lutris',             nome: 'Lutris' });
+registrarAppRemovivel('bottles-install',      { tipo: 'flatpak', appId: 'com.usebottles.bottles',        nome: 'Bottles' });
+registrarAppRemovivel('protonup-qt-install',  { tipo: 'flatpak', appId: 'net.davidotek.pupgui2',         nome: 'ProtonUp-Qt' });
+registrarAppRemovivel('retroarch-install',    { tipo: 'flatpak', appId: 'org.libretro.RetroArch',        nome: 'RetroArch' });
+registrarAppRemovivel('dolphin-install',      { tipo: 'flatpak', appId: 'org.DolphinEmu.dolphin-emu',    nome: 'Dolphin' });
+registrarAppRemovivel('pcsx2-install',        { tipo: 'flatpak', appId: 'net.pcsx2.PCSX2',               nome: 'PCSX2' });
+registrarAppRemovivel('rpcs3-install',        { tipo: 'flatpak', appId: 'net.rpcs3.RPCS3',               nome: 'RPCS3' });
+registrarAppRemovivel('duckstation-install',  { tipo: 'flatpak', appId: 'org.duckstation.DuckStation',   nome: 'Duckstation' });
+
+// --- DNF (repos oficiais do Fedora) ---
+
 registrarAppRemovivel('wine-install',       { tipo: 'dnf', pacotes: ['wine'], nome: 'Wine' });
 registrarAppRemovivel('winetricks-install', { tipo: 'dnf', pacotes: ['winetricks'], nome: 'Winetricks' });
 registrarAppRemovivel('gamemode-install',   { tipo: 'dnf', pacotes: ['gamemode'], nome: 'GameMode' });
@@ -712,17 +738,7 @@ registrarAppRemovivel('ntsync-install', {
 });
 
 // ------------------------------------------------------------
-// Helper: gerencia visibilidade do botão "Abrir X"
-// ------------------------------------------------------------
-
-function _atualizarBotaoAbrir(idInstalacao, idBotaoAbrir) {
-    var btn = document.getElementById(idBotaoAbrir);
-    if (!btn) return;
-    btn.style.display = isExecutado(idInstalacao) ? '' : 'none';
-}
-
-// ------------------------------------------------------------
-// LAUNCHERS (todos Flatpak)
+// LAUNCHERS
 // ------------------------------------------------------------
 
 async function executarSteam() {
@@ -734,30 +750,20 @@ async function executarSteam() {
 }
 
 function abrirSteam() {
-    // Usa o binário direto /usr/bin/steam em vez de gtk-launch.
-    //
-    // Motivo: gtk-launch depende do arquivo .desktop estar em
-    // XDG_DATA_DIRS com o nome exato 'steam.desktop'. Se algo
-    // estiver fora do lugar, gtk-launch falha com stderr e o
-    // FAP redireciona para /dev/null — o usuário não vê nada.
-    //
-    // O binário direto é o mesmo que o .desktop chama internamente
-    // (Exec=steam %U), então o comportamento é idêntico a clicar
-    // no atalho do menu. Mais robusto e sem dependência do
-    // .desktop estar indexado.
     abrirFerramentaExterna('steam', 'steam-install', 'Steam');
 }
 
 async function executarHeroic() {
     const idComando = 'heroic-install';
-    const comando = 'flatpak install flathub com.heroicgameslauncher.hgl -y';
+    const info = APPS_RPM_REPO[idComando];
+    const comando = info.repoSetup + ' && sudo dnf install -y ' + info.pacote;
     await executarComandoGenerico(idComando, comando,
         _t('sessoes.gaming.btn_heroic', '⚡ Heroic Games'),
         function() { aplicarEstadoInstalavel(idComando, 'abrir-heroic'); });
 }
 
 function abrirHeroic() {
-    abrirFerramentaExterna('gtk-launch com.heroicgameslauncher.hgl', 'heroic-install', 'Heroic Games');
+    abrirFerramentaExterna('heroic', 'heroic-install', 'Heroic Games');
 }
 
 async function executarLutris() {
@@ -840,10 +846,6 @@ async function executarGoverlay() {
 }
 
 async function executarGamescope() {
-    // O gamescope está no repositório oficial do Fedora — instalar
-    // direto, sem COPR nem Terra. É a versão mantida pela distro,
-    // atualizada junto com o resto do sistema.
-
     await executarComandoGenerico('gamescope-install',
         'sudo dnf install -y gamescope',
         _t('sessoes.gaming.btn_gamescope', '🖥️ Gamescope'),
@@ -909,85 +911,14 @@ async function executarGameModePresets() {
 }
 
 async function executarGamescopeSession() {
-    // ============================================================
-    // Gamescope Session — abordagem oficial do Fedora Docs
-    // ============================================================
-    //
-    // Substitui o COPR pvermeer/gamescope-session-steam (que
-    // apresentava "tela travada após login") pela receita oficial
-    // do próprio Fedora:
-    //
-    //   https://docs.fedoraproject.org/en-US/gaming/gamescope/
-    //
-    // Criamos manualmente dois arquivos:
-    //   1. /usr/bin/gamescope-session  — launcher
-    //   2. /usr/share/wayland-sessions/gamescope-session.desktop
-    //
-    // POR QUE A VERSÃO DO COPR NÃO FUNCIONAVA:
-    //   O launcher do COPR não passa `-steamdeck -steamos3` ao
-    //   Steam. Sem essas flags o Steam abre em modo DESKTOP
-    //   dentro do gamescope — o compositor não recebe uma janela
-    //   válida para fazer o present e a sessão inteira trava.
-    //   É exatamente o sintoma que o usuário relatou.
-    //
-    // DIFERENÇAS EM RELAÇÃO AO COMANDO CRU DO FEDORA DOCS:
-    //
-    //   • Resolução dinâmica. O doc usa 1920x1080 hardcoded — em
-    //     1440p/4K/ultrawide a saída fica distorcida. Lemos o
-    //     modo atual do kernel via /sys/class/drm/card*/mode
-    //     (funciona em X11 e Wayland, sem depender de wlr-randr,
-    //     xrandr ou kscreen-doctor) e gravamos no script.
-    //
-    //   • Log de sessão em /tmp/fap-gamescope-session.log. O
-    //     script do Fedora engole stdout/stderr — se a sessão
-    //     falhar, nada fica registrado. Redirecionamos tudo para
-    //     um arquivo rastreável para diagnóstico posterior.
-    //
-    //   • Limpeza automática do COPR antigo. Se o usuário tinha a
-    //     versão anterior do FAP, removemos gamescope-session-steam
-    //     e desabilitamos o repo. Sem isso, dois .desktop
-    //     concorrentes apareceriam no seletor de sessão.
-    //
-    // PRÉ-REQUISITOS (avisados na UI, não bloqueantes):
-    //   • Steam NATIVO (não Flatpak) — a sessão chama /usr/bin/steam.
-    //   • Em NVIDIA: nvidia-drm.modeset=1 ativo (senão a sessão
-    //     trava no login, mesmo com o script correto).
-
-        var comando =
-        // --- Pré-requisito: gamescope ------------------------------
-        // A sessão depende do binário `gamescope` (o compositor em
-        // si), que tem um botão separado na seção "Desempenho e
-        // Monitoramento" (gamescope-install). Como o usuário pode
-        // não ter clicado nele ainda — ou tê-lo removido depois —
-        // garantimos a instalação aqui.
-        //
-        // DNF é idempotente: se o pacote já estiver instalado, a
-        // linha não faz nada e o comando segue. O `|| exit 1`
-        // garante que, se o DNF falhar (rede fora, repo quebrado),
-        // não criamos um gamescope-session.desktop apontando para
-        // um binário inexistente.
+    var comando =
         'sudo dnf install -y gamescope || { echo "❌ Falha ao instalar gamescope. Abortando."; exit 1; }; ' +
-
-        // --- Pré-requisito: Steam nativo (aviso, não bloqueante) ---
-        // A sessão Gamescope chama `steam` do PATH. Se o usuário
-        // tiver apenas o Steam via Flatpak (que roda em sandbox e
-        // não é acessível pelo script), a sessão vai falhar no
-        // login. Avisamos sem abortar — o usuário pode instalar o
-        // Steam nativo depois e a sessão passa a funcionar sem
-        // precisar reinstalar os arquivos.
         'if ! command -v steam > /dev/null 2>&1; then ' +
         '  echo "⚠️  Steam nativo não encontrado em /usr/bin/steam."; ' +
         '  echo "    A sessão Gamescope requer o Steam nativo (não Flatpak)."; ' +
         '  echo "    Instale-o pela sessão Gaming → Steam antes de fazer logout."; ' +
         '  echo ""; ' +
         'fi; ' +
-
-        // --- Detecção de resolução ---------------------------------
-        // /sys/class/drm/card*-*/mode contém o modo atual de cada
-        // conector DRM (ex.: "1920x1080" ou vazio se desconectado).
-        // Lemos o primeiro que tiver conteúdo — funciona em
-        // qualquer compositor (KWin, Mutter, wlroots, X11) sem
-        // precisar de ferramenta externa.
         'DETECTED_W=1920; DETECTED_H=1080; ' +
         'for f in /sys/class/drm/card*/mode; do ' +
         '  if [ -s "$f" ]; then ' +
@@ -1000,22 +931,6 @@ async function executarGamescopeSession() {
         '  fi; ' +
         'done; ' +
         'echo "🎯 Resolução detectada: ${DETECTED_W}x${DETECTED_H}"; ' +
-
-        // --- Launcher /usr/bin/gamescope-session -------------------
-        // Heredoc SEM quotes (GAMESCOPE_EOF) — expande ${DETECTED_W}
-        // e ${DETECTED_H} na hora da escrita, gravando a resolução
-        // detectada no script final.
-        //
-        // As flags -W/-H são obrigatórias: o gamescope cria uma
-        // saída virtual e precisa saber qual resolução apresentar
-        // aos jogos.
-        //
-        // As flags -steamdeck -steamos3 são a CHAVE do problema
-        // atual: forçam o Steam a abrir em Big Picture / Gamepad UI
-        // em vez de modo desktop.
-        //
-        // O `--` antes do `steam` é crítico: sem ele, o gamescope
-        // engole as flags subsequentes como se fossem dele.
         'sudo tee /usr/bin/gamescope-session > /dev/null <<GAMESCOPE_EOF\n' +
         '#!/bin/sh\n' +
         '# Fedora Advantage Panel — Gamescope Steam Session\n' +
@@ -1024,23 +939,6 @@ async function executarGamescopeSession() {
         'exec gamescope -W ${DETECTED_W} -H ${DETECTED_H} -e -f -- steam -steamdeck -steamos3 >/tmp/fap-gamescope-session.log 2>&1\n' +
         'GAMESCOPE_EOF\n' +
         'sudo chmod +x /usr/bin/gamescope-session && ' +
-
-        // --- Entrada de sessão Wayland -----------------------------
-        // Heredoc COM quotes ('DESKTOP_EOF') — nada é expandido.
-        //
-        // DesktopNames=Gamescope é o que faz o SDDM/GDM reconhecer
-        // esta entrada como sessão Wayland válida. Sem essa linha,
-        // o display manager ignora o arquivo.
-        //
-        // TryExec é OBRIGATÓRIO no plasmalogin (display manager do
-        // Fedora 45 KDE). Sem essa chave, o plasmalogin descarta a
-        // entrada silenciosamente — o arquivo existe, mas nunca
-        // aparece no seletor de sessões. Validado em Fedora 45
-        // (KDE Plasma prerelease): com TryExec, a sessão aparece;
-        // sem, não aparece. O plasma.desktop do próprio Fedora usa
-        // TryExec=/usr/bin/startplasma-wayland — confirma o
-        // requisito. SDDM e GDM também aceitam a chave (é padrão
-        // freedesktop), então isto é seguro para todos os DMs.
         'sudo tee /usr/share/wayland-sessions/gamescope-session.desktop > /dev/null <<\'DESKTOP_EOF\'\n' +
         '[Desktop Entry]\n' +
         'Name=SteamOS mode (Gamescope)\n' +
@@ -1050,25 +948,9 @@ async function executarGamescopeSession() {
         'Type=Application\n' +
         'DesktopNames=Gamescope\n' +
         'DESKTOP_EOF\n' +
-
-        // --- Grupos de dispositivo ---------------------------------
-        // render + video dão acesso a /dev/dri/renderD128 e aos
-        // controles de vídeo. Sem eles, o gamescope não abre o
-        // DRM master.
         'sudo usermod -aG render,video $USER && ' +
-
-        // --- Limpeza do COPR antigo -------------------------------
-        // Se o usuário tinha a versão anterior do FAP, removemos o
-        // pacote e desabilitamos o repo. Sem isso, dois
-        // gamescope-session.desktop concorreriam no seletor de
-        // sessão (um do COPR, um nosso).
-        //
-        // `|| true` para não abortar o comando se o pacote não
-        // existir (caso de instalação limpa).
         'sudo dnf remove -y gamescope-session-steam 2>/dev/null || true; ' +
         'sudo dnf copr disable pvermeer/gamescope-session-steam -y 2>/dev/null || true; ' +
-
-        // --- Confirmação final ------------------------------------
         'echo ""; ' +
         'echo "════════════════════════════════════════════════════════════"; ' +
         'echo "✅ Gamescope Session instalada!"; ' +
@@ -1082,7 +964,7 @@ async function executarGamescopeSession() {
 
     await executarComandoGenerico('gamescope-session-install', comando,
         _t('sessoes.gaming.btn_gamescope_session', '📦 Instalar Gamescope Session'),
-        function() { atualizarIconeRemover('gamescope-session-install'); });
+        function() { aplicarEstadoInstalavel('gamescope-session-install', null); });
 }
 
 async function executarControllerTest() {
@@ -1160,186 +1042,36 @@ function abrirDuckstation() {
     abrirFerramentaExterna('gtk-launch org.duckstation.DuckStation', 'duckstation-install', 'Duckstation');
 }
 
-// ------------------------------------------------------------
-// DESINSTALAÇÃO DE FLATPAKS
-// ------------------------------------------------------------
+// ============================================================
+// RESTAURAR ESTADO DA SESSÃO
+// ============================================================
 
-async function desinstalarAppFlatpak(idComando, appId, nomeExibicao) {
-    if (!isExecutado(idComando)) {
-        alert(_tVars('comum.nao_instalado', nomeExibicao + ' não está instalado.', { nome: nomeExibicao }));
-        return;
-    }
-
-    if (!confirm(_tVars('comum.confirmar_desinstalar', 'Deseja desinstalar o ' + nomeExibicao + '?', { nome: nomeExibicao }))) return;
-
-    var logBox = _getLogBox(idComando);
-    var btn = document.getElementById('btn-' + idComando);
-    var idRevert = idComando + '-revert';
-
-    if (logBox) {
-        logBox.style.display = 'block';
-        _separadorLog(logBox, '🗑️ Desinstalar ' + nomeExibicao);
-        var infoLine = document.createElement('div');
-        infoLine.className = 'log-line info';
-        infoLine.textContent = '🗑️ Desinstalando ' + nomeExibicao + '...';
-        logBox.appendChild(infoLine);
-        logBox.scrollTop = logBox.scrollHeight;
-    }
-
-    conectarSSE(idRevert, logBox);
-
-    try {
-        await fetch(API_URL + '/executar', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                comando: 'flatpak uninstall -y ' + appId,
-                idComando: idRevert
-            })
-        });
-
-        var sucesso = await aguardarConclusaoReal(idRevert, 180000);
-
-        if (!sucesso) {
-            if (logBox) {
-                var errorLine = document.createElement('div');
-                errorLine.className = 'log-line error';
-                errorLine.textContent = sucesso === null
-                    ? _t('comum.erro_timeout_desinstalar', '❌ Tempo esgotado esperando a desinstalação.')
-                    : _tVars('comum.erro_falha_desinstalar', '❌ Falha ao desinstalar ' + nomeExibicao + '.', { nome: nomeExibicao });
-                logBox.appendChild(errorLine);
-                logBox.scrollTop = logBox.scrollHeight;
-            }
-            return;
-        }
-
-        await desmarcarComoExecutado(idComando);
-
-        if (btn) {
-            btn.textContent = _textoOriginalTraduzido(btn) || nomeExibicao;
-            btn.style.backgroundColor = _corOriginalDoBotao(btn);
-            btn.style.cursor = 'pointer';
-            btn.style.opacity = '1';
-            btn.disabled = false;
-        }
-
-        _esconderIconeDesinstalar(idComando);
-        esconderBotoesAbrirDe(idComando);
-
-        if (logBox) {
-            var successLine = document.createElement('div');
-            successLine.className = 'log-line success';
-            successLine.textContent = _tVars('comum.sucesso_desinstalar', '✅ ' + nomeExibicao + ' desinstalado com sucesso!', { nome: nomeExibicao });
-            logBox.appendChild(successLine);
-            logBox.scrollTop = logBox.scrollHeight;
-        }
-
-    } catch (e) {
-        if (logBox) {
-            var errorLine2 = document.createElement('div');
-            errorLine2.className = 'log-line error';
-            errorLine2.textContent = _tVars('comum.erro_desinstalar', '❌ Erro ao desinstalar: ' + e.message, { msg: e.message });
-            logBox.appendChild(errorLine2);
-            logBox.scrollTop = logBox.scrollHeight;
-        }
-    }
-}
-
-// ------------------------------------------------------------
-// ÍCONES DE DESINSTALAR — FLATPAK (local desta sessão)
-// ------------------------------------------------------------
-
-var _svgLixeira = '<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>';
-
-function _atualizarIconeDesinstalar(idComando) {
-    var btn = document.getElementById('btn-' + idComando);
-    if (!btn) return;
-
-    var wrapper = btn.closest('.btn-flatpak-wrapper');
-    if (!wrapper) return;
-
-    var info = APPS_FLATPAK[idComando];
-    if (!info) return;
-
-    var nomeExibicao = (btn.textContent || '').replace(/^[✅\s]+/, '').trim() || info.fallback;
-
-    var icone = wrapper.querySelector('.btn-flatpak-uninstall');
-    if (!icone) {
-        icone = document.createElement('button');
-        icone.type = 'button';
-        icone.className = 'btn-flatpak-uninstall';
-        icone.setAttribute('data-comando-alvo', idComando);
-        icone.innerHTML = _svgLixeira;
-        icone.title = _tVars('comum.desinstalar_flatpak', 'Desinstalar ' + nomeExibicao, { nome: nomeExibicao });
-        icone.setAttribute('aria-label', icone.title);
-
-        icone.addEventListener('click', function(e) {
-            e.stopPropagation();
-            var alvo = this.getAttribute('data-comando-alvo');
-            var alvoInfo = APPS_FLATPAK[alvo];
-            if (!alvoInfo) return;
-            var alvoBtn = document.getElementById('btn-' + alvo);
-            var alvoNome = alvoBtn ? (alvoBtn.textContent || '').replace(/^[✅\s]+/, '').trim() : alvoInfo.fallback;
-            desinstalarAppFlatpak(alvo, alvoInfo.appId, alvoNome || alvoInfo.fallback);
-        });
-
-        wrapper.appendChild(icone);
-    }
-
-    icone.style.display = '';
-}
-
-function _esconderIconeDesinstalar(idComando) {
-    var btn = document.getElementById('btn-' + idComando);
-    if (!btn) return;
-    var wrapper = btn.closest('.btn-flatpak-wrapper');
-    if (!wrapper) return;
-    var icone = wrapper.querySelector('.btn-flatpak-uninstall');
-    if (icone) icone.style.display = 'none';
-}
-
-function _restaurarIconesFlatpak() {
-    Object.keys(APPS_FLATPAK).forEach(function(idComando) {
-        if (isExecutado(idComando)) {
-            _atualizarIconeDesinstalar(idComando);
-        }
-    });
-}
-
-// ===== RESTAURAR ESTADO DA SESSÃO =====
 function restaurarEstadoSessao() {
-    // Flatpaks com botão de abrir → Estado 2 (verde + lixeira).
+    // Apps com botão de abrir → Estado 2 (verde + lixeira).
     ['heroic-install', 'lutris-install', 'bottles-install', 'protonup-qt-install',
      'retroarch-install', 'dolphin-install', 'pcsx2-install', 'rpcs3-install',
      'duckstation-install'].forEach(function(id) {
         aplicarEstadoInstalavel(id, _derivarIdAbrir(id));
     });
 
-    // Pacotes dnf com GUI → Estado 2 (verde + lixeira).
-    // Steam, Controller Test.
+    // Pacotes dnf com GUI → Estado 2.
     aplicarEstadoInstalavel('steam-install', 'abrir-steam');
     aplicarEstadoInstalavel('controller-test-install', 'abrir-controller-test');
 
     // Pacotes dnf sem GUI → Estado 3 (cinza + lixeira).
-    // Wine, Winetricks, GameMode, MangoHud, Goverlay, Gamescope, vkBasalt.
     ['wine-install', 'winetricks-install',
      'gamemode-install', 'mangohud-install', 'goverlay-install',
      'gamescope-install', 'vkbasalt-install'].forEach(function(id) {
         aplicarEstadoInstalavel(id, null);
     });
 
-    // Gamescope Session — fora do padrão unificado (não instalamos
-    // pacote dnf direto, criamos arquivos). Mantém o comportamento
-    // atual: botão cinza one-shot após execução.
-    if (isExecutado('gamescope-session-install')) {
-        _marcarBotaoConcluido('gamescope-session-install');
-        atualizarIconeRemover('gamescope-session-install');
-    }
+    // Gamescope Session — sem GUI dedicada, botão cinza one-shot.
+    aplicarEstadoInstalavel('gamescope-session-install', null);
 
-    // NTSYNC: par install/revert (desfazer tudo)
+    // NTSYNC: par install/revert (desfazer tudo).
     aplicarEstadoToggle('ntsync-install', 'desfazer-ntsync');
 
-    // gamemode-presets-apply: one-shot (bloqueia após execução)
+    // gamemode-presets-apply: one-shot (bloqueia após execução).
     var btnPresets = document.getElementById('btn-gamemode-presets-apply');
     if (btnPresets) {
         if (isExecutado('gamemode-presets-apply')) {
@@ -1356,11 +1088,8 @@ function restaurarEstadoSessao() {
             btnPresets.style.opacity = '1';
         }
     }
-
-    _restaurarIconesFlatpak();
 }
 
-// ===== INICIALIZAÇÃO =====
 (function() {
     document.querySelectorAll('.btn-executar').forEach(function(btn) {
         if (!btn.hasAttribute('data-texto-original')) {
