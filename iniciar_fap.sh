@@ -521,6 +521,12 @@ verificar_arquivos() {
         exit 1
     fi
 
+    if [ ! -f "$DIR/system-state-service.js" ]; then
+        log_error "Arquivo system-state-service.js não encontrado!"
+        log_error "Ele é obrigatório — o server.js depende dele para subir."
+        exit 1
+    fi
+
     # hardware_map.json é lido em runtime pelo hardware-service.js
     # quando /hardware-scan é chamado. Sem ele, o servidor sobe,
     # mas a detecção de hardware falha silenciosamente — daí o

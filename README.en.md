@@ -2,7 +2,7 @@
 
 **🌐 Language:** [Português (BR)](README.md) | English | [Español](README.es.md)
 
-![Version](https://img.shields.io/badge/Version-v1.0.0--10152026.c-orange?style=flat-square)
+![Version](https://img.shields.io/badge/Version-v1.1.1--10182026-orange?style=flat-square)
 ![Fedora](https://img.shields.io/badge/Fedora-44+-294172?style=flat-square&logo=fedora)
 ![License](https://img.shields.io/badge/License-GPL--3.0-green?style=flat-square)
 ![Languages](https://img.shields.io/badge/Languages-PT--BR%20%7C%20EN%20%7C%20ES-3c67e3?style=flat-square)
@@ -40,8 +40,8 @@ Fedora Advantage Panel (FAP) is a visual automation panel for Fedora Linux. It t
 | 4 | 🔌 Devices | Automatic hardware detection, community COPR drivers, controllers, firmware |
 | 5 | 🎬 Media Production | OBS Studio, virtual camera, EasyEffects |
 | 6 | 📦 Apps | Curated Flatpaks, 20+ `dnf` apps, browsers via official RPM, **ArtCraft Suite (13 apps)** and remote access tools |
-| 7 | 🏠 Home and Office | CUPS, Samba, LocalSend, KeePassXC, OCR (Okular + Tesseract) |
-| 8 | 🎮 Gaming | Native Steam, Heroic (official RPM), Lutris, Wine, GameMode, Gamescope Session, emulators |
+| 7 | 🏠 Home and Office | CUPS, Samba, LocalSend, KeePassXC |
+| 8 | 🎮 Gaming | Native Steam, Heroic (Flatpak), Lutris, Wine, GameMode, emulators |
 | 9 | 📱 Waydroid | Android on Linux via container |
 | 10 | 🖥️ Virtualization | QEMU/KVM, VirtualBox, GNOME Boxes |
 | 11 | 📊 Diagnostics | System panel, disk health (SMART), temperatures, error journal |
@@ -65,12 +65,41 @@ Fedora Advantage Panel (FAP) is a visual automation panel for Fedora Linux. It t
 - **Origin by app type** — FAP automatically picks the best install method:
   - **Flatpak (Flathub)** — when there's no official Fedora repo nor package in the distro repos
   - **`dnf` (official Fedora repos or RPM Fusion)** — when the distro packages the software
-  - **RPM via vendor's official repo** — when the vendor ships for Fedora (browsers, Heroic)
+  - **RPM via vendor's official repo** — when the vendor ships for Fedora (Brave, Vivaldi, Edge browsers)
   - **RPM downloaded from URL** — when that's the only option. Supports both a static URL (OnlyOffice) and a URL resolved at runtime via the GitHub API (ArtCraft Suite, RustDesk, Lightworks, Rclone Manager). `--setopt=localpkg_gpgcheck=0` required on Fedora 44/45
 - **Flatpak queue** — clicking on multiple apps in sequence enqueues and installs them one at a time, avoiding Flathub lock errors
 - **"Open" button** on all GUI apps — launches in its own session, surviving FAP closing
 - **Detection of externally installed apps** — if you already have an app installed before FAP, the button appears as "Open" from the start
+- **Real system state awareness** — on boot, FAP queries `GET /system-state` and detects already-active repositories, installed apps, groups, kernel params and config files. **Apps installed externally** (before FAP) are treated **identically to apps installed by FAP itself**: they show "🚀 Open X" + trash icon, with a tooltip that explains the origin; the trash's `confirm()` prefixes an extra warning before removing. **Exception:** 14 high-risk items are protected — gray "✅ Already active" button with tooltip, no trash (see 🔒 Protection of critical items). **Kernel params** and **hardware drivers** also keep the conservative approach: gray "✅ Already active" button and hidden revert (to avoid undoing configurations the user made manually)
 - **Smart codec removal** — the trash icon for codecs swaps `ffmpeg` back to `ffmpeg-free` and reinstalls base Fedora plugins, instead of leaving the system without any codecs
+- **Client state cache invalidated after removal** — when you remove an app, FAP discards the `/system-state` cache so the button returns to the "Install" state immediately (without waiting 60s for TTL)
+
+### 🔒 Protection of critical items
+
+With Option B (pre-existing treated as installed), every app now has a trash icon. This is the desired behavior for everyday apps — uninstalling a Flatpak that was already on the system is reversible in one click. But for **14 high-risk items**, allowing removal through FAP would be destructive: it can take down services, change user groups, or drag along base Fedora packages.
+
+**For these 14 items, the trash icon only appears if FAP itself installed them.** If you already had them before FAP, the button shows a gray "✅ Already active" with a tooltip — including the exact command for manual revert, in case you want to undo the configuration.
+
+**Protected items:**
+
+| Item | Session | Reason |
+|---|---|---|
+| Essential codecs | 2 | `ffmpeg` → `ffmpeg-free` swap is destructive |
+| Extras tainted (DVD) | 2 | Breaks commercial DVD playback |
+| Microsoft fonts | 2 | Record includes `fontconfig` (base package) |
+| Vulkan/Mesa AMD | 3 | Removes games and 3D apps |
+| VA-API AMD | 3 | Removes video acceleration |
+| VA-API AMD (alternative) | 3 | Same |
+| NVIDIA driver | 3 | Leaves GPU without driver until reboot |
+| Intel Media Driver | 3 | Removes Intel video acceleration |
+| Printing support | 7 | All printers stop |
+| Samba | 7 | Network shares stop |
+| QEMU/KVM | 10 | VMs stop running |
+| VirtualBox | 10 | VMs stop running |
+| GNOME Boxes | 10 | VMs stop running |
+| Real-time priority | 12 | Removes user from `realtime` group |
+
+For all other apps (low/medium risk), the trash icon remains available even if pre-existing — the `confirmMsg` already warns about data preservation and removal is reversible.
 
 ### Native WebKitGTK container
 
@@ -83,6 +112,8 @@ Fedora Advantage Panel (FAP) is a visual automation panel for Fedora Linux. It t
 
 - **Universal `pkexec`** — integrated password dialog on all desktops (KDE uses `polkit-kde-agent`, GNOME uses `polkit-gnome`, etc.), no need to type the password in the terminal
 - **Read-only commands in whitelist** — `rpm -q`, `uname -r`, `gtk-launch`, `flatpak`, `systemctl --user` and similar run without asking for a password
+- **GUI app launching without password** — `setsid -f gtk-launch`, `setsid -f lightworks`, `setsid -f desktopeditors` and variants are whitelisted. Opening an app is treated as a user action, not an administrative one
+- **App opening receives the correct user env** — `gtk-launch` and `waydroid show-full-ui` are in `COMANDOS_USER_CONTEXT`, so `node server.js` adjusts `XDG_RUNTIME_DIR` and `DBUS_SESSION_BUS_ADDRESS` automatically. Without this, apps failed to open when FAP was started outside a graphical terminal
 - **FAP update and uninstall run as the user**, with `SUDO_ASKPASS` (zenity/kdialog) for internal privileged steps — avoids files ending up owned by root
 - **Shell injection blocking** — commands with `;`, `&&`, `|`, `$(...)` or `&` are rejected by the whitelist and require authentication
 

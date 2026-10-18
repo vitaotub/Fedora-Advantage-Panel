@@ -796,40 +796,76 @@ await executarComandoGenerico(idComando, comando, _t('sessoes.waydroid.btn_prefs
 // RESTAURAR ESTADO DA SESSÃO
 // ============================================================
 
-function restaurarEstadoSessao() {
-var naoRevertiveis = [
-'waydroid-install',
-'waydroid-init',
-'waydroid-extras-prep',
-'waydroid-gapps',
-'waydroid-libndk',
-'waydroid-libhoudini',
-'waydroid-magisk',
-'waydroid-widevine',
-'waydroid-smartdock',
-'waydroid-prefs',
-'waydroid-helper-install'
-];
-naoRevertiveis.forEach(function(id) {
-if (isExecutado(id)) {
-var b = document.getElementById('btn-' + id);
-if (b) {
-b.textContent = getTextoAposExecucao(id);
-b.style.backgroundColor = '#4b5563';
-b.style.cursor = 'default';
-b.disabled = true;
-b.style.opacity = '1';
-}
-}
-});
+async function restaurarEstadoSessao() {
+    // Carrega o estado real do sistema antes de pintar os botões.
+    await SystemState.carregar();
 
-_bloquearExtrasPreventivamente();
+    var wd = SystemState.waydroid();
 
-atualizarBotaoAbrirWaydroidHelper();
+    var naoRevertiveis = [
+        'waydroid-install',
+        'waydroid-init',
+        'waydroid-extras-prep',
+        'waydroid-gapps',
+        'waydroid-libndk',
+        'waydroid-libhoudini',
+        'waydroid-magisk',
+        'waydroid-widevine',
+        'waydroid-smartdock',
+        'waydroid-prefs',
+        'waydroid-helper-install'
+    ];
 
-_atualizarBloqueioExtrasWaydroid();
+    naoRevertiveis.forEach(function(id) {
+        var b = document.getElementById('btn-' + id);
+        if (!b) return;
 
-_atualizarBotaoUninstallWaydroid();
+        // 1. Executado pelo FAP → cinza "concluído" (padrão).
+        if (isExecutado(id)) {
+            b.textContent = getTextoAposExecucao(id);
+            b.style.backgroundColor = '#4b5563';
+            b.style.cursor = 'default';
+            b.disabled = true;
+            b.style.opacity = '1';
+            b.title = '';
+            return;
+        }
+
+        // 2. Pré-existente no sistema → cinza "já estava" com
+        //    tooltip. Só se aplica aos 3 botões cujo estado é
+        //    detectável: install, init e extras-prep.
+        var preExistente = false;
+        if (id === 'waydroid-install')        preExistente = wd.installed;
+        else if (id === 'waydroid-init')      preExistente = wd.initialized;
+        else if (id === 'waydroid-extras-prep') preExistente = wd.extras_prepared;
+
+        if (preExistente) {
+            b.textContent = '✅ Já foi feito (antes do FAP)';
+            b.style.backgroundColor = '#4b5563';
+            b.style.cursor = 'not-allowed';
+            b.disabled = true;
+            b.style.opacity = '0.7';
+            b.title = 'Este passo já foi cumprido no sistema antes do FAP. O FAP não foi a causa — para desfazer, use o terminal.';
+            return;
+        }
+
+        // 3. Nada feito → azul clicável original.
+        var original = b.getAttribute('data-texto-original') || b.textContent;
+        b.textContent = original;
+        b.style.backgroundColor = '';
+        b.style.cursor = 'pointer';
+        b.disabled = false;
+        b.style.opacity = '1';
+        b.title = '';
+    });
+
+    _bloquearExtrasPreventivamente();
+
+    atualizarBotaoAbrirWaydroidHelper();
+
+    _atualizarBloqueioExtrasWaydroid();
+
+    _atualizarBotaoUninstallWaydroid();
 }
 
 // ============================================================

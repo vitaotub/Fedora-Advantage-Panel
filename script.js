@@ -24,10 +24,11 @@ var comando, idRemocao;
  * de 12h.
  *
  * VERIFICAÇÃO DE FLATPAKS REMOVIDOS: no boot e a cada sessão carregada,
- * o FAP consulta /flatpak-installed e desmarca qualquer comando que
- * tenha sido marcado como executado mas cujo Flatpak não esteja mais
- * instalado (o usuário removeu via GNOME Software, linha de comando,
- * etc.). O botão volta ao estado original para reinstalar.
+* o FAP consulta o estado real do sistema (via `/system-state`, cacheado
+* no cliente por `SystemState`) e desmarca qualquer comando que tenha
+* sido marcado como executado mas cujo Flatpak não esteja mais instalado
+* (o usuário removeu via GNOME Software, linha de comando, etc.).
+* O botão volta ao estado original para reinstalar.
  *
  * LIMPEZA DE IDs ÓRFÃOS: no boot e a cada sessão carregada, o FAP remove
  * do progresso persistido qualquer idComando que não exista mais no
@@ -395,6 +396,216 @@ function _textoOriginalTraduzido(btn) {
         return _t(chave, fallback);
     }
     return fallback;
+}
+
+// ============================================================
+// ESTADO DO SISTEMA (cache cliente de /system-state)
+// ============================================================
+//
+// O endpoint GET /system-state devolve o estado real do Fedora do
+// usuário — repositórios ativos, pacotes instalados, etc. — sem
+// depender do que o FAP já instalou.
+//
+// O servidor tem cache de 5 minutos em memória. Este módulo
+// cliente faz uma ÚNICA fetch no boot (ou na primeira consulta,
+// o que vier antes) e guarda o resultado. Helpers síncronos
+// (`SystemState.repoAtivo`, `SystemState.pacoteInstalado`) leem
+// desse cache.
+//
+// Se a fetch falhar (rede, servidor fora do ar), o cache fica
+// como `null` e todos os helpers retornam `false` — o
+// comportamento anterior é preservado (o usuário só vê o que o
+// .progresso.json conhece).
+
+var SystemState = (function() {
+    var _dados = null;
+    var _promessa = null;
+
+    function _carregar() {
+        if (_dados) return Promise.resolve(_dados);
+        if (_promessa) return _promessa;
+
+        _promessa = fetch(API_URL + '/system-state', { cache: 'no-store' })
+        .then(function(r) {
+            if (!r.ok) throw new Error('HTTP ' + r.status);
+            return r.json();
+        })
+        .then(function(dados) {
+            _dados = dados || {};
+            _promessa = null;
+            return _dados;
+        })
+        .catch(function(e) {
+            console.warn('[SystemState] Falha ao carregar:', e.message);
+            _dados = {};
+            _promessa = null;
+            return _dados;
+        });
+
+        return _promessa;
+    }
+
+    function _lista(campo) {
+        if (!_dados) return [];
+        return Array.isArray(_dados[campo]) ? _dados[campo] : [];
+    }
+
+    return {
+        carregar: _carregar,
+
+        // Síncronos: o chamador deve ter feito `await SystemState.carregar()`
+        // antes. Retornam false se o cache estiver vazio (comportamento
+        // anterior preservado).
+
+        // Repositório DNF ativo: SystemState.repoAtivo('terra')
+        repoAtivo: function(id) {
+            return _lista('repos_enabled').indexOf(id) !== -1;
+        },
+
+        // Remote Flatpak ativo: SystemState.remoteFlatpakAtivo('flathub')
+        remoteFlatpakAtivo: function(id) {
+            return _lista('repos_enabled').indexOf('flatpak:' + id) !== -1;
+        },
+
+        // Arquivo .repo de fabricante presente: SystemState.repoFabricanteAtivo('opera')
+        repoFabricanteAtivo: function(id) {
+            return _lista('repos_enabled').indexOf('file:' + id) !== -1;
+        },
+
+        // Pacote RPM instalado. Fase 2.
+        pacoteInstalado: function(nome) {
+            return _lista('packages_installed').indexOf(nome) !== -1;
+        },
+
+        // Flatpak instalado. Fase 2.
+        flatpakInstalado: function(appId) {
+            return _lista('flatpaks_installed').indexOf(appId) !== -1;
+        },
+
+        // Membro do grupo. Fase 3.
+        membroDoGrupo: function(nome) {
+            return _lista('groups_membership').indexOf(nome) !== -1;
+        },
+
+        // Valor de kernel param. Fase 3.
+        kernelParam: function(nome) {
+            return _dados && _dados.kernel_params ? _dados.kernel_params[nome] : undefined;
+        },
+
+        // Serviço ativo. Fase 3.
+        servicoAtivo: function(nome) {
+            return _lista('services_active').indexOf(nome) !== -1;
+        },
+
+        // Arquivo de config presente. Fase 3.
+        arquivoPresente: function(caminho) {
+            return _lista('config_files_present').indexOf(caminho) !== -1;
+        },
+
+        // Waydroid: retorna { installed, initialized, extras_prepared }.
+        // Fase 4.
+        waydroid: function() {
+            return (_dados && _dados.waydroid) || {
+                installed: false,
+                initialized: false,
+                extras_prepared: false
+            };
+        },
+
+        // Para debug: devolve o objeto cru.
+        bruto: function() { return _dados; },
+
+                   // Invalida o cache cliente. Chamado após remoções e
+                   // instalações que mudam o estado do sistema, para que
+                   // `carregar()` faça um novo fetch na próxima consulta —
+                   // em vez de retornar dados obsoletos por até 60s (TTL
+                   // do servidor). Sem isso, o botão do app removido
+                   // continuava "Abrir" por 60s porque `appJaInstaladoNoSistema`
+                   // ainda via o app no cache.
+                   invalidar: function() {
+                       _dados = null;
+                       _promessa = null;
+                   }
+    };
+})();
+
+// ============================================================
+// PRÉ-EXISTENTE (Opção C — UI honesta + revert conservador)
+// ============================================================
+//
+// Um item é "pré-existente" quando o estado do SISTEMA indica
+// que ele já está instalado/ativo, mas o .progresso.json NÃO o
+// marca como instalado pelo FAP. Isso significa que o usuário já
+// tinha o item antes de usar o FAP.
+//
+// Comportamento:
+//   • UI mostra o estado real (botão cinza / "Abrir X").
+//   • Revert fica DESABILITADO com tooltip explicando.
+//   • Lixeira some ou fica desabilitada.
+//
+// A função é pura — cada sessão a chama com a condição específica
+// do seu contexto.
+
+function ehPreExistente(idComando, jaInstaladoNoSistema) {
+    if (!jaInstaladoNoSistema) return false;
+    return !isExecutado(idComando);
+}
+
+// ============================================================
+// APP JÁ INSTALADO NO SISTEMA?
+// ============================================================
+//
+// Consulta o SystemState (cache cliente de /system-state) e o
+// registro APPS_REMOVIVEIS para responder: "este app está
+// instalado no sistema, independente de quem o instalou?".
+//
+// Usa os campos do registro:
+//   - tipo: 'flatpak'  → appId        (SystemState.flatpakInstalado)
+//   - tipo: 'dnf'      → pacotes[]    (SystemState.pacoteInstalado)
+//   - tipo: 'arquivos' → não detectável (retorna false)
+//   - modo: 'desfazerTudo' → checa `pacotes[]` se presente (caso
+//                            do Rclone Manager); senão retorna false.
+//
+// Retorna false se o idComando não estiver registrado.
+
+function appJaInstaladoNoSistema(idComando) {
+    var info = APPS_REMOVIVEIS[idComando];
+    if (!info) return false;
+
+    // `modo: 'desfazerTudo'` normalmente não tem `tipo`/`pacotes`.
+    // Exceção: Rclone Manager define `pacotes` para permitir
+    // detecção de pré-existência. Se `pacotes` existir, checa
+    // mesmo em desfazerTudo.
+    if (info.modo === 'desfazerTudo') {
+        if (Array.isArray(info.pacotes) && info.pacotes.length > 0) {
+            for (var i = 0; i < info.pacotes.length; i++) {
+                if (SystemState.pacoteInstalado(info.pacotes[i])) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    if (info.tipo === 'flatpak' && info.appId) {
+        return SystemState.flatpakInstalado(info.appId);
+    }
+
+    if (info.tipo === 'dnf' && Array.isArray(info.pacotes) && info.pacotes.length > 0) {
+        // Basta um dos pacotes estar instalado para considerarmos
+        // o app instalado. Isso cobre os casos em que o pacote
+        // principal depende de secundários (ex.: remmina +
+        // remmina-plugins-rdp + remmina-plugins-vnc) e o usuário
+        // tem uma instalação parcial.
+        for (var i = 0; i < info.pacotes.length; i++) {
+            if (SystemState.pacoteInstalado(info.pacotes[i])) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    return false;
 }
 
 // ============================================================
@@ -840,7 +1051,7 @@ var SESSOES = [
         'instalar-inkscape': { textoConcluido: '✅ Inkscape instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_inkscape' },
         'instalar-gimp': { textoConcluido: '✅ GIMP instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_gimp' },
         'instalar-darktable': { textoConcluido: '✅ Darktable instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_darktable' },
-        'instalar-freecad': { textoConcluido: '✅ FreeCAD instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_freecad' },
+        'instalar-freecad': { textoConcluido: '✅ FreeCAD instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_freecad', flatpakId: 'org.freecad.FreeCAD' },
         'instalar-librecad': { textoConcluido: '✅ LibreCAD instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_librecad' },
         'instalar-kdenlive': { textoConcluido: '✅ Kdenlive instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_kdenlive' },
         'instalar-pitivi': { textoConcluido: '✅ Pitivi instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_pitivi' },
@@ -851,7 +1062,7 @@ var SESSOES = [
         'instalar-chromium': { textoConcluido: '✅ Chromium instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_chromium' },
 
         // --- RPM via repo oficial do fabricante ---
-        'instalar-opera': { textoConcluido: '✅ Opera instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_opera' },
+        'instalar-opera': { textoConcluido: '✅ Opera instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_opera', flatpakId: 'com.opera.Opera' },
         'instalar-brave': { textoConcluido: '✅ Brave instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_brave' },
         'instalar-vivaldi': { textoConcluido: '✅ Vivaldi instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_vivaldi' },
         'instalar-edge': { textoConcluido: '✅ Microsoft Edge instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_edge' },
@@ -919,13 +1130,8 @@ var SESSOES = [
             textoConcluido: '✅ KeePassXC instalado',
             textoConcluidoKey: 'sessoes.casa-escritorio.texto_concluido_keepassxc'
         },
-        'okular-tesseract-install': {
-            textoConcluido: '✅ PDF+OCR instalado',
-            textoConcluidoKey: 'sessoes.casa-escritorio.texto_concluido_okular_tesseract'
-        },
         'samba-remove': { sempreClicavel: true },
-        'keepassxc-remove': { sempreClicavel: true },
-        'okular-tesseract-remove': { sempreClicavel: true }
+        'keepassxc-remove': { sempreClicavel: true }
     }
 },
 
@@ -945,7 +1151,8 @@ var SESSOES = [
         },
         'heroic-install': {
             textoConcluido: '✅ Heroic instalado',
-            textoConcluidoKey: 'sessoes.gaming.texto_concluido_heroic'
+            textoConcluidoKey: 'sessoes.gaming.texto_concluido_heroic',
+            flatpakId: 'com.heroicgameslauncher.hgl'
         },
         'lutris-install': {
             textoConcluido: '✅ Lutris instalado',
@@ -974,7 +1181,6 @@ var SESSOES = [
         },
         'vkbasalt-install': { textoConcluido: '✅ vkBasalt instalado', textoConcluidoKey: 'sessoes.gaming.texto_concluido_vkbasalt' },
         'gamemode-presets-apply': { textoConcluido: '✅ Presets aplicados' },
-        'gamescope-session-install': { textoConcluido: '✅ Gamescope session instalado', textoConcluidoKey: 'sessoes.gaming.texto_concluido_gamescope_session' },
         'controller-test-install': { textoConcluido: '✅ Ferramenta instalada', textoConcluidoKey: 'sessoes.gaming.texto_concluido_controller_test' },
         // --- Emuladores ---
         'retroarch-install': {
@@ -1009,7 +1215,6 @@ var SESSOES = [
         'goverlay-remove': { sempreClicavel: true },
         'gamescope-remove': { sempreClicavel: true },
         'vkbasalt-remove': { sempreClicavel: true },
-        'gamescope-session-remove': { sempreClicavel: true },
         'controller-test-remove': { sempreClicavel: true },
         'desfazer-ntsync': { sempreClicavel: true }
     }
@@ -1884,14 +2089,18 @@ async function _sincronizarEstadoFlatpaks() {
     }
     _ultimaVerificacaoFlatpak = agora;
 
+    // Fonte única: `/system-state` já devolve `flatpaks_installed`.
+    // Antes, esta função fazia um `fetch('/flatpak-installed')` próprio,
+    // duplicando a consulta que `/system-state` faz — 2 requests por
+    // boot para a mesma informação.
+    //
+    // Se o `SystemState` ainda não estiver carregado (rede lenta, boot
+    // recém-iniciado), `carregar()` resolve a promise existente ou
+    // dispara um novo fetch. `flatpakInstalado()` retorna `false` para
+    // tudo enquanto o cache estiver vazio — comportamento anterior
+    // preservado (sem detecção externa).
     try {
-        var r = await fetch(API_URL + '/flatpak-installed', { cache: 'no-store' });
-        if (!r.ok) {
-            console.warn('[Flatpak] /flatpak-installed retornou HTTP ' + r.status);
-            return;
-        }
-        var data = await r.json();
-        var instalados = Array.isArray(data.apps) ? data.apps : [];
+        await SystemState.carregar();
 
         var progress = await getProgress();
         var executados = progress.executados || [];
@@ -1907,7 +2116,7 @@ async function _sincronizarEstadoFlatpaks() {
                 if (!info.flatpakId) continue;
 
                 var estaMarcado = executados.includes(idComando);
-                var estaInstalado = instalados.includes(info.flatpakId);
+                var estaInstalado = SystemState.flatpakInstalado(info.flatpakId);
 
                 if (!estaMarcado && estaInstalado) {
                     marcados.push(idComando);
@@ -1917,21 +2126,23 @@ async function _sincronizarEstadoFlatpaks() {
             }
         }
 
-        // Etapa 1: marca os que já estão instalados no sistema.
+        // Etapa 1: aplica a UI de "Abrir X" para apps que já estão
+        // instalados no sistema (detectados via SystemState).
         //
-        // CORREÇÃO v1.0.0-10062026.b: após marcar como executado,
-        // chamamos `aplicarEstadoInstalavel` em vez de
-        // `restaurarBotaoAposExecucao`. Motivo: restaurarBotaoAposExecucao
-        // pinta o botão de cinza com o texto "✅ instalado", mas NÃO faz
-        // o swap para "🚀 Abrir X" — que é o comportamento correto para
-        // apps GUI. aplicarEstadoInstalavel detecta se o botão de abrir
-        // existe (no HTML ou criado dinamicamente pela sessão) e faz o
-        // swap correto. Isso resolve o caso do usuário que instalou o
-        // app fora do FAP e via o botão travado em "instalado".
-        for (var j = 0; j < marcados.length; j++) {
-            console.log('[Flatpak] Já instalado, marcando como executado:', marcados[j]);
-            await marcarComoExecutado(marcados[j]);
-        }
+        // DECISÃO (v1.1.2): NÃO chamamos `marcarComoExecutado`.
+        // Motivo: `aplicarEstadoInstalavel` já detecta a instalação
+        // via `appJaInstaladoNoSistema` (que consulta SystemState) e
+        // cai no branch `preExistente` — mostrando "Abrir X" +
+        // lixeira com tooltip de pré-existente. Marcar como executado
+        // forçava `instalado=true`, o que fazia o app parecer ter
+        // sido instalado pelo FAP a partir do 2º boot (o tooltip e
+        // o aviso de remoção desapareciam). Sem a marcação, o
+        // `.progresso.json` fica enxuto e o app é tratado com
+        // honestidade como pré-existente para sempre.
+        //
+        // Trade-off: a barra de progresso global ("N/M sessões
+        // concluídas") deixa de contar esses apps como "feitos pelo
+        // FAP". Correto, já que o FAP não os instalou.
         for (var k = 0; k < marcados.length; k++) {
             try {
                 var idAbrirMarc = (typeof _derivarIdAbrir === 'function')
@@ -2238,16 +2449,54 @@ function _corOriginalDoBotao(btn) {
  *   2. onSucesso dos comandos install/revert — para atualizar os
  *      dois botões em uníssono após uma transição de estado
  */
-function aplicarEstadoToggle(idInstall, idRevert) {
+function aplicarEstadoToggle(idInstall, idRevert, esconderRevertSeNaoFeito, preExistente) {
     var installBtn = document.getElementById('btn-' + idInstall);
     var revertBtn = document.getElementById('btn-' + idRevert);
     if (!installBtn || !revertBtn) return;
 
     var installFeito = isExecutado(idInstall);
 
+    // `preExistente` pode ser:
+    //   - undefined → consulta `appJaInstaladoNoSistema(idInstall)`
+    //   - boolean   → usa direto
+    //   - function  → chama (para checagens contextuais, como
+    //                 kernel params e arquivos de config)
+    if (preExistente === undefined) {
+        try {
+            preExistente = appJaInstaladoNoSistema(idInstall);
+        } catch (e) {
+            preExistente = false;
+        }
+    } else if (typeof preExistente === 'function') {
+        try {
+            preExistente = !!preExistente();
+        } catch (e) {
+            preExistente = false;
+        }
+    }
+
     var textoOriginalInstall = installBtn.getAttribute('data-texto-original') || installBtn.textContent;
     var textoOriginalRevert = revertBtn.getAttribute('data-texto-original') || revertBtn.textContent;
     var corOriginalInstall = _corOriginalDoBotao(installBtn);
+
+    // Estado "pré-existente": o sistema diz que já está ativo, mas
+    // o FAP não foi a causa. Instalar vira cinza com aviso; reverter
+    // some (não há o que o FAP desfazer).
+    if (preExistente && !installFeito) {
+        installBtn.textContent = _t('comum.ja_estava_ativo', '✅ Já estava ativo');
+        installBtn.style.backgroundColor = '#4b5563';
+        installBtn.style.cursor = 'not-allowed';
+        installBtn.disabled = true;
+        installBtn.style.opacity = '0.7';
+        installBtn.title = _t('comum.tooltip_preexistente_app',
+                              'Este recurso já estava ativo antes do FAP. O FAP não foi a causa — para desfazer, use o terminal.');
+
+        revertBtn.style.display = 'none';
+        return;
+    }
+
+    // Limpa tooltip de pré-existente se veio de um estado anterior.
+    installBtn.title = '';
 
     if (installFeito) {
         installBtn.textContent = getTextoAposExecucao(idInstall);
@@ -2261,6 +2510,7 @@ function aplicarEstadoToggle(idInstall, idRevert) {
         revertBtn.style.cursor = 'pointer';
         revertBtn.disabled = false;
         revertBtn.style.opacity = '1';
+        revertBtn.style.display = '';
     } else {
         installBtn.textContent = textoOriginalInstall;
         installBtn.style.backgroundColor = corOriginalInstall || '';
@@ -2273,6 +2523,12 @@ function aplicarEstadoToggle(idInstall, idRevert) {
         revertBtn.style.cursor = 'not-allowed';
         revertBtn.disabled = true;
         revertBtn.style.opacity = '0.5';
+
+        if (esconderRevertSeNaoFeito) {
+            revertBtn.style.display = 'none';
+        } else {
+            revertBtn.style.display = '';
+        }
     }
 }
 
@@ -3058,6 +3314,45 @@ function _idRemocaoDe(idComando) {
     return idComando + '-remove';
 }
 
+// ============================================================
+// TRADUÇÃO DO MOTIVO DE BLOQUEIO
+// ============================================================
+//
+// Os 14 itens protegidos têm `permitirRemocaoPreExistente: false`
+// e um `motivoBloqueio` em PT-BR (hardcoded no HTML da sessão).
+// O texto contém comandos shell literais — que NÃO podem ser
+// traduzidos — e por isso o PT-BR é o fallback universal.
+//
+// Este mapa aponta para a chave i18n de cada item. Quando o
+// locale tem a tradução, ela é usada; senão, cai no PT-BR
+// original do `motivoBloqueio`. Ambos os textos contêm os
+// mesmos comandos (não traduzíveis).
+var _MAPA_MOTIVO_BLOQUEIO = {
+    'codecs-essenciais':        'mitigacao.codecs_essenciais',
+    'extras-tainted':           'mitigacao.extras_tainted',
+    'fontes-ms-all':            'mitigacao.fontes_ms_all',
+    'vulkan-amd':               'mitigacao.vulkan_amd',
+    'vaapi-amd':                'mitigacao.vaapi_amd',
+    'vaapi-swap':               'mitigacao.vaapi_swap',
+    'nvidia-driver-install':    'mitigacao.nvidia_driver_install',
+    'intel-media-install':      'mitigacao.intel_media_install',
+    'cups-install':             'mitigacao.cups_install',
+    'samba-install':            'mitigacao.samba_install',
+    'qemu-kvm-install':         'mitigacao.qemu_kvm_install',
+    'virtualbox-install':       'mitigacao.virtualbox_install',
+    'gnome-boxes-install':      'mitigacao.gnome_boxes_install',
+    'realtime-setup':           'mitigacao.realtime_setup'
+};
+
+// Devolve o motivo de bloqueio traduzido, caindo no PT-BR original
+// do `motivoBloqueio` quando a chave não existe no locale.
+function _traduzirMotivoBloqueio(idInstall, info) {
+    var fallback = (info && info.motivoBloqueio) ||
+    'Este recurso já estava ativo antes do FAP. O FAP não foi a causa — para desfazer, use o terminal.';
+    var chave = _MAPA_MOTIVO_BLOQUEIO[idInstall];
+    return chave ? _t(chave, fallback) : fallback;
+}
+
 // (funções `atualizarIconeRemover` e `esconderIconeRemover` foram
 // removidas — código morto. O trabalho é feito por `_mostrarLixeira`
 // e `_esconderLixeira`, chamadas a partir de `aplicarEstadoInstalavel`.)
@@ -3134,31 +3429,96 @@ function esconderBotoesAbrirDe(idInstall) {
  *                             Se omitido, tenta derivar
  *                             (`<install>-remove` ou `<install>-revert`).
  */
-function aplicarEstadoInstalavel(idInstall, idAbrir, idRemover) {
+function aplicarEstadoInstalavel(idInstall, idAbrir, idRemover, preExistente) {
     var btnInstall = document.getElementById('btn-' + idInstall);
     if (!btnInstall) return;
 
     var btnAbrir = idAbrir ? document.getElementById('btn-' + idAbrir) : null;
     var instalado = isExecutado(idInstall);
+    var idRem = idRemover || _idRemocaoDe(idInstall);
+
+    // Se o chamador não passou `preExistente` explicitamente,
+    // consulta o SystemState + APPS_REMOVIVEIS. Assim os
+    // `aplicarEstadoInstalavel('X', 'abrir-X')` já existentes
+    // ganham detecção de pré-existência automaticamente.
+    if (preExistente === undefined) {
+        try {
+            preExistente = appJaInstaladoNoSistema(idInstall);
+        } catch (e) {
+            preExistente = false;
+        }
+    }
 
     // Cor original do botão de instalar (azul padrão) — guardada
     // uma vez para restaurar quando o app for desinstalado.
     var corOriginal = _corOriginalDoBotao(btnInstall);
     var textoOriginalInstall = btnInstall.getAttribute('data-texto-original') || btnInstall.textContent;
 
-    if (instalado) {
-        // Estado 2 ou 3: app instalado.
+    // ============================================================
+    // OPÇÃO B — pré-existente é tratado igual a instalado pelo FAP
+    // ============================================================
+    //
+    // Mudança de design (v1.1.2): se o app está instalado no
+    // sistema — detectado via /system-state, independente de quem
+    // instalou — a UI mostra "🚀 Abrir X" + lixeira, igual a um
+    // app instalado pelo FAP. A distinção "quem instalou" fica
+    // invisível ao usuário.
+    //
+    // A única proteção adicional:
+    //   • Tooltip no botão de abrir avisando que o app já estava
+    //     lá antes do FAP.
+    //   • `confirmMsg` extra em `_executarRemocaoApp` com o mesmo
+    //     aviso antes de remover.
+    //
+    // Sem esse tratamento, o usuário via "✅ Já instalado (antes
+    // do FAP)" + botão verde "Abrir" separado, gerando dois
+    // botões empilhados e um espaço vazio embaixo (bug de layout
+    // da sessão 6, bloco "Produtividade e Escritório").
+    var tratadoComoInstalado = instalado || preExistente;
+
+    // ============================================================
+    // MITIGAÇÃO: pré-existente sem permissão de remoção
+    // ============================================================
+    //
+    // Alguns apps declaram `permitirRemocaoPreExistente: false`
+    // no registro (ex.: realtime-setup). Motivo: se o usuário já
+    // tinha o item antes do FAP, remover via lixeira desfaria uma
+    // configuração que o FAP não fez (ex.: `gpasswd -d $USER
+    // realtime`).
+    //
+    // Nesses casos, voltamos ao comportamento ANTIGO (pré-Opção B):
+    // botão cinza "✅ Já estava ativo" com tooltip, SEM lixeira.
+    // Se o FAP instalou (isExecutado === true), a lixeira continua
+    // funcionando normalmente — a mitigação é só para pré-existentes.
+    //
+    // Textos usam `_t()` com fallback PT-BR. O motivo de bloqueio
+    // vem do mapa `_MAPA_MOTIVO_BLOQUEIO`, que aponta para as 14
+    // chaves em `mitigacao.*` dos locales. O PT-BR do `motivoBloqueio`
+    // (hardcoded no HTML da sessão) é o fallback universal.
+    var infoApp = APPS_REMOVIVEIS[idInstall];
+    var bloquearRemocaoPreExistente = preExistente && !instalado &&
+    infoApp && infoApp.permitirRemocaoPreExistente === false;
+
+    if (bloquearRemocaoPreExistente) {
+        btnInstall.textContent = _t('comum.ja_estava_ativo', '✅ Já estava ativo');
+        btnInstall.style.backgroundColor = '#4b5563';
+        btnInstall.style.cursor = 'not-allowed';
+        btnInstall.disabled = true;
+        btnInstall.style.opacity = '0.7';
+        btnInstall.title = _traduzirMotivoBloqueio(idInstall, infoApp);
+        btnInstall.setAttribute('data-estado', 'instalado-sem-abrir');
+
+        if (btnAbrir) btnAbrir.style.display = 'none';
+        _esconderLixeira(idInstall);
+        return;
+    }
+
+    if (tratadoComoInstalado) {
         if (btnAbrir) {
             // Estado 2 — botão de instalar vira botão de abrir.
             // Reaproveita o mesmo botão (não cria novo), mudando
             // texto, cor e handler. Assim a lixeira "irmã" continua
             // no lugar certo.
-            // Usa _textoOriginalTraduzido() em vez de data-texto-original
-            // direto: data-texto-original guarda o texto PT-BR capturado
-            // no init, ANTES do i18n aplicar. Sem isso, em EN/ES o botão
-            // de abrir aparecia em português. _textoOriginalTraduzido lê
-            // o data-i18n do botão de abrir e retorna a string traduzida,
-            // caindo no fallback PT-BR se a tradução não existir.
             var textoAbrir = _textoOriginalTraduzido(btnAbrir);
             btnInstall.textContent = textoAbrir;
             btnInstall.style.backgroundColor = '#10b981'; // verde
@@ -3173,16 +3533,24 @@ function aplicarEstadoInstalavel(idInstall, idAbrir, idRemover) {
             var onclickInstall = btnInstall.getAttribute('data-onclick-install');
 
             if (!onclickInstall) {
-                // Primeira vez: salva o onclick de instalar
+                // Primeira vez: salva o onclick de instalar.
                 btnInstall.setAttribute('data-onclick-install', btnInstall.getAttribute('onclick') || '');
             }
             btnInstall.setAttribute('onclick', onclickAbrir);
 
-            // Esconde o botão "Abrir" original (não é mais usado)
+            // Esconde o botão "Abrir" original (não é mais usado).
             btnAbrir.style.display = 'none';
 
-            // Marca visualmente como "instalado"
+            // Marca visualmente como "instalado".
             btnInstall.setAttribute('data-estado', 'instalado-abrir');
+
+            // Tooltip explicativo quando o app é pré-existente.
+            if (preExistente && !instalado) {
+                btnInstall.title = _t('comum.tooltip_preexistente_app',
+                                      'Este app já estava instalado antes do FAP. A lixeira remove o app do sistema, mas o FAP não foi o responsável pela instalação.');
+            } else {
+                btnInstall.title = '';
+            }
         } else {
             // Estado 3 — botão cinza "✅ instalado", sem "Abrir".
             btnInstall.textContent = getTextoAposExecucao(idInstall);
@@ -3191,18 +3559,26 @@ function aplicarEstadoInstalavel(idInstall, idAbrir, idRemover) {
             btnInstall.disabled = true;
             btnInstall.style.opacity = '1';
             btnInstall.setAttribute('data-estado', 'instalado-sem-abrir');
+
+            if (preExistente && !instalado) {
+                btnInstall.title = _t('comum.tooltip_preexistente_app',
+                                      'Este app já estava instalado antes do FAP. A lixeira remove o app do sistema, mas o FAP não foi o responsável pela instalação.');
+            } else {
+                btnInstall.title = '';
+            }
         }
 
-        // Lixeira ao lado.
-        var idRem = idRemover || _idRemocaoDe(idInstall);
+        // Lixeira ao lado — aparece tanto para instalado pelo FAP
+        // quanto para pré-existente (Opção B).
         _mostrarLixeira(idInstall, idRem);
     } else {
-        // Estado 1: não instalado.
+        // Estado 1: não instalado, não pré-existente.
         btnInstall.textContent = textoOriginalInstall;
         btnInstall.style.backgroundColor = corOriginal || '';
         btnInstall.style.cursor = 'pointer';
         btnInstall.disabled = false;
         btnInstall.style.opacity = '1';
+        btnInstall.title = '';
 
         // Restaura o onclick de instalar (se foi salvo).
         var onclickInstallSalvo = btnInstall.getAttribute('data-onclick-install');
@@ -3225,11 +3601,44 @@ function aplicarEstadoInstalavel(idInstall, idAbrir, idRemover) {
  * install. Usado tanto por flatpaks quanto por apps dnf/rpm que
  * usam o `registrarAppRemovivel`.
  */
+/**
+ * Garante que o botão de instalar esteja dentro de um
+ * `.btn-flatpak-wrapper`. Se já estiver, retorna o wrapper
+ * existente. Se não, cria um, insere-o na posição do botão
+ * original e move o botão para dentro.
+ *
+ * Por que isso existe: a lixeira (`.btn-flatpak-uninstall`) é
+ * um IRMÃO do botão de instalar, dentro do wrapper. Sessões que
+ * declaram o botão solto dentro de `.grupo-botoes` ou
+ * `.botoes-flex` (CoreCtrl, LACT e futuros) não teriam onde
+ * colocar a lixeira. Em vez de exigir que cada HTML seja
+ * alterado, embrulhamos o botão na hora.
+ *
+ * Idempotente: chamar duas vezes não cria wrapper duplicado.
+ */
+function _garantirWrapperFlatpak(btnInstall) {
+    if (!btnInstall) return null;
+
+    var wrapper = btnInstall.closest('.btn-flatpak-wrapper');
+    if (wrapper) return wrapper;
+
+    // Cria o wrapper e o insere no lugar do botão.
+    var parent = btnInstall.parentElement;
+    if (!parent) return null;
+
+    wrapper = document.createElement('div');
+    wrapper.className = 'btn-flatpak-wrapper';
+    parent.insertBefore(wrapper, btnInstall);
+    wrapper.appendChild(btnInstall);
+    return wrapper;
+}
+
 function _mostrarLixeira(idInstall, idRemover) {
     var btnInstall = document.getElementById('btn-' + idInstall);
     if (!btnInstall) return;
 
-    var wrapper = btnInstall.closest('.btn-flatpak-wrapper');
+    // Garante o wrapper — cria na hora se o HTML não o declarou.
+    var wrapper = _garantirWrapperFlatpak(btnInstall);
     if (!wrapper) return;
 
     // Reaproveita o ícone existente ou cria um novo.
@@ -3319,16 +3728,53 @@ async function _executarRemocaoApp(idComando) {
     var info = APPS_REMOVIVEIS[idComando];
     if (!info) return;
 
-    if (!isExecutado(idComando)) {
+    // Considera "instalado" tanto se o FAP marcou no .progresso.json
+    // quanto se o /system-state detecta o app no sistema. Sem isso,
+    // a lixeira ficava silenciosa para apps pré-existentes (o
+    // `.progresso.json` deste diretório pode estar vazio, mas o
+    // sistema tem o app).
+    var marcadoPeloFap = isExecutado(idComando);
+    var instaladoNoSistema = false;
+    try {
+        instaladoNoSistema = appJaInstaladoNoSistema(idComando);
+    } catch (e) {
+        instaladoNoSistema = false;
+    }
+
+    if (!marcadoPeloFap && !instaladoNoSistema) {
         alert(_tVars('comum.nao_instalado',
                      (info.nome || idComando) + ' não está instalado.',
                      { nome: info.nome || idComando }));
         return;
     }
 
+    // Aviso extra para pré-existente (FAP não foi a causa da
+    // instalação, então remover pode surpreender o usuário).
+    var preExistente = instaladoNoSistema && !marcadoPeloFap;
+
+    // ============================================================
+    // MITIGAÇÃO: pré-existente sem permissão de remoção (camada 2)
+    // ============================================================
+    //
+    // Defesa em profundidade. A camada 1 (`aplicarEstadoInstalavel`)
+    // nem chega a mostrar a lixeira para esses casos. Mas se por
+    // algum motivo o clique chegar aqui (DOM manipulado, botão
+    // recriado, teste manual), rejeitamos com a mesma mensagem
+    // explicativa do tooltip.
+    if (preExistente && info.permitirRemocaoPreExistente === false) {
+        alert(_traduzirMotivoBloqueio(idComando, info));
+        return;
+    }
+
     var msg = info.confirmMsg || _tVars('comum.confirmar_desinstalar',
                                         'Deseja desinstalar o ' + (info.nome || idComando) + '?',
                                         { nome: info.nome || idComando });
+    if (preExistente) {
+        msg = _t('comum.confirm_preexistente_prefixo',
+                 '⚠️ ATENÇÃO!\n\nEste app já estava instalado antes do FAP. ' +
+                 'Removê-lo do sistema pode apagar configurações e ' +
+                 'dados que você criou (perfis, favoritos, saves).\n\n') + msg;
+    }
     if (!confirm(msg)) return;
 
     var comando, idRemocao;
@@ -3446,6 +3892,14 @@ async function _executarRemocaoApp(idComando) {
         // reaplicado pelo `aplicarEstadoInstalavel` — que cuida
         // do botão, do "Abrir" e da lixeira em uníssono.
         await desmarcarComoExecutado(idComando);
+
+        // Invalida o cache cliente do estado do sistema. O app
+        // acabou de ser removido do disco; sem isso, `appJaInstaladoNoSistema`
+        // continuaria vendo o app por até 60s e o botão voltaria
+        // ao estado "Abrir + lixeira" (pré-existente).
+        if (typeof SystemState !== 'undefined' && typeof SystemState.invalidar === 'function') {
+            SystemState.invalidar();
+        }
 
         // Deriva o idAbrir a partir do idInstall. Convenção: para
         // 'instalar-<nome>' → 'abrir-<nome>'; para '<nome>-install'
@@ -3629,6 +4083,13 @@ document.addEventListener('keydown', function(e) {
 // ============================================================
 
 document.addEventListener('DOMContentLoaded', function() {
+    // Carrega o estado real do sistema em paralelo com o progresso.
+    // Quando as sessões começarem a pintar botões (~500ms depois),
+    // o SystemState já estará pronto. Se a rede estiver lenta, os
+    // helpers síncronos retornam false (comportamento anterior) e
+    // o SystemState se preenche no próximo carregamento de sessão.
+    SystemState.carregar();
+
     carregarProgressoInicial();
     setTimeout(initCustomSelects, 300);
     criarBotaoTema();
@@ -3664,6 +4125,11 @@ document.addEventListener('sessao-carregada', function() {
     // esteja rodando. Sem isso, os botões da sessão recém-carregada
     // ficariam todos ativos, mesmo com um comando rodando em outra.
     _reaplicarBloqueioSeNecessario();
+
+    // Garante que o SystemState esteja carregado antes da sessão
+    // pintar os botões. Se já estiver, `carregar()` retorna na
+    // hora (Promise resolvida).
+    SystemState.carregar();
 
     // Marca Flatpaks já instalados no sistema. Roda antes do
     // restaurarEstadoSessao() da sessão (que é chamado no
@@ -3719,10 +4185,10 @@ document.addEventListener('todas-sessoes-carregadas', function() {
 // mas 'instalar-easyeffects' → 'abrir-easyeffects' bate), a
 // convenção cobre 100% dos casos atuais. Se surgir divergência
 // futura, mapeie aqui.
+// Mapa de exceções install → abrir. Vazio no momento — todas as
+// sessões atuais seguem a convenção `_derivarIdAbrir`. Preenchido
+// apenas se alguma sessão futura tiver idAbrir fora do padrão.
 var _MAPA_ABRIR_EXCECOES = {
-    // instalar-id : abrir-id
-    'okular-tesseract-install': 'abrir-okular',
-    // Os demais seguem a convenção padrão e não precisam de mapeamento.
 };
 
 function _derivarIdAbrir(idInstall) {

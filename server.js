@@ -3,6 +3,7 @@ const { exec, spawn, spawnSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 const hardwareService = require('./hardware-service');
+const systemStateService = require('./system-state-service');
 
 const PORT = parseInt(process.env.PORT, 10) || 3000;
 const ARQUIVO_PROGRESSO = path.join(__dirname, '.progresso.json');
@@ -120,6 +121,10 @@ const COMANDOS_SEM_AUTENTICACAO = [
 'setsid -f waydroid show-full-ui',
 'setsid -f keepassxc',
 'setsid -f okular',
+// Editores/apps que NÃO usam gtk-launch (não têm .desktop
+// com o binário). Precisam de entrada própria.
+'setsid -f lightworks',
+'setsid -f desktopeditors',
 // Suíte ArtCraft.
 'setsid -f photocraft',
 'setsid -f vectorcraft',
@@ -273,12 +278,22 @@ function _criarAskpassHelper() {
 // execução.
 
 const COMANDOS_USER_CONTEXT = [
-    'flatpak',
+'flatpak',
 'systemctl --user',
 'pw-metadata',
 'pw-cli',
 'pactl',
-'wpctl'
+'wpctl',
+// gtk-launch abre o app via D-Bus do usuário. Sem
+// DBUS_SESSION_BUS_ADDRESS e XDG_RUNTIME_DIR corretos, a
+// chamada falha silenciosamente (o app nunca abre).
+// Cobre todos os botões "Abrir X" baseados em .desktop —
+// tanto flatpaks (gtk-launch <appId>) quanto pacotes dnf
+// (gtk-launch <nome>).
+'gtk-launch',
+// Waydroid também depende do D-Bus do usuário para exibir
+// a UI. `show-full-ui` é o único subcomando que abre janela.
+'waydroid show-full-ui'
 ];
 
 function _precisaEnvUserContext(comando) {
@@ -613,26 +628,33 @@ function lerProgresso() {
         if (fs.existsSync(ARQUIVO_PROGRESSO)) {
             const dados = JSON.parse(fs.readFileSync(ARQUIVO_PROGRESSO, 'utf8'));
 
+            // Formato antigo (array puro) — converte para o formato
+            // atual. Nunca existiu sem objeto desde v1.0.0-09282026,
+            // mas mantemos a normalização por defesa.
             if (Array.isArray(dados)) {
-                return { executados: dados, pulados: [] };
+                return { executados: dados, pulados: [], origem: {} };
             }
 
             return {
                 executados: Array.isArray(dados.executados) ? dados.executados : [],
-                                                       pulados: Array.isArray(dados.pulados) ? dados.pulados : []
+                                                       pulados: Array.isArray(dados.pulados) ? dados.pulados : [],
+                                                       // `origem` é puramente de auditoria — ver comentário em
+                                                       // `salvarProgresso`. Pode não existir em arquivos antigos;
+                                                       // devolvemos `{}` para simplificar o `POST /progress`.
+                                                       origem: (dados.origem && typeof dados.origem === 'object') ? dados.origem : {}
             };
         }
     } catch (e) {
         console.error("[Erro ao ler progresso]:", e.message);
     }
-    return { executados: [], pulados: [] };
+    return { executados: [], pulados: [], origem: {} };
 }
 
 function escreverProgresso(progresso) {
     fs.writeFileSync(ARQUIVO_PROGRESSO, JSON.stringify(progresso, null, 2), 'utf8');
 }
 
-function salvarProgresso(idComando) {
+function salvarProgresso(idComando, origem) {
     // Ids "transientes" não devem poluir o .progresso.json:
     //
     //   • `-open`   — abertura de app GUI (gerado por
@@ -658,6 +680,27 @@ function salvarProgresso(idComando) {
             progresso.executados.push(idComando);
         }
         progresso.pulados = progresso.pulados.filter(id => id !== idComando);
+
+        // Campo `origem` é puramente de AUDITORIA — o FAP NUNCA lê
+        // este campo para decidir estado visual. Ele existe apenas
+        // para o usuário (ou um desenvolvedor) inspecionar o
+        // .progresso.json e ver "o que o FAP instalou" vs "o que já
+        // existia antes". A UI continua usando a heurística runtime
+        // `appJaInstaladoNoSistema()` (cruza `.progresso.json` com
+        // `/system-state`), que é auto-corretiva: se o usuário
+        // remove/instala algo por fora, a heurística percebe na
+        // próxima consulta — um valor fixo em `origem` não.
+        //
+        // Formato: objeto `{ idComando: "fap" | "preexistente" }`.
+        // Aditivo — `.progresso.json` antigo (sem esse campo)
+        // continua sendo lido normalmente.
+        if (origem === 'fap' || origem === 'preexistente') {
+            if (!progresso.origem || typeof progresso.origem !== 'object') {
+                progresso.origem = {};
+            }
+            progresso.origem[idComando] = origem;
+        }
+
         escreverProgresso(progresso);
     } catch (e) {
         console.error("[Erro ao salvar progresso]:", e.message);
@@ -974,7 +1017,7 @@ function executarComandoComStream(comandoFinal, idComando, isReversao, callback)
                 if (isReversao) {
                     removerProgresso(idComando);
                 } else {
-                    salvarProgresso(idComando);
+                    salvarProgresso(idComando, 'fap');
                 }
                 enviarLog(idComando, `\n✅ Comando concluído com sucesso!\n`, 'success');
                 console.log(`[SUCESSO] ${idComando}`);
@@ -1027,7 +1070,7 @@ function executarComandoComStream(comandoFinal, idComando, isReversao, callback)
                 if (isReversao) {
                     removerProgresso(idComando);
                 } else {
-                    salvarProgresso(idComando);
+                    salvarProgresso(idComando, 'fap');
                 }
                 enviarLog(idComando, `\n✅ Comando concluído com sucesso! (código: ${code})\n`, 'success');
                 console.log(`[SUCESSO] ${idComando}`);
@@ -1294,7 +1337,7 @@ async function executarComAutenticacaoSegura(comandoOriginal, idComando, isRever
                 if (isReversao) {
                     removerProgresso(idComando);
                 } else {
-                    salvarProgresso(idComando);
+                    salvarProgresso(idComando, 'fap');
                 }
                 enviarLog(idComando, `\n✅ Comando concluído com sucesso! (código: ${code})\n`, 'success');
                 console.log(`[SUCESSO] ${idComando}`);
@@ -1509,7 +1552,8 @@ const server = http.createServer((req, res) => {
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({
             executados: progresso.executados,
-            pulados: progresso.pulados
+            pulados: progresso.pulados,
+            origem: progresso.origem || {}
         }));
         return;
     }
@@ -1521,9 +1565,19 @@ const server = http.createServer((req, res) => {
             try {
                 const { executados, pulados } = JSON.parse(body);
                 if (Array.isArray(executados) || Array.isArray(pulados)) {
+                    // Preserva o campo `origem` do arquivo atual. O
+                    // cliente NÃO o envia em `POST /progress` (é campo
+                    // de auditoria preenchido só por `salvarProgresso`
+                    // no backend, quando o próprio servidor executa um
+                    // comando). Se sobrescrevêssemos com o body, o
+                    // `origem` seria apagado em qualquer clique de
+                    // botão — porque `marcarComoExecutado()` do cliente
+                    // dispara `POST /progress` em toda transição.
+                    const atual = lerProgresso();
                     escreverProgresso({
                         executados: Array.isArray(executados) ? executados : [],
-                                      pulados: Array.isArray(pulados) ? pulados : []
+                                      pulados: Array.isArray(pulados) ? pulados : [],
+                                      origem: atual.origem || {}
                     });
                 }
                 res.writeHead(200, { 'Content-Type': 'application/json' });
@@ -1609,6 +1663,7 @@ const server = http.createServer((req, res) => {
             ok: true,
             executados: progresso.executados,
             pulados: progresso.pulados,
+            origem: progresso.origem || {},
             uptime: Math.floor(process.uptime()),
                                versao: FAP_VERSION,
                                sseConexoes: sseClients.size,
@@ -1962,6 +2017,41 @@ const server = http.createServer((req, res) => {
                  });
                  res.end(JSON.stringify({ apps: apps }));
              });
+        return;
+    }
+
+    // ----------------------------------------------------------
+    // /system-state — estado atual do Fedora do usuário
+    // ----------------------------------------------------------
+    //
+    // Devolve o estado REAL do sistema (repositórios ativos,
+    // pacotes instalados, etc.), independente do que o FAP já
+    // instalou. Usado pelo frontend no boot para atualizar os
+    // botões de repositório (Fase 1) e, futuramente, de apps e
+    // de itens de sistema.
+    //
+    // Read-only, sem autenticação. Cache de 5min em memória.
+    if (req.method === 'GET' && url === '/system-state') {
+        systemStateService.scanSystemState().then(function(dados) {
+            res.writeHead(200, {
+                'Content-Type': 'application/json',
+                'Cache-Control': 'no-cache, no-store, must-revalidate'
+            });
+            res.end(JSON.stringify(dados));
+        }).catch(function(e) {
+            console.error('[system-state] Erro:', e.message);
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({
+                repos_enabled: [],
+                packages_installed: [],
+                flatpaks_installed: [],
+                groups_membership: [],
+                kernel_params: {},
+                services_active: [],
+                config_files_present: [],
+                error: e.message
+            }));
+        });
         return;
     }
 

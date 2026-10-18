@@ -50,9 +50,12 @@ Thumbs.db
 # NÃO IGNORAR (arquivos lidos em runtime — precisam ser
 # rastreados para o FAP funcionar depois do clone)
 # ------------------------------------------------------------
-# hardware_map.json precisa ser rastreado — o hardware-service.js
-# o lê em runtime para o endpoint /hardware-scan.
-# CHANGELOG.md precisa ser rastreado — o endpoint /changelog
-# do server.js o lê em runtime.
-# locales/en.json e locales/es.json precisam ser rastreados —
-# o i18n.js os carrega em runtime.
+# As regras abaixo são "defesa em profundidade": se algum dia
+# alguém adicionar `*.json` ou `*.md` ao .gitignore no futuro,
+# esses arquivos continuam sendo rastreados porque o `!` os
+# reabilita explicitamente.
+!hardware_map.json
+!CHANGELOG.md
+!locales/
+!locales/en.json
+!locales/es.json

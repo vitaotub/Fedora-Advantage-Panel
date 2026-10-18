@@ -104,7 +104,7 @@ check: check-basico
 # package.json e CHANGELOG.md. Alvo principal de validação do projeto.
 check-basico:
 	@echo "==> Checando sintaxe JavaScript..."
-	@for f in script.js i18n.js server.js hardware-service.js; do \
+	@for f in script.js i18n.js server.js hardware-service.js system-state-service.js; do \
 		node --check "$$f" && echo "  OK: $$f" || exit 1; \
 	done
 	@echo "==> Checando sintaxe Bash..."

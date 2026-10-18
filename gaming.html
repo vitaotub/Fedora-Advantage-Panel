@@ -353,31 +353,6 @@ Ferramentas para quem quer tirar o máximo do Fedora em jogos: versões específ
 </div>
 </div>
 
-<!-- Gamescope Session -->
-<div class="bloco-comando">
-<div class="comando-info">
-<h3 data-i18n="sessoes.gaming.gamescope_session_titulo">Gamescope Session — Modo Gaming no boot</h3>
-<p data-i18n="sessoes.gaming.gamescope_session_desc">Instala uma sessão de login alternativa que inicia o computador diretamente no Gamescope (o mesmo modo que o Steam Deck usa). Ideal para HTPCs e máquinas ligadas à TV.</p>
-<div class="aviso-caixa" data-i18n-html="sessoes.gaming.gamescope_session_aviso">
-    ⚠️ <strong>Pré-requisitos para a sessão Gamescope:</strong><br>
-    • <strong>Steam instalado e configurado</strong> — a sessão inicia diretamente no Steam Big Picture. Instale o Steam pelo RPM Fusion (não via Flatpak), execute-o pela primeira vez para aplicar as atualizações necessárias e faça login com sua conta.<br>
-    • <strong>Hardware compatível</strong> — AMD e Intel funcionam nativamente. NVIDIA exige o parâmetro <code>nvidia-drm.modeset=1</code> ativo no kernel (ative pela sessão <strong>Hardware → NVIDIA</strong>).<br>
-    • <strong>Logout para testar</strong> — a sessão não pode ser testada dentro do FAP. Após instalar, reinicie o computador, faça logout e selecione <strong>"SteamOS mode (Gamescope)"</strong> no seletor de sessão da tela de login. Se a sessão travar, verifique <code>/tmp/fap-gamescope-session.log</code> para detalhes.
-</div>
-<div class="grupo-botoes">
-<div class="btn-flatpak-wrapper">
-<button class="btn-executar" onclick="executarGamescopeSession()" data-comando="gamescope-session-install" data-logbox="log-sessao-gaming" id="btn-gamescope-session-install" data-i18n="sessoes.gaming.btn_gamescope_session">
-📦 Instalar Gamescope Session
-</button>
-</div>
-</div>
-</div>
-<div class="progress-container" id="progress-gamescope-session-install">
-<div class="progress-bar"><div class="progress-fill" id="progress-fill-gamescope-session-install"></div></div>
-<div class="progress-text"><span class="status" id="progress-status-gamescope-session-install">⏳ Iniciando...</span><span class="percentage" id="progress-percent-gamescope-session-install">0%</span></div>
-</div>
-</div>
-
 <!-- Controller Test -->
 <div class="bloco-comando">
 <div class="comando-info">
@@ -640,6 +615,7 @@ function _tVars(chave, fallback, vars) {
 // ------------------------------------------------------------
 
 var APPS_FLATPAK = {
+    'heroic-install': { appId: 'com.heroicgameslauncher.hgl', fallback: '⚡ Heroic Games' },
     'lutris-install': { appId: 'net.lutris.Lutris', fallback: '🎯 Lutris' },
     'bottles-install': { appId: 'com.usebottles.bottles', fallback: '🍾 Bottles' },
     'protonup-qt-install': { appId: 'net.davidotek.pupgui2', fallback: '📦 Instalar ProtonUp-Qt' },
@@ -658,15 +634,7 @@ var APPS_FLATPAK = {
 // `dnf install <url-do-repo>` e o pacote vem dele. A remoção
 // apaga o pacote E o arquivo .repo.
 
-var APPS_RPM_REPO = {
-    'heroic-install': {
-        pacote: 'heroic-games-launcher',
-        repoSetup:
-            'sudo dnf install -y https://heroicgameslauncher.com/linux/heroic-games-launcher.repo',
-        repoRemove: 'sudo rm -f /etc/yum.repos.d/heroic-games-launcher.repo',
-        fallback: '⚡ Heroic Games'
-    }
-};
+// (APPS_RPM_REPO removido — Heroic migrou para Flatpak na v1.0.0-10152026.d)
 
 // ------------------------------------------------------------
 // Registro de apps removíveis (lixeira unificada)
@@ -682,11 +650,9 @@ registrarAppRemovivel('steam-install', {
                 'Continuar?'
 });
 
-// Heroic — RPM via repo oficial do fabricante.
 registrarAppRemovivel('heroic-install', {
-    tipo: 'dnf',
-    pacotes: ['heroic-games-launcher'],
-    reposRemover: ['/etc/yum.repos.d/heroic-games-launcher.repo'],
+    tipo: 'flatpak',
+    appId: 'com.heroicgameslauncher.hgl',
     nome: 'Heroic Games',
     confirmMsg: '⚠️ Desinstalar o Heroic?\n\n' +
                 'Seus jogos e prefixos Wine NÃO serão apagados.\n\n' +
@@ -718,23 +684,6 @@ registrarAppRemovivel('controller-test-install', {
     pacotes: ['jstest-gtk'],
     nome: 'Teste de Controle'
 });
-registrarAppRemovivel('gamescope-session-install', {
-    tipo: 'arquivos',
-    comandoRemocao:
-        'sudo rm -f /usr/bin/gamescope-session && ' +
-        'sudo rm -f /usr/share/wayland-sessions/gamescope-session.desktop && ' +
-        'sudo dnf remove -y gamescope-session-steam 2>/dev/null || true; ' +
-        'sudo dnf copr disable pvermeer/gamescope-session-steam -y 2>/dev/null || true',
-    nome: 'Gamescope Session',
-    confirmMsg: '⚠️ Desinstalar o Gamescope Session?\n\n' +
-                'Isso remove:\n' +
-                '• O script /usr/bin/gamescope-session\n' +
-                '• A entrada /usr/share/wayland-sessions/gamescope-session.desktop\n' +
-                '• O pacote gamescope-session-steam (se estava instalado via COPR antigo)\n\n' +
-                'O pacote gamescope em si NÃO é removido — ele continua disponível\n' +
-                'para uso independente (ex.: pelo comando `gamescope -- %command%`).\n\n' +
-                'Continuar?'
-});
 
 // NTSYNC usa "desfazer tudo" porque deixa /etc/modules-load.d/ntsync.conf órfão.
 registrarAppRemovivel('ntsync-install', {
@@ -762,15 +711,15 @@ function abrirSteam() {
 
 async function executarHeroic() {
     const idComando = 'heroic-install';
-    const info = APPS_RPM_REPO[idComando];
-    const comando = info.repoSetup + ' && sudo dnf install -y ' + info.pacote;
+    const info = APPS_FLATPAK[idComando];
+    const comando = 'flatpak install flathub ' + info.appId + ' -y';
     await executarComandoGenerico(idComando, comando,
         _t('sessoes.gaming.btn_heroic', '⚡ Heroic Games'),
         function() { aplicarEstadoInstalavel(idComando, 'abrir-heroic'); });
 }
 
 function abrirHeroic() {
-    abrirFerramentaExterna('heroic', 'heroic-install', 'Heroic Games');
+    abrirFerramentaExterna('gtk-launch com.heroicgameslauncher.hgl', 'heroic-install', 'Heroic Games');
 }
 
 async function executarLutris() {
@@ -917,63 +866,6 @@ async function executarGameModePresets() {
         _t('sessoes.gaming.btn_gamemode_presets', '⚙️ Aplicar Presets'));
 }
 
-async function executarGamescopeSession() {
-    var comando =
-        'sudo dnf install -y gamescope || { echo "❌ Falha ao instalar gamescope. Abortando."; exit 1; }; ' +
-        'if ! command -v steam > /dev/null 2>&1; then ' +
-        '  echo "⚠️  Steam nativo não encontrado em /usr/bin/steam."; ' +
-        '  echo "    A sessão Gamescope requer o Steam nativo (não Flatpak)."; ' +
-        '  echo "    Instale-o pela sessão Gaming → Steam antes de fazer logout."; ' +
-        '  echo ""; ' +
-        'fi; ' +
-        'DETECTED_W=1920; DETECTED_H=1080; ' +
-        'for f in /sys/class/drm/card*/mode; do ' +
-        '  if [ -s "$f" ]; then ' +
-        '    RES=$(cat "$f" 2>/dev/null); ' +
-        '    if echo "$RES" | grep -qE "^[0-9]+x[0-9]+$"; then ' +
-        '      DETECTED_W="${RES%x*}"; ' +
-        '      DETECTED_H="${RES#*x}"; ' +
-        '      break; ' +
-        '    fi; ' +
-        '  fi; ' +
-        'done; ' +
-        'echo "🎯 Resolução detectada: ${DETECTED_W}x${DETECTED_H}"; ' +
-        'sudo tee /usr/bin/gamescope-session > /dev/null <<GAMESCOPE_EOF\n' +
-        '#!/bin/sh\n' +
-        '# Fedora Advantage Panel — Gamescope Steam Session\n' +
-        '# Gerado automaticamente. Para alterar, edite este arquivo ou\n' +
-        '# re-execute o botão "Instalar Gamescope Session" no FAP.\n' +
-        'exec gamescope -W ${DETECTED_W} -H ${DETECTED_H} -e -f -- steam -steamdeck -steamos3 >/tmp/fap-gamescope-session.log 2>&1\n' +
-        'GAMESCOPE_EOF\n' +
-        'sudo chmod +x /usr/bin/gamescope-session && ' +
-        'sudo tee /usr/share/wayland-sessions/gamescope-session.desktop > /dev/null <<\'DESKTOP_EOF\'\n' +
-        '[Desktop Entry]\n' +
-        'Name=SteamOS mode (Gamescope)\n' +
-        'Comment=Standalone Gamescope session running Steam Big Picture\n' +
-        'Exec=/usr/bin/gamescope-session\n' +
-        'TryExec=/usr/bin/gamescope-session\n' +
-        'Type=Application\n' +
-        'DesktopNames=Gamescope\n' +
-        'DESKTOP_EOF\n' +
-        'sudo usermod -aG render,video $USER && ' +
-        'sudo dnf remove -y gamescope-session-steam 2>/dev/null || true; ' +
-        'sudo dnf copr disable pvermeer/gamescope-session-steam -y 2>/dev/null || true; ' +
-        'echo ""; ' +
-        'echo "════════════════════════════════════════════════════════════"; ' +
-        'echo "✅ Gamescope Session instalada!"; ' +
-        'echo "════════════════════════════════════════════════════════════"; ' +
-        'echo ""; ' +
-        'echo "ℹ️  Faça logout e selecione SteamOS mode (Gamescope)"; ' +
-        'echo "   no seletor de sessão do seu display manager."; ' +
-        'echo ""; ' +
-        'echo "📋 Log da sessão: /tmp/fap-gamescope-session.log"; ' +
-        'echo "════════════════════════════════════════════════════════════";';
-
-    await executarComandoGenerico('gamescope-session-install', comando,
-        _t('sessoes.gaming.btn_gamescope_session', '📦 Instalar Gamescope Session'),
-        function() { aplicarEstadoInstalavel('gamescope-session-install', null); });
-}
-
 async function executarControllerTest() {
     const idComando = 'controller-test-install';
     await executarComandoGenerico(idComando, 'sudo dnf install -y jstest-gtk',
@@ -1071,9 +963,6 @@ function restaurarEstadoSessao() {
      'gamescope-install', 'vkbasalt-install'].forEach(function(id) {
         aplicarEstadoInstalavel(id, null);
     });
-
-    // Gamescope Session — sem GUI dedicada, botão cinza one-shot.
-    aplicarEstadoInstalavel('gamescope-session-install', null);
 
     // NTSYNC: par install/revert (desfazer tudo).
     aplicarEstadoToggle('ntsync-install', 'desfazer-ntsync');

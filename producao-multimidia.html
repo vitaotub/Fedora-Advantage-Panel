@@ -34,6 +34,11 @@
 
 <p data-i18n="sessoes.producao-multimidia.obs_desc">Instale o OBS Studio para gravação/streaming e ative a câmera virtual para chamadas de vídeo.</p>
 
+<div class="dashboard-grid" style="margin-top: 1rem; grid-template-columns: 1fr 1fr;">
+
+<!-- Coluna 1: OBS Studio -->
+<div class="dashboard-card destaque-card" style="padding: 1rem;">
+<div class="dashboard-titulo" style="margin-bottom: 0.75rem;" data-i18n="sessoes.producao-multimidia.obs_coluna_titulo">📹 OBS Studio</div>
 <div class="botoes-flex">
 <div class="btn-flatpak-wrapper">
 <button class="btn-executar"
@@ -45,7 +50,6 @@ data-i18n="sessoes.producao-multimidia.btn_instalar_obs">
 📹 Instalar OBS Studio
 </button>
 </div>
-
 <button class="btn-executar verde"
 style="display: none;"
 onclick="abrirOBSStudio()"
@@ -56,8 +60,16 @@ data-i18n="sessoes.producao-multimidia.btn_abrir_obs">
 🚀 Abrir OBS Studio
 </button>
 </div>
+<div class="progress-container" id="progress-instalar-obs-studio">
+<div class="progress-bar"><div class="progress-fill" id="progress-fill-instalar-obs-studio"></div></div>
+<div class="progress-text"><span class="status" id="progress-status-instalar-obs-studio">⏳ Iniciando...</span><span class="percentage" id="progress-percent-instalar-obs-studio">0%</span></div>
+</div>
+</div>
 
-<div class="botoes-flex" style="margin-top: 0.75rem;">
+<!-- Coluna 2: Câmera Virtual -->
+<div class="dashboard-card" style="padding: 1rem;">
+<div class="dashboard-titulo" style="margin-bottom: 0.75rem;" data-i18n="sessoes.producao-multimidia.cam_coluna_titulo">🎥 Câmera Virtual</div>
+<div class="botoes-flex">
 <div class="btn-flatpak-wrapper">
 <button class="btn-executar"
 onclick="executarOBSCam()"
@@ -69,16 +81,12 @@ data-i18n="sessoes.producao-multimidia.btn_ativar_cam">
 </button>
 </div>
 </div>
-</div>
-
-<div class="progress-container" id="progress-instalar-obs-studio">
-<div class="progress-bar"><div class="progress-fill" id="progress-fill-instalar-obs-studio"></div></div>
-<div class="progress-text"><span class="status" id="progress-status-instalar-obs-studio">⏳ Iniciando...</span><span class="percentage" id="progress-percent-instalar-obs-studio">0%</span></div>
-</div>
-
 <div class="progress-container" id="progress-obs-cam">
 <div class="progress-bar"><div class="progress-fill" id="progress-fill-obs-cam"></div></div>
 <div class="progress-text"><span class="status" id="progress-status-obs-cam">⏳ Iniciando...</span><span class="percentage" id="progress-percent-obs-cam">0%</span></div>
+</div>
+</div>
+
 </div>
 </div>
 

@@ -193,13 +193,40 @@ registrarAppRemovivel('codecs-essenciais', {
         'gstreamer1-plugins-good ' +
         'gstreamer1-plugins-bad-free ' +
         'gstreamer1-plugins-base',
-    nome: 'Codecs Multimídia Essenciais'
+nome: 'Codecs Multimídia Essenciais',
+    // MITIGAÇÃO (v1.1.2): pré-existente NÃO pode ser removido.
+    // A remoção de codecs é o `comandoRemocao` mais destrutivo do
+    // FAP — swap de `ffmpeg` → `ffmpeg-free`, remoção dos pacotes
+    // `-freeworld` do RPM Fusion e reinstalação de plugins base.
+    // Se o usuário já tinha os codecs antes do FAP, desfazer essa
+    // configuração pode deixar o sistema sem reprodução de áudio
+    // ou vídeo até o próximo `dnf install`.
+    permitirRemocaoPreExistente: false,
+    motivoBloqueio: 'Os codecs já estavam instalados antes do FAP. ' +
+                    'Desfazer a configuração pode deixar o sistema sem ' +
+                    'reprodução de áudio/vídeo até reinstalar os pacotes ' +
+                    'originais. Para reverter manualmente:\n\n' +
+                    '  sudo dnf swap ffmpeg ffmpeg-free --allowerasing\n' +
+                    '  sudo dnf remove gstreamer1-plugins-bad-freeworld \\\n' +
+                    '    libavcodec-freeworld libheif-freeworld\n' +
+                    '  sudo dnf install gstreamer1-plugins-good \\\n' +
+                    '    gstreamer1-plugins-bad-free gstreamer1-plugins-base'
 });
 
 registrarAppRemovivel('extras-tainted', {
     tipo: 'dnf',
     pacotes: ['rpmfusion-free-release-tainted', 'rpmfusion-nonfree-release-tainted', 'libdvdcss'],
-    nome: 'DVD Comercial e Firmware Adicional'
+    nome: 'DVD Comercial e Firmware Adicional',
+    // MITIGAÇÃO (v1.1.2): pré-existente NÃO pode ser removido.
+    // O pacote instala os repositórios `tainted` do RPM Fusion e
+    // a `libdvdcss`. Se o usuário já tinha, remover quebra a
+    // leitura de DVDs comerciais sem aviso claro.
+    permitirRemocaoPreExistente: false,
+    motivoBloqueio: 'O suporte a DVD comercial já estava ativo antes do FAP. ' +
+                    'Para reverter manualmente:\n\n' +
+                    '  sudo dnf remove libdvdcss \\\n' +
+                    '    rpmfusion-free-release-tainted \\\n' +
+                    '    rpmfusion-nonfree-release-tainted'
 });
 
 registrarAppRemovivel('fontes-ms-all', {
@@ -209,7 +236,20 @@ registrarAppRemovivel('fontes-ms-all', {
     confirmMsg: '⚠️ Remover as fontes Microsoft?\n\n' +
                 'Documentos em LibreOffice/OnlyOffice podem quebrar a formatação ' +
                 'até que as fontes sejam reinstaladas.\n\n' +
-                'Continuar?'
+                'Continuar?',
+    // MITIGAÇÃO (v1.1.2): pré-existente NÃO pode ser removido.
+    // O registro inclui `fontconfig`, que é PACOTE BASE do Fedora.
+    // `dnf remove fontconfig` arrasta dezenas de dependências
+    // (aplicativos GUI inteiros deixam de abrir). Se o usuário já
+    // tinha as fontes, remover via FAP é catastrófico.
+    permitirRemocaoPreExistente: false,
+    motivoBloqueio: 'As fontes Microsoft já estavam instaladas antes do FAP. ' +
+                    'A remoção via FAP é BLOQUEADA porque o pacote inclui ' +
+                    '`fontconfig` (base do Fedora) — removê-lo arrasta dezenas ' +
+                    'de dependências e pode quebrar aplicativos GUI. ' +
+                    'Para remover apenas as fontes, apague manualmente:\n\n' +
+                    '  sudo rm -rf /usr/share/fonts/microsoft\n' +
+                    '  sudo fc-cache -f -v'
 });
 
 // ------------------------------------------------------------
@@ -299,6 +339,11 @@ function restaurarEstadoSessao() {
     // Cada um dos três botões usa o estado unificado
     // "instalado-sem-abrir" (Estado 3): botão cinza + lixeira.
     // Não há botão "Abrir" nesta sessão — são pacotes de sistema.
+    //
+    // A pré-existência é detectada automaticamente por
+    // `aplicarEstadoInstalavel` (Bloco G). Se o pacote já estava
+    // instalado antes do FAP, o botão vira "✅ Já instalado
+    // (antes do FAP)" com tooltip e SEM lixeira.
     ['codecs-essenciais', 'extras-tainted', 'fontes-ms-all'].forEach(function(id) {
         aplicarEstadoInstalavel(id, null);
     });

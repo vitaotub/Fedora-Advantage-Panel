@@ -403,7 +403,32 @@ registrarAppRemovivel('realtime-setup', {
     confirmMsg: '⚠️ Reverter o ajuste de Prioridade de Tempo Real?\n\n' +
                 'Isso remove o pacote realtime-setup E remove seu usuário do grupo realtime.\n\n' +
                 'Requer logout/login para o grupo deixar de valer na sessão atual.\n\n' +
-                'Continuar?'
+                'Continuar?',
+    // ============================================================
+    // MITIGAÇÃO (v1.1.2): pré-existente NÃO pode ser removido
+    // ============================================================
+    //
+    // `realtime-setup` é o único item do FAP cuja remoção altera
+    // um GRUPO de usuário (`gpasswd -d $USER realtime`). Se o
+    // usuário já estava no grupo `realtime` antes do FAP, a Opção
+    // B faria a lixeira aparecer — e a remoção desfaria uma
+    // configuração que o FAP não fez.
+    //
+    // Com `permitirRemocaoPreExistente: false`:
+    //   • `aplicarEstadoInstalavel` cai no estado "pré-existente
+    //     bloqueado" (cinza com aviso, sem lixeira).
+    //   • `_executarRemocaoApp` rejeita a remoção mesmo se o
+    //     clique chegar (defesa em profundidade).
+    //
+    // Se o FAP instalou (isExecutado === true), a lixeira continua
+    // funcionando normalmente — a mitigação só vale para
+    // pré-existentes.
+    permitirRemocaoPreExistente: false,
+    motivoBloqueio: 'Seu usuário já estava no grupo realtime antes do FAP. ' +
+                    'A lixeira não aparece aqui para evitar remover uma ' +
+                    'configuração que o FAP não fez. Para desfazer manualmente:\n\n' +
+                    '  sudo gpasswd -d $USER realtime\n' +
+                    '  sudo dnf remove -y realtime-setup'
 });
 
 // ------------------------------------------------------------
@@ -1511,39 +1536,86 @@ async function restaurarEstadoSessao() {
 
     // --- Tuning realtime-setup: único que instala pacote ---
     // Migrado para o padrão cinza + lixeira (Estado 3).
-    aplicarEstadoInstalavel('realtime-setup', null);
+    //
+    // Detecção de pré-existência: se o usuário já está no grupo
+    // `realtime`, o botão vira cinza com aviso (FAP não foi a causa).
+    aplicarEstadoInstalavel(
+        'realtime-setup',
+        null,
+        undefined,
+        SystemState.membroDoGrupo('realtime')
+    );
 
     // --- Toggles de tuning (kernel/sysctl/config) ---
     // Estes NÃO instalam pacote — continuam com o par de texto
-    // aplicar/reverter. A cor do "Aplicar" é a padrão (azul) e o
-    // "Reverter" (vermelho) só é habilitado após aplicação.
+    // aplicar/reverter. O 4º argumento é uma FUNÇÃO que consulta
+    // o estado real do sistema. Se o ajuste já estava ativo antes
+    // do FAP, o botão "Aplicar" vira cinza com aviso e o "Reverter"
+    // fica oculto.
+    //
+    // A cor do "Aplicar" é a padrão (azul) quando nada está ativo;
+    // cinza com aviso quando pré-existente; cinza "concluído"
+    // quando o FAP fez.
+    var _home = '';  // caminho absoluto do HOME virá do endpoint
     var toggles = [
         ['vm-max-map-count', 'vm-max-map-count-remove',
             _t('sessoes.ajustes-manutencao.btn_vm_max_map_count', '⚙️ Aplicar Ajuste'),
-            _t('sessoes.ajustes-manutencao.btn_vm_max_map_count_remove', '↩️ Reverter')],
+            _t('sessoes.ajustes-manutencao.btn_vm_max_map_count_remove', '↩️ Reverter'),
+            function() {
+                return SystemState.kernelParam('vm.max_map_count') === '2147483642';
+            }],
         ['vm-swappiness-cache', 'vm-swappiness-cache-remove',
             _t('sessoes.ajustes-manutencao.btn_vm_swappiness_cache', '⚙️ Aplicar Ajuste'),
-            _t('sessoes.ajustes-manutencao.btn_vm_swappiness_cache_remove', '↩️ Reverter')],
+            _t('sessoes.ajustes-manutencao.btn_vm_swappiness_cache_remove', '↩️ Reverter'),
+            function() {
+                return SystemState.kernelParam('vm.swappiness') === '150' &&
+                       SystemState.kernelParam('vm.vfs_cache_pressure') === '50';
+            }],
         ['tcp-bbr', 'tcp-bbr-remove',
             _t('sessoes.ajustes-manutencao.btn_tcp_bbr', '⚙️ Aplicar Ajuste'),
-            _t('sessoes.ajustes-manutencao.btn_tcp_bbr_remove', '↩️ Reverter')],
+            _t('sessoes.ajustes-manutencao.btn_tcp_bbr_remove', '↩️ Reverter'),
+            function() {
+                return SystemState.kernelParam('net.ipv4.tcp_congestion_control') === 'bbr';
+            }],
         ['pipewire-quantum-low', 'pipewire-quantum-low-remove',
             _t('sessoes.ajustes-manutencao.btn_pipewire_quantum', '⚙️ Ativar Baixa Latência'),
-            _t('sessoes.ajustes-manutencao.btn_pipewire_quantum_remove', '↩️ Reverter')]
+            _t('sessoes.ajustes-manutencao.btn_pipewire_quantum_remove', '↩️ Reverter'),
+            function() {
+                // O arquivo é criado pelo FAP em ~/.config. O endpoint
+                // devolve o caminho absoluto (com HOME expandido).
+                var arquivos = SystemState.bruto().config_files_present || [];
+                for (var i = 0; i < arquivos.length; i++) {
+                    if (arquivos[i].indexOf('99-fap-quantum.conf') !== -1) {
+                        return true;
+                    }
+                }
+                return false;
+            }]
     ];
 
     for (var i = 0; i < toggles.length; i++) {
         var t = toggles[i];
         var aplicarMarcado = isExecutado(t[0]);
         var reverterMarcado = isExecutado(t[1]);
+        var detectar = t[4];
 
         if (aplicarMarcado && !reverterMarcado) {
+            // FAP aplicou. Botão cinza concluído; revert habilitado.
             _marcarBotaoConcluido(t[0]);
             _resetarBotao(t[1], t[3]);
+            var btnRev1 = document.getElementById('btn-' + t[1]);
+            if (btnRev1) {
+                btnRev1.style.display = '';
+                btnRev1.disabled = false;
+                btnRev1.style.cursor = 'pointer';
+                btnRev1.style.opacity = '1';
+            }
         } else if (reverterMarcado && !aplicarMarcado) {
+            // FAP reverteu. Revert cinza; aplicar azul clicável.
             _marcarBotaoConcluido(t[1]);
             _resetarBotao(t[0], t[2]);
         } else if (aplicarMarcado && reverterMarcado) {
+            // Estado ambíguo: limpa e reseta.
             _resetarBotao(t[0], t[2]);
             _resetarBotao(t[1], t[3]);
             try {
@@ -1553,16 +1625,47 @@ async function restaurarEstadoSessao() {
                 console.error('Erro ao limpar estado ambíguo do toggle ' + t[0] + ':', e);
             }
         } else {
-            _resetarBotao(t[0], t[2]);
-            _resetarBotao(t[1], t[3]);
-            // Estado inicial: reverter DESABILITADO (nada para reverter ainda)
-            var btnReverter = document.getElementById('btn-' + t[1]);
-            if (btnReverter) {
-                btnReverter.textContent = btnReverter.getAttribute('data-texto-original') || t[3];
-                btnReverter.style.backgroundColor = '';
-                btnReverter.style.cursor = 'not-allowed';
-                btnReverter.disabled = true;
-                btnReverter.style.opacity = '0.5';
+            // Nada feito pelo FAP. Verifica se o estado já existe
+            // no sistema (pré-existente).
+            var preExistente = false;
+            if (typeof detectar === 'function') {
+                try { preExistente = !!detectar(); } catch (e) { preExistente = false; }
+            }
+
+            if (preExistente) {
+                // Pré-existente: aplicar fica cinza "✅ já ativo"
+                // com tooltip; reverter fica oculto.
+                _resetarBotao(t[0], t[2]);
+                var btnApl = document.getElementById('btn-' + t[0]);
+                if (btnApl) {
+                    btnApl.textContent = '✅ Já estava ativo';
+                    btnApl.style.backgroundColor = '#4b5563';
+                    btnApl.style.cursor = 'not-allowed';
+                    btnApl.disabled = true;
+                    btnApl.style.opacity = '0.7';
+                    btnApl.title = 'Este ajuste já estava ativo antes do FAP. O FAP não foi a causa — para desfazer, use o terminal.';
+                }
+                var btnRevPre = document.getElementById('btn-' + t[1]);
+                if (btnRevPre) {
+                    btnRevPre.style.display = 'none';
+                }
+            } else {
+                // Estado inicial normal.
+                _resetarBotao(t[0], t[2]);
+                _resetarBotao(t[1], t[3]);
+                var btnReverter = document.getElementById('btn-' + t[1]);
+                if (btnReverter) {
+                    btnReverter.textContent = btnReverter.getAttribute('data-texto-original') || t[3];
+                    btnReverter.style.backgroundColor = '';
+                    btnReverter.style.cursor = 'not-allowed';
+                    btnReverter.disabled = true;
+                    btnReverter.style.opacity = '0.5';
+                    btnReverter.style.display = 'none';
+                }
+                var btnApl2 = document.getElementById('btn-' + t[0]);
+                if (btnApl2) {
+                    btnApl2.title = '';
+                }
             }
         }
     }

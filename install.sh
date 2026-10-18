@@ -174,6 +174,7 @@ ARQUIVOS_PRINCIPAIS=(
 "server.js"
 "hardware-service.js"
 "hardware_map.json"
+"system-state-service.js"
 "index.html"
 "guiado.html"
 "style.css"

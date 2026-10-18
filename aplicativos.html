@@ -158,7 +158,7 @@ BLOCO 3 — FERRAMENTAS GRÁFICAS
 </div>
 <div class="launcher-item">
 <div class="btn-flatpak-wrapper">
-<button class="btn-executar" onclick="instalarDnf('instalar-freecad')" data-comando="instalar-freecad" data-logbox="log-sessao-aplicativos" id="btn-instalar-freecad" data-i18n="sessoes.aplicativos.btn_freecad">⚙️ FreeCAD</button>
+<button class="btn-executar" onclick="instalarFlatpak('instalar-freecad')" data-comando="instalar-freecad" data-logbox="log-sessao-aplicativos" id="btn-instalar-freecad" data-i18n="sessoes.aplicativos.btn_freecad">⚙️ FreeCAD</button>
 </div>
 </div>
 <div class="launcher-item">
@@ -436,7 +436,7 @@ BLOCO 5 — INTERNET E COMUNICAÇÃO
 <div class="grid-launchers">
 <div class="launcher-item">
 <div class="btn-flatpak-wrapper">
-<button class="btn-executar" onclick="instalarRpmRepo('instalar-opera')" data-comando="instalar-opera" data-logbox="log-sessao-aplicativos" id="btn-instalar-opera" data-i18n="sessoes.aplicativos.btn_opera">🌐 Opera</button>
+<button class="btn-executar" onclick="instalarFlatpak('instalar-opera')" data-comando="instalar-opera" data-logbox="log-sessao-aplicativos" id="btn-instalar-opera" data-i18n="sessoes.aplicativos.btn_opera">🌐 Opera</button>
 </div>
 </div>
 <div class="launcher-item">
@@ -531,6 +531,9 @@ BLOCO 6 — EDIÇÃO DE VÍDEO, ÁUDIO E MODELAGEM 3D
 <div class="btn-flatpak-wrapper">
 <button class="btn-executar" onclick="instalarLightworks()" data-comando="instalar-lightworks" data-logbox="log-sessao-aplicativos" id="btn-instalar-lightworks" data-i18n="sessoes.aplicativos.btn_lightworks">🎞️ Lightworks</button>
 </div>
+<button class="btn-executar verde" style="display: none;" onclick="abrirLightworks()" data-comando="abrir-lightworks" data-logbox="log-sessao-aplicativos" id="btn-abrir-lightworks" data-i18n="sessoes.aplicativos.btn_abrir_lightworks">
+🚀 Abrir Lightworks
+</button>
 </div>
 <div class="launcher-item">
 <div class="btn-flatpak-wrapper">
@@ -730,11 +733,13 @@ var APPS_FLATPAK = {
     'instalar-cura': { appId: 'com.ultimaker.cura', fallback: '🖨️ Cura' },
     'instalar-upscayl': { appId: 'org.upscayl.Upscayl', fallback: '🔍 Upscayl' },
     'instalar-xnviewmp': { appId: 'com.xnview.XnViewMP', fallback: '🖼️ XnView MP' },
+    'instalar-freecad': { appId: 'org.freecad.FreeCAD', fallback: '⚙️ FreeCAD' },
     'instalar-zoom': { appId: 'us.zoom.Zoom', fallback: '📹 Zoom' },
     'instalar-discord': { appId: 'com.discordapp.Discord', fallback: '💬 Discord' },
     'instalar-telegram': { appId: 'org.telegram.desktop', fallback: '✈️ Telegram' },
     'instalar-openshot': { appId: 'org.openshot.OpenShot', fallback: '🎬 OpenShot' },
-    'instalar-drift': { appId: 'org.cutwire.Drift', fallback: '🎬 Drift' }
+    'instalar-drift': { appId: 'org.cutwire.Drift', fallback: '🎬 Drift' },
+    'instalar-opera': { appId: 'com.opera.Opera', fallback: '🌐 Opera' }
 };
 
 // ============================================================
@@ -752,7 +757,6 @@ var APPS_DNF = {
     'instalar-inkscape':    { pacotes: ['inkscape'],                       fallback: '🎨 Inkscape' },
     'instalar-gimp':        { pacotes: ['gimp'],                           fallback: '🖼️ GIMP' },
     'instalar-darktable':   { pacotes: ['darktable'],                      fallback: '📷 Darktable' },
-    'instalar-freecad':     { pacotes: ['freecad'],                        fallback: '⚙️ FreeCAD' },
     'instalar-librecad':    { pacotes: ['librecad'],                       fallback: '📐 LibreCAD' },
     'instalar-kdenlive':    { pacotes: ['kdenlive'],                       fallback: '🎬 Kdenlive' },
     'instalar-pitivi':      { pacotes: ['pitivi'],                         fallback: '🎞️ Pitivi' },
@@ -801,22 +805,6 @@ var APPS_URL_RPM = {
 // ============================================================
 
 var APPS_RPM_REPO = {
-    'instalar-opera': {
-        pacote: 'opera-stable',
-        repoSetup:
-            'sudo rpm --import https://rpm.opera.com/rpmrepo.key && ' +
-            'sudo tee /etc/yum.repos.d/opera.repo > /dev/null << \'OPERA_EOF\'\n' +
-            '[opera]\n' +
-            'name=Opera packages\n' +
-            'type=rpm-md\n' +
-            'baseurl=https://rpm.opera.com/rpm\n' +
-            'gpgcheck=1\n' +
-            'gpgkey=https://rpm.opera.com/rpmrepo.key\n' +
-            'enabled=1\n' +
-            'OPERA_EOF',
-        repoRemove: 'sudo rm -f /etc/yum.repos.d/opera.repo',
-        fallback: '🌐 Opera'
-    },
     'instalar-brave': {
         pacote: 'brave-browser',
         repoSetup:
@@ -903,17 +891,23 @@ var _CMD_ABRIR_DNF = {
     'instalar-foliate':     'gtk-launch com.github.johnfactotum.Foliate',
     'instalar-haruna':      'gtk-launch org.kde.haruna',
     'instalar-vlc':         'vlc',
-    'instalar-mpv':         'gtk-launch io.mpv.Mpv',
+    'instalar-mpv':         'gtk-launch mpv',
     'instalar-krita':       'krita',
     'instalar-inkscape':    'inkscape',
     'instalar-gimp':        'gimp',
     'instalar-darktable':   'darktable',
-    'instalar-freecad':     'freecad',
     'instalar-librecad':    'librecad',
     'instalar-kdenlive':    'kdenlive',
     'instalar-pitivi':      'pitivi',
     'instalar-shotcut':     'shotcut',
-    'instalar-avidemux':    'avidemux',
+    // O Avidemux 2.8+ migrou o app-id para `org.avidemux.Avidemux`
+    // (antes era `avidemux.desktop`, agora é `org.avidemux.Avidemux.desktop`).
+    // O binário instalado pelo RPM Fusion mudou para algo em
+    // /usr/bin/avidemux3_* que pode nem existir dependendo da
+    // versão do Fedora. `gtk-launch` lê o `Exec=` do `.desktop`
+    // oficial e sempre chama o binário correto, independente do
+    // que a distro decidiu empacotar.
+    'instalar-avidemux':    'gtk-launch org.avidemux.Avidemux',
     'instalar-blender':     'blender',
     'instalar-ardour':      'ardour8',
     'instalar-lmms':        'lmms',
@@ -922,7 +916,6 @@ var _CMD_ABRIR_DNF = {
 };
 
 var _CMD_ABRIR_RPM_REPO = {
-    'instalar-opera':   'opera',
     'instalar-brave':   'brave-browser',
     'instalar-vivaldi': 'vivaldi-stable',
     'instalar-edge':    'microsoft-edge-stable'
@@ -989,11 +982,13 @@ registrarAppRemovivel('instalar-pinta',    { tipo: 'flatpak', appId: 'com.github
 registrarAppRemovivel('instalar-cura',     { tipo: 'flatpak', appId: 'com.ultimaker.cura',             nome: 'Cura' });
 registrarAppRemovivel('instalar-upscayl',  { tipo: 'flatpak', appId: 'org.upscayl.Upscayl',            nome: 'Upscayl' });
 registrarAppRemovivel('instalar-xnviewmp', { tipo: 'flatpak', appId: 'com.xnview.XnViewMP',            nome: 'XnView MP' });
+registrarAppRemovivel('instalar-freecad',  { tipo: 'flatpak', appId: 'org.freecad.FreeCAD',            nome: 'FreeCAD' });
 registrarAppRemovivel('instalar-zoom',     { tipo: 'flatpak', appId: 'us.zoom.Zoom',                   nome: 'Zoom' });
 registrarAppRemovivel('instalar-discord',  { tipo: 'flatpak', appId: 'com.discordapp.Discord',         nome: 'Discord' });
 registrarAppRemovivel('instalar-telegram', { tipo: 'flatpak', appId: 'org.telegram.desktop',           nome: 'Telegram' });
 registrarAppRemovivel('instalar-openshot', { tipo: 'flatpak', appId: 'org.openshot.OpenShot',          nome: 'OpenShot' });
 registrarAppRemovivel('instalar-drift',    { tipo: 'flatpak', appId: 'org.cutwire.Drift',              nome: 'Drift' });
+registrarAppRemovivel('instalar-opera',    { tipo: 'flatpak', appId: 'com.opera.Opera',                nome: 'Opera' });
 
 // --- RPM baixado de URL ---
 
@@ -1018,15 +1013,47 @@ registrarAppRemovivel('instalar-rustdesk', {
 registrarAppRemovivel('instalar-rclone-manager', {
     modo: 'desfazerTudo',
     idDesfazer: 'desfazer-rclone-manager',
+    // `pacotes` é usado APENAS por `appJaInstaladoNoSistema` para
+    // detectar pré-existência. O comando de fato é `comandoDesfazer`
+    // (que apaga pacotes + resíduos). A lista abaixo cobre o nome
+    // canônico do pacote (rclone-manager) e o próprio rclone CLI
+    // (que o Rclone Manager instala como dependência).
+    pacotes: ['rclone-manager', 'rclone'],
     comandoDesfazer:
+        // 1. Remove os pacotes rclone* (rclone-manager e/ou rclone).
         'PKGS=$(rpm -qa | grep -i "^rclone"); ' +
         'if [ -n "$PKGS" ]; then ' +
         '  sudo dnf remove -y $PKGS; ' +
         'else ' +
         '  echo "ℹ️ Nenhum pacote rclone* encontrado para remover."; ' +
         'fi; ' +
+        // 2. Remove o atalho do menu iniciar (é o que o usuário vê
+        //    como "rclone-manager" no menu após o "desfazer tudo").
+        'rm -f $HOME/.local/share/applications/rclone-manager.desktop; ' +
+        // 3. Remove o ícone do hicolor (para o menu não exibir um
+        //    ícone órfão se o .desktop for recriado por outra via).
+        'rm -f $HOME/.local/share/icons/hicolor/*/apps/rclone-manager.*; ' +
+        'rm -f $HOME/.local/share/icons/hicolor/*/apps/com.zarestia.rclone-manager.*; ' +
+        // 4. Remove dados do app (configurações do gerenciador,
+        //    caches, estado). NÃO toca em ~/.config/rclone/ — as
+        //    contas configuradas pelo usuário ficam intactas.
+        'rm -rf $HOME/.local/share/rclone-manager; ' +
+        'rm -rf $HOME/.cache/rclone-manager; ' +
+        // 5. Atualiza os índices do desktop e do tema de ícones.
+        'update-desktop-database $HOME/.local/share/applications 2>/dev/null || true; ' +
+        'gtk-update-icon-cache -f -t $HOME/.local/share/icons/hicolor 2>/dev/null || true; ' +
         'sudo dnf clean all && sudo dnf autoremove -y',
-    nome: 'Rclone Manager'
+    nome: 'Rclone Manager',
+    confirmMsg:
+        '⚠️ Remover completamente o Rclone Manager?\n\n' +
+        'Este botão remove:\n' +
+        '• Os pacotes rclone* do sistema (rclone-manager e rclone)\n' +
+        '• O atalho do menu iniciar\n' +
+        '• O ícone do tema hicolor\n' +
+        '• Os dados locais do Rclone Manager (~/.local/share/rclone-manager e ~/.cache/rclone-manager)\n\n' +
+        'Suas contas de nuvem ficam em ~/.config/rclone/ e NÃO são apagadas —\n' +
+        'se reinstalar depois, elas continuarão lá.\n\n' +
+        'Ação irreversível em relação aos pacotes. Continuar?'
 });
 
 // --- DNF (repos oficiais do Fedora) ---
@@ -1041,7 +1068,6 @@ registrarAppRemovivel('instalar-krita',       { tipo: 'dnf', pacotes: ['krita'],
 registrarAppRemovivel('instalar-inkscape',    { tipo: 'dnf', pacotes: ['inkscape'],    nome: 'Inkscape' });
 registrarAppRemovivel('instalar-gimp',        { tipo: 'dnf', pacotes: ['gimp'],        nome: 'GIMP' });
 registrarAppRemovivel('instalar-darktable',   { tipo: 'dnf', pacotes: ['darktable'],   nome: 'Darktable' });
-registrarAppRemovivel('instalar-freecad',     { tipo: 'dnf', pacotes: ['freecad'],     nome: 'FreeCAD' });
 registrarAppRemovivel('instalar-librecad',    { tipo: 'dnf', pacotes: ['librecad'],    nome: 'LibreCAD' });
 registrarAppRemovivel('instalar-kdenlive',    { tipo: 'dnf', pacotes: ['kdenlive'],    nome: 'Kdenlive' });
 registrarAppRemovivel('instalar-pitivi',      { tipo: 'dnf', pacotes: ['pitivi'],      nome: 'Pitivi' });
@@ -1055,12 +1081,6 @@ registrarAppRemovivel('instalar-chromium',    { tipo: 'dnf', pacotes: ['chromium
 
 // --- Navegadores via repo oficial do fabricante ---
 
-registrarAppRemovivel('instalar-opera', {
-    tipo: 'dnf',
-    pacotes: ['opera-stable'],
-    reposRemover: ['/etc/yum.repos.d/opera.repo'],
-    nome: 'Opera'
-});
 registrarAppRemovivel('instalar-brave', {
     tipo: 'dnf',
     pacotes: ['brave-browser'],
@@ -1222,7 +1242,17 @@ async function instalarLightworks() {
         'https://cdn.lwks.com/releases/latest/lightworks_linux_rpm.rpm';
     var nomeAcao = _t('sessoes.aplicativos.btn_lightworks', '🎞️ Lightworks');
     await executarComandoGenerico('instalar-lightworks', comando, nomeAcao,
-        function() { aplicarEstadoInstalavel('instalar-lightworks', null); });
+        function() { aplicarEstadoInstalavel('instalar-lightworks', 'abrir-lightworks'); });
+}
+
+function abrirLightworks() {
+    // Usa o .desktop oficial (`lightworks.desktop`) em vez do
+    // binário direto. O RPM do site oficial instala o .desktop
+    // com o `Exec=` correto para a versão instalada — o binário
+    // `lightworks` pode ser um wrapper que muda de nome entre
+    // releases (lightworks, lightworks2023, lightworks-2023).
+    // `gtk-launch` resolve isso lendo o `Exec=` do .desktop.
+    abrirFerramentaExterna('gtk-launch lightworks', 'instalar-lightworks', 'Lightworks');
 }
 
 // ============================================================
@@ -1532,8 +1562,12 @@ async function restaurarEstadoSessao() {
         aplicarEstadoInstalavel(idComando, _derivarIdAbrir(idComando));
     });
 
-    // Lightworks (RPM baixado de URL, sem botão de abrir).
-    aplicarEstadoInstalavel('instalar-lightworks', null);
+    // Lightworks (RPM baixado de URL, botão de abrir presente no
+    // HTML: `btn-abrir-lightworks`). Passar `null` aqui fazia o
+    // botão voltar ao Estado 3 (cinza "✅ instalado") na recarga,
+    // apagando o swap "instalar → abrir" que `instalarLightworks`
+    // aplica corretamente após a instalação.
+        aplicarEstadoInstalavel('instalar-lightworks', 'abrir-lightworks');
 
     // Rclone Manager ("desfazer tudo").
     if (isExecutado('instalar-rclone-manager')) {
@@ -1556,10 +1590,24 @@ async function restaurarEstadoSessao() {
         aplicarEstadoInstalavel('instalar-' + appId, 'abrir-' + appId);
     });
 
-    atualizarBotaoAbrirRclone();
+atualizarBotaoAbrirRclone();
     aplicarEstadoToggle('instalar-rclone-manager', 'desfazer-rclone-manager');
 
-    await _ajustarFerramentasPorDesktop();
+    // NOTA (v1.1.2): `_ajustarFerramentasPorDesktop()` foi REMOVIDA
+    // daqui. Ela escondia o `.btn-flatpak-wrapper` inteiro quando o
+    // pacote nativo do desktop (krdc em KDE, gnome-connections em
+    // GNOME) já estava instalado — mas a lixeira é criada DENTRO do
+    // wrapper por `_mostrarLixeira`, então sumia junto. Resultado:
+    // "Abrir KRDC" sem lixeira, "Abrir GNOME Connections" sem
+    // lixeira. Com a Opção B, `aplicarEstadoInstalavel` detecta
+    // pré-existência via `SystemState` e já mostra "Abrir X +
+    // lixeira" — o caso deixou de precisar de tratamento especial,
+    // e o tratamento especial passou a ser prejudicial.
+    //
+    // As funções `_ajustarFerramentasPorDesktop` e
+    // `_esconderSePacoteInstalado` permanecem definidas em
+    // `aplicativos.html` como código morto, para minimizar o diff
+    // caso algo dependa delas em testes futuros.
 }
 
 (function() {

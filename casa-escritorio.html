@@ -230,57 +230,6 @@ data-i18n="sessoes.casa-escritorio.btn_abrir_keepassxc">
 </div>
 </details>
 
-<!-- ============================================================
-PDF E OCR
-============================================================ -->
-<details class="acordeao">
-<summary data-i18n="sessoes.casa-escritorio.pdfocr_titulo">📄 PDF e OCR</summary>
-<div class="acordeao-conteudo">
-
-<div class="bloco-comando">
-<div class="comando-info">
-<h3 data-i18n="sessoes.casa-escritorio.okular_tesseract_titulo">Okular + Tesseract — Leitor de PDF com OCR</h3>
-<p data-i18n="sessoes.casa-escritorio.okular_tesseract_desc">Instala o <strong>Okular</strong> (leitor de PDF, e-books e quadrinhos, muito rápido) e o <strong>Tesseract</strong> (motor de OCR). Com os dois juntos, você pode abrir um PDF digitalizado (imagem) e extrair o texto — útil para copiar trechos de documentos escaneados.</p>
-
-<div class="info-extra" data-i18n-html="sessoes.casa-escritorio.okular_tesseract_info">
-ℹ️ <strong>O que é OCR:</strong> Optical Character Recognition — converte imagens de texto (escaneado, foto) em texto pesquisável e copiável. O Tesseract suporta português, inglês e mais de 100 idiomas. No Okular, use <strong>Ferramentas → Seleção de Texto</strong> em PDFs digitalizados (com o Tesseract instalado, ele reconhece automaticamente).
-</div>
-
-<div class="info-extra" data-i18n-html="sessoes.casa-escritorio.okular_tesseract_info_lang">
-ℹ️ <strong>Idiomas adicionais do OCR:</strong> instalamos o pacote base com português e inglês. Se precisar de outro idioma, procure por <code>tesseract-langpack-XX</code> no Discover/GNOME Software.
-</div>
-
-<div class="botoes-flex">
-<div class="btn-flatpak-wrapper">
-<button class="btn-executar"
-onclick="executarOkularTesseract()"
-data-comando="okular-tesseract-install"
-data-logbox="log-sessao-casa-escritorio"
-id="btn-okular-tesseract-install"
-data-i18n="sessoes.casa-escritorio.btn_okular_tesseract">
-📦 Instalar Okular + Tesseract
-</button>
-</div>
-<button class="btn-executar verde"
-style="display: none;"
-onclick="abrirOkular()"
-data-comando="abrir-okular"
-data-logbox="log-sessao-casa-escritorio"
-id="btn-abrir-okular"
-data-i18n="sessoes.casa-escritorio.btn_abrir_okular">
-🚀 Abrir Okular
-</button>
-</div>
-</div>
-<div class="progress-container" id="progress-okular-tesseract-install">
-<div class="progress-bar"><div class="progress-fill" id="progress-fill-okular-tesseract-install"></div></div>
-<div class="progress-text"><span class="status" id="progress-status-okular-tesseract-install">⏳ Iniciando...</span><span class="percentage" id="progress-percent-okular-tesseract-install">0%</span></div>
-</div>
-</div>
-
-</div>
-</details>
-
 <div class="terminal-log sessao-compartilhado" id="log-sessao-casa-escritorio"></div>
 </div>
 
@@ -316,25 +265,40 @@ var APPS_FLATPAK = {
 registrarAppRemovivel('cups-install', {
     tipo: 'dnf',
     pacotes: ['cups', 'cups-filters', 'avahi', 'avahi-tools', 'system-config-printer', 'ghostscript'],
-    nome: 'Suporte a Impressão (CUPS)'
+    nome: 'Suporte a Impressão (CUPS)',
+    // MITIGAÇÃO (v1.1.2): pré-existente NÃO pode ser removido.
+    // Remove CUPS + Avahi — todas as impressoras param de
+    // funcionar (local e rede), sem aviso claro. Se o usuário
+    // já tinha CUPS configurado antes do FAP, remover é destrutivo.
+    permitirRemocaoPreExistente: false,
+    motivoBloqueio: 'O suporte a impressão já estava ativo antes do FAP. ' +
+                    'Removê-lo desabilita TODAS as impressoras (local e rede). ' +
+                    'Para reverter manualmente:\n\n' +
+                    '  sudo systemctl disable --now cups avahi-daemon\n' +
+                    '  sudo dnf remove cups cups-filters avahi \\\n' +
+                    '    avahi-tools system-config-printer ghostscript'
 });
 
 registrarAppRemovivel('samba-install', {
     tipo: 'dnf',
     pacotes: ['samba', 'samba-client', 'cifs-utils'],
-    nome: 'Samba'
+    nome: 'Samba',
+    // MITIGAÇÃO (v1.1.2): pré-existente NÃO pode ser removido.
+    // Remove Samba — compartilhamentos locais e acesso a pastas
+    // Windows na rede param de funcionar.
+    permitirRemocaoPreExistente: false,
+    motivoBloqueio: 'O Samba já estava configurado antes do FAP. ' +
+                    'Removê-lo desabilita compartilhamentos de arquivos ' +
+                    'e acesso a pastas Windows na rede. ' +
+                    'Para reverter manualmente:\n\n' +
+                    '  sudo systemctl disable --now smb nmb\n' +
+                    '  sudo dnf remove samba samba-client cifs-utils'
 });
 
 registrarAppRemovivel('keepassxc-install', {
     tipo: 'dnf',
     pacotes: ['keepassxc'],
     nome: 'KeePassXC'
-});
-
-registrarAppRemovivel('okular-tesseract-install', {
-    tipo: 'dnf',
-    pacotes: ['okular', 'tesseract', 'tesseract-langpack-por', 'tesseract-langpack-eng', 'ocrmypdf'],
-    nome: 'Okular + Tesseract'
 });
 
 // --- Flatpaks (Flathub) ---
@@ -424,19 +388,6 @@ function abrirKeePassXC() {
 // PDF E OCR
 // ------------------------------------------------------------
 
-async function executarOkularTesseract() {
-    const idComando = 'okular-tesseract-install';
-    const comando =
-        'sudo dnf install -y okular tesseract tesseract-langpack-por tesseract-langpack-eng ocrmypdf';
-    await executarComandoGenerico(idComando, comando,
-        _t('sessoes.casa-escritorio.btn_okular_tesseract', '📦 Instalar Okular + Tesseract'),
-        function() { aplicarEstadoInstalavel(idComando, 'abrir-okular'); });
-}
-
-function abrirOkular() {
-    abrirFerramentaExterna('okular', 'okular-tesseract-install', 'Okular');
-}
-
 // ------------------------------------------------------------
 // RESTAURAR ESTADO DA SESSÃO
 // ------------------------------------------------------------
@@ -450,12 +401,8 @@ function restaurarEstadoSessao() {
     aplicarEstadoInstalavel('localsend-install', 'abrir-localsend');
     aplicarEstadoInstalavel('warpinator-install', 'abrir-warpinator');
 
-    // KeePassXC e Okular+Tesseract têm GUI — Estado 2.
-    // Okular+Tesseract tem idAbrir fora do padrão — o mapa global
-    // `_MAPA_ABRIR_EXCECOES` em script.js já resolve isso para
-    // `_derivarIdAbrir`, mas aqui passamos explícito.
+    // KeePassXC tem GUI — Estado 2.
     aplicarEstadoInstalavel('keepassxc-install', 'abrir-keepassxc');
-    aplicarEstadoInstalavel('okular-tesseract-install', 'abrir-okular');
 }
 
 (function() {

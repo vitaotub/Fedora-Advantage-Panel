@@ -169,7 +169,19 @@ registrarAppRemovivel('qemu-kvm-install', {
     nome: 'QEMU/KVM',
     confirmMsg: '⚠️ Tem certeza que deseja remover QEMU/KVM?\n\n' +
                 'As máquinas virtuais que você criou NÃO serão apagadas — apenas o software será removido do sistema.\n\n' +
-                'Continuar?'
+                'Continuar?',
+    // MITIGAÇÃO (v1.1.2): pré-existente NÃO pode ser removido.
+    // QEMU/KVM + libvirt são a base de virtualização nativa.
+    // Remover derruba TODAS as VMs (que continuam existindo no
+    // disco, mas param de rodar).
+    permitirRemocaoPreExistente: false,
+    motivoBloqueio: 'O QEMU/KVM já estava configurado antes do FAP. ' +
+                    'Removê-lo desabilita a execução de máquinas virtuais ' +
+                    '(os discos das VMs permanecem intactos). ' +
+                    'Para reverter manualmente:\n\n' +
+                    '  sudo systemctl disable --now libvirtd\n' +
+                    '  sudo dnf remove qemu-kvm libvirt virt-manager \\\n' +
+                    '    virt-install libvirt-daemon-config-network'
 });
 
 registrarAppRemovivel('virtualbox-install', {
@@ -178,7 +190,15 @@ registrarAppRemovivel('virtualbox-install', {
     nome: 'VirtualBox',
     confirmMsg: '⚠️ Tem certeza que deseja remover VirtualBox?\n\n' +
                 'As máquinas virtuais que você criou NÃO serão apagadas — apenas o software será removido do sistema.\n\n' +
-                'Continuar?'
+                'Continuar?',
+    // MITIGAÇÃO (v1.1.2): pré-existente NÃO pode ser removido.
+    // Mesma lógica do QEMU/KVM.
+    permitirRemocaoPreExistente: false,
+    motivoBloqueio: 'O VirtualBox já estava instalado antes do FAP. ' +
+                    'Removê-lo desabilita as VMs (os discos .vdi permanecem). ' +
+                    'Para reverter manualmente:\n\n' +
+                    '  sudo dnf remove VirtualBox akmod-VirtualBox \\\n' +
+                    '    VirtualBox-kmod'
 });
 
 registrarAppRemovivel('gnome-boxes-install', {
@@ -187,7 +207,14 @@ registrarAppRemovivel('gnome-boxes-install', {
     nome: 'GNOME Boxes',
     confirmMsg: '⚠️ Tem certeza que deseja remover GNOME Boxes?\n\n' +
                 'As máquinas virtuais que você criou NÃO serão apagadas — apenas o software será removido do sistema.\n\n' +
-                'Continuar?'
+                'Continuar?',
+    // MITIGAÇÃO (v1.1.2): pré-existente NÃO pode ser removido.
+    // Mesma lógica do QEMU/KVM (Boxes usa QEMU/KVM por baixo).
+    permitirRemocaoPreExistente: false,
+    motivoBloqueio: 'O GNOME Boxes já estava instalado antes do FAP. ' +
+                    'Removê-lo desabilita as VMs (os discos permanecem). ' +
+                    'Para reverter manualmente:\n\n' +
+                    '  sudo dnf remove gnome-boxes'
 });
 
 // ------------------------------------------------------------

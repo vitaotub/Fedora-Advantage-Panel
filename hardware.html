@@ -86,7 +86,8 @@ data-i18n="sessoes.hardware.btn_vaapi_alt">
 <div class="comando-info">
 <h3 data-i18n="sessoes.hardware.corectrl_titulo">CoreCtrl</h3>
 <p data-i18n="sessoes.hardware.corectrl_desc">Interface gráfica para controle de fans, clock e voltagem de GPUs AMD.</p>
-<div class="grupo-botoes">
+<div class="botoes-flex">
+<div class="btn-flatpak-wrapper">
 <button class="btn-executar"
 onclick="executarCoreCtrl()"
 data-comando="corectrl-install"
@@ -95,6 +96,7 @@ id="btn-corectrl-install"
 data-i18n="sessoes.hardware.btn_corectrl">
 📦 Instalar CoreCtrl
 </button>
+</div>
 <button class="btn-executar verde"
 style="display: none;"
 onclick="abrirCoreCtrl()"
@@ -116,7 +118,8 @@ data-i18n="sessoes.hardware.btn_abrir_corectrl">
 <div class="comando-info">
 <h3 data-i18n="sessoes.hardware.lact_titulo">LACT (Linux AMDGPU Controller)</h3>
 <p data-i18n="sessoes.hardware.lact_desc">Alternativa moderna ao CoreCtrl para controle de fans, clock e voltagem de GPUs AMD.</p>
-<div class="grupo-botoes">
+<div class="botoes-flex">
+<div class="btn-flatpak-wrapper">
 <button class="btn-executar"
 onclick="executarLACT()"
 data-comando="lact-install"
@@ -125,6 +128,7 @@ id="btn-lact-install"
 data-i18n="sessoes.hardware.btn_lact">
 📦 Instalar LACT
 </button>
+</div>
 <button class="btn-executar verde"
 style="display: none;"
 onclick="abrirLACT()"
@@ -336,19 +340,44 @@ data-i18n="sessoes.hardware.btn_intel_media_instalar">
 registrarAppRemovivel('vulkan-amd', {
     tipo: 'dnf',
     pacotes: ['mesa-vulkan-drivers', 'mesa-vulkan-drivers.i686', 'vulkan-tools', 'vulkan-loader', 'mesa-dri-drivers', 'mesa-dri-drivers.i686'],
-    nome: 'Vulkan e Mesa 3D'
+    nome: 'Vulkan e Mesa 3D',
+    // MITIGAÇÃO (v1.1.2): pré-existente NÃO pode ser removido.
+    // Remove Mesa 3D + Vulkan — jogos e apps 3D param de
+    // funcionar até reinstalar.
+    permitirRemocaoPreExistente: false,
+    motivoBloqueio: 'Vulkan/Mesa já estava instalado antes do FAP. ' +
+                    'Removê-lo desabilita jogos e aplicações 3D. ' +
+                    'Para reverter manualmente:\n\n' +
+                    '  sudo dnf remove mesa-vulkan-drivers vulkan-loader \\\n' +
+                    '    vulkan-tools mesa-dri-drivers'
 });
 
 registrarAppRemovivel('vaapi-amd', {
     tipo: 'dnf',
     pacotes: ['ffmpeg-libs', 'libva', 'libva-utils', 'mesa-va-drivers-freeworld', 'mesa-va-drivers-freeworld.i686'],
-    nome: 'VA-API AMD'
+    nome: 'VA-API AMD',
+    // MITIGAÇÃO (v1.1.2): pré-existente NÃO pode ser removido.
+    // Remove aceleração de vídeo por hardware — CPU sobe muito
+    // ao reproduzir vídeo em HD/4K.
+    permitirRemocaoPreExistente: false,
+    motivoBloqueio: 'A aceleração VA-API já estava ativa antes do FAP. ' +
+                    'Removê-la aumenta muito o uso de CPU em reprodução ' +
+                    'de vídeo HD/4K. Para reverter manualmente:\n\n' +
+                    '  sudo dnf remove mesa-va-drivers-freeworld \\\n' +
+                    '    mesa-vdpau-drivers-freeworld ffmpeg-libs libva'
 });
 
 registrarAppRemovivel('vaapi-swap', {
     tipo: 'dnf',
     pacotes: ['mesa-va-drivers-freeworld', 'mesa-vdpau-drivers-freeworld'],
-    nome: 'VA-API AMD (Alternativa)'
+    nome: 'VA-API AMD (Alternativa)',
+    // MITIGAÇÃO (v1.1.2): pré-existente NÃO pode ser removido.
+    // Idem `vaapi-amd` — remove aceleração por hardware.
+    permitirRemocaoPreExistente: false,
+    motivoBloqueio: 'A aceleração VA-API (via freeworld) já estava ativa ' +
+                    'antes do FAP. Para reverter manualmente:\n\n' +
+                    '  sudo dnf swap mesa-va-drivers-freeworld mesa-va-drivers\n' +
+                    '  sudo dnf swap mesa-vdpau-drivers-freeworld mesa-vdpau-drivers'
 });
 
 registrarAppRemovivel('corectrl-install', {
@@ -366,13 +395,35 @@ registrarAppRemovivel('lact-install', {
 registrarAppRemovivel('nvidia-driver-install', {
     tipo: 'dnf',
     pacotes: ['akmod-nvidia', 'akmod-nvidia-580xx', 'akmod-nvidia-470xx', 'akmod-nvidia-390xx', 'xorg-x11-drv-nvidia-cuda', 'xorg-x11-drv-nvidia-cuda-libs', 'nvidia-settings'],
-    nome: 'Driver NVIDIA'
+    nome: 'Driver NVIDIA',
+    // MITIGAÇÃO (v1.1.2): pré-existente NÃO pode ser removido.
+    // Remover o driver NVIDIA deixa o sistema SEM driver de vídeo
+    // até o próximo boot (nouveau assume, mas com performance
+    // drasticamente reduzida). Se o usuário instalou manualmente,
+    // não deve ser o FAP a desfazer.
+    permitirRemocaoPreExistente: false,
+    motivoBloqueio: 'O driver NVIDIA já estava instalado antes do FAP. ' +
+                    'Removê-lo via FAP deixa a GPU sem driver até reiniciar ' +
+                    '(o nouveau assume, com performance reduzida). ' +
+                    'Para reverter manualmente (equivalente ao botão "Reverter pro nouveau"):\n\n' +
+                    '  sudo dnf remove akmod-nvidia akmod-nvidia-580xx \\\n' +
+                    '    akmod-nvidia-470xx akmod-nvidia-390xx \\\n' +
+                    '    xorg-x11-drv-nvidia-* nvidia-settings\n\n' +
+                    'Depois reinicie o computador.'
 });
 
 registrarAppRemovivel('intel-media-install', {
     tipo: 'dnf',
     pacotes: ['intel-media-driver'],
-    nome: 'Intel Media Driver'
+    nome: 'Intel Media Driver',
+    // MITIGAÇÃO (v1.1.2): pré-existente NÃO pode ser removido.
+    // Remove aceleração VA-API em Intel — vídeo 4K passa a
+    // consumir CPU.
+    permitirRemocaoPreExistente: false,
+    motivoBloqueio: 'O Intel Media Driver já estava instalado antes do FAP. ' +
+                    'Removê-lo aumenta o uso de CPU em reprodução de vídeo. ' +
+                    'Para reverter manualmente:\n\n' +
+                    '  sudo dnf remove intel-media-driver'
 });
 
 function _t(chave, fallback) {
@@ -792,7 +843,30 @@ async function restaurarEstadoSessao() {
     // Overclock — par install/revert. Mantém `aplicarEstadoToggle`
     // porque não é uma instalação de pacote, é um ajuste de kernel
     // (não faz sentido ter lixeira).
-    aplicarEstadoToggle('amdgpu-overclock', 'amdgpu-overclock-remove');
+    //
+    // O 4º argumento é uma FUNÇÃO que consulta o estado real do
+    // kernel param `amdgpu.ppfeaturemask`. Se já estiver ativo
+    // (pré-existente), o botão "Ativar Overclock" vira cinza com
+    // aviso; o "Desativar" fica oculto.
+    aplicarEstadoToggle(
+        'amdgpu-overclock',
+        'amdgpu-overclock-remove',
+        false,
+        function() {
+            return SystemState.kernelParam('amdgpu.ppfeaturemask') === '0xffffffff';
+        }
+    );
+
+    // NVIDIA modeset — mesmo raciocínio. O param
+    // `nvidia-drm.modeset` pode estar ativo por fora.
+    aplicarEstadoToggle(
+        'nvidia-modeset-on',
+        'nvidia-modeset-off',
+        false,
+        function() {
+            return SystemState.kernelParam('nvidia-drm.modeset') === '1';
+        }
+    );
 
     // NVIDIA — seção com detecção de hardware própria. O painel
     // de detecção e a lógica de abrir/desabilitar botões continuam

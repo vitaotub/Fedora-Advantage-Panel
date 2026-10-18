@@ -275,7 +275,26 @@ var DRIVER_COMMANDS = {
     'driver-realtek-r8168-remove': 'sudo dnf remove -y akmod-r8168',
     'driver-broadcom-wl-install': 'sudo dnf install -y akmod-wl',
     'driver-broadcom-wl-remove': 'sudo dnf remove -y akmod-wl',
-    'driver-openrazer-install': 'sudo dnf install -y polychromatic && sudo gpasswd -a $USER plugdev',
+    'driver-openrazer-install':
+        'CURRENT_KERNEL=$(uname -r) && ' +
+        'sudo dnf install -y kernel-devel-${CURRENT_KERNEL} kernel-headers-${CURRENT_KERNEL} && ' +
+        'sudo dnf install -y polychromatic && ' +
+        'if dnf info akmod-openrazer 2>/dev/null | grep -q "^Available Packages"; then ' +
+        '  echo "ℹ️ akmod-openrazer disponível — usando akmod (recompila em todo kernel novo)."; ' +
+        '  sudo dnf install -y akmod-openrazer; ' +
+        'else ' +
+        '  echo "ℹ️ akmod-openrazer indisponível — usando openrazer-kernel-modules-dkms."; ' +
+        '  sudo dnf install -y openrazer-kernel-modules-dkms; ' +
+        'fi && ' +
+        'sudo gpasswd -a $USER plugdev && ' +
+        'echo "" && ' +
+        'if lsmod | grep -q "^razer"; then ' +
+        '  echo "✅ Módulo openrazer-driver carregado."; ' +
+        'else ' +
+        '  echo "⚠️ Módulo openrazer-driver NÃO está carregado."; ' +
+        '  echo "   Pode ser necessário reiniciar o computador."; ' +
+        '  echo "   Verifique com: sudo dkms status"; ' +
+        'fi',
     'driver-openrazer-remove': 'sudo gpasswd -d $USER plugdev; sudo dnf remove -y polychromatic openrazer-driver openrazer-daemon openrazer-kmod-common',
     'driver-xpadneo-install': 'sudo dnf install -y xpadneo',
     'driver-xpadneo-remove': 'sudo dnf remove -y xpadneo'
@@ -693,7 +712,7 @@ async function executarSuplemento(idComando) {
         _t('sessoes.dispositivos-perifericos.instalando_suplemento', 'Instalando suplemento...'),
         function() {
             var idRevert = idComando.replace('-install', '-remove');
-            aplicarEstadoToggle(idComando, idRevert);
+            aplicarEstadoToggle(idComando, idRevert, true);
         });
 }
 
@@ -709,10 +728,10 @@ async function executarSuplementoRemover(idComando) {
         function() {
             var idInstall = idComando.replace('-remove', '-install');
             desmarcarComoExecutado(idInstall).then(function() {
-                aplicarEstadoToggle(idInstall, idComando);
+                aplicarEstadoToggle(idInstall, idComando, true);
             }).catch(function(e) {
                 console.warn('[toggle] Erro ao limpar estado do install:', e);
-                aplicarEstadoToggle(idInstall, idComando);
+                aplicarEstadoToggle(idInstall, idComando, true);
             });
         });
 }
@@ -727,7 +746,7 @@ async function executarInputAdd() {
     await executarComandoGenerico(idComando, comando,
         _t('sessoes.dispositivos-perifericos.btn_input_add', '👤 Adicionar ao grupo input'),
         function () {
-            aplicarEstadoToggle('input-group-add', 'input-group-remove');
+            aplicarEstadoToggle('input-group-add', 'input-group-remove', true);
         });
 }
 
@@ -738,10 +757,10 @@ async function executarInputRemove() {
         _t('sessoes.dispositivos-perifericos.btn_input_remove', '↩️ Remover do grupo input'),
         function () {
             desmarcarComoExecutado('input-group-add').then(function() {
-                aplicarEstadoToggle('input-group-add', 'input-group-remove');
+                aplicarEstadoToggle('input-group-add', 'input-group-remove', true);
             }).catch(function(e) {
                 console.warn('[toggle] Erro ao limpar estado do install:', e);
-                aplicarEstadoToggle('input-group-add', 'input-group-remove');
+                aplicarEstadoToggle('input-group-add', 'input-group-remove', true);
             });
         });
 }
@@ -752,7 +771,7 @@ async function executarSteamDevices() {
     await executarComandoGenerico(idComando, comando,
         _t('sessoes.dispositivos-perifericos.btn_steam_devices', '🎮 Instalar Regras para Controles'),
         function() {
-            aplicarEstadoToggle('steam-devices-install', 'steam-devices-remove');
+            aplicarEstadoToggle('steam-devices-install', 'steam-devices-remove', true);
         });
 }
 
@@ -763,10 +782,10 @@ async function executarSteamDevicesRemove() {
         _t('sessoes.dispositivos-perifericos.btn_steam_devices_reverter', '🗑️ Reverter Regras'),
         function() {
             desmarcarComoExecutado('steam-devices-install').then(function() {
-                aplicarEstadoToggle('steam-devices-install', 'steam-devices-remove');
+                aplicarEstadoToggle('steam-devices-install', 'steam-devices-remove', true);
             }).catch(function(e) {
                 console.warn('[toggle] Erro ao limpar estado do install:', e);
-                aplicarEstadoToggle('steam-devices-install', 'steam-devices-remove');
+                aplicarEstadoToggle('steam-devices-install', 'steam-devices-remove', true);
             });
         });
 }
@@ -794,84 +813,100 @@ async function executarSteamDevicesRemove() {
 // e desmarcarComoExecutado). Não há detecção em runtime do estado real
 // dos pacotes — é o mesmo trade-off do firmware-vendor.
 
-function aplicarEstadoItemCompleto(idRepoAtivar, idInstall, idRemove) {
+function aplicarEstadoItemCompleto(idRepoAtivar, idInstall, idRemove, repoJaAtivoNoSistema) {
     var repoBtn    = idRepoAtivar ? document.getElementById('btn-' + idRepoAtivar) : null;
     var installBtn = idInstall    ? document.getElementById('btn-' + idInstall)    : null;
     var removeBtn  = idRemove     ? document.getElementById('btn-' + idRemove)     : null;
 
-    // repoFeito: true se o repo já foi ativado. Para itens SEM repo
-    // separado (Broadcom — usa RPM Fusion configurado na Sessão 1),
-    // é sempre false — não há repo para "ativar" aqui.
-    var repoFeito = idRepoAtivar ? isExecutado(idRepoAtivar) : false;
+    // Repo: FAP ou pré-existente?
+    var repoFeitoFap = idRepoAtivar ? isExecutado(idRepoAtivar) : false;
+    var repoFeito = repoFeitoFap || !!repoJaAtivoNoSistema;
+    var repoPreExistente = !!repoJaAtivoNoSistema && !repoFeitoFap;
 
-    // prerequisitoOk: para instalar o pacote, o pré-requisito precisa
-    // estar satisfeito.
-    //   - Com repo: o repo precisa estar ativo.
-    //   - Sem repo (Broadcom): o pré-requisito (RPM Fusion) foi
-    //     satisfeito na Sessão 1 e não é rastreado aqui — tratamos
-    //     como sempre satisfeito.
     var prerequisitoOk = idRepoAtivar ? repoFeito : true;
 
-    var pacoteFeito = idInstall ? isExecutado(idInstall) : false;
+    // Pacote: FAP ou pré-existente? A detecção usa o registro
+    // `APPS_REMOVIVEIS` + `SystemState` (Bloco G).
+    var pacoteFeitoFap = idInstall ? isExecutado(idInstall) : false;
+    var pacotePreExistente = false;
+    if (idInstall && !pacoteFeitoFap) {
+        try {
+            pacotePreExistente = appJaInstaladoNoSistema(idInstall);
+        } catch (e) {
+            pacotePreExistente = false;
+        }
+    }
 
     // --- Botão "Ativar repositório" ---
     if (repoBtn) {
         var textoRepoOriginal = repoBtn.getAttribute('data-texto-original') || repoBtn.textContent;
-        if (repoFeito) {
+        if (repoFeitoFap) {
             repoBtn.textContent = _t('sessoes.dispositivos-perifericos.btn_repo_ativado',
                 '✅ Repositório ativado');
             repoBtn.style.backgroundColor = '#4b5563';
             repoBtn.style.cursor = 'default';
             repoBtn.disabled = true;
             repoBtn.style.opacity = '1';
+            repoBtn.title = '';
+        } else if (repoPreExistente) {
+            repoBtn.textContent = '✅ Já estava ativo';
+            repoBtn.style.backgroundColor = '#4b5563';
+            repoBtn.style.cursor = 'not-allowed';
+            repoBtn.disabled = true;
+            repoBtn.style.opacity = '0.7';
+            repoBtn.title = 'Este repositório já estava ativo antes do FAP. O FAP não foi a causa — para desativar, use o terminal.';
         } else {
             repoBtn.textContent = textoRepoOriginal;
             repoBtn.style.backgroundColor = '';
             repoBtn.style.cursor = 'pointer';
             repoBtn.disabled = false;
             repoBtn.style.opacity = '1';
+            repoBtn.title = '';
         }
     }
 
     // --- Botão "Instalar pacote" ---
     if (installBtn) {
         var textoInstallOriginal = installBtn.getAttribute('data-texto-original') || installBtn.textContent;
-        if (pacoteFeito) {
+        if (pacoteFeitoFap) {
             installBtn.textContent = getTextoAposExecucao(idInstall) ||
                 _t('sessoes.dispositivos-perifericos.btn_pacote_instalado', '✅ Pacote instalado');
             installBtn.style.backgroundColor = '#4b5563';
             installBtn.style.cursor = 'default';
             installBtn.disabled = true;
             installBtn.style.opacity = '1';
+            installBtn.title = '';
+        } else if (pacotePreExistente) {
+            installBtn.textContent = '✅ Já instalado (antes do FAP)';
+            installBtn.style.backgroundColor = '#4b5563';
+            installBtn.style.cursor = 'not-allowed';
+            installBtn.disabled = true;
+            installBtn.style.opacity = '0.7';
+            installBtn.title = 'Este pacote já estava instalado antes do FAP. O FAP não foi a causa — para remover, use o terminal.';
         } else if (prerequisitoOk) {
-            // Pré-requisito satisfeito → pode instalar.
             installBtn.textContent = textoInstallOriginal;
             installBtn.style.backgroundColor = '';
             installBtn.style.cursor = 'pointer';
             installBtn.disabled = false;
             installBtn.style.opacity = '1';
+            installBtn.title = '';
         } else {
-            // Falta ativar o repo → não pode instalar ainda.
             installBtn.textContent = textoInstallOriginal;
             installBtn.style.backgroundColor = '';
             installBtn.style.cursor = 'not-allowed';
             installBtn.disabled = true;
             installBtn.style.opacity = '0.5';
+            installBtn.title = '';
         }
     }
 
     // --- Botão "Reverter tudo" ---
-    //
-    // Regra:
-    //   - Item COM repo: reverter habilita se repo ativo OU pacote
-    //     instalado. Faz sentido — o usuário pode querer só
-    //     desativar o repo sem ter instalado o pacote.
-    //   - Item SEM repo (Broadcom): reverter habilita SOMENTE se o
-    //     pacote estiver instalado. Antes, ficava sempre clicável
-    //     porque `repoFeito` era forçado a true.
+    // Só habilita se o FAP fez algo (repo ou pacote). Repo ou
+    // pacote pré-existente sozinho NÃO habilita (FAP não foi a
+    // causa).
     if (removeBtn) {
         var textoRemoveOriginal = removeBtn.getAttribute('data-texto-original') || removeBtn.textContent;
-        var podeReverter = idRepoAtivar ? (repoFeito || pacoteFeito) : pacoteFeito;
+        var podeReverter = repoFeitoFap || pacoteFeitoFap;
 
         removeBtn.textContent = textoRemoveOriginal;
         if (podeReverter) {
@@ -879,11 +914,17 @@ function aplicarEstadoItemCompleto(idRepoAtivar, idInstall, idRemove) {
             removeBtn.style.cursor = 'pointer';
             removeBtn.disabled = false;
             removeBtn.style.opacity = '1';
+            removeBtn.title = '';
         } else {
             removeBtn.style.backgroundColor = '';
             removeBtn.style.cursor = 'not-allowed';
             removeBtn.disabled = true;
             removeBtn.style.opacity = '0.5';
+            if (repoPreExistente || pacotePreExistente) {
+                removeBtn.title = 'O FAP não foi a causa (repositório ou pacote já existia antes). Para desfazer, use o terminal.';
+            } else {
+                removeBtn.title = '';
+            }
         }
     }
 }
@@ -892,24 +933,52 @@ function aplicarEstadoItemCompleto(idRepoAtivar, idInstall, idRemove) {
 // RESTAURAR ESTADO DA SESSÃO
 // ============================================================
 
-function restaurarEstadoSessao() {
+async function restaurarEstadoSessao() {
+    // Carrega o estado real do sistema (uma vez, cache em
+    // SystemState). Só então os botões sabem distinguir "instalado
+    // pelo FAP" de "já estava ativo antes".
+    await SystemState.carregar();
+
     // --- Suplementos seguros: toggles via aplicarEstadoToggle ---
-    aplicarEstadoToggle('firmware-vendor-install', 'firmware-vendor-remove');
+    // O 3º argumento (`esconderRevertSeNaoFeito = true`) faz o botão
+    // de reverter ficar OCULTO até o install ser marcado. Padrão
+    // adotado só nesta sessão.
+    aplicarEstadoToggle('firmware-vendor-install', 'firmware-vendor-remove', true);
 
     // --- Controles: toggles via aplicarEstadoToggle ---
-    aplicarEstadoToggle('input-group-add', 'input-group-remove');
+    // `input-group-add` é um grupo (não pacote): usa
+    // `SystemState.membroDoGrupo`. Se já estiver no grupo antes do
+    // FAP, o botão fica cinza "✅ Já estava ativo" e o reverter some.
+    aplicarEstadoToggle(
+        'input-group-add',
+        'input-group-remove',
+        true,
+        SystemState.membroDoGrupo('input')
+    );
 
     // --- Steam Devices: toggle install/revert ---
-    aplicarEstadoToggle('steam-devices-install', 'steam-devices-remove');
+    // É um pacote — `appJaInstaladoNoSistema` cobre via G.2
+    // (registro `steam-devices-install` tem `pacotes`). Passa
+    // `undefined` no 4º argumento para acionar a detecção automática.
+    aplicarEstadoToggle('steam-devices-install', 'steam-devices-remove', true);
 
     // --- Itens com repo + pacote (Razer, Xbox, Broadcom) ---
     //
-    // Cada item tem até 3 botões. A função aplicarEstadoItemCompleto
-    // lê o estado persistido e ajusta cada um conforme a regra
-    // progressiva (repo → instalar → reverter).
-    aplicarEstadoItemCompleto('copr-openrazer-enable',  'driver-openrazer-install',  'driver-openrazer-remove');
-    aplicarEstadoItemCompleto('copr-xpadneo-enable',    'driver-xpadneo-install',    'driver-xpadneo-remove');
-    aplicarEstadoItemCompleto(null,                     'driver-broadcom-wl-install','driver-broadcom-wl-remove');
+    // `repoJaAtivoNoSistema` é true quando o repo já estava
+    // configurado antes do FAP (Opção C).
+    var openrazerRepoAtivo = SystemState.repoFabricanteAtivo('razer');
+    var xpadneoRepoAtivo   = SystemState.repoAtivo('copr:atim/xpadneo');
+    var broadcomSemRepo    = false; // Broadcom usa RPM Fusion da Sessão 1
+
+    aplicarEstadoItemCompleto(
+        'copr-openrazer-enable', 'driver-openrazer-install', 'driver-openrazer-remove',
+        openrazerRepoAtivo);
+    aplicarEstadoItemCompleto(
+        'copr-xpadneo-enable', 'driver-xpadneo-install', 'driver-xpadneo-remove',
+        xpadneoRepoAtivo);
+    aplicarEstadoItemCompleto(
+        null, 'driver-broadcom-wl-install', 'driver-broadcom-wl-remove',
+        broadcomSemRepo);
 }
 
 // ============================================================

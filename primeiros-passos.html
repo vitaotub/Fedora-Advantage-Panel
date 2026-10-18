@@ -568,26 +568,54 @@ async function executarRemoverRepoFedoraFlatpak() {
         _t('sessoes.primeiros-passos.btn_remover_fedora_flatpak', '🚫 Remover repositório Fedora Flatpak'));
 }
 
-function restaurarEstadoSessao() {
-    // One-shot: RPM Fusion, Flatpak, remoção do repo Fedora
-    ['rpm-fusion', 'flatpak-setup', 'remover-repo-fedora-flatpak'].forEach(function(id) {
-        if (isExecutado(id)) {
-            var btn = document.getElementById('btn-' + id);
-            if (btn) {
-                btn.textContent = getTextoAposExecucao(id);
-                btn.style.backgroundColor = '#4b5563';
-                btn.style.cursor = 'default';
-                btn.disabled = true;
-            }
-        }
-    });
+async function restaurarEstadoSessao() {
+    // Carrega o estado real do sistema (uma vez, cache em
+    // SystemState). Só então os botões sabem distinguir "instalado
+    // pelo FAP" de "já estava ativo antes".
+    await SystemState.carregar();
 
-    // Pares install/revert: Terra e Terra Extras.
-    // aplicarEstadoToggle cuida de cores/disabled/texto;
-    // _atualizarVisibilidadeTerra controla o display:none dos
-    // botões de remoção (que só aparecem após a ativação).
-    aplicarEstadoToggle('terra-repo', 'terra-repo-remove');
-    aplicarEstadoToggle('terra-extras-install', 'terra-extras-remove');
+    // --- RPM Fusion ---
+    var rpmFusionJaAtivo =
+        SystemState.repoAtivo('rpmfusion-free') &&
+        SystemState.repoAtivo('rpmfusion-nonfree');
+    _aplicarEstadoOneShotOuPreExistente('rpm-fusion', rpmFusionJaAtivo);
+
+    // --- Flatpak / Flathub ---
+    var flatpakJaAtivo =
+        SystemState.remoteFlatpakAtivo('flathub') &&
+        SystemState.repoAtivo('flathub');
+    _aplicarEstadoOneShotOuPreExistente('flatpak-setup', flatpakJaAtivo);
+
+    // --- Remoção do repo Fedora Flatpak ---
+    // (só faz sentido marcar como "concluído" se o repo Fedora
+    // realmente não existe mais — mas isso não é detectável de
+    // forma confiável sem consultar `flatpak remotes`, e a remoção
+    // é one-shot irreversível; mantemos o comportamento atual.)
+    if (isExecutado('remover-repo-fedora-flatpak')) {
+        var btnRem = document.getElementById('btn-remover-repo-fedora-flatpak');
+        if (btnRem) {
+            btnRem.textContent = getTextoAposExecucao('remover-repo-fedora-flatpak');
+            btnRem.style.backgroundColor = '#4b5563';
+            btnRem.style.cursor = 'default';
+            btnRem.disabled = true;
+        }
+    }
+
+    // --- Terra principal ---
+    var terraJaAtivo = SystemState.repoAtivo('terra');
+    aplicarEstadoToggle('terra-repo', 'terra-repo-remove', false, terraJaAtivo);
+
+    // --- Terra Extras ---
+    // O repo `terra-extras` é o mais comum dos subrepos. Se algum
+    // dos 4 estiver ativo, tratamos como "extras ativo". O pacote
+    // é único (terra-release-extras) e instala os 4 de uma vez.
+    var terraExtrasJaAtivo =
+        SystemState.repoAtivo('terra-extras') ||
+        SystemState.repoAtivo('terra-mesa') ||
+        SystemState.repoAtivo('terra-nvidia') ||
+        SystemState.repoAtivo('terra-multimedia');
+    aplicarEstadoToggle('terra-extras-install', 'terra-extras-remove', false, terraExtrasJaAtivo);
+
     _atualizarVisibilidadeTerra();
 
     // Sempre clicável: atualização
@@ -598,6 +626,43 @@ function restaurarEstadoSessao() {
         btnAtualizacao.style.opacity = '1';
         btnAtualizacao.style.backgroundColor = '';
         btnAtualizacao.style.cursor = 'pointer';
+    }
+}
+
+// Aplica o estado visual de um botão one-shot (sem par revert)
+// considerando se já estava ativo no sistema.
+//
+// - Se isExecutado(id) → cinza "✅ concluído" (comportamento atual).
+// - Senão, se jaAtivoNoSistema → cinza "✅ Já estava ativo" com
+//   tooltip (pré-existente, opção C).
+// - Senão → azul clicável original (comportamento atual).
+function _aplicarEstadoOneShotOuPreExistente(idComando, jaAtivoNoSistema) {
+    var btn = document.getElementById('btn-' + idComando);
+    if (!btn) return;
+
+    if (isExecutado(idComando)) {
+        btn.textContent = getTextoAposExecucao(idComando);
+        btn.style.backgroundColor = '#4b5563';
+        btn.style.cursor = 'default';
+        btn.disabled = true;
+        btn.style.opacity = '1';
+        btn.title = '';
+    } else if (jaAtivoNoSistema) {
+        btn.textContent = '✅ Já estava ativo';
+        btn.style.backgroundColor = '#4b5563';
+        btn.style.cursor = 'not-allowed';
+        btn.disabled = true;
+        btn.style.opacity = '0.7';
+        btn.title = 'Este recurso já estava ativo antes do FAP. O FAP não foi a causa — para desfazer, use o terminal.';
+    } else {
+        // Restaura o texto original e o estado azul clicável.
+        var original = btn.getAttribute('data-texto-original') || btn.textContent;
+        btn.textContent = original;
+        btn.style.backgroundColor = '';
+        btn.style.cursor = 'pointer';
+        btn.disabled = false;
+        btn.style.opacity = '1';
+        btn.title = '';
     }
 }
 

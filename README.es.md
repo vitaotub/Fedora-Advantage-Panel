@@ -2,7 +2,7 @@
 
 **🌐 Idioma:** [Português (BR)](README.md) | [English](README.en.md) | Español
 
-![Versión](https://img.shields.io/badge/Versi%C3%B3n-v1.0.0--10152026.c-orange?style=flat-square)
+![Versión](https://img.shields.io/badge/Versi%C3%B3n-v1.1.1--10182026-orange?style=flat-square)
 ![Fedora](https://img.shields.io/badge/Fedora-44+-294172?style=flat-square&logo=fedora)
 ![Licencia](https://img.shields.io/badge/Licencia-GPL--3.0-green?style=flat-square)
 ![Idiomas](https://img.shields.io/badge/Idiomas-PT--BR%20%7C%20EN%20%7C%20ES-3c67e3?style=flat-square)
@@ -40,8 +40,8 @@ Fedora Advantage Panel (FAP) es un panel de automatización visual para Fedora L
 | 4 | 🔌 Dispositivos | Detección automática de hardware, controladores COPR de la comunidad, mandos, firmware |
 | 5 | 🎬 Producción Multimedia | OBS Studio, cámara virtual, EasyEffects |
 | 6 | 📦 Aplicaciones | Flatpaks seleccionados, 20+ apps `dnf`, navegadores vía RPM oficial, **Suite ArtCraft (13 apps)** y herramientas de acceso remoto |
-| 7 | 🏠 Hogar y Oficina | CUPS, Samba, LocalSend, KeePassXC, OCR (Okular + Tesseract) |
-| 8 | 🎮 Gaming | Steam nativo, Heroic (RPM oficial), Lutris, Wine, GameMode, Gamescope Session, emuladores |
+| 7 | 🏠 Hogar y Oficina | CUPS, Samba, LocalSend, KeePassXC |
+| 8 | 🎮 Gaming | Steam nativo, Heroic (Flatpak), Lutris, Wine, GameMode, emuladores |
 | 9 | 📱 Waydroid | Android en Linux vía contenedor |
 | 10 | 🖥️ Virtualización | QEMU/KVM, VirtualBox, GNOME Boxes |
 | 11 | 📊 Diagnóstico | Panel del sistema, salud del disco (SMART), temperaturas, journal de errores |
@@ -65,12 +65,41 @@ Fedora Advantage Panel (FAP) es un panel de automatización visual para Fedora L
 - **Origen por tipo de app** — FAP elige automáticamente la mejor forma de instalación:
   - **Flatpak (Flathub)** — cuando no existe repo oficial en Fedora ni paquete en los repos de la distro
   - **`dnf` (repos oficiales de Fedora o RPM Fusion)** — cuando la propia distro empaqueta el software
-  - **RPM vía repo oficial del fabricante** — cuando el fabricante distribuye para Fedora (navegadores, Heroic)
+  - **RPM vía repo oficial del fabricante** — cuando el fabricante distribuye para Fedora (navegadores Brave, Vivaldi, Edge)
   - **RPM descargado de URL** — cuando es la única opción. Soporta tanto URL estática (OnlyOffice) como URL resuelta en runtime vía API de GitHub (Suite ArtCraft, RustDesk, Lightworks, Rclone Manager). `--setopt=localpkg_gpgcheck=0` obligatorio en Fedora 44/45
 - **Cola de Flatpaks** — hacer clic en varias apps en secuencia las encola y las instala de a una, sin errores de lock de Flathub
 - **Botón "Abrir"** en todas las apps GUI — se inicia en sesión propia, sobreviviendo al cierre de FAP
 - **Detección de apps instaladas por fuera** — si ya tienes una app instalada antes de FAP, el botón aparece como "Abrir" desde el principio
+- **Reconocimiento del estado real del sistema** — al arrancar, FAP consulta `GET /system-state` y detecta repositorios ya activos, apps instaladas, grupos, parámetros del kernel y archivos de configuración. **Apps instaladas por fuera** (antes de FAP) son tratadas **igual a apps instaladas por el propio FAP**: muestran "🚀 Abrir X" + papelera, con un tooltip que avisa el origen; el `confirm()` de la papelera prefija un aviso extra antes de eliminar. **Excepción:** 14 ítems de alto riesgo quedan protegidos — botón gris "✅ Ya estaba activo" con tooltip, sin papelera (ver 🔒 Protección de ítems críticos). **Parámetros del kernel** y **controladores de hardware** también mantienen el enfoque conservador: botón gris "✅ Ya estaba activo" y revert oculto (para no deshacer configuraciones que el usuario hizo manualmente)
 - **Eliminación inteligente de códecs** — la papelera de los códecs hace el swap de vuelta de `ffmpeg` a `ffmpeg-free` y reinstala los plugins base de Fedora, en vez de dejar el sistema sin códecs
+- **Caché de estado cliente invalidada tras eliminación** — cuando eliminas una app, FAP descarta la caché de `/system-state` para que el botón vuelva al estado "Instalar" inmediatamente (sin esperar 60s de TTL)
+
+### 🔒 Protección de ítems críticos
+
+Con la Opción B (pre-existente tratado como instalado), toda app pasó a tener papelera. Esto es el comportamiento deseado para apps de uso cotidiano — desinstalar un Flatpak que ya estaba en el sistema es reversible en 1 clic. Pero para **14 ítems de alto riesgo**, permitir eliminación vía FAP sería destructivo: puede tumbar servicios, alterar grupos del usuario o arrastrar paquetes base de Fedora.
+
+**Para esos 14 ítems, la papelera solo aparece si FAP los instaló.** Si ya los tenías antes de FAP, el botón muestra un gris "✅ Ya estaba activo" con tooltip — incluyendo el comando exacto de reversión manual, por si quieres deshacer la configuración.
+
+**Ítems protegidos:**
+
+| Ítem | Sesión | Motivo |
+|---|---|---|
+| Códecs esenciales | 2 | Swap de `ffmpeg` → `ffmpeg-free` es destructivo |
+| Extras tainted (DVD) | 2 | Rompe lectura de DVDs comerciales |
+| Fuentes Microsoft | 2 | El registro incluye `fontconfig` (paquete base) |
+| Vulkan/Mesa AMD | 3 | Elimina juegos y apps 3D |
+| VA-API AMD | 3 | Elimina aceleración de vídeo |
+| VA-API AMD (alternativa) | 3 | Ídem |
+| Controlador NVIDIA | 3 | Deja GPU sin driver hasta reiniciar |
+| Intel Media Driver | 3 | Elimina aceleración de vídeo Intel |
+| Soporte de impresión | 7 | Todas las impresoras paran |
+| Samba | 7 | Compartidos de red paran |
+| QEMU/KVM | 10 | VMs paran de correr |
+| VirtualBox | 10 | VMs paran de correr |
+| GNOME Boxes | 10 | VMs paran de correr |
+| Prioridad en tiempo real | 12 | Elimina al usuario del grupo `realtime` |
+
+Para todas las demás apps (bajo/medio riesgo), la papelera sigue disponible aunque sean preexistentes — el `confirmMsg` ya avisa sobre datos preservados y la eliminación es reversible.
 
 ### Contenedor WebKitGTK nativo
 
@@ -83,6 +112,8 @@ Fedora Advantage Panel (FAP) es un panel de automatización visual para Fedora L
 
 - **`pkexec` universal** — diálogo de contraseña integrado en todos los escritorios (KDE usa `polkit-kde-agent`, GNOME usa `polkit-gnome`, etc.), sin necesidad de escribir la contraseña en la terminal
 - **Comandos read-only en whitelist** — `rpm -q`, `uname -r`, `gtk-launch`, `flatpak`, `systemctl --user` y similares se ejecutan sin pedir contraseña
+- **Apertura de apps GUI sin pedir contraseña** — `setsid -f gtk-launch`, `setsid -f lightworks`, `setsid -f desktopeditors` y variantes están en la whitelist. Abrir una app se trata como acción de usuario, no administrativa
+- **Apertura de apps recibe el env correcto del usuario** — `gtk-launch` y `waydroid show-full-ui` están en `COMANDOS_USER_CONTEXT`, así `node server.js` ajusta `XDG_RUNTIME_DIR` y `DBUS_SESSION_BUS_ADDRESS` automáticamente. Sin esto, las apps fallaban al abrir cuando FAP se iniciaba fuera de una terminal gráfica
 - **Actualización y desinstalación del FAP corren como usuario**, con `SUDO_ASKPASS` (zenity/kdialog) para los pasos privilegiados internos — evita que los archivos queden con dueño root
 - **Bloqueo de inyección de shell** — comandos con `;`, `&&`, `|`, `$(...)` o `&` son rechazados por la whitelist y requieren autenticación
 
