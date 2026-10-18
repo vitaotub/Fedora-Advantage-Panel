@@ -53,7 +53,10 @@
         "badge_atualizar": "Update",
         "badge_atualizando": "🔄 Updating FAP... Follow progress in About FAP.",
         "badge_ja_atualizando": "⏳ Update already in progress...",
-        "navegacao_bloqueada": "Wait for this session's commands to finish before switching sessions."
+        "navegacao_bloqueada": "Wait for this session's commands to finish before switching sessions.",
+        "ja_estava_ativo": "✅ Already active",
+        "tooltip_preexistente_app": "This app was already installed before FAP. The trash icon removes it from the system, but FAP was not responsible for the installation.",
+        "confirm_preexistente_prefixo": "⚠️ WARNING!\n\nThis app was already installed before FAP. Removing it from the system may delete settings and data you created (profiles, favorites, saves).\n\n"
     },
 
     "index": {
@@ -317,6 +320,8 @@
             "titulo": "🎬 Media Production",
             "descricao": "Tools to record, edit, stream and produce audio and video content on Fedora.",
             "acordeao_titulo": "🎬 Recording, streaming and audio",
+            "obs_coluna_titulo": "📹 OBS Studio",
+            "cam_coluna_titulo": "🎥 Virtual Camera",
             "obs_titulo": "🎬 OBS Studio - Installation and Virtual Camera",
             "obs_desc": "Install OBS Studio for recording/streaming and enable the virtual camera for video calls.",
             "btn_instalar_obs": "📹 Install OBS Studio",
@@ -505,6 +510,7 @@
             "btn_abrir_blender": "🚀 Open Blender",
             "btn_abrir_ardour": "🚀 Open Ardour",
             "btn_abrir_lmms": "🚀 Open LMMS",
+            "btn_abrir_lightworks": "🚀 Open Lightworks",
             "btn_abrir_audacity": "🚀 Open Audacity",
 
             "bloco_artcraft_titulo": "🎨 ArtCraft Suite (Adobe and Office on Linux)",
@@ -586,17 +592,9 @@
             "keepassxc_info": "ℹ️ <strong>Why KeePassXC instead of Bitwarden?</strong> KeePassXC is 100% offline and local — nothing leaves your computer. Ideal for those who prefer not to depend on any service. If you prefer cloud convenience, Bitwarden is also a good option (but FAP installs KeePassXC, which is more aligned with the local-first philosophy).",
             "btn_keepassxc": "📦 Install KeePassXC",
             "texto_concluido_keepassxc": "✅ KeePassXC installed",
-            "pdfocr_titulo": "📄 PDF and OCR",
-            "okular_tesseract_titulo": "Okular + Tesseract — PDF Reader with OCR",
-            "okular_tesseract_desc": "Installs <strong>Okular</strong> (PDF, e-book and comic reader, very fast) and <strong>Tesseract</strong> (OCR engine). With both, you can open a scanned PDF (image) and extract the text — useful for copying excerpts from scanned documents.",
-            "okular_tesseract_info": "ℹ️ <strong>What is OCR:</strong> Optical Character Recognition — converts text images (scanned, photographed) into searchable and copyable text. Tesseract supports Portuguese, English and 100+ languages. In Okular, use <strong>Tools → Text Selection</strong> on scanned PDFs (with Tesseract installed, it recognizes automatically).",
-            "okular_tesseract_info_lang": "ℹ️ <strong>Additional OCR languages:</strong> we install the base package with Portuguese and English. If you need another language, look for <code>tesseract-langpack-XX</code> in Discover/GNOME Software.",
-            "btn_okular_tesseract": "📦 Install Okular + Tesseract",
-            "texto_concluido_okular_tesseract": "✅ PDF+OCR installed",
             "btn_abrir_localsend": "🚀 Open LocalSend",
             "btn_abrir_warpinator": "🚀 Open Warpinator",
-            "btn_abrir_keepassxc": "🚀 Open KeePassXC",
-            "btn_abrir_okular": "🚀 Open Okular"
+            "btn_abrir_keepassxc": "🚀 Open KeePassXC"
         },
 
         "gaming": {
@@ -659,11 +657,6 @@
             "gamemode_presets_desc": "Creates ready-to-use config files for MangoHud (FPS overlay) and GameMode (CPU/GPU priority). You get a clean, readable overlay without configuring anything manually.",
             "gamemode_presets_info": "ℹ️ Files are created at <code>~/.config/MangoHud/MangoHud.conf</code> and <code>~/.config/gamemode.ini</code>. If you already have custom files, they'll be overwritten — back them up beforehand if needed.",
             "btn_gamemode_presets": "⚙️ Apply Presets",
-            "gamescope_session_titulo": "Gamescope Session — Gaming mode on boot",
-            "gamescope_session_desc": "Installs an alternative login session that boots the computer directly into Gamescope (the same mode Steam Deck uses). Ideal for HTPCs and TV-connected machines.",
-            "gamescope_session_aviso": "⚠️ <strong>Prerequisites for the Gamescope session:</strong><br>• <strong>Steam installed and configured</strong> — the session boots directly into Steam Big Picture. Install Steam via RPM Fusion (not Flatpak), launch it once to apply updates and log in with your account before proceeding.<br>• <strong>Compatible hardware</strong> — AMD and Intel work natively. NVIDIA requires the <code>nvidia-drm.modeset=1</code> kernel parameter (enable via the <strong>Hardware → NVIDIA</strong> session).<br>• <strong>Logout to test</strong> — the session cannot be tested inside FAP. After installing, reboot, log out and select <strong>\"SteamOS mode (Gamescope)\"</strong> in the login screen's session selector. If the session freezes, check <code>/tmp/fap-gamescope-session.log</code> for details.",
-            "btn_gamescope_session": "📦 Install Gamescope Session",
-            "texto_concluido_gamescope_session": "✅ Gamescope session installed",
             "controller_test_titulo": "Controller Test",
             "controller_test_desc": "Installs a graphical tool to test buttons, analog stick dead zones, trigger response and controller rumble. Useful for diagnosing controllers with drift or buttons that don't respond.",
             "btn_controller_test": "📦 Install Controller Test",
@@ -1123,6 +1116,23 @@
             "changelog_atual_titulo": "Current version",
             "btn_changelog_completo": "📝 View Full Changelog on GitHub"
         }
+    },
+
+    "mitigacao": {
+        "codecs_essenciais": "The codecs were already installed before FAP. Undoing the configuration can leave the system without audio/video playback until you reinstall the original packages. To revert manually:\n\n  sudo dnf swap ffmpeg ffmpeg-free --allowerasing\n  sudo dnf remove gstreamer1-plugins-bad-freeworld libavcodec-freeworld libheif-freeworld\n  sudo dnf install gstreamer1-plugins-good gstreamer1-plugins-bad-free gstreamer1-plugins-base",
+        "extras_tainted": "Commercial DVD support was already active before FAP. To revert manually:\n\n  sudo dnf remove libdvdcss rpmfusion-free-release-tainted rpmfusion-nonfree-release-tainted",
+        "fontes_ms_all": "Microsoft fonts were already installed before FAP. Removal via FAP is BLOCKED because the package includes 'fontconfig' (Fedora base) — removing it drags dozens of dependencies and can break GUI apps. To remove only the fonts, delete manually:\n\n  sudo rm -rf /usr/share/fonts/microsoft\n  sudo fc-cache -f -v",
+        "vulkan_amd": "Vulkan/Mesa was already installed before FAP. Removing it disables games and 3D applications. To revert manually:\n\n  sudo dnf remove mesa-vulkan-drivers vulkan-loader vulkan-tools mesa-dri-drivers",
+        "vaapi_amd": "VA-API acceleration was already active before FAP. Removing it greatly increases CPU usage in HD/4K video playback. To revert manually:\n\n  sudo dnf remove mesa-va-drivers-freeworld mesa-vdpau-drivers-freeworld ffmpeg-libs libva",
+        "vaapi_swap": "VA-API (via freeworld) acceleration was already active before FAP. To revert manually:\n\n  sudo dnf swap mesa-va-drivers-freeworld mesa-va-drivers\n  sudo dnf swap mesa-vdpau-drivers-freeworld mesa-vdpau-drivers",
+        "nvidia_driver_install": "The NVIDIA driver was already installed before FAP. Removing it via FAP leaves the GPU without a driver until reboot (nouveau takes over, with reduced performance). To revert manually (equivalent to the 'Revert to nouveau' button):\n\n  sudo dnf remove akmod-nvidia akmod-nvidia-580xx akmod-nvidia-470xx akmod-nvidia-390xx xorg-x11-drv-nvidia-* nvidia-settings\n\nThen reboot.",
+        "intel_media_install": "Intel Media Driver was already installed before FAP. Removing it increases CPU usage in video playback. To revert manually:\n\n  sudo dnf remove intel-media-driver",
+        "cups_install": "Printing support was already active before FAP. Removing it disables ALL printers (local and network). To revert manually:\n\n  sudo systemctl disable --now cups avahi-daemon\n  sudo dnf remove cups cups-filters avahi avahi-tools system-config-printer ghostscript",
+        "samba_install": "Samba was already configured before FAP. Removing it disables file sharing and access to Windows folders on the network. To revert manually:\n\n  sudo systemctl disable --now smb nmb\n  sudo dnf remove samba samba-client cifs-utils",
+        "qemu_kvm_install": "QEMU/KVM was already configured before FAP. Removing it disables running virtual machines (VM disks remain intact). To revert manually:\n\n  sudo systemctl disable --now libvirtd\n  sudo dnf remove qemu-kvm libvirt virt-manager virt-install libvirt-daemon-config-network",
+        "virtualbox_install": "VirtualBox was already installed before FAP. Removing it disables VMs (the .vdi disks remain). To revert manually:\n\n  sudo dnf remove VirtualBox akmod-VirtualBox VirtualBox-kmod",
+        "gnome_boxes_install": "GNOME Boxes was already installed before FAP. Removing it disables VMs (disks remain). To revert manually:\n\n  sudo dnf remove gnome-boxes",
+        "realtime_setup": "Your user was already in the 'realtime' group before FAP. The trash icon does not appear here to avoid removing a configuration FAP didn't make. To undo manually:\n\n  sudo gpasswd -d $USER realtime\n  sudo dnf remove -y realtime-setup"
     },
 
     "seletor": {
