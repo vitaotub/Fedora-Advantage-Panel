@@ -354,8 +354,29 @@ async function executarFlatpak() {
 //   3. onSucesso de executarTerraRemove() / executarTerraExtrasRemove()
 
 function _atualizarVisibilidadeTerra() {
-    var terraAtivo = isExecutado('terra-repo');
-    var extrasAtivo = isExecutado('terra-extras-install');
+    // v1.1.2: origem não importa. Se o repo Terra foi habilitado
+    // por fora do FAP (via terminal, script, etc.), os botões
+    // dependentes aparecem do mesmo jeito que apareceriam se o
+    // FAP tivesse habilitado. Antes, `SystemState.repoAtivo('terra')`
+    // era ignorado — o que fazia o botão "Ativar Terra Extras"
+    // nunca aparecer para quem já tinha o Terra ativo antes.
+    //
+    // `SystemState` pode não estar carregado ainda (é assíncrono).
+    // Nesse caso, cai no `isExecutado` (comportamento antigo,
+    // seguro) e a próxima chamada pega o estado real.
+    var terraAtivoPorFora = false;
+    var extrasAtivoPorFora = false;
+    try {
+        terraAtivoPorFora = SystemState.repoAtivo('terra');
+        extrasAtivoPorFora =
+            SystemState.repoAtivo('terra-extras') ||
+            SystemState.repoAtivo('terra-mesa') ||
+            SystemState.repoAtivo('terra-nvidia') ||
+            SystemState.repoAtivo('terra-multimedia');
+    } catch (e) { /* SystemState indisponível — cai no isExecutado */ }
+
+    var terraAtivo = isExecutado('terra-repo') || terraAtivoPorFora;
+    var extrasAtivo = isExecutado('terra-extras-install') || extrasAtivoPorFora;
 
     // Remover Terra Repository: só aparece se o Terra está ativo.
     var btnRemoveTerra = document.getElementById('btn-terra-repo-remove');
@@ -364,8 +385,8 @@ function _atualizarVisibilidadeTerra() {
     }
 
     // Ativar Terra Extras: só aparece se o Terra principal está
-    // ativo. Sem ele, os pacotes `terra-release-*` não existem em
-    // nenhum repo configurado, e o botão falharia silenciosamente.
+    // ativo (FAP ou por fora). Sem ele, os pacotes
+    // `terra-release-*` não existem em nenhum repo configurado.
     var btnExtras = document.getElementById('btn-terra-extras-install');
     if (btnExtras) {
         btnExtras.style.display = terraAtivo ? '' : 'none';
@@ -640,20 +661,21 @@ function _aplicarEstadoOneShotOuPreExistente(idComando, jaAtivoNoSistema) {
     var btn = document.getElementById('btn-' + idComando);
     if (!btn) return;
 
-    if (isExecutado(idComando)) {
+    // v1.1.2: origem não importa. Pré-existente vira "concluído"
+    // (mesmo visual de instalado pelo FAP) — o aviso de origem fica
+    // só no tooltip.
+    var feito = isExecutado(idComando) || jaAtivoNoSistema;
+
+    if (feito) {
         btn.textContent = getTextoAposExecucao(idComando);
         btn.style.backgroundColor = '#4b5563';
         btn.style.cursor = 'default';
         btn.disabled = true;
         btn.style.opacity = '1';
-        btn.title = '';
-    } else if (jaAtivoNoSistema) {
-        btn.textContent = '✅ Já estava ativo';
-        btn.style.backgroundColor = '#4b5563';
-        btn.style.cursor = 'not-allowed';
-        btn.disabled = true;
-        btn.style.opacity = '0.7';
-        btn.title = 'Este recurso já estava ativo antes do FAP. O FAP não foi a causa — para desfazer, use o terminal.';
+        btn.title = (!isExecutado(idComando) && jaAtivoNoSistema)
+            ? _t('comum.tooltip_preexistente_recurso',
+                'Este recurso já estava ativo antes do FAP. O FAP não foi o responsável pela configuração, mas está tratando como ativo normalmente.')
+            : '';
     } else {
         // Restaura o texto original e o estado azul clicável.
         var original = btn.getAttribute('data-texto-original') || btn.textContent;

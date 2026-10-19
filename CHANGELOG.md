@@ -12,6 +12,107 @@ que exibe a seção da versão atual dentro do FAP, na sessão **Sobre o FAP**.
 
 ---
 
+## v1.1.2-10192026
+
+Rodada de **consistência de toggles** na sessão 12 (Ajustes e Manutenção) e
+**extensão da detecção pré-existente** para os itens que ainda não tinham.
+O objetivo: todo toggle de sistema (kernel, áudio, dual-boot) agora se
+comporta igual aos apps — detecta o estado real, mostra "Já estava ativo"
+quando aplicável, e exibe o botão "Reverter" habilitado com o aviso de
+origem. O `realtime-setup` deixa de ser um "app com lixeira" e passa a ser
+um toggle puro, como os demais ajustes da sessão.
+
+### 🐛 Correções
+
+- **Botão "Reverter" oculto nos toggles de Desempenho (sessão 12).** O loop
+  de toggles em `restaurarEstadoSessao` forçava `btnReverter.style.display
+  = 'none'` para pré-existentes, anulando a nova regra da Opção C unificada.
+  Resultado: `vm-max-map-count`, `vm-swappiness-cache` e `tcp-bbr` exibiam
+  "✅ Já estava ativo" mas o reverter nunca aparecia — mesmo quando o ajuste
+  já estava aplicado no sistema. Corrigido delegando inteiramente ao
+  `aplicarEstadoToggle`, que já sabe distinguir "FAP aplicou" de "pré-existente"
+  e mostrar o revert nos dois casos.
+
+- **`realtime-setup` era "app com lixeira" em vez de toggle.** A migração
+  para o padrão `aplicarEstadoInstalavel` fazia o item ter um ícone de
+  lixeira ao lado do botão, o que destoava dos demais toggles da mesma
+  seção (kernel, PipeWire, dual-boot). Agora `realtime-setup` usa
+  `aplicarEstadoToggle('realtime-setup', 'realtime-setup-remove')` como
+  todos os outros. Detecção de estado via
+  `SystemState.membroDoGrupo('realtime')`. **O reverter aparece só depois
+  que o ativar é clicado** (comportamento padrão dos toggles) — e quando
+  o usuário já estava no grupo antes do FAP, o toggle vem com o botão
+  cinza "✅ Já estava ativo" e o reverter habilitado com tooltip de origem.
+
+- **Dual-boot (`dual-boot-time`) não tinha reverter.** O item só oferecia
+  "Corrigir Relógio" (`timedatectl set-local-rtc 1`). Adicionado o par
+  `dual-boot-time-remove` que reverte para UTC (`timedatectl set-local-rtc
+  0 --adjust-system-clock`). Detecção real via novo campo `local_rtc` em
+  `/system-state` (executa `timedatectl show -p LocalRTC --value`).
+
+### ✨ Novo
+
+- **Campo `local_rtc` no endpoint `/system-state`.** `system-state-service.js`
+  ganhou `_detectarLocalRtc()`, que roda `timedatectl show -p LocalRTC
+  --value` e retorna `true`/`false`. O campo é consumido pelo helper
+  `SystemState.localRtc()` (novo em `script.js`), usado pelo toggle de
+  dual-boot para saber se o ajuste já está aplicado — pelo FAP ou por fora.
+
+- **`dual-boot-time-remove` no registro `SESSOES`.** Novo `idComando` com
+  `textoConcluido` e `textoConcluidoKey`. Não é `sempreClicavel` porque
+  `aplicarEstadoToggle` depende de `isExecutado(idInstall)` para refletir
+  o estado — se fosse `sempreClicavel`, o `completarProgresso` não marcaria
+  como executado e o toggle nunca viraria "feito".
+
+- **Botão "↩️ Reverter para UTC"** no bloco de dual-boot, com
+  `confirm()` específico e log próprio. Começa com `display: none` até
+  o "Corrigir Relógio" ser clicado (regra nova aplicada a todos os
+  reverts da sessão).
+
+### 🎨 Interface
+
+- **Todos os reverts da sessão 12 começam ocultos.** Tanto os 4 toggles
+  de Desempenho/Áudio quanto o `dual-boot-time-remove` usam
+  `esconderRevertSeNaoFeito = true` no `aplicarEstadoToggle`. A única
+  exceção continua sendo quando o item já está aplicado no sistema
+  (pré-existente) — aí o toggle entra no ramo "installFeito" e o revert
+  aparece com o tooltip de origem.
+
+### 🔧 Melhorias
+
+- **`realtime-setup` sai da lista de itens com `permitirRemocaoPreExistente:
+  false`.** Como agora é toggle puro (não mais app com lixeira), a proteção
+  contra remoção de pré-existente não se aplica: o reverter é o próprio
+  caminho de desfazer, e é ele que fica disponível com o aviso de origem.
+  A lista passou de 14 para 13 itens protegidos.
+
+- **`SystemState.invalidar()` chamado após `timedatectl`.** Quando o
+  usuário aciona o dual-boot em qualquer direção, o `local_rtc` do cache
+  cliente fica defasado até o TTL (60s). A correção força refetch
+  imediato, e o toggle reflete o novo estado sem esperar.
+
+### 🧹 Limpeza
+
+- **Comentário do `registrarAppRemovivel('realtime-setup', ...)` removido.**
+  O bloco inteiro saiu de `ajustes-manutencao.html` — o item agora usa
+  `aplicarEstadoToggle`, sem `APPS_REMOVIVEIS`.
+
+- **`motivoBloqueio` e `permitirRemocaoPreExistente` do `realtime-setup`
+  removidos** junto com o bloco acima. Nenhuma outra sessão referencia
+  esses campos para esse item.
+
+### 🌐 Internacionalização
+
+- **Novas chaves em `locales/en.json` e `locales/es.json`:**
+  - `sessoes.ajustes-manutencao.btn_dual_boot_remove` — rótulo do botão.
+  - `sessoes.ajustes-manutencao.dual_boot_confirmar_remove` — texto do `confirm()`.
+  - `sessoes.ajustes-manutencao.texto_concluido_dual_boot` — texto do botão ativar após aplicado.
+  - `sessoes.ajustes-manutencao.texto_concluido_dual_boot_remove` — texto do botão reverter após aplicado.
+
+- **`texto_concluido_dual_boot` foi reescrito** para refletir o estado do toggle ("✅ Relógio em horário local" / "✅ Clock in local time" / "✅ Reloj en hora local"), em vez do antigo "✅ Relógio corrigido". Isso é necessário porque, com o toggle, o botão mostra o estado persistido após reload — e "corrigido" é ambíguo quando o usuário volta ao UTC.
+
+---
+
 ## v1.1.1-10182026
 
 O FAP passa a **enxergar o estado real do Fedora do usuário**. Até esta versão, ele só sabia o que ele mesmo tinha feito (`.progresso.json`). Se o usuário já tinha o Terra ativo, o RPM Fusion habilitado, o Flathub configurado, o VLC instalado ou o grupo `input` já configurado antes de usar o FAP, o botão correspondente continuava clicável — e o clique falhava (o `dnf install` recusa a transação com "already installed"; o `flatpak install` idem).
@@ -33,13 +134,13 @@ Além disso, esta versão corrige uma série de bugs de dispatcher e de abertura
 
 ### ✨ Novo
 
-- **`GET /system-state`** — endpoint read-only com TTL de 60s em memória. Devolve `repos_enabled`, `packages_installed`, `flatpaks_installed`, `groups_membership`, `kernel_params`, `services_active`, `config_files_present` e `waydroid` (com `installed`, `initialized`, `extras_prepared`). Todas as consultas rodam em paralelo; na máquina típica o custo é ~1s (limitado por `dnf repolist`).
+- **`GET /system-state`** — endpoint read-only com TTL de 60s em memória. Devolve `repos_enabled`, `packages_installed`, `flatpaks_installed`, `groups_membership`, `kernel_params`, `services_active`, `config_files_present`, `waydroid` (com `installed`, `initialized`, `extras_prepared`) e (v1.1.2) `local_rtc`. Todas as consultas rodam em paralelo; na máquina típica o custo é ~1s (limitado por `dnf repolist`).
 
-- **Módulo `system-state-service.js`** — roda os comandos read-only (`dnf repolist`, `rpm -qa`, `flatpak list`, `id -nG`, `systemctl is-active`, `sysctl -n`, `grubby --info=DEFAULT`, `test -f`, `rpm -q waydroid`). Cache em memória, invalidado a cada 60s.
+- **Módulo `system-state-service.js`** — roda os comandos read-only (`dnf repolist`, `rpm -qa`, `flatpak list`, `id -nG`, `systemctl is-active`, `sysctl -n`, `grubby --info=DEFAULT`, `test -f`, `rpm -q waydroid`, `timedatectl`). Cache em memória, invalidado a cada 60s.
 
-- **Cache cliente `SystemState` em `script.js`** — uma única `fetch('/system-state')` no boot. Helpers síncronos (`repoAtivo`, `remoteFlatpakAtivo`, `pacoteInstalado`, `flatpakInstalado`, `membroDoGrupo`, `kernelParam`, `servicoAtivo`, `arquivoPresente`, `waydroid`) usados por todas as sessões.
+- **Cache cliente `SystemState` em `script.js`** — uma única `fetch('/system-state')` no boot. Helpers síncronos (`repoAtivo`, `remoteFlatpakAtivo`, `pacoteInstalado`, `flatpakInstalado`, `membroDoGrupo`, `kernelParam`, `servicoAtivo`, `arquivoPresente`, `waydroid`, `localRtc`) usados por todas as sessões.
 
-- **Método `SystemState.invalidar()`** — invalida o cache cliente após operações que mudam o estado do sistema (remoção de app, instalação por fora). Sem ele, o cache ficava obsoleto por até 60s (TTL do servidor), e o botão de um app removido continuava mostrando "Abrir + lixeira" nesse intervalo.
+- **Método `SystemState.invalidar()`** — invalida o cache cliente após operações que mudam o estado do sistema (remoção de app, instalação por fora, `timedatectl`). Sem ele, o cache ficava obsoleto por até 60s (TTL do servidor), e o botão de um app removido continuava mostrando "Abrir + lixeira" nesse intervalo.
 
 - **Detecção automática em `aplicarEstadoInstalavel`, `aplicarEstadoToggle` e `aplicarEstadoItemCompleto`** — quando o chamador não passa `preExistente` explicitamente, as funções consultam `appJaInstaladoNoSistema(idComando)`, que cruza `APPS_REMOVIVEIS` com `SystemState`. **Toda a base de apps do FAP ganha detecção de pré-existência sem alteração individual nas sessões.**
 
@@ -51,14 +152,14 @@ Além disso, esta versão corrige uma série de bugs de dispatcher e de abertura
 
 ### 🔒 Mitigação: lixeira bloqueada para pré-existentes de alto risco
 
-Com a Opção B (pré-existente tratado como instalado), todo app passou a ter lixeira. Isso é o comportamento desejado para apps de uso cotidiano — desinstalar um flatpak que já estava no sistema é reversível em 1 clique. Mas para **14 itens de alto risco**, permitir remoção via FAP é destrutivo: a remoção pode derrubar serviços, alterar grupos do usuário, ou (no caso de `fontes-ms-all`) arrastar pacotes base do Fedora.
+Com a Opção B (pré-existente tratado como instalado), todo app passou a ter lixeira. Isso é o comportamento desejado para apps de uso cotidiano — desinstalar um flatpak que já estava no sistema é reversível em 1 clique. Mas para **13 itens de alto risco** (eram 14 na v1.1.1; `realtime-setup` saiu na v1.1.2 ao virar toggle), permitir remoção via FAP é destrutivo: a remoção pode derrubar serviços, alterar grupos do usuário, ou (no caso de `fontes-ms-all`) arrastar pacotes base do Fedora.
 
-Para esses 14 itens, foi adicionada a flag `permitirRemocaoPreExistente: false` no registro de `APPS_REMOVIVEIS`, com um `motivoBloqueio` explicando como reverter manualmente. **Comportamento resultante:**
+Para esses 13 itens, foi adicionada a flag `permitirRemocaoPreExistente: false` no registro de `APPS_REMOVIVEIS`, com um `motivoBloqueio` explicando como reverter manualmente. **Comportamento resultante:**
 
 - **Pré-existente** (usuário já tinha antes do FAP) → botão cinza "✅ Já estava ativo", tooltip com o `motivoBloqueio`, **sem lixeira**. Clique não faz nada.
 - **Instalado pelo FAP** → "🚀 Abrir X" (se tiver GUI) ou "✅ Nome do recurso instalado" + **lixeira funcional**. A mitigação só bloqueia o caso pré-existente.
 
-**Itens bloqueados:**
+**Itens bloqueados (13):**
 
 | Item | Sessão | Por que bloqueado |
 |---|---|---|
@@ -75,7 +176,8 @@ Para esses 14 itens, foi adicionada a flag `permitirRemocaoPreExistente: false` 
 | `qemu-kvm-install` | 10 | Remove QEMU/KVM + libvirt; VMs param de rodar |
 | `virtualbox-install` | 10 | Idem |
 | `gnome-boxes-install` | 10 | Idem |
-| `realtime-setup` | 12 | `gpasswd -d $USER realtime` — remove um grupo que o FAP não criou |
+
+**Item que saiu da lista na v1.1.2:** `realtime-setup` (sessão 12) — virou toggle puro, não tem lixeira, o revert é o próprio caminho de desfazer.
 
 **Itens que mantêm a lixeira mesmo se pré-existentes** (baixo e médio risco — o `confirmMsg` já avisa sobre dados preservados, e remover é reversível):
 
@@ -90,9 +192,11 @@ Para esses 14 itens, foi adicionada a flag `permitirRemocaoPreExistente: false` 
 
 - **Terra Repository não falha mais em quem já tinha o repo ativo.** Era o caso mais visível: o `dnf install terra-release` recusava a transação porque o pacote já existia, mas o botão continuava azul clicável. Agora aparece como `✅ Já estava ativo` cinza, com tooltip. O mesmo vale para RPM Fusion, Flathub e os 4 subrepositórios do Terra.
 
+- **Terra Extras (subrepositórios opcionais) aparecem mesmo se o Terra principal foi habilitado por fora do FAP.** `_atualizarVisibilidadeTerra` antes só consultava `isExecutado('terra-repo')`. Agora consulta `SystemState.repoAtivo('terra')` também, o que faz o botão "Ativar Terra Extras" aparecer quando o repo `terra` já está ativo no sistema — independente de quem o habilitou.
+
 - **Repositórios de fabricante e COPRs** (Opera, Brave, Vivaldi, Edge, OpenRazer, xpadneo) deixam de ser reconfigurados quando o arquivo `.repo` já está em `/etc/yum.repos.d/`.
 
-- **Sessão 12 (Ajustes)** — os 4 toggles de kernel (`vm-max-map-count`, `vm-swappiness-cache`, `tcp-bbr`, `pipewire-quantum-low`) e o `realtime-setup` passam a detectar estado real. Se o usuário já tinha `bbr` no kernel, `swappiness=150`, o grupo `realtime`, ou o arquivo `99-fap-quantum.conf`, o botão "Aplicar" vira `✅ Já estava ativo` cinza e o "Reverter" fica oculto. **Exceção:** `realtime-setup` usa `aplicarEstadoInstalavel`, então com Opção B ele viraria "Abrir + lixeira" — **mas com a mitigação acima, ele também fica bloqueado para pré-existentes** (a lixeira só aparece se o FAP instalou).
+- **Sessão 12 (Ajustes)** — os 4 toggles de kernel (`vm-max-map-count`, `vm-swappiness-cache`, `tcp-bbr`, `pipewire-quantum-low`) e o `realtime-setup` passam a detectar estado real. Se o usuário já tinha `bbr` no kernel, `swappiness=150`, o grupo `realtime`, ou o arquivo `99-fap-quantum.conf`, o botão "Aplicar" vira `✅ Já estava ativo` cinza e o "Reverter" fica habilitado com tooltip de origem. **Exceção:** `realtime-setup` saiu dos 14 protegidos na v1.1.2 (virou toggle).
 
 - **Sessão 4 (Dispositivos)** — o toggle `input-group-add` detecta se o usuário já está no grupo `input` via `SystemState.membroDoGrupo('input')`.
 
@@ -116,7 +220,7 @@ Para esses 14 itens, foi adicionada a flag `permitirRemocaoPreExistente: false` 
 
 ### 🎨 Interface
 
-- **Opção B implementada em `aplicarEstadoInstalavel`:** pré-existente é tratado **identicamente** a instalado pelo FAP (exceto os 14 itens protegidos). O usuário não precisa mais entender a distinção "quem instalou" — se o app está no sistema, o botão mostra "🚀 Abrir X" + lixeira. A transparência fica em duas camadas discretas:
+- **Opção B implementada em `aplicarEstadoInstalavel`:** pré-existente é tratado **identicamente** a instalado pelo FAP (exceto os 13 itens protegidos). O usuário não precisa mais entender a distinção "quem instalou" — se o app está no sistema, o botão mostra "🚀 Abrir X" + lixeira. A transparência fica em duas camadas discretas:
   - **Tooltip no botão de abrir** quando pré-existente: *"Este app já estava instalado antes do FAP. A lixeira remove o app do sistema, mas o FAP não foi o responsável pela instalação."*
   - **Prefixação do `confirmMsg` da lixeira** quando pré-existente: o `confirm()` começa com *"⚠️ ATENÇÃO! Este app já estava instalado antes do FAP. Removê-lo do sistema pode apagar configurações e dados que você criou (perfis, favoritos, saves)."*
 
@@ -124,33 +228,33 @@ Para esses 14 itens, foi adicionada a flag `permitirRemocaoPreExistente: false` 
 
 - **Reverter oculto em estados iniciais** (sessão 4 e sessão 12). Antes era visível mas desabilitado (opacidade 0.5). Agora fica `display: none` até existir algo a reverter. Consistente com o padrão visual das demais sessões.
 
-- **Botão "Abrir X" com tooltip explicativo** quando o app é pré-existente. O tooltip substituiu o antigo "tooltip no botão de instalar" (que não existe mais no estado pré-existente, porque o botão de instalar virou botão de abrir).
+- **Botão "Abrir X" com tooltip explicativo** quando o app é pré-existente.
 
-- **Botão "✅ Já estava ativo" com tooltip estendido** para os 14 itens protegidos. O tooltip mostra o `motivoBloqueio` — que inclui o comando exato de reversão manual, caso o usuário queira desfazer a configuração.
+- **Botão "✅ Já estava ativo" com tooltip estendido** para os 13 itens protegidos. O tooltip mostra o `motivoBloqueio` — que inclui o comando exato de reversão manual.
 
 ### 🔧 Melhorias
 
-- **`_sincronizarEstadoFlatpaks` não marca mais como executado.** Antes, a cada boot, a função chamava `marcarComoExecutado(idComando)` para todo Flatpak instalado no sistema. Isso gravava o id em `.progresso.json`, e a partir do 2º boot o app parecia ter sido instalado pelo FAP — o tooltip de pré-existente e o prefixo do `confirmMsg` desapareciam. Agora a função só chama `aplicarEstadoInstalavel(idComando, idAbrirMarc)`, que detecta pré-existência via `SystemState` e aplica o estado correto **sem gravar nada em `.progresso.json`**. Efeito colateral: a barra de progresso global ("N/M sessões concluídas") deixa de contar esses apps como "feitos pelo FAP" — tecnicamente correto, já que o FAP não os instalou.
+- **`_sincronizarEstadoFlatpaks` não marca mais como executado.** Antes, a cada boot, a função chamava `marcarComoExecutado(idComando)` para todo Flatpak instalado no sistema. Isso gravava o id em `.progresso.json`, e a partir do 2º boot o app parecia ter sido instalado pelo FAP — o tooltip de pré-existente e o prefixo do `confirmMsg` desapareciam. Agora a função só chama `aplicarEstadoInstalavel(idComando, idAbrirMarc)`, que detecta pré-existência via `SystemState` e aplica o estado correto **sem gravar nada em `.progresso.json`**.
 
-- **`_executarRemocaoApp` aceita remoção via `SystemState`.** Antes, a lixeira só funcionava se `isExecutado(idComando) === true` (isto é, se o `.progresso.json` marcava o app). Para pré-existentes, o `.progresso.json` está vazio por design, então a lixeira ficava silenciosa. Agora aceita `isExecutado(idComando) || appJaInstaladoNoSistema(idComando)`. Bônus: depois de remover, chama `SystemState.invalidar()` para que o próximo `appJaInstaladoNoSistema` veja o estado real (sem cache obsoleto).
+- **`_executarRemocaoApp` aceita remoção via `SystemState`.** Antes, a lixeira só funcionava se `isExecutado(idComando) === true`. Agora aceita `isExecutado(idComando) || appJaInstaladoNoSistema(idComando)`. Bônus: depois de remover, chama `SystemState.invalidar()`.
 
-- **`appJaInstaladoNoSistema` cobre `modo: 'desfazerTudo'`** — Rclone Manager agora declara `pacotes: ['rclone-manager', 'rclone']` no registro, permitindo detectar pré-existência mesmo sem o `tipo`/`idDesfazer` clássicos.
+- **`appJaInstaladoNoSistema` cobre `modo: 'desfazerTudo'`** — Rclone Manager agora declara `pacotes: ['rclone-manager', 'rclone']` no registro, permitindo detectar pré-existência.
 
-- **`SystemState.carregar()` chamado no `DOMContentLoaded` e no evento `sessao-carregada`** — o cache cliente fica populado antes de as sessões pintarem os botões. Janela de corrida de ~500 ms coberta pelo `setTimeout` de restauração.
+- **`SystemState.carregar()` chamado no `DOMContentLoaded` e no evento `sessao-carregada`** — o cache cliente fica populado antes de as sessões pintarem os botões.
 
-- **`_sincronizarEstadoFlatpaks` unificado com `SystemState`.** A função deixou de fazer um `fetch('/flatpak-installed')` próprio e passou a consultar `SystemState.flatpakInstalado()`, que por baixo usa `/system-state`. Eram 2 requisições por boot para a mesma informação; agora é 1. Bônus: o `_sincronizarEstadoFlatpaks` herda o cache cliente de `SystemState` (que já está populado pelo `DOMContentLoaded` do `script.js`), eliminando o throttle paralelo de 30s que existia na função antiga.
+- **`_sincronizarEstadoFlatpaks` unificado com `SystemState`.** A função deixou de fazer um `fetch('/flatpak-installed')` próprio e passou a consultar `SystemState.flatpakInstalado()`. Eram 2 requisições por boot para a mesma informação; agora é 1.
 
-- **TTL do `/system-state` reduzido de 5 min para 60s.** Com o `/system-state` sendo a fonte única para repositórios, pacotes e Flatpaks (após a unificação acima), o cache de 5 min deixava a detecção de mudanças externas defasada demais. 60s alinha com o throttle cliente e mantém o custo de 1 `dnf repolist` a cada 60s de uso ativo — equivalente a ter um terminal com `watch -n 60 dnf repolist` (desprezível em SSD).
+- **TTL do `/system-state` reduzido de 5 min para 60s.** Com o `/system-state` sendo a fonte única, o cache de 5 min deixava a detecção de mudanças externas defasada demais. 60s alinha com o throttle cliente e mantém o custo de 1 `dnf repolist` a cada 60s de uso ativo.
 
-- **Campo `origem` no `.progresso.json` (só auditoria).** Cada comando marcado como executado agora grava `origem: { "<idComando>": "fap" }` no arquivo de progresso. **O FAP nunca lê esse campo** — a decisão de mostrar "🚀 Abrir X" para pré-existentes continua sendo runtime, via `appJaInstaladoNoSistema()` (cruza `.progresso.json` com `/system-state`), que é auto-corretiva. O campo existe apenas para inspeção manual do `.progresso.json` (auditar "o que o FAP instalou" sem precisar comparar com o sistema). O `GET /progress` e `GET /status` passam a devolver o campo, e o `POST /progress` **preserva** o que já estava no arquivo (o cliente não o envia, o servidor não o apaga).
+- **Campo `origem` no `.progresso.json` (só auditoria).** Cada comando marcado como executado agora grava `origem: { "<idComando>": "fap" }`. **O FAP nunca lê esse campo** — a decisão de mostrar "🚀 Abrir X" para pré-existentes continua sendo runtime, via `appJaInstaladoNoSistema()`. O campo existe apenas para inspeção manual.
 
 ### 🧹 Limpeza
 
-- **`system-state-service.js` adicionado** ao `Makefile` (`check-basico` valida sintaxe) e ao `install.sh` (`ARQUIVOS_PRINCIPAIS`) e `iniciar_fap.sh` (`verificar_arquivos`, erro fatal se ausente).
+- **`system-state-service.js` adicionado** ao `Makefile` (`check-basico`), `install.sh` (`ARQUIVOS_PRINCIPAIS`) e `iniciar_fap.sh` (`verificar_arquivos`, erro fatal se ausente).
 
-- **Código morto identificado mas mantido** (minimização de diff, ainda referenciado em testes): `_ajustarFerramentasPorDesktop` e `_esconderSePacoteInstalado` em `aplicativos.html`. Nenhuma sessão as chama desde esta versão; remoção planejada para a próxima.
+- **Código morto identificado mas mantido**: `_ajustarFerramentasPorDesktop` e `_esconderSePacoteInstalado` em `aplicativos.html`. Nenhuma sessão as chama; remoção planejada para a próxima.
 
-- **Entradas mortas de Avidemux removidas da whitelist** (`setsid -f avidemux3_qt5`, `avidemux3_gtk`, `avidemux3_cli`) — binários inexistentes no Fedora 44.
+- **Entradas mortas de Avidemux removidas da whitelist** (`setsid -f avidemux3_qt5`, `avidemux3_gtk`, `avidemux3_cli`).
 
 ---
 
@@ -160,39 +264,32 @@ Primeira release da série 1.1.0. Consolida as correções da `1.0.0-10152026.d`
 
 ### 🐛 Correções
 
-- **Lixeira aparecendo em CoreCtrl e LACT (sessão 3).** Os botões de instalar desses dois apps ficavam soltos em `.grupo-botoes`, sem o `.btn-flatpak-wrapper` que `_mostrarLixeira` exige para ancorar o ícone. Ao instalar, o botão ficava cinza mas a lixeira nunca aparecia. Agora `_mostrarLixeira` **cria o wrapper na hora** se ele não existir no HTML — beneficia qualquer botão presente ou futuro, sem exigir alteração em cada sessão. (Defesa em profundidade: os dois botões também foram embrulhados no HTML, mantendo consistência com o padrão das outras sessões.)
+- **Lixeira aparecendo em CoreCtrl e LACT (sessão 3).** Os botões de instalar desses dois apps ficavam soltos em `.grupo-botoes`, sem o `.btn-flatpak-wrapper` que `_mostrarLixeira` exige. Agora `_mostrarLixeira` **cria o wrapper na hora** se ele não existir no HTML.
 
-- **FreeCAD, Opera e Heroic migrados para Flatpak.** O botão de FreeCAD falhava silenciosamente porque o pacote saiu dos repositórios oficiais do Fedora. Opera e Heroic falhavam com o repo oficial do fabricante. Todos os três agora instalam via Flathub (`org.freecad.FreeCAD`, `com.opera.Opera`, `com.heroicgameslauncher.hgl`), usando o mesmo fluxo dos outros apps Flatpak — inclusive a fila de instalação e a sincronização de estado do `.progresso.json`.
+- **FreeCAD, Opera e Heroic migrados para Flatpak.** O botão de FreeCAD falhava silenciosamente porque o pacote saiu dos repositórios oficiais do Fedora. Opera e Heroic falhavam com o repo oficial do fabricante. Todos os três agora instalam via Flathub.
 
-- **Lightworks agora vira "🚀 Abrir Lightworks" após instalar.** A chamada passava `null` como `idAbrir` para `aplicarEstadoInstalavel`, o que forçava o Estado 3 (cinza, sem "Abrir") porque não havia `btn-abrir-lightworks` no HTML. Agora o botão de abrir existe e a chamada aponta para ele. Abre em sessão própria via `setsid -f lightworks`, como todos os outros apps GUI.
+- **Lightworks agora vira "🚀 Abrir Lightworks" após instalar.** A chamada passava `null` como `idAbrir`. Corrigido.
 
-- **Rclone Manager é removido de fato pelo "desfazer tudo".** O `comandoDesfazer` só removia pacotes `rclone*` via `dnf`. Deixava órfãos: `.desktop` no menu iniciar, ícone hicolor, `~/.local/share/rclone-manager/` e `~/.cache/rclone-manager/`. O usuário via o app no menu mesmo após clicar em "remover completamente". Agora o comando apaga todos esses resíduos. **As contas do usuário em `~/.config/rclone/` continuam intactas** — o `confirmMsg` específico do Rclone Manager deixa isso explícito.
+- **Rclone Manager é removido de fato pelo "desfazer tudo".** O `comandoDesfazer` só removia pacotes `rclone*` via `dnf`. Deixava órfãos: `.desktop` no menu iniciar, ícone hicolor, `~/.local/share/rclone-manager/` e `~/.cache/rclone-manager/`. Agora o comando apaga todos esses resíduos. **As contas do usuário em `~/.config/rclone/` continuam intactas.**
 
-- **OpenRazer instala com `kernel-devel` do kernel em execução.** Antes, o `dnf install polychromatic openrazer-daemon openrazer-kernel-modules-dkms` falhava com exit 21 porque o `posttrans` do DKMS não conseguia compilar o módulo contra o kernel em execução (faltavam os headers daquele kernel específico). O FAP interpretava como falha total, mas o Polychromatic ficava instalado **e sem driver** — o usuário achava que nada tinha sido instalado. Agora o comando instala `kernel-devel-$(uname -r)` e `kernel-headers-$(uname -r)` antes, tenta `akmod-openrazer` se disponível no repo oficial, e usa `dkms` como fallback. No final, verifica se o módulo carregou e avisa se é preciso reiniciar.
+- **OpenRazer instala com `kernel-devel` do kernel em execução.** Antes, o `dnf install` falhava com exit 21 porque o `posttrans` do DKMS não conseguia compilar o módulo. Agora instala `kernel-devel-$(uname -r)` e `kernel-headers-$(uname -r)` antes, tenta `akmod-openrazer` se disponível, e usa `dkms` como fallback.
 
 ### 🎨 Interface
 
-- **OBS Studio e Câmera Virtual lado a lado (sessão 5).** Antes ficavam empilhados, cada um ocupando uma linha inteira. Agora ficam em 2 colunas iguais (`dashboard-grid` com `grid-template-columns: 1fr 1fr`), cada uma com seu próprio botão, lixeira e barra de progresso. Vira 1 coluna em telas pequenas.
+- **OBS Studio e Câmera Virtual lado a lado (sessão 5).**
 
-- **Sessão 4 exibe botões progressivamente.** Os itens OpenRazer, Xbox Wireless e Broadcom exibiam os 3 botões simultaneamente (repo / instalar / reverter), mesmo quando os dois últimos não faziam sentido. Agora a progressão é: só o botão de ativar repo aparece → clicar nele revela o de instalar → instalar revela o de reverter. Os toggles `firmware-vendor`, `input-group` e `steam-devices` também passam a esconder o botão de reverter até o install ser marcado. **Comportamento restrito à sessão 4** — as outras mantêm o padrão atual (reverter visível mas desabilitado).
+- **Sessão 4 exibe botões progressivamente.**
 
 ### 🗑️ Remoções
 
-- **Sessão 7 (Casa e Escritório): item "PDF e OCR" removido.** O Fedora já traz o Okular por padrão, e o OCR do Tesseract estava fora do escopo do FAP. Bloco HTML, `registrarAppRemovivel`, funções `executarOkularTesseract()` e `abrirOkular()`, entradas de `SESSOES` e chaves i18n removidas. O Okular **continua** disponível na sessão 6 (Aplicativos), onde já era oferecido separadamente.
+- **Sessão 7: item "PDF e OCR" removido.**
 
-- **Sessão 8 (Gaming): item "Gamescope Session" removido.** O pacote `gamescope-session-steam` vem de COPR de terceiros e não está estável nos repositórios oficiais. Bloco HTML, `registrarAppRemovivel`, `executarGamescopeSession()`, entradas de `SESSOES` e chaves i18n removidas. O `install.sh --uninstall` mantém a limpeza residual (`/usr/bin/gamescope-session`, `.desktop`, pacote, COPR) para quem instalou em versões anteriores.
+- **Sessão 8: item "Gamescope Session" removido.**
 
 ### 🧹 Limpeza
 
-- **Código morto removido:**
-  - `_MAPA_ABRIR_EXCECOES`: só tinha uma entrada (`okular-tesseract-install` → `abrir-okular`), removida com o item de PDF/OCR. Mapa agora vazio.
-  - Funções `executarOkularTesseract` e `abrirOkular` (sessão 7).
-  - Função `executarGamescopeSession` (sessão 8).
-  - Entradas `okular-tesseract-install`, `okular-tesseract-remove`, `gamescope-session-install`, `gamescope-session-remove` do array `SESSOES`.
+- **Código morto removido:** `_MAPA_ABRIR_EXCECOES` (mapa vazio), `executarOkularTesseract`, `abrirOkular`, `executarGamescopeSession`.
 
 ### 🌐 Internacionalização
 
-- **Novas chaves adicionadas em `locales/en.json` e `locales/es.json`:**
-  - `sessoes.producao-multimidia.obs_coluna_titulo` e `cam_coluna_titulo` (títulos das colunas do OBS e Câmera Virtual).
-  - `sessoes.aplicativos.btn_abrir_lightworks` (texto do botão "Abrir Lightworks").
-- **Chaves removidas** com as duas features deletadas: `pdfocr_titulo`, `okular_tesseract_*`, `btn_okular_tesseract`, `texto_concluido_okular_tesseract`, `btn_abrir_okular`, `gamescope_session_titulo`, `gamescope_session_desc`, `gamescope_session_aviso`, `btn_gamescope_session`, `texto_concluido_gamescope_session`.
+- **Novas chaves** em `locales/en.json` e `locales/es.json` para OBS/Câmera Virtual e Lightworks.

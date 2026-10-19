@@ -122,7 +122,6 @@ Configura o sistema para permitir que aplicativos de áudio tenham prioridade de
 ⚠️ <strong>Requer logout/login:</strong> o grupo <code>realtime</code> só entra em vigor depois que você sair e entrar novamente.
 </div>
 <div class="botoes-flex">
-<div class="btn-flatpak-wrapper">
 <button class="btn-executar"
 onclick="executarRealtimeSetup()"
 data-comando="realtime-setup"
@@ -131,13 +130,6 @@ id="btn-realtime-setup"
 data-i18n="sessoes.ajustes-manutencao.btn_realtime_setup">
 ⚙️ Ativar Prioridade de Tempo Real
 </button>
-</div>
-<!--
-Botão "Reverter" manual mantido para compatibilidade com HTMLs
-antigos (par instalado/apagado pelo CSS via `display: none`). O
-fluxo de reversão ativo agora é o ícone de lixeira SVG, criado
-por `aplicarEstadoInstalavel` via `registrarAppRemovivel`.
--->
 <button class="btn-executar vermelho"
 onclick="executarRealtimeSetupRemove()"
 data-comando="realtime-setup-remove"
@@ -264,11 +256,13 @@ ACORDEÃO 5: DUAL-BOOT
 <div class="aviso-caixa" data-i18n-html="sessoes.ajustes-manutencao.dual_boot_aviso">
 💡 Por padrão, o Windows grava o relógio em <strong>horário local</strong>, enquanto o Linux grava em <strong>UTC</strong>. Este botão alinha o Fedora com o comportamento do Windows — você não precisa mexer em nada no Windows.
 </div>
-<div class="grupo-botoes">
+<div class="botoes-flex">
 <button class="btn-executar" onclick="executarDualBootTime()" data-comando="dual-boot-time" data-logbox="log-sessao-ajustes-manutencao" id="btn-dual-boot-time" data-i18n="sessoes.ajustes-manutencao.btn_dual_boot">Corrigir Relógio</button>
+<button class="btn-executar vermelho" onclick="executarDualBootTimeRemove()" data-comando="dual-boot-time-remove" data-logbox="log-sessao-ajustes-manutencao" id="btn-dual-boot-time-remove" data-i18n="sessoes.ajustes-manutencao.btn_dual_boot_remove" style="display: none;">↩️ Reverter para UTC</button>
 </div>
 </div>
 <div class="progress-container" id="progress-dual-boot-time"><div class="progress-bar"><div class="progress-fill" id="progress-fill-dual-boot-time"></div></div><div class="progress-text"><span class="status" id="progress-status-dual-boot-time">⏳ Iniciando...</span><span class="percentage" id="progress-percent-dual-boot-time">0%</span></div></div>
+<div class="progress-container" id="progress-dual-boot-time-remove"><div class="progress-bar"><div class="progress-fill" id="progress-fill-dual-boot-time-remove"></div></div><div class="progress-text"><span class="status" id="progress-status-dual-boot-time-remove">⏳ Iniciando...</span><span class="percentage" id="progress-percent-dual-boot-time-remove">0%</span></div></div>
 </div>
 
 </div>
@@ -396,40 +390,10 @@ function _tVars(chave, fallback, vars) {
 // deixando o usuário órfão no grupo. O botão manual de "Reverter"
 // (agora oculto) fazia certo, mas as duas interfaces divergiam.
 
-registrarAppRemovivel('realtime-setup', {
-    tipo: 'dnf',
-    comandoRemocao: 'sudo gpasswd -d $USER realtime; sudo dnf remove -y realtime-setup',
-    nome: 'Prioridade de Tempo Real',
-    confirmMsg: '⚠️ Reverter o ajuste de Prioridade de Tempo Real?\n\n' +
-                'Isso remove o pacote realtime-setup E remove seu usuário do grupo realtime.\n\n' +
-                'Requer logout/login para o grupo deixar de valer na sessão atual.\n\n' +
-                'Continuar?',
-    // ============================================================
-    // MITIGAÇÃO (v1.1.2): pré-existente NÃO pode ser removido
-    // ============================================================
-    //
-    // `realtime-setup` é o único item do FAP cuja remoção altera
-    // um GRUPO de usuário (`gpasswd -d $USER realtime`). Se o
-    // usuário já estava no grupo `realtime` antes do FAP, a Opção
-    // B faria a lixeira aparecer — e a remoção desfaria uma
-    // configuração que o FAP não fez.
-    //
-    // Com `permitirRemocaoPreExistente: false`:
-    //   • `aplicarEstadoInstalavel` cai no estado "pré-existente
-    //     bloqueado" (cinza com aviso, sem lixeira).
-    //   • `_executarRemocaoApp` rejeita a remoção mesmo se o
-    //     clique chegar (defesa em profundidade).
-    //
-    // Se o FAP instalou (isExecutado === true), a lixeira continua
-    // funcionando normalmente — a mitigação só vale para
-    // pré-existentes.
-    permitirRemocaoPreExistente: false,
-    motivoBloqueio: 'Seu usuário já estava no grupo realtime antes do FAP. ' +
-                    'A lixeira não aparece aqui para evitar remover uma ' +
-                    'configuração que o FAP não fez. Para desfazer manualmente:\n\n' +
-                    '  sudo gpasswd -d $USER realtime\n' +
-                    '  sudo dnf remove -y realtime-setup'
-});
+// (realtime-setup migrou de app removível para toggle puro —
+// usa aplicarEstadoToggle, com detecção via SystemState.membroDoGrupo
+// e reverter oculto até o ativar ser acionado. Não usa mais
+// registrarAppRemovivel.)
 
 // ------------------------------------------------------------
 // HELPERS DE TOGGLE
@@ -555,13 +519,19 @@ async function executarRealtimeSetup() {
     var comando = 'sudo dnf install -y realtime-setup && sudo usermod -aG realtime $USER';
     await executarComandoGenerico(idComando, comando,
         _t('sessoes.ajustes-manutencao.btn_realtime_setup', '⚙️ Ativar Prioridade de Tempo Real'),
-        function() { aplicarEstadoInstalavel('realtime-setup', null); });
+        function() {
+            // v1.1.2: par toggle puro. Aplica estado com base em
+            // `SystemState.membroDoGrupo('realtime')` (o grupo é a
+            // detecção real do ajuste).
+            aplicarEstadoToggle(
+                'realtime-setup',
+                'realtime-setup-remove',
+                true,
+                SystemState.membroDoGrupo('realtime')
+            );
+        });
 }
 
-// Mantida para compatibilidade: se algum HTML antigo ainda tiver o
-// botão manual `realtime-setup-remove` visível, ele continua
-// funcionando. O fluxo principal agora é a lixeira (que usa
-// `comandoRemocao` com gpasswd + dnf remove).
 async function executarRealtimeSetupRemove() {
     var idComando = 'realtime-setup-remove';
     var comando = 'sudo gpasswd -d $USER realtime; sudo dnf remove -y realtime-setup';
@@ -569,10 +539,20 @@ async function executarRealtimeSetupRemove() {
         _t('sessoes.ajustes-manutencao.btn_realtime_setup_remove', '↩️ Reverter'),
         function() {
             desmarcarComoExecutado('realtime-setup').then(function() {
-                aplicarEstadoInstalavel('realtime-setup', null);
+                aplicarEstadoToggle(
+                    'realtime-setup',
+                    'realtime-setup-remove',
+                    true,
+                    SystemState.membroDoGrupo('realtime')
+                );
             }).catch(function(e) {
                 console.warn('[toggle] Erro ao limpar estado:', e);
-                aplicarEstadoInstalavel('realtime-setup', null);
+                aplicarEstadoToggle(
+                    'realtime-setup',
+                    'realtime-setup-remove',
+                    true,
+                    SystemState.membroDoGrupo('realtime')
+                );
             });
         });
 }
@@ -692,7 +672,57 @@ async function executarDualBootTime() {
     await executarComandoGenerico(
         'dual-boot-time',
         'sudo timedatectl set-local-rtc 1 --adjust-system-clock',
-        _t('sessoes.ajustes-manutencao.btn_dual_boot', '🕒 Corrigir Relógio')
+        _t('sessoes.ajustes-manutencao.btn_dual_boot', '🕒 Corrigir Relógio'),
+        function() {
+            // v1.1.2: par toggle puro. Invalida o cache do
+            // SystemState (o RTC mudou no sistema) e reaplica o
+            // estado, forçando a UI a refletir o novo `local_rtc`.
+            SystemState.invalidar();
+            SystemState.carregar().then(function() {
+                aplicarEstadoToggle(
+                    'dual-boot-time',
+                    'dual-boot-time-remove',
+                    true,
+                    SystemState.localRtc()
+                );
+            });
+        }
+    );
+}
+
+async function executarDualBootTimeRemove() {
+    var confirmado = confirm(_t('sessoes.ajustes-manutencao.dual_boot_confirmar_remove',
+        '⚠️ Reverter o relógio para UTC?\n\n' +
+        'Isso fará o Fedora usar UTC novamente (o padrão do Linux). ' +
+        'O relógio pode saltar temporariamente algumas horas.\n\n' +
+        'Continuar?'));
+    if (!confirmado) return;
+
+    await executarComandoGenerico(
+        'dual-boot-time-remove',
+        'sudo timedatectl set-local-rtc 0 --adjust-system-clock',
+        _t('sessoes.ajustes-manutencao.btn_dual_boot_remove', '↩️ Reverter para UTC'),
+        function() {
+            desmarcarComoExecutado('dual-boot-time').then(function() {
+                SystemState.invalidar();
+                SystemState.carregar().then(function() {
+                    aplicarEstadoToggle(
+                        'dual-boot-time',
+                        'dual-boot-time-remove',
+                        true,
+                        SystemState.localRtc()
+                    );
+                });
+            }).catch(function(e) {
+                console.warn('[toggle] Erro ao limpar estado do dual-boot:', e);
+                aplicarEstadoToggle(
+                    'dual-boot-time',
+                    'dual-boot-time-remove',
+                    true,
+                    SystemState.localRtc()
+                );
+            });
+        }
     );
 }
 
@@ -1534,16 +1564,23 @@ async function restaurarEstadoSessao() {
         btnDualBoot.style.cursor = 'pointer';
     }
 
-    // --- Tuning realtime-setup: único que instala pacote ---
-    // Migrado para o padrão cinza + lixeira (Estado 3).
-    //
-    // Detecção de pré-existência: se o usuário já está no grupo
-    // `realtime`, o botão vira cinza com aviso (FAP não foi a causa).
-    aplicarEstadoInstalavel(
+    // --- Tuning realtime-setup: par toggle puro ---
+    // (v1.1.2) Detecção real via `SystemState.membroDoGrupo('realtime')`.
+    // Reverter oculto até o ativar ser acionado.
+    aplicarEstadoToggle(
         'realtime-setup',
-        null,
-        undefined,
+        'realtime-setup-remove',
+        true,
         SystemState.membroDoGrupo('realtime')
+    );
+
+    // --- Dual-boot: par toggle com detecção real ---
+    // `SystemState.localRtc()` reflete o estado do `timedatectl`.
+    aplicarEstadoToggle(
+        'dual-boot-time',
+        'dual-boot-time-remove',
+        true,
+        SystemState.localRtc()
     );
 
     // --- Toggles de tuning (kernel/sysctl/config) ---
@@ -1624,49 +1661,20 @@ async function restaurarEstadoSessao() {
             } catch (e) {
                 console.error('Erro ao limpar estado ambíguo do toggle ' + t[0] + ':', e);
             }
-        } else {
-            // Nada feito pelo FAP. Verifica se o estado já existe
-            // no sistema (pré-existente).
-            var preExistente = false;
-            if (typeof detectar === 'function') {
-                try { preExistente = !!detectar(); } catch (e) { preExistente = false; }
-            }
-
-            if (preExistente) {
-                // Pré-existente: aplicar fica cinza "✅ já ativo"
-                // com tooltip; reverter fica oculto.
-                _resetarBotao(t[0], t[2]);
-                var btnApl = document.getElementById('btn-' + t[0]);
-                if (btnApl) {
-                    btnApl.textContent = '✅ Já estava ativo';
-                    btnApl.style.backgroundColor = '#4b5563';
-                    btnApl.style.cursor = 'not-allowed';
-                    btnApl.disabled = true;
-                    btnApl.style.opacity = '0.7';
-                    btnApl.title = 'Este ajuste já estava ativo antes do FAP. O FAP não foi a causa — para desfazer, use o terminal.';
-                }
-                var btnRevPre = document.getElementById('btn-' + t[1]);
-                if (btnRevPre) {
-                    btnRevPre.style.display = 'none';
-                }
-            } else {
-                // Estado inicial normal.
-                _resetarBotao(t[0], t[2]);
-                _resetarBotao(t[1], t[3]);
-                var btnReverter = document.getElementById('btn-' + t[1]);
-                if (btnReverter) {
-                    btnReverter.textContent = btnReverter.getAttribute('data-texto-original') || t[3];
-                    btnReverter.style.backgroundColor = '';
-                    btnReverter.style.cursor = 'not-allowed';
-                    btnReverter.disabled = true;
-                    btnReverter.style.opacity = '0.5';
-                    btnReverter.style.display = 'none';
-                }
-                var btnApl2 = document.getElementById('btn-' + t[0]);
-                if (btnApl2) {
-                    btnApl2.title = '';
-                }
-            }
+                                } else {
+            // Nada feito pelo FAP. v1.1.2: origem não importa.
+            // Delega inteiramente ao `aplicarEstadoToggle`, que
+            // passa a função `detectar` adiante. Se detectar()
+            // retornar true, o toggle entra no ramo "installFeito"
+            // (aplicar cinza concluído + reverter habilitado +
+            // tooltip de origem). Se false, fica no estado inicial
+            // (aplicar azul + reverter oculto).
+            //
+            // Antes, este bloco forçava `btnReverter.style.display
+            // = 'none'` para pré-existentes — o que anulava a nova
+            // regra e escondia o revert mesmo com `detectar()`
+            // retornando true.
+            aplicarEstadoToggle(t[0], t[1], true, detectar);
         }
     }
 

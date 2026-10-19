@@ -381,6 +381,14 @@ window._dispararAtualizacaoFAP = _dispararAtualizacaoFAP;
 // ============================================================
 // i18n HELPER LOCAL
 // ============================================================
+//
+// Chaves novas usadas desde a v1.1.2 (mantidas em locales/en.json
+// e locales/es.json; PT-BR é o fallback embutido aqui):
+//   - comum.tooltip_preexistente_app
+//   - comum.tooltip_preexistente_recurso
+//   - comum.confirm_preexistente_prefixo
+//   - comum.ja_estava_ativo
+//   - mitigacao.<id>  (motivo de bloqueio dos 14 itens protegidos)
 function _t(chave, fallback) {
     return (typeof tOr === 'function') ? tOr(chave, fallback) : fallback;
 }
@@ -510,6 +518,14 @@ var SystemState = (function() {
                 initialized: false,
                 extras_prepared: false
             };
+        },
+
+        // RTC em horário local (yes) ou UTC (no). Fase 5.
+        // Usado pelo toggle `dual-boot-time` da sessão 12 para
+        // detectar se o ajuste já foi aplicado — pelo FAP ou por
+        // fora.
+        localRtc: function() {
+            return !!(_dados && _dados.local_rtc);
         },
 
         // Para debug: devolve o objeto cru.
@@ -1321,7 +1337,18 @@ var SESSOES = [
         'idioma-packs': { textoConcluido: '✅ Tradução instalada', textoConcluidoKey: 'sessoes.ajustes-manutencao.texto_concluido_packs' },
         'idioma-hunspell': { textoConcluido: '✅ Corretor instalado', textoConcluidoKey: 'sessoes.ajustes-manutencao.texto_concluido_hunspell' },
         'idioma-localectl': { textoConcluido: '✅ Localidade configurada', textoConcluidoKey: 'sessoes.ajustes-manutencao.texto_concluido_localectl' },
-        'dual-boot-time': { sempreClicavel: true },
+        // Dual-boot: par toggle com detecção real via `SystemState.localRtc()`.
+        // O texto de concluído é usado pelo aplicarEstadoToggle quando
+        // o par está marcado como feito. `dual-boot-time-remove` volta
+        // para UTC.
+        'dual-boot-time': {
+            textoConcluido: '✅ Relógio em horário local',
+            textoConcluidoKey: 'sessoes.ajustes-manutencao.texto_concluido_dual_boot'
+        },
+        'dual-boot-time-remove': {
+            textoConcluido: '✅ Relógio em UTC',
+            textoConcluidoKey: 'sessoes.ajustes-manutencao.texto_concluido_dual_boot_remove'
+        },
         // --- Manutenção do Fedora ---
         'limpeza-sistema': {
             sempreClicavel: true,
@@ -2479,26 +2506,25 @@ function aplicarEstadoToggle(idInstall, idRevert, esconderRevertSeNaoFeito, preE
     var textoOriginalRevert = revertBtn.getAttribute('data-texto-original') || revertBtn.textContent;
     var corOriginalInstall = _corOriginalDoBotao(installBtn);
 
-    // Estado "pré-existente": o sistema diz que já está ativo, mas
-    // o FAP não foi a causa. Instalar vira cinza com aviso; reverter
-    // some (não há o que o FAP desfazer).
-    if (preExistente && !installFeito) {
-        installBtn.textContent = _t('comum.ja_estava_ativo', '✅ Já estava ativo');
-        installBtn.style.backgroundColor = '#4b5563';
-        installBtn.style.cursor = 'not-allowed';
-        installBtn.disabled = true;
-        installBtn.style.opacity = '0.7';
-        installBtn.title = _t('comum.tooltip_preexistente_app',
-                              'Este recurso já estava ativo antes do FAP. O FAP não foi a causa — para desfazer, use o terminal.');
-
-        revertBtn.style.display = 'none';
-        return;
-    }
+    // Estado "pré-existente" (v1.1.2): origem não importa. O FAP
+    // trata como se fosse ele quem configurou — install vira
+    // "concluído", revert fica habilitado, e o aviso de origem
+    // aparece apenas no tooltip (o usuário sabe que já existia).
+    //
+    // Antes, o revert ficava OCULTO (não havia o que desfazer do
+    // ponto de vista do FAP). Agora o revert aparece habilitado:
+    // se o usuário já tinha `bbr` no kernel, ele pode remover pelo
+    // FAP mesmo assim. É a mesma ação que faria no terminal.
+    var efetivamenteFeito = installFeito || preExistente;
 
     // Limpa tooltip de pré-existente se veio de um estado anterior.
     installBtn.title = '';
 
-    if (installFeito) {
+    if (efetivamenteFeito) {
+        if (preExistente && !installFeito) {
+            installBtn.title = _t('comum.tooltip_preexistente_recurso',
+                                  'Este recurso já estava ativo antes do FAP. O FAP não foi o responsável pela configuração, mas está tratando como ativo normalmente.');
+        }
         installBtn.textContent = getTextoAposExecucao(idInstall);
         installBtn.style.backgroundColor = '#4b5563';
         installBtn.style.cursor = 'default';
@@ -3950,7 +3976,20 @@ async function _executarRemocaoApp(idComando) {
 async function _executarDesfazerTudo(idInstall) {
     var info = APPS_REMOVIVEIS[idInstall];
     if (!info || info.modo !== 'desfazerTudo') return;
-    if (!isExecutado(idInstall)) return;
+
+    // Aceita pré-existente (v1.1.2): origem não importa. Se o app
+    // já estava no sistema antes do FAP, o "desfazer tudo" continua
+    // disponível — com aviso extra no confirm.
+    var marcadoPeloFap = isExecutado(idInstall);
+    var instaladoNoSistema = false;
+    try {
+        instaladoNoSistema = appJaInstaladoNoSistema(idInstall);
+    } catch (e) {
+        instaladoNoSistema = false;
+    }
+    if (!marcadoPeloFap && !instaladoNoSistema) return;
+
+    var preExistente = instaladoNoSistema && !marcadoPeloFap;
 
     var nome = info.nome || idInstall;
     var idDesfazer = info.idDesfazer;
@@ -3963,6 +4002,12 @@ async function _executarDesfazerTudo(idInstall) {
                       '• Grupos de usuário e serviços\n\n' +
                       'Ação irreversível.',
                       { nome: nome });
+    if (preExistente) {
+        msg1 = _t('comum.confirm_preexistente_prefixo',
+                  '⚠️ ATENÇÃO!\n\nEste app já estava instalado antes do FAP. ' +
+                  'Removê-lo do sistema pode apagar configurações e ' +
+                  'dados que você criou (perfis, favoritos, saves).\n\n') + msg1;
+    }
     if (!confirm(msg1)) return;
 
     var msg2 = _tVars('comum.desfazer_tudo_confirm2',

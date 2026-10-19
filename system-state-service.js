@@ -293,6 +293,21 @@ async function _detectarKernelParams() {
 // padrão no FAP), mas se por algum motivo não forem, o `test -f`
 // via shell resolve. Usamos shell aqui para homogeneidade.
 
+// ============================================================
+// RTC LOCAL/UTC (dual-boot)
+// ============================================================
+//
+// `timedatectl show -p LocalRTC --value` retorna `yes` ou `no`:
+//   • `yes` → RTC em horário local (Windows padrão)
+//   • `no`  → RTC em UTC (Linux padrão)
+//
+// Usado pelo toggle `dual-boot-time` da sessão 12 para saber se
+// o ajuste já está aplicado — seja pelo FAP, seja por fora.
+async function _detectarLocalRtc() {
+    var out = await _exec('timedatectl show -p LocalRTC --value 2>/dev/null');
+    return out.trim() === 'yes';
+}
+
 async function _detectarArquivosConfig() {
     var home = process.env.HOME || ('/home/' + (process.env.USER || 'user'));
 
@@ -378,7 +393,8 @@ async function scanSystemState() {
                                        _detectarServicos(),
                                        _detectarKernelParams(),
                                        _detectarArquivosConfig(),
-                                       _detectarWaydroid()
+                                       _detectarWaydroid(),
+                                       _detectarLocalRtc()
     ]);
 
     var dados = {
@@ -389,7 +405,8 @@ async function scanSystemState() {
         kernel_params: resultados[5],
         services_active: resultados[4],
         config_files_present: resultados[6],
-        waydroid: resultados[7]
+        waydroid: resultados[7],
+        local_rtc: resultados[8]
     };
 
     _cache = { dados: dados, ts: agora };

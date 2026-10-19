@@ -818,15 +818,26 @@ function aplicarEstadoItemCompleto(idRepoAtivar, idInstall, idRemove, repoJaAtiv
     var installBtn = idInstall    ? document.getElementById('btn-' + idInstall)    : null;
     var removeBtn  = idRemove     ? document.getElementById('btn-' + idRemove)     : null;
 
-    // Repo: FAP ou pré-existente?
+    // ============================================================
+    // OPÇÃO C UNIFICADA (v1.1.2): origem não importa
+    // ============================================================
+    //
+    // Pré-existente é tratado como "feito", igual a instalado pelo
+    // FAP. Os avisos de origem ficam apenas nos tooltips — o
+    // comportamento funcional é idêntico (revert habilitado,
+    // progressão liberada).
+    //
+    // Antes, `repoPreExistente` e `pacotePreExistente` eram estados
+    // visuais separados (cinza sem ação). Agora colapsam em
+    // "feito", e a única diferença observável é o tooltip
+    // explicando que o FAP não foi o responsável.
+
     var repoFeitoFap = idRepoAtivar ? isExecutado(idRepoAtivar) : false;
-    var repoFeito = repoFeitoFap || !!repoJaAtivoNoSistema;
     var repoPreExistente = !!repoJaAtivoNoSistema && !repoFeitoFap;
+    var repoFeito = repoFeitoFap || repoPreExistente;
 
     var prerequisitoOk = idRepoAtivar ? repoFeito : true;
 
-    // Pacote: FAP ou pré-existente? A detecção usa o registro
-    // `APPS_REMOVIVEIS` + `SystemState` (Bloco G).
     var pacoteFeitoFap = idInstall ? isExecutado(idInstall) : false;
     var pacotePreExistente = false;
     if (idInstall && !pacoteFeitoFap) {
@@ -836,25 +847,22 @@ function aplicarEstadoItemCompleto(idRepoAtivar, idInstall, idRemove, repoJaAtiv
             pacotePreExistente = false;
         }
     }
+    var pacoteFeito = pacoteFeitoFap || pacotePreExistente;
 
     // --- Botão "Ativar repositório" ---
     if (repoBtn) {
         var textoRepoOriginal = repoBtn.getAttribute('data-texto-original') || repoBtn.textContent;
-        if (repoFeitoFap) {
+        if (repoFeito) {
             repoBtn.textContent = _t('sessoes.dispositivos-perifericos.btn_repo_ativado',
                 '✅ Repositório ativado');
             repoBtn.style.backgroundColor = '#4b5563';
             repoBtn.style.cursor = 'default';
             repoBtn.disabled = true;
             repoBtn.style.opacity = '1';
-            repoBtn.title = '';
-        } else if (repoPreExistente) {
-            repoBtn.textContent = '✅ Já estava ativo';
-            repoBtn.style.backgroundColor = '#4b5563';
-            repoBtn.style.cursor = 'not-allowed';
-            repoBtn.disabled = true;
-            repoBtn.style.opacity = '0.7';
-            repoBtn.title = 'Este repositório já estava ativo antes do FAP. O FAP não foi a causa — para desativar, use o terminal.';
+            repoBtn.title = repoPreExistente
+                ? _t('comum.tooltip_preexistente_recurso',
+                    'Este recurso já estava ativo antes do FAP. O FAP não foi o responsável pela configuração, mas está tratando como ativo normalmente.')
+                : '';
         } else {
             repoBtn.textContent = textoRepoOriginal;
             repoBtn.style.backgroundColor = '';
@@ -868,21 +876,17 @@ function aplicarEstadoItemCompleto(idRepoAtivar, idInstall, idRemove, repoJaAtiv
     // --- Botão "Instalar pacote" ---
     if (installBtn) {
         var textoInstallOriginal = installBtn.getAttribute('data-texto-original') || installBtn.textContent;
-        if (pacoteFeitoFap) {
+        if (pacoteFeito) {
             installBtn.textContent = getTextoAposExecucao(idInstall) ||
                 _t('sessoes.dispositivos-perifericos.btn_pacote_instalado', '✅ Pacote instalado');
             installBtn.style.backgroundColor = '#4b5563';
             installBtn.style.cursor = 'default';
             installBtn.disabled = true;
             installBtn.style.opacity = '1';
-            installBtn.title = '';
-        } else if (pacotePreExistente) {
-            installBtn.textContent = '✅ Já instalado (antes do FAP)';
-            installBtn.style.backgroundColor = '#4b5563';
-            installBtn.style.cursor = 'not-allowed';
-            installBtn.disabled = true;
-            installBtn.style.opacity = '0.7';
-            installBtn.title = 'Este pacote já estava instalado antes do FAP. O FAP não foi a causa — para remover, use o terminal.';
+            installBtn.title = pacotePreExistente
+                ? _t('comum.tooltip_preexistente_recurso',
+                    'Este recurso já estava ativo antes do FAP. O FAP não foi o responsável pela configuração, mas está tratando como ativo normalmente.')
+                : '';
         } else if (prerequisitoOk) {
             installBtn.textContent = textoInstallOriginal;
             installBtn.style.backgroundColor = '';
@@ -901,12 +905,10 @@ function aplicarEstadoItemCompleto(idRepoAtivar, idInstall, idRemove, repoJaAtiv
     }
 
     // --- Botão "Reverter tudo" ---
-    // Só habilita se o FAP fez algo (repo ou pacote). Repo ou
-    // pacote pré-existente sozinho NÃO habilita (FAP não foi a
-    // causa).
+    // Habilita se ALGO foi feito (repo ou pacote, FAP ou pré-existente).
     if (removeBtn) {
         var textoRemoveOriginal = removeBtn.getAttribute('data-texto-original') || removeBtn.textContent;
-        var podeReverter = repoFeitoFap || pacoteFeitoFap;
+        var podeReverter = repoFeito || pacoteFeito;
 
         removeBtn.textContent = textoRemoveOriginal;
         if (podeReverter) {
@@ -914,17 +916,16 @@ function aplicarEstadoItemCompleto(idRepoAtivar, idInstall, idRemove, repoJaAtiv
             removeBtn.style.cursor = 'pointer';
             removeBtn.disabled = false;
             removeBtn.style.opacity = '1';
-            removeBtn.title = '';
+            removeBtn.title = (repoPreExistente || pacotePreExistente)
+                ? _t('comum.tooltip_preexistente_recurso',
+                    'Este recurso já estava ativo antes do FAP. O FAP não foi o responsável pela configuração, mas está tratando como ativo normalmente.')
+                : '';
         } else {
             removeBtn.style.backgroundColor = '';
             removeBtn.style.cursor = 'not-allowed';
             removeBtn.disabled = true;
             removeBtn.style.opacity = '0.5';
-            if (repoPreExistente || pacotePreExistente) {
-                removeBtn.title = 'O FAP não foi a causa (repositório ou pacote já existia antes). Para desfazer, use o terminal.';
-            } else {
-                removeBtn.title = '';
-            }
+            removeBtn.title = '';
         }
     }
 }
