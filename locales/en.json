@@ -56,6 +56,7 @@
         "navegacao_bloqueada": "Wait for this session's commands to finish before switching sessions.",
         "ja_estava_ativo": "✅ Already active",
         "tooltip_preexistente_app": "This app was already installed before FAP. The trash icon removes it from the system, but FAP was not responsible for the installation.",
+        "tooltip_preexistente_recurso": "This resource was already active before FAP. FAP was not responsible for the configuration, but is treating it as active normally.",
         "confirm_preexistente_prefixo": "⚠️ WARNING!\n\nThis app was already installed before FAP. Removing it from the system may delete settings and data you created (profiles, favorites, saves).\n\n"
     },
 
@@ -951,8 +952,11 @@
             "dual_boot_desc": "Makes Fedora use the hardware clock in local time (the same way Windows does by default), fixing the wrong time when switching between systems.",
             "dual_boot_aviso": "💡 By default, Windows stores the hardware clock in <strong>local time</strong>, while Linux (Fedora) stores it in <strong>UTC</strong>. This button configures Fedora to use <strong>local time</strong>, matching Windows' behavior — so you don't need to change anything on Windows.",
             "btn_dual_boot": "🕒 Fix Clock",
+            "btn_dual_boot_remove": "↩️ Revert to UTC",
             "dual_boot_confirmar": "⚠️ Adjust the clock to local time?\n\nThis will make Fedora use local time (like Windows). The change may cause a temporary jump of a few hours in the clock.\n\nContinue?",
-            "texto_concluido_dual_boot": "✅ Clock fixed",
+            "dual_boot_confirmar_remove": "⚠️ Revert the clock to UTC?\n\nThis makes Fedora use UTC again (the default on Linux). The clock may temporarily jump by a few hours.\n\nContinue?",
+            "texto_concluido_dual_boot": "✅ Clock in local time",
+            "texto_concluido_dual_boot_remove": "✅ Clock reverted to UTC",
 
             "manutencao_fedora_titulo": "🧰 Fedora Maintenance",
             "manutencao_fedora_desc": "Periodic tasks that keep the system clean and controllable: cache cleanup, kernel management and GRUB settings.",

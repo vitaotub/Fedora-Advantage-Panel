@@ -56,6 +56,7 @@
         "navegacao_bloqueada": "Espera a que terminen los comandos de esta sesión antes de cambiar de sesión.",
         "ja_estava_ativo": "✅ Ya estaba activo",
         "tooltip_preexistente_app": "Esta app ya estaba instalada antes de FAP. La papelera la elimina del sistema, pero FAP no fue responsable de la instalación.",
+        "tooltip_preexistente_recurso": "Este recurso ya estaba activo antes de FAP. FAP no fue responsable de la configuración, pero lo está tratando como activo normalmente.",
         "confirm_preexistente_prefixo": "⚠️ ¡ATENCIÓN!\n\nEsta app ya estaba instalada antes de FAP. Eliminarla del sistema puede borrar configuraciones y datos que creaste (perfiles, favoritos, partidas).\n\n"
     },
 
@@ -951,8 +952,11 @@
             "dual_boot_desc": "Hace que Fedora use el reloj del hardware en horario local (igual que Windows hace por defecto), resolviendo el problema de horario incorrecto al alternar entre los sistemas.",
             "dual_boot_aviso": "💡 Por defecto, Windows guarda el reloj del hardware en <strong>horario local</strong>, mientras que Linux (Fedora) lo guarda en <strong>UTC</strong>. Este botón configura Fedora para usar <strong>horario local</strong>, alineando el comportamiento con el de Windows — así no necesitas cambiar nada en Windows.",
             "btn_dual_boot": "🕒 Corregir Reloj",
+            "btn_dual_boot_remove": "↩️ Revertir a UTC",
             "dual_boot_confirmar": "⚠️ ¿Ajustar el reloj a la hora local?\n\nEsto hará que Fedora use la hora local (como Windows). El cambio puede causar un salto temporal de algunas horas en el reloj.\n\n¿Continuar?",
-            "texto_concluido_dual_boot": "✅ Reloj corregido",
+            "dual_boot_confirmar_remove": "⚠️ ¿Revertir el reloj a UTC?\n\nEsto hace que Fedora use UTC de nuevo (el predeterminado en Linux). El reloj puede saltar temporalmente algunas horas.\n\n¿Continuar?",
+            "texto_concluido_dual_boot": "✅ Reloj en hora local",
+            "texto_concluido_dual_boot_remove": "✅ Reloj revertido a UTC",
 
             "manutencao_fedora_titulo": "🧰 Mantenimiento de Fedora",
             "manutencao_fedora_desc": "Tareas periódicas que mantienen el sistema limpio y controlable: limpieza de caché, gestión de kernels y ajustes de GRUB.",
