@@ -1,49 +1,141 @@
 <!--
 ============================================================
-MOLDE PARA UMA NOVA SESSÃO DO FAP
+MOLDE PARA UMA NOVA SESSÃO DO FAP (v1.2)
 ============================================================
 
 Como usar:
 1. Copie este arquivo para nome-da-sessao.html (sem número).
-   Os IDs de sessão são semânticos desde a v1.0.0-09282026 —
-   a ordem de exibição vem da posição no array SESSOES em
-   script.js, não do nome do arquivo. Ex.: emuladores.html.
-2. Troque os placeholders entre <> pelo conteúdo real.
-3. Adicione uma entrada no array SESSOES, em script.js, com o
-   mesmo id do arquivo (sem o .html) e os data-comando dos seus
-   botões. Adicione também o emoji em ICONES_SESSOES (guiado.html).
-   Não precisa editar mais nada — nem index.html, nem server.js.
-4. Apague este comentário e os comentários "MOLDE:" abaixo.
+2. Troque os placeholders <...> pelo conteúdo real.
+3. Registre a sessão nos 7 lugares listados em "Checklist de
+   integração" abaixo. Sem isso, a sessão não aparece na sidebar,
+   não entra no card de status, não tem badge de origem, etc.
+4. Apague este comentário e os comentários "MOLDE:".
 
-Este molde traz UM botão simples (instalar). Pra ver outros
-padrões prontos:
-- Botão sempre clicável (ação repetível, nunca desabilita):
-  veja 'atualizacao-inicial' em primeiros-passos.html e a flag
-  sempreClicavel em script.js.
-- Flatpak com detecção de remoção externa: adicione
-  `flatpakId: 'org.exemplo.App'` no registro de script.js e o
-  botão ganha o ícone de lixeira automaticamente. Veja
-  'instalar-vlc' em aplicativos.html.
-- Vários botões instalar em grade, cada um independente:
-  veja gaming.html (bloco "Launchers").
-- Botão com par "aplicar/reverter" (dois botões independentes,
-  ambos sempre clicáveis): veja 'amdgpu-overclock' e
-  'amdgpu-overclock-remove' em hardware.html.
-- Dropdown + botão "aplicar valor selecionado": veja o ajuste de
-  DNF em ajustes-manutencao.html.
-- Fluxo mais elaborado (dropdown populado dinamicamente, duas
-  confirmações, bloqueio condicional): veja o gerenciamento de
-  kernels em ajustes-manutencao.html.
-- Detecção de hardware via endpoint (estado real via rpm -q, não
-  progresso do .progresso.json): veja dispositivos-perifericos.html.
+---
 
-IMPORTANTE — o FAP não tem botões de "desfazer" genéricos. Se
-uma ação tiver um "desfazer" com sentido, modele como um
-segundo botão independente, também sempre clicável (ver o par
-grub-aplicar-recomendado / grub-restaurar-padrao em
-ajustes-manutencao.html e o par amdgpu-overclock em hardware.html).
+## Estrutura de uma sessão na v1.2
+
+Sessão = <details class="acordeao"> (blocos temáticos) contendo
+<div class="bloco-comando"> (cada app/ação). Cada app tem:
+  • Título (h3) + descrição (p) — use data-i18n para traduzir.
+  • Botão de instalar (azul) dentro de .btn-flatpak-wrapper.
+  • Botão de abrir (verde, oculto até instalar) — OPCIONAL, só
+    pra apps GUI. A badge de origem é injetada automaticamente
+    pelo script.js DENTRO do .btn-flatpak-wrapper.
+  • Progress container com IDs únicos.
+  • Log compartilhado no fim da sessão (1 por sessão).
+
+---
+
+## Padrões prontos (copie o que precisar)
+
+Para uma sessão nova, você quase sempre só precisa de UM destes
+três padrões de botão:
+
+### Padrão A — App instalável com botão "Abrir"
+(Flatpak com GUI, DNF com GUI, etc.)
+Use os helpers `instalarFlatpak` ou `instalarDnf` + `abrirX`.
+A badge de origem aparece se o idComando estiver em
+`_MAPA_ORIGEM` (script.js). A lixeira aparece sozinha.
+Veja o exemplo completo no HTML abaixo.
+
+### Padrão B — Pacote de sistema (sem "Abrir")
+(Bibliotecas, drivers, pacotes sem GUI.)
+Use `executarComandoGenerico(id, comando, nomeAcao)` direto.
+No `restaurarEstadoSessao`, chame `aplicarEstadoInstalavel(id, null)`
+— botão cinza "✅ instalado" + lixeira.
+
+### Padrão C — Par install/revert (toggle)
+(Ajustes de kernel, sysctl, configs de sistema.)
+Use `executarComandoGenerico` nos dois lados.
+No `restaurarEstadoSessao`, chame `aplicarEstadoToggle(idInstall,
+idRevert, esconderRevertSeNaoFeito, preExistente?)`.
+
+---
+
+## Checklist de integração — 7 lugares
+
+Ao criar uma sessão nova, registre-a em TODOS estes pontos:
+
+1. **script.js → SESSOES** — adicione um objeto com `id`,
+   `nome`, `nomeKey` e `comandos` (cada idComando com
+   `textoConcluido` + `textoConcluidoKey`). A ordem no array
+   define a ordem de exibição e o número "Sessão N".
+
+2. **script.js → _MAPA_ORIGEM** — para cada app que instala
+   um pacote de origem conhecida, mapeie idComando → origem
+   (`flathub`, `fedora`, `rpmfusion`, `fabricante`, `download`
+   ou `comunidade`). Sem isso, o app não ganha badge de origem
+   (funciona igual, mas sem selo).
+
+3. **guiado.html → ICONES_SESSOES** — emoji de fallback.
+   Ex.: `'nome-da-sessao': '📦'`.
+
+4. **guiado.html → SVG_ICONES_SESSOES** — SVG monocromático
+   (Lucide/Feather, stroke 2, sem fill, viewBox 24×24).
+   Se não adicionar, cai no emoji do item anterior.
+
+5. **iniciar_fap.sh → verificar_arquivos → local sessoes=(...)**
+   — adicione `"nome-da-sessao.html"` para que o script falhe
+   cedo se o arquivo estiver ausente.
+
+6. **install.sh → SESSAO_ARQUIVOS** — mesma lista, para o
+   install.sh copiar o arquivo.
+
+7. **locales/en.json** e **locales/es.json** — traduções sob
+   `sessoes.<id>.*`. PT-BR é o fallback (o próprio HTML), então
+   EN/ES precisam das chaves. Sem elas, a sessão fica em PT-BR
+   mesmo em outros idiomas.
+
+Se algum desses 7 ficar de fora:
+  • Sem 1 → sessão invisível na sidebar, não é carregada.
+  • Sem 2 → sem badge de origem (não quebra nada).
+  • Sem 3/4 → sem ícone na sidebar (cai no genérico '•').
+  • Sem 5 → iniciar_fap.sh emite warning, mas funciona.
+  • Sem 6 → install.sh não copia o arquivo (quebra em produção).
+  • Sem 7 → sessão em PT-BR em EN/ES.
+
+---
+
+## Recursos que funcionam automaticamente
+
+Se você seguir os 7 passos e usar os padrões abaixo, ganha de
+graça:
+
+  ✅ Busca global — o índice em background varre [data-comando]
+     automaticamente. Não precisa registrar nada extra.
+  ✅ Log dock fixo — guiado.html move .terminal-log para o
+     dock e cuida do toggle/recolhimento.
+  ✅ Detecção de pré-existência — aplicarEstadoInstalavel e
+     aplicarEstadoToggle consultam /system-state sozinhas.
+  ✅ Badge de origem — injetado via _renderizarBadgeOrigem se
+     o idComando estiver em _MAPA_ORIGEM.
+  ✅ Lixeira — aparece via registrarAppRemovivel.
+  ✅ Bloqueios — executarComandoGenerico já cuida dos três
+     (sessão, entre sessões, navegação).
+  ✅ i18n — data-i18n e data-i18n-html são aplicados pelo
+     i18n.js automaticamente.
+  ✅ Tema claro/escuro — herdado de style.css.
+
+---
+
+## Observação sobre ítens de alto risco
+
+Se a sessão instalar algo que possa derrubar serviços do sistema
+(drivers de GPU, drivers de rede, codecs críticos, CUPS, Samba,
+virtualização), marque o registro com:
+
+  permitirRemocaoPreExistente: false,
+  motivoBloqueio: 'Texto PT-BR explicando o risco.\n\n  <comando shell de reversão manual>'
+
+Isso desabilita a lixeira quando o item já existia antes do FAP
+— a remoção só fica disponível se o FAP instalou. Adicione também
+uma entrada em _MAPA_MOTIVO_BLOQUEIO (script.js) apontando para a
+chave `mitigacao.<id>` dos locales.
+
 ============================================================
 -->
+
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -53,73 +145,186 @@ ajustes-manutencao.html e o par amdgpu-overclock em hardware.html).
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<!-- ===== CONTEÚDO DA SESSÃO ===== -->
-<!--
-O id="sessao-nome-da-sessao" deve ser "sessao-" + o mesmo id que
-você usar no array SESSOES em script.js (sem número — os IDs são
-semânticos). O texto dentro de .sessao-label ("Sessão N") é
-preenchido automaticamente — não precisa escrever o número certo
-aqui.
--->
 <div class="sessao-container" id="sessao-nome-da-sessao">
 <div class="sessao-titulo">
 <span class="sessao-label">Sessão</span>
-<!-- MOLDE: emoji + título, ex.: "🕹️ Emuladores" -->
+<!-- MOLDE: emoji + título. "Sessão N" é preenchido por numerarSessao() -->
+<span data-i18n="sessoes.nome-da-sessao.titulo">📦 Título da Sessão</span>
 </div>
+
+<!-- Acórdeão principal — descrição da sessão (2-3 frases). -->
+<div class="acordeao-principal">
+<span data-i18n="sessoes.nome-da-sessao.descricao">Descrição da sessão em 2-3 frases...</span>
+</div>
+
+<!-- ============================================================
+BLOCO 1 — Padrão A: app instalável com botão "Abrir"
+============================================================ -->
+<details class="acordeao">
+<summary data-i18n="sessoes.nome-da-sessao.bloco1_titulo">📂 Bloco 1</summary>
+<div class="acordeao-conteudo">
+
+<p data-i18n="sessoes.nome-da-sessao.bloco1_desc">Descrição do bloco.</p>
 
 <div class="bloco-comando">
 <div class="comando-info">
-<h3><!-- MOLDE: nome curto do que este botão faz --></h3>
-<p><!-- MOLDE: explicação de uma ou duas frases --></p>
-
-<div class="grupo-botoes">
-<!--
-data-comando é o ID que conecta este botão ao
-registro em script.js (SESSOES) e ao progresso
-salvo no servidor. Use um ID único no projeto
-inteiro, em minúsculas com hífen.
--->
-<button class="btn-executar" onclick="executarMeuComando()" data-comando="meu-comando-novo" id="btn-meu-comando-novo">
-<!-- MOLDE: texto do botão, ex.: "🕹️ Instalar RetroArch" -->
+<h3 data-i18n="sessoes.nome-da-sessao.item1_titulo">Nome do App</h3>
+<p data-i18n="sessoes.nome-da-sessao.item1_desc">Descrição do app em 1-2 frases.</p>
+<div class="botoes-flex">
+<div class="btn-flatpak-wrapper">
+<button class="btn-executar"
+onclick="instalarFlatpak('instalar-exemplo')"
+data-comando="instalar-exemplo"
+data-logbox="log-sessao-nome-da-sessao"
+id="btn-instalar-exemplo"
+data-i18n="sessoes.nome-da-sessao.btn_exemplo">
+📦 Instalar Exemplo
+</button>
+</div>
+<button class="btn-executar verde"
+style="display: none;"
+onclick="abrirExemplo()"
+data-comando="abrir-exemplo"
+data-logbox="log-sessao-nome-da-sessao"
+id="btn-abrir-exemplo"
+data-i18n="sessoes.nome-da-sessao.btn_abrir_exemplo">
+🚀 Abrir Exemplo
 </button>
 </div>
 </div>
-
-<div class="progress-container" id="progress-meu-comando-novo">
-<div class="progress-bar"><div class="progress-fill" id="progress-fill-meu-comando-novo"></div></div>
-<div class="progress-text"><span class="status" id="progress-status-meu-comando-novo">⏳ Iniciando...</span><span class="percentage" id="progress-percent-meu-comando-novo">0%</span></div>
-</div>
-<div class="terminal-log" id="log-meu-comando-novo"></div>
+<div class="progress-container" id="progress-instalar-exemplo">
+<div class="progress-bar"><div class="progress-fill" id="progress-fill-instalar-exemplo"></div></div>
+<div class="progress-text"><span class="status" id="progress-status-instalar-exemplo">⏳ Iniciando...</span><span class="percentage" id="progress-percent-instalar-exemplo">0%</span></div>
 </div>
 </div>
 
-<!-- ===== JAVASCRIPT ESPECÍFICO DA SESSÃO ===== -->
+</div>
+</details>
+
+<!-- Log único da sessão. O guiado.html move para o dock fixo. -->
+<div class="terminal-log sessao-compartilhado" id="log-sessao-nome-da-sessao"></div>
+</div>
+
 <script>
-/**
-* MOLDE: troque pelo comando real (dnf, flatpak, script, o que for).
-* executarComandoGenerico já cuida do texto "instalando...", da
-* barra de progresso, do log em tempo real (SSE) e de marcar o
-* botão como concluído ao final.
-*/
-async function executarMeuComando() {
-const comando = 'flatpak install flathub org.exemplo.Programa -y';
-await executarComandoGenerico('meu-comando-novo', comando, 'Instalando <!-- MOLDE: nome do programa -->');
+// ============================================================
+// SESSÃO: NOME DA SESSÃO
+// ============================================================
+
+function _t(chave, fallback) {
+    return (typeof tOr === 'function') ? tOr(chave, fallback) : fallback;
+}
+function _tVars(chave, fallback, vars) {
+    return (typeof tOr === 'function') ? tOr(chave, fallback, vars) : fallback;
 }
 
-// ===== RESTAURAR ESTADO DA SESSÃO =====
-// Chamada automaticamente pelo Modo Guiado assim que esta sessão é
-// carregada — não precisa ser adicionada a nenhum outro lugar.
+// ------------------------------------------------------------
+// Registry Flatpak
+// ------------------------------------------------------------
+// Estrutura: { idComando: { appId, fallback } }
+// "fallback" é o texto do botão se a tradução falhar.
+var APPS_FLATPAK = {
+    'instalar-exemplo': { appId: 'org.exemplo.App', fallback: '📦 Instalar Exemplo' }
+};
+
+// ------------------------------------------------------------
+// Registry DNF
+// ------------------------------------------------------------
+// var APPS_DNF = {
+//     'instalar-exemplo': { pacotes: ['exemplo'], fallback: '📦 Instalar Exemplo' }
+// };
+
+// ------------------------------------------------------------
+// Registro de apps removíveis (habilita a lixeira)
+// ------------------------------------------------------------
+// Só registre apps que instalem PACOTES no sistema. Para toggles
+// de kernel/sysctl/GRUB, NÃO registre — eles usam aplicarEstadoToggle
+// e não têm lixeira.
+registrarAppRemovivel('instalar-exemplo', {
+    tipo: 'flatpak',
+    appId: 'org.exemplo.App',
+    nome: 'App Exemplo'
+    // Opcional para itens de alto risco:
+    // permitirRemocaoPreExistente: false,
+    // motivoBloqueio: 'Texto explicando como reverter manualmente.\n\n  comando exato'
+});
+
+// ------------------------------------------------------------
+// Instalador
+// ------------------------------------------------------------
+// executarComandoGenerico() já cuida de:
+//   • barra de progresso
+//   • log em tempo real (SSE)
+//   • bloqueio de sessão + entre sessões + navegação
+//   • marcação em .progresso.json
+//   • estado final do botão
+//
+// Para Flatpak: passa pela fila global automaticamente (o script.js
+// detecta "flatpak install" no comando).
+async function instalarFlatpak(idComando) {
+    var info = APPS_FLATPAK[idComando];
+    if (!info) {
+        console.error('[sessao] App Flatpak não mapeado:', idComando);
+        return;
+    }
+    var comando = 'flatpak install flathub ' + info.appId + ' -y';
+    var nomeAcao = _t('sessoes.nome-da-sessao.btn_exemplo', info.fallback);
+
+    await executarComandoGenerico(idComando, comando, nomeAcao, function() {
+        aplicarEstadoInstalavel(idComando, 'abrir-exemplo');
+    });
+}
+
+// ------------------------------------------------------------
+// Abrir app
+// ------------------------------------------------------------
+// abrirFerramentaExterna() usa setsid -f + redirect para /tmp/fap-open-*.log.
+// O app ganha sessão própria e sobrevive ao fechamento do FAP.
+function abrirExemplo() {
+    abrirFerramentaExterna('gtk-launch org.exemplo.App', 'instalar-exemplo', 'App Exemplo');
+}
+
+// ------------------------------------------------------------
+// Restaurar estado ao carregar a sessão
+// ------------------------------------------------------------
+// Chamada automaticamente por guiado.html assim que a sessão é
+// injetada no DOM. É o ÚNICO ponto onde você declara o estado
+// visual inicial dos botões.
 function restaurarEstadoSessao() {
-if (isExecutado('meu-comando-novo')) {
-const btn = document.getElementById('btn-meu-comando-novo');
-if (btn) {
-btn.textContent = getTextoAposExecucao('meu-comando-novo');
-btn.style.backgroundColor = '#4b5563';
-btn.style.cursor = 'default';
-btn.disabled = true;
+    // Padrão A — app com "Abrir": a badge de origem, o swap
+    // Instalar↔Abrir, a lixeira e a detecção de pré-existência
+    // são tratados por aplicarEstadoInstalavel.
+    aplicarEstadoInstalavel('instalar-exemplo', 'abrir-exemplo');
+
+    // Padrão B — pacote de sistema (sem "Abrir"):
+    // aplicarEstadoInstalavel('instalar-exemplo', null);
+
+    // Padrão C — toggle (install/revert sem lixeira):
+    // aplicarEstadoToggle('meu-toggle-on', 'meu-toggle-off', true);
+    //
+    // Com detecção real (grupo, kernel param, arquivo de config):
+    // aplicarEstadoToggle(
+    //     'meu-toggle-on', 'meu-toggle-off', true,
+    //     function() { return SystemState.membroDoGrupo('meu-grupo'); }
+    // );
 }
-}
-}
+
+// ------------------------------------------------------------
+// Inicialização
+// ------------------------------------------------------------
+(function() {
+    // Guarda o texto original de cada botão ANTES de qualquer
+    // alteração. O script.js usa esse texto ao resetar o estado
+    // (por exemplo, depois de uma remoção).
+    document.querySelectorAll('.btn-executar').forEach(function(btn) {
+        if (!btn.hasAttribute('data-texto-original')) {
+            btn.setAttribute('data-texto-original', btn.textContent);
+        }
+    });
+
+    restaurarEstadoSessao();
+
+    console.log('📦 Componente nome-da-sessao carregado!');
+})();
 </script>
 </body>
 </html>
