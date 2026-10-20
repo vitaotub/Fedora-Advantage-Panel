@@ -363,6 +363,8 @@
             "texto_concluido_thunderbird": "✅ Thunderbird instalado",
             "btn_okular": "📚 Okular",
             "texto_concluido_okular": "✅ Okular instalado",
+            "btn_kate": "📝 Kate",
+            "texto_concluido_kate": "✅ Kate instalado",
             "btn_joplin": "📝 Joplin",
             "texto_concluido_joplin": "✅ Joplin instalado",
             "btn_foliate": "📖 Foliate",
