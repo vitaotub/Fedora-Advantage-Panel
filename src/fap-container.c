@@ -22,8 +22,10 @@
 #define FAP_VERSION "unknown"
 #endif
 
-#define WINDOW_WIDTH 980
-#define WINDOW_HEIGHT 880
+#define WINDOW_WIDTH 1280
+#define WINDOW_HEIGHT 900
+#define WINDOW_MIN_WIDTH 640
+#define WINDOW_MIN_HEIGHT 480
 #define APP_NAME "Fedora Advantage Panel"
 #define DEFAULT_URL "http://localhost:3000"
 
@@ -387,6 +389,8 @@ static gboolean on_permission_request(WebKitWebView *web_view,
                                                                                                             char *app_name = APP_NAME;
                                                                                                             int window_width = WINDOW_WIDTH;
                                                                                                             int window_height = WINDOW_HEIGHT;
+                                                                                                            int min_width = WINDOW_MIN_WIDTH;
+                                                                                                            int min_height = WINDOW_MIN_HEIGHT;
                                                                                                             int debug_mode = 0;
 
                                                                                                             for (int i = 1; i < argc; i++) {
@@ -400,6 +404,10 @@ static gboolean on_permission_request(WebKitWebView *web_view,
                                                                                                                     window_width = atoi(argv[++i]);
                                                                                                                 } else if (strcmp(argv[i], "--height") == 0 && i + 1 < argc) {
                                                                                                                     window_height = atoi(argv[++i]);
+                                                                                                                } else if (strcmp(argv[i], "--min-width") == 0 && i + 1 < argc) {
+                                                                                                                    min_width = atoi(argv[++i]);
+                                                                                                                } else if (strcmp(argv[i], "--min-height") == 0 && i + 1 < argc) {
+                                                                                                                    min_height = atoi(argv[++i]);
                                                                                                                 } else if (strcmp(argv[i], "--debug") == 0) {
                                                                                                                     debug_mode = 1;
                                                                                                                 } else if (strcmp(argv[i], "--help") == 0 || strcmp(argv[i], "-h") == 0) {
@@ -409,8 +417,10 @@ static gboolean on_permission_request(WebKitWebView *web_view,
                                                                                                                     printf(" --url URL URL do servidor (padrão: http://localhost:3000)\n");
                                                                                                                     printf(" --icon CAMINHO Caminho do ícone da aplicação\n");
                                                                                                                     printf(" --name NOME Nome da aplicação (padrão: Fedora Advantage Panel)\n");
-                                                                                                                    printf(" --width N Largura da janela (padrão: 980)\n");
-                                                                                                                    printf(" --height N Altura da janela (padrão: 880)\n");
+                                                                                                                    printf(" --width N Largura da janela (padrão: 1280)\n");
+                                                                                                                    printf(" --height N Altura da janela (padrão: 900)\n");
+                                                                                                                    printf(" --min-width N Largura mínima (padrão: 640)\n");
+                                                                                                                    printf(" --min-height N Altura mínima (padrão: 480)\n");
                                                                                                                     printf(" --debug Modo debug\n");
                                                                                                                     printf(" --help, -h Mostra esta ajuda\n");
                                                                                                                     printf("\nAtalhos:\n");
@@ -461,6 +471,14 @@ static gboolean on_permission_request(WebKitWebView *web_view,
                                                                                                             gtk_window_set_default_size(GTK_WINDOW(data.window), window_width, window_height);
                                                                                                             gtk_window_set_position(GTK_WINDOW(data.window), GTK_WIN_POS_CENTER);
                                                                                                             gtk_window_set_resizable(GTK_WINDOW(data.window), TRUE);
+
+                                                                                                            // Tamanho mínimo: abaixo disso o layout quebra (sidebar + conteúdo + log dock
+                                                                                                            // não caberiam lado a lado). A janela continua redimensionável — só não desce
+                                                                                                            // abaixo dos limites.
+                                                                                                            GdkGeometry min_hints;
+                                                                                                            min_hints.min_width = min_width;
+                                                                                                            min_hints.min_height = min_height;
+                                                                                                            gtk_window_set_geometry_hints(GTK_WINDOW(data.window), NULL, &min_hints, GDK_HINT_MIN_SIZE);
 
                                                                                                             // Reforça o WM_CLASS (resname, resclass). O resname aqui é redundante
                                                                                                             // com o g_set_prgname acima, mas garante em qualquer versão do GTK.
@@ -570,7 +588,7 @@ static gboolean on_permission_request(WebKitWebView *web_view,
                                                                                                             g_print(" 🐧 Fedora Advantage Panel - Container WebKitGTK %s\n", FAP_VERSION);
                                                                                                             g_print("============================================================\n");
                                                                                                             g_print(" 🌐 URL: %s\n", url);
-                                                                                                            g_print(" 📐 Janela: %dx%d\n", window_width, window_height);
+                                                                                                            g_print(" 📐 Janela: %dx%d (mín: %dx%d)\n", window_width, window_height, min_width, min_height);
                                                                                                             g_print(" 🐛 Debug: %s\n", debug_mode ? "Ativado" : "Desativado");
                                                                                                             g_print(" 🚫 Permissões: negadas automaticamente (localização, câmera, microfone, notificações, clipboard)\n");
                                                                                                             g_print("============================================================\n");
