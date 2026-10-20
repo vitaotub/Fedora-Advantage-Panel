@@ -29,7 +29,7 @@ BLOCO 1 — PRODUTIVIDADE E ESCRITÓRIO
 <div class="grid-launchers">
 <div class="launcher-item">
 <div class="btn-flatpak-wrapper">
-<button class="btn-executar" onclick="instalarUrlRpm('instalar-onlyoffice')" data-comando="instalar-onlyoffice" data-logbox="log-sessao-aplicativos" id="btn-instalar-onlyoffice" data-i18n="sessoes.aplicativos.btn_onlyoffice">📝 OnlyOffice</button>
+<button class="btn-executar" onclick="instalarFlatpak('instalar-onlyoffice')" data-comando="instalar-onlyoffice" data-logbox="log-sessao-aplicativos" id="btn-instalar-onlyoffice" data-i18n="sessoes.aplicativos.btn_onlyoffice">📝 OnlyOffice</button>
 </div>
 </div>
 <div class="launcher-item">
@@ -49,6 +49,11 @@ BLOCO 1 — PRODUTIVIDADE E ESCRITÓRIO
 </div>
 <div class="launcher-item">
 <div class="btn-flatpak-wrapper">
+<button class="btn-executar" onclick="instalarDnf('instalar-kate')" data-comando="instalar-kate" data-logbox="log-sessao-aplicativos" id="btn-instalar-kate" data-i18n="sessoes.aplicativos.btn_kate">📝 Kate</button>
+</div>
+</div>
+<div class="launcher-item">
+<div class="btn-flatpak-wrapper">
 <button class="btn-executar" onclick="instalarFlatpak('instalar-joplin')" data-comando="instalar-joplin" data-logbox="log-sessao-aplicativos" id="btn-instalar-joplin" data-i18n="sessoes.aplicativos.btn_joplin">📝 Joplin</button>
 </div>
 </div>
@@ -63,6 +68,7 @@ BLOCO 1 — PRODUTIVIDADE E ESCRITÓRIO
 <div class="progress-container" id="progress-instalar-obsidian"><div class="progress-bar"><div class="progress-fill" id="progress-fill-instalar-obsidian"></div></div><div class="progress-text"><span class="status" id="progress-status-instalar-obsidian">⏳ Iniciando...</span><span class="percentage" id="progress-percent-instalar-obsidian">0%</span></div></div>
 <div class="progress-container" id="progress-instalar-thunderbird"><div class="progress-bar"><div class="progress-fill" id="progress-fill-instalar-thunderbird"></div></div><div class="progress-text"><span class="status" id="progress-status-instalar-thunderbird">⏳ Iniciando...</span><span class="percentage" id="progress-percent-instalar-thunderbird">0%</span></div></div>
 <div class="progress-container" id="progress-instalar-okular"><div class="progress-bar"><div class="progress-fill" id="progress-fill-instalar-okular"></div></div><div class="progress-text"><span class="status" id="progress-status-instalar-okular">⏳ Iniciando...</span><span class="percentage" id="progress-percent-instalar-okular">0%</span></div></div>
+<div class="progress-container" id="progress-instalar-kate"><div class="progress-bar"><div class="progress-fill" id="progress-fill-instalar-kate"></div></div><div class="progress-text"><span class="status" id="progress-status-instalar-kate">⏳ Iniciando...</span><span class="percentage" id="progress-percent-instalar-kate">0%</span></div></div>
 <div class="progress-container" id="progress-instalar-joplin"><div class="progress-bar"><div class="progress-fill" id="progress-fill-instalar-joplin"></div></div><div class="progress-text"><span class="status" id="progress-status-instalar-joplin">⏳ Iniciando...</span><span class="percentage" id="progress-percent-instalar-joplin">0%</span></div></div>
 <div class="progress-container" id="progress-instalar-foliate"><div class="progress-bar"><div class="progress-fill" id="progress-fill-instalar-foliate"></div></div><div class="progress-text"><span class="status" id="progress-status-instalar-foliate">⏳ Iniciando...</span><span class="percentage" id="progress-percent-instalar-foliate">0%</span></div></div>
 
@@ -81,12 +87,12 @@ BLOCO 2 — ENTRETENIMENTO E MULTIMÍDIA
 <div class="grid-launchers">
 <div class="launcher-item">
 <div class="btn-flatpak-wrapper">
-<button class="btn-executar" onclick="instalarDnf('instalar-haruna')" data-comando="instalar-haruna" data-logbox="log-sessao-aplicativos" id="btn-instalar-haruna" data-i18n="sessoes.aplicativos.btn_haruna">🎥 Haruna</button>
+<button class="btn-executar" onclick="instalarFlatpak('instalar-haruna')" data-comando="instalar-haruna" data-logbox="log-sessao-aplicativos" id="btn-instalar-haruna" data-i18n="sessoes.aplicativos.btn_haruna">🎥 Haruna</button>
 </div>
 </div>
 <div class="launcher-item">
 <div class="btn-flatpak-wrapper">
-<button class="btn-executar" onclick="instalarDnf('instalar-vlc')" data-comando="instalar-vlc" data-logbox="log-sessao-aplicativos" id="btn-instalar-vlc" data-i18n="sessoes.aplicativos.btn_vlc">🎬 VLC Media Player</button>
+<button class="btn-executar" onclick="instalarFlatpak('instalar-vlc')" data-comando="instalar-vlc" data-logbox="log-sessao-aplicativos" id="btn-instalar-vlc" data-i18n="sessoes.aplicativos.btn_vlc">🎬 VLC Media Player</button>
 </div>
 </div>
 <div class="launcher-item">
@@ -504,12 +510,12 @@ BLOCO 6 — EDIÇÃO DE VÍDEO, ÁUDIO E MODELAGEM 3D
 <div class="grid-launchers">
 <div class="launcher-item">
 <div class="btn-flatpak-wrapper">
-<button class="btn-executar" onclick="instalarDnf('instalar-kdenlive')" data-comando="instalar-kdenlive" data-logbox="log-sessao-aplicativos" id="btn-instalar-kdenlive" data-i18n="sessoes.aplicativos.btn_kdenlive">🎬 Kdenlive</button>
+<button class="btn-executar" onclick="instalarFlatpak('instalar-kdenlive')" data-comando="instalar-kdenlive" data-logbox="log-sessao-aplicativos" id="btn-instalar-kdenlive" data-i18n="sessoes.aplicativos.btn_kdenlive">🎬 Kdenlive</button>
 </div>
 </div>
 <div class="launcher-item">
 <div class="btn-flatpak-wrapper">
-<button class="btn-executar" onclick="instalarDnf('instalar-shotcut')" data-comando="instalar-shotcut" data-logbox="log-sessao-aplicativos" id="btn-instalar-shotcut" data-i18n="sessoes.aplicativos.btn_shotcut">✂️ Shotcut</button>
+<button class="btn-executar" onclick="instalarFlatpak('instalar-shotcut')" data-comando="instalar-shotcut" data-logbox="log-sessao-aplicativos" id="btn-instalar-shotcut" data-i18n="sessoes.aplicativos.btn_shotcut">✂️ Shotcut</button>
 </div>
 </div>
 <div class="launcher-item">
@@ -542,7 +548,7 @@ BLOCO 6 — EDIÇÃO DE VÍDEO, ÁUDIO E MODELAGEM 3D
 </div>
 <div class="launcher-item">
 <div class="btn-flatpak-wrapper">
-<button class="btn-executar" onclick="instalarDnf('instalar-blender')" data-comando="instalar-blender" data-logbox="log-sessao-aplicativos" id="btn-instalar-blender" data-i18n="sessoes.aplicativos.btn_blender">🧊 Blender</button>
+<button class="btn-executar" onclick="instalarFlatpak('instalar-blender')" data-comando="instalar-blender" data-logbox="log-sessao-aplicativos" id="btn-instalar-blender" data-i18n="sessoes.aplicativos.btn_blender">🧊 Blender</button>
 </div>
 </div>
 <div class="launcher-item">
@@ -557,7 +563,7 @@ BLOCO 6 — EDIÇÃO DE VÍDEO, ÁUDIO E MODELAGEM 3D
 </div>
 <div class="launcher-item">
 <div class="btn-flatpak-wrapper">
-<button class="btn-executar" onclick="instalarDnf('instalar-audacity')" data-comando="instalar-audacity" data-logbox="log-sessao-aplicativos" id="btn-instalar-audacity" data-i18n="sessoes.aplicativos.btn_audacity">🎙️ Audacity</button>
+<button class="btn-executar" onclick="instalarFlatpak('instalar-audacity')" data-comando="instalar-audacity" data-logbox="log-sessao-aplicativos" id="btn-instalar-audacity" data-i18n="sessoes.aplicativos.btn_audacity">🎙️ Audacity</button>
 </div>
 </div>
 </div>
@@ -722,10 +728,18 @@ function _tVars(chave, fallback, vars) {
 // ============================================================
 // REGISTRY DE APPS FLATPAK (Flathub)
 // ============================================================
+//
+// v1.1.3: revisão das origens. Apps maduros empacotados oficialmente
+// pelo Fedora (VLC, Haruna, etc.) foram movidos para DNF; apps que
+// o upstream mantém diretamente no Flathub (OnlyOffice, Kdenlive,
+// Blender, etc.) permanecem Flatpak.
 
 var APPS_FLATPAK = {
+    'instalar-onlyoffice': { appId: 'org.onlyoffice.desktopeditors', fallback: '📝 OnlyOffice' },
     'instalar-obsidian': { appId: 'md.obsidian.Obsidian', fallback: '💎 Obsidian' },
     'instalar-joplin': { appId: 'net.cozic.joplin_desktop', fallback: '📝 Joplin' },
+    'instalar-haruna': { appId: 'org.kde.haruna', fallback: '🎥 Haruna' },
+    'instalar-vlc': { appId: 'org.videolan.VLC', fallback: '🎬 VLC Media Player' },
     'instalar-spotify': { appId: 'com.spotify.Client', fallback: '🎵 Spotify' },
     'instalar-plex': { appId: 'tv.plex.PlexDesktop', fallback: '📺 Plex' },
     'instalar-stremio': { appId: 'com.stremio.Stremio', fallback: '🎬 Stremio' },
@@ -734,61 +748,50 @@ var APPS_FLATPAK = {
     'instalar-upscayl': { appId: 'org.upscayl.Upscayl', fallback: '🔍 Upscayl' },
     'instalar-xnviewmp': { appId: 'com.xnview.XnViewMP', fallback: '🖼️ XnView MP' },
     'instalar-freecad': { appId: 'org.freecad.FreeCAD', fallback: '⚙️ FreeCAD' },
+    'instalar-opera': { appId: 'com.opera.Opera', fallback: '🌐 Opera' },
     'instalar-zoom': { appId: 'us.zoom.Zoom', fallback: '📹 Zoom' },
     'instalar-discord': { appId: 'com.discordapp.Discord', fallback: '💬 Discord' },
     'instalar-telegram': { appId: 'org.telegram.desktop', fallback: '✈️ Telegram' },
+    'instalar-kdenlive': { appId: 'org.kde.kdenlive', fallback: '🎬 Kdenlive' },
+    'instalar-shotcut': { appId: 'org.shotcut.Shotcut', fallback: '✂️ Shotcut' },
     'instalar-openshot': { appId: 'org.openshot.OpenShot', fallback: '🎬 OpenShot' },
     'instalar-drift': { appId: 'org.cutwire.Drift', fallback: '🎬 Drift' },
-    'instalar-opera': { appId: 'com.opera.Opera', fallback: '🌐 Opera' }
+    'instalar-blender': { appId: 'org.blender.Blender', fallback: '🧊 Blender' },
+    'instalar-audacity': { appId: 'org.audacityteam.Audacity', fallback: '🎙️ Audacity' }
 };
 
 // ============================================================
 // REGISTRY DE APPS DNF (repos oficiais do Fedora)
 // ============================================================
+//
+// Apps que o Fedora empacota oficialmente e são maduros o bastante
+// para não precisar do Flatpak. A integração com o sistema
+// (KDE/GNOME, JACK/PipeWire, gerenciamento de arquivos) é mais
+// confiável via RPM.
 
 var APPS_DNF = {
     'instalar-thunderbird': { pacotes: ['thunderbird'],                    fallback: '📧 Thunderbird' },
     'instalar-okular':      { pacotes: ['okular'],                         fallback: '📚 Okular' },
+    'instalar-kate':        { pacotes: ['kate'],                           fallback: '📝 Kate' },
     'instalar-foliate':     { pacotes: ['foliate'],                        fallback: '📖 Foliate' },
-    'instalar-haruna':      { pacotes: ['haruna'],                         fallback: '🎥 Haruna' },
-    'instalar-vlc':         { pacotes: ['vlc'],                            fallback: '🎬 VLC Media Player' },
     'instalar-mpv':         { pacotes: ['mpv'],                            fallback: '🎥 MPV' },
     'instalar-krita':       { pacotes: ['krita'],                          fallback: '🎨 Krita' },
     'instalar-inkscape':    { pacotes: ['inkscape'],                       fallback: '🎨 Inkscape' },
     'instalar-gimp':        { pacotes: ['gimp'],                           fallback: '🖼️ GIMP' },
     'instalar-darktable':   { pacotes: ['darktable'],                      fallback: '📷 Darktable' },
     'instalar-librecad':    { pacotes: ['librecad'],                       fallback: '📐 LibreCAD' },
-    'instalar-kdenlive':    { pacotes: ['kdenlive'],                       fallback: '🎬 Kdenlive' },
     'instalar-pitivi':      { pacotes: ['pitivi'],                         fallback: '🎞️ Pitivi' },
-    'instalar-shotcut':     { pacotes: ['shotcut'],                        fallback: '✂️ Shotcut' },
     'instalar-avidemux':    { pacotes: ['avidemux'],                       fallback: '✂️ Avidemux' },
-    'instalar-blender':     { pacotes: ['blender'],                        fallback: '🧊 Blender' },
     'instalar-ardour':      { pacotes: ['ardour8'],                        fallback: '🎵 Ardour' },
     'instalar-lmms':        { pacotes: ['lmms'],                           fallback: '🎹 LMMS' },
-    'instalar-audacity':    { pacotes: ['audacity'],                       fallback: '🎙️ Audacity' },
     'instalar-chromium':    { pacotes: ['chromium'],                       fallback: '🌐 Chromium' }
 };
 
 // ============================================================
 // REGISTRY DE APPS RPM VIA URL DIRETA DE RELEASE
 // ============================================================
-//
-// Dois modos:
-//   • `url`        — URL estática (OnlyOffice mantém o mesmo path).
-//   • `resolveUrl` — comando shell que imprime a URL em runtime
-//                    (RustDesk versiona cada release).
-//
-// `--setopt=localpkg_gpgcheck=0` é obrigatório no Fedora 44/45:
-// RPMs baixados de URL (localpkg) são rejeitados por padrão se
-// não tiverem assinatura verificada no keyring do sistema.
 
 var APPS_URL_RPM = {
-    'instalar-onlyoffice': {
-        url: 'https://download.onlyoffice.com/install/desktop/editors/linux/onlyoffice-desktopeditors.x86_64.rpm',
-        pacote: 'onlyoffice-desktopeditors',
-        binAbrir: 'desktopeditors',
-        fallback: '📝 OnlyOffice'
-    },
     'instalar-rustdesk': {
         resolveUrl:
             'curl -s https://api.github.com/repos/rustdesk/rustdesk/releases/latest ' +
@@ -831,10 +834,6 @@ var APPS_RPM_REPO = {
 // ============================================================
 // BOTÕES "ABRIR X" DINÂMICOS
 // ============================================================
-//
-// Cria dinamicamente os botões "Abrir X" para todos os apps
-// registrados que ainda não os têm no HTML. Roda uma vez, antes
-// de `restaurarEstadoSessao()`.
 
 function _criarBotoesAbrir() {
     var todos = Object.assign({}, APPS_FLATPAK, APPS_DNF, APPS_RPM_REPO, APPS_URL_RPM);
@@ -878,40 +877,22 @@ function _criarBotoesAbrir() {
 // ============================================================
 // COMANDOS DE ABERTURA POR TIPO
 // ============================================================
-//
-// NOTA: removidas as entradas `instalar-onlyoffice` e
-// `instalar-rustdesk` — elas pertenciam a uma versão anterior em
-// que esses apps vinham de DNF. Hoje vivem em APPS_URL_RPM e o
-// dispatcher `abrirAppGenerico` os trata ANTES de chegar ao mapa
-// DNF. Mantê-las aqui era código morto (nunca alcançado).
 
 var _CMD_ABRIR_DNF = {
     'instalar-thunderbird': 'gtk-launch thunderbird',
     'instalar-okular':      'okular',
+    'instalar-kate':        'kate',
     'instalar-foliate':     'gtk-launch com.github.johnfactotum.Foliate',
-    'instalar-haruna':      'gtk-launch org.kde.haruna',
-    'instalar-vlc':         'vlc',
     'instalar-mpv':         'gtk-launch mpv',
     'instalar-krita':       'krita',
     'instalar-inkscape':    'inkscape',
     'instalar-gimp':        'gimp',
     'instalar-darktable':   'darktable',
     'instalar-librecad':    'librecad',
-    'instalar-kdenlive':    'kdenlive',
     'instalar-pitivi':      'pitivi',
-    'instalar-shotcut':     'shotcut',
-    // O Avidemux 2.8+ migrou o app-id para `org.avidemux.Avidemux`
-    // (antes era `avidemux.desktop`, agora é `org.avidemux.Avidemux.desktop`).
-    // O binário instalado pelo RPM Fusion mudou para algo em
-    // /usr/bin/avidemux3_* que pode nem existir dependendo da
-    // versão do Fedora. `gtk-launch` lê o `Exec=` do `.desktop`
-    // oficial e sempre chama o binário correto, independente do
-    // que a distro decidiu empacotar.
     'instalar-avidemux':    'gtk-launch org.avidemux.Avidemux',
-    'instalar-blender':     'blender',
     'instalar-ardour':      'ardour8',
     'instalar-lmms':        'lmms',
-    'instalar-audacity':    'audacity',
     'instalar-chromium':    'chromium-browser'
 };
 
@@ -966,15 +947,14 @@ _criarBotoesAbrir();
 // ============================================================
 // REGISTRO DE APPS REMOVÍVEIS
 // ============================================================
-//
-// Flatpaks, DNF, RPM-repo e URL-RPM: todos seguem o mesmo padrão
-// de lixeira unificada. `_mostrarLixeira` (script.js) consulta
-// esta tabela para saber o tipo e os identificadores de remoção.
 
 // --- Flatpaks (Flathub) ---
 
+registrarAppRemovivel('instalar-onlyoffice', { tipo: 'flatpak', appId: 'org.onlyoffice.desktopeditors', nome: 'OnlyOffice' });
 registrarAppRemovivel('instalar-obsidian', { tipo: 'flatpak', appId: 'md.obsidian.Obsidian',            nome: 'Obsidian' });
 registrarAppRemovivel('instalar-joplin',   { tipo: 'flatpak', appId: 'net.cozic.joplin_desktop',        nome: 'Joplin' });
+registrarAppRemovivel('instalar-haruna',   { tipo: 'flatpak', appId: 'org.kde.haruna',                  nome: 'Haruna' });
+registrarAppRemovivel('instalar-vlc',      { tipo: 'flatpak', appId: 'org.videolan.VLC',                nome: 'VLC Media Player' });
 registrarAppRemovivel('instalar-spotify',  { tipo: 'flatpak', appId: 'com.spotify.Client',             nome: 'Spotify' });
 registrarAppRemovivel('instalar-plex',     { tipo: 'flatpak', appId: 'tv.plex.PlexDesktop',            nome: 'Plex' });
 registrarAppRemovivel('instalar-stremio',  { tipo: 'flatpak', appId: 'com.stremio.Stremio',            nome: 'Stremio' });
@@ -983,12 +963,16 @@ registrarAppRemovivel('instalar-cura',     { tipo: 'flatpak', appId: 'com.ultima
 registrarAppRemovivel('instalar-upscayl',  { tipo: 'flatpak', appId: 'org.upscayl.Upscayl',            nome: 'Upscayl' });
 registrarAppRemovivel('instalar-xnviewmp', { tipo: 'flatpak', appId: 'com.xnview.XnViewMP',            nome: 'XnView MP' });
 registrarAppRemovivel('instalar-freecad',  { tipo: 'flatpak', appId: 'org.freecad.FreeCAD',            nome: 'FreeCAD' });
+registrarAppRemovivel('instalar-opera',    { tipo: 'flatpak', appId: 'com.opera.Opera',                nome: 'Opera' });
 registrarAppRemovivel('instalar-zoom',     { tipo: 'flatpak', appId: 'us.zoom.Zoom',                   nome: 'Zoom' });
 registrarAppRemovivel('instalar-discord',  { tipo: 'flatpak', appId: 'com.discordapp.Discord',         nome: 'Discord' });
 registrarAppRemovivel('instalar-telegram', { tipo: 'flatpak', appId: 'org.telegram.desktop',           nome: 'Telegram' });
+registrarAppRemovivel('instalar-kdenlive', { tipo: 'flatpak', appId: 'org.kde.kdenlive',               nome: 'Kdenlive' });
+registrarAppRemovivel('instalar-shotcut',  { tipo: 'flatpak', appId: 'org.shotcut.Shotcut',            nome: 'Shotcut' });
 registrarAppRemovivel('instalar-openshot', { tipo: 'flatpak', appId: 'org.openshot.OpenShot',          nome: 'OpenShot' });
 registrarAppRemovivel('instalar-drift',    { tipo: 'flatpak', appId: 'org.cutwire.Drift',              nome: 'Drift' });
-registrarAppRemovivel('instalar-opera',    { tipo: 'flatpak', appId: 'com.opera.Opera',                nome: 'Opera' });
+registrarAppRemovivel('instalar-blender',  { tipo: 'flatpak', appId: 'org.blender.Blender',            nome: 'Blender' });
+registrarAppRemovivel('instalar-audacity', { tipo: 'flatpak', appId: 'org.audacityteam.Audacity',      nome: 'Audacity' });
 
 // --- RPM baixado de URL ---
 
@@ -996,11 +980,6 @@ registrarAppRemovivel('instalar-lightworks', {
     tipo: 'dnf',
     pacotes: ['lightworks'],
     nome: 'Lightworks'
-});
-registrarAppRemovivel('instalar-onlyoffice', {
-    tipo: 'dnf',
-    pacotes: ['onlyoffice-desktopeditors'],
-    nome: 'OnlyOffice'
 });
 registrarAppRemovivel('instalar-rustdesk', {
     tipo: 'dnf',
@@ -1013,33 +992,19 @@ registrarAppRemovivel('instalar-rustdesk', {
 registrarAppRemovivel('instalar-rclone-manager', {
     modo: 'desfazerTudo',
     idDesfazer: 'desfazer-rclone-manager',
-    // `pacotes` é usado APENAS por `appJaInstaladoNoSistema` para
-    // detectar pré-existência. O comando de fato é `comandoDesfazer`
-    // (que apaga pacotes + resíduos). A lista abaixo cobre o nome
-    // canônico do pacote (rclone-manager) e o próprio rclone CLI
-    // (que o Rclone Manager instala como dependência).
     pacotes: ['rclone-manager', 'rclone'],
     comandoDesfazer:
-        // 1. Remove os pacotes rclone* (rclone-manager e/ou rclone).
         'PKGS=$(rpm -qa | grep -i "^rclone"); ' +
         'if [ -n "$PKGS" ]; then ' +
         '  sudo dnf remove -y $PKGS; ' +
         'else ' +
         '  echo "ℹ️ Nenhum pacote rclone* encontrado para remover."; ' +
         'fi; ' +
-        // 2. Remove o atalho do menu iniciar (é o que o usuário vê
-        //    como "rclone-manager" no menu após o "desfazer tudo").
         'rm -f $HOME/.local/share/applications/rclone-manager.desktop; ' +
-        // 3. Remove o ícone do hicolor (para o menu não exibir um
-        //    ícone órfão se o .desktop for recriado por outra via).
         'rm -f $HOME/.local/share/icons/hicolor/*/apps/rclone-manager.*; ' +
         'rm -f $HOME/.local/share/icons/hicolor/*/apps/com.zarestia.rclone-manager.*; ' +
-        // 4. Remove dados do app (configurações do gerenciador,
-        //    caches, estado). NÃO toca em ~/.config/rclone/ — as
-        //    contas configuradas pelo usuário ficam intactas.
         'rm -rf $HOME/.local/share/rclone-manager; ' +
         'rm -rf $HOME/.cache/rclone-manager; ' +
-        // 5. Atualiza os índices do desktop e do tema de ícones.
         'update-desktop-database $HOME/.local/share/applications 2>/dev/null || true; ' +
         'gtk-update-icon-cache -f -t $HOME/.local/share/icons/hicolor 2>/dev/null || true; ' +
         'sudo dnf clean all && sudo dnf autoremove -y',
@@ -1060,23 +1025,18 @@ registrarAppRemovivel('instalar-rclone-manager', {
 
 registrarAppRemovivel('instalar-thunderbird', { tipo: 'dnf', pacotes: ['thunderbird'], nome: 'Thunderbird' });
 registrarAppRemovivel('instalar-okular',      { tipo: 'dnf', pacotes: ['okular'],      nome: 'Okular' });
+registrarAppRemovivel('instalar-kate',        { tipo: 'dnf', pacotes: ['kate'],        nome: 'Kate' });
 registrarAppRemovivel('instalar-foliate',     { tipo: 'dnf', pacotes: ['foliate'],     nome: 'Foliate' });
-registrarAppRemovivel('instalar-haruna',      { tipo: 'dnf', pacotes: ['haruna'],      nome: 'Haruna' });
-registrarAppRemovivel('instalar-vlc',         { tipo: 'dnf', pacotes: ['vlc'],         nome: 'VLC Media Player' });
 registrarAppRemovivel('instalar-mpv',         { tipo: 'dnf', pacotes: ['mpv'],         nome: 'MPV' });
 registrarAppRemovivel('instalar-krita',       { tipo: 'dnf', pacotes: ['krita'],       nome: 'Krita' });
 registrarAppRemovivel('instalar-inkscape',    { tipo: 'dnf', pacotes: ['inkscape'],    nome: 'Inkscape' });
 registrarAppRemovivel('instalar-gimp',        { tipo: 'dnf', pacotes: ['gimp'],        nome: 'GIMP' });
 registrarAppRemovivel('instalar-darktable',   { tipo: 'dnf', pacotes: ['darktable'],   nome: 'Darktable' });
 registrarAppRemovivel('instalar-librecad',    { tipo: 'dnf', pacotes: ['librecad'],    nome: 'LibreCAD' });
-registrarAppRemovivel('instalar-kdenlive',    { tipo: 'dnf', pacotes: ['kdenlive'],    nome: 'Kdenlive' });
 registrarAppRemovivel('instalar-pitivi',      { tipo: 'dnf', pacotes: ['pitivi'],      nome: 'Pitivi' });
-registrarAppRemovivel('instalar-shotcut',     { tipo: 'dnf', pacotes: ['shotcut'],     nome: 'Shotcut' });
 registrarAppRemovivel('instalar-avidemux',    { tipo: 'dnf', pacotes: ['avidemux'],    nome: 'Avidemux' });
-registrarAppRemovivel('instalar-blender',     { tipo: 'dnf', pacotes: ['blender'],     nome: 'Blender' });
 registrarAppRemovivel('instalar-ardour',      { tipo: 'dnf', pacotes: ['ardour8'],     nome: 'Ardour' });
 registrarAppRemovivel('instalar-lmms',        { tipo: 'dnf', pacotes: ['lmms'],        nome: 'LMMS' });
-registrarAppRemovivel('instalar-audacity',    { tipo: 'dnf', pacotes: ['audacity'],    nome: 'Audacity' });
 registrarAppRemovivel('instalar-chromium',    { tipo: 'dnf', pacotes: ['chromium'],    nome: 'Chromium' });
 
 // --- Navegadores via repo oficial do fabricante ---
@@ -1137,10 +1097,6 @@ registrarAppRemovivel('instalar-soundcraft',  { tipo: 'dnf', pacotes: ['soundcra
 // ============================================================
 // INSTALADORES
 // ============================================================
-//
-// Todos usam `aplicarEstadoInstalavel` no onSucesso — isso faz o
-// swap para "🚀 Abrir X" + criação da lixeira via `_mostrarLixeira`
-// (script.js), em uníssono para Flatpak, DNF, RPM-repo e URL-RPM.
 
 async function instalarFlatpak(idComando) {
     var info = APPS_FLATPAK[idComando];
@@ -1246,12 +1202,6 @@ async function instalarLightworks() {
 }
 
 function abrirLightworks() {
-    // Usa o .desktop oficial (`lightworks.desktop`) em vez do
-    // binário direto. O RPM do site oficial instala o .desktop
-    // com o `Exec=` correto para a versão instalada — o binário
-    // `lightworks` pode ser um wrapper que muda de nome entre
-    // releases (lightworks, lightworks2023, lightworks-2023).
-    // `gtk-launch` resolve isso lendo o `Exec=` do .desktop.
     abrirFerramentaExterna('gtk-launch lightworks', 'instalar-lightworks', 'Lightworks');
 }
 
@@ -1441,7 +1391,6 @@ function abrirArtCraft(appId) {
 // ============================================================
 
 function abrirRustDesk() {
-    // RPM nativo — binário /usr/bin/rustdesk.
     abrirFerramentaExterna('rustdesk', 'instalar-rustdesk', 'RustDesk');
 }
 
@@ -1547,7 +1496,7 @@ async function restaurarEstadoSessao() {
         aplicarEstadoInstalavel(idComando, _derivarIdAbrir(idComando));
     });
 
-    // DNF (repos oficiais do Fedora e RPM Fusion).
+    // DNF (repos oficiais do Fedora).
     Object.keys(APPS_DNF).forEach(function(idComando) {
         aplicarEstadoInstalavel(idComando, _derivarIdAbrir(idComando));
     });
@@ -1557,17 +1506,13 @@ async function restaurarEstadoSessao() {
         aplicarEstadoInstalavel(idComando, _derivarIdAbrir(idComando));
     });
 
-    // RPM via URL direta (OnlyOffice, RustDesk).
+    // RPM via URL direta (RustDesk).
     Object.keys(APPS_URL_RPM).forEach(function(idComando) {
         aplicarEstadoInstalavel(idComando, _derivarIdAbrir(idComando));
     });
 
-    // Lightworks (RPM baixado de URL, botão de abrir presente no
-    // HTML: `btn-abrir-lightworks`). Passar `null` aqui fazia o
-    // botão voltar ao Estado 3 (cinza "✅ instalado") na recarga,
-    // apagando o swap "instalar → abrir" que `instalarLightworks`
-    // aplica corretamente após a instalação.
-        aplicarEstadoInstalavel('instalar-lightworks', 'abrir-lightworks');
+    // Lightworks (RPM baixado de URL, botão de abrir presente no HTML).
+    aplicarEstadoInstalavel('instalar-lightworks', 'abrir-lightworks');
 
     // Rclone Manager ("desfazer tudo").
     if (isExecutado('instalar-rclone-manager')) {
@@ -1590,24 +1535,13 @@ async function restaurarEstadoSessao() {
         aplicarEstadoInstalavel('instalar-' + appId, 'abrir-' + appId);
     });
 
-atualizarBotaoAbrirRclone();
+    atualizarBotaoAbrirRclone();
     aplicarEstadoToggle('instalar-rclone-manager', 'desfazer-rclone-manager');
 
-    // NOTA (v1.1.2): `_ajustarFerramentasPorDesktop()` foi REMOVIDA
-    // daqui. Ela escondia o `.btn-flatpak-wrapper` inteiro quando o
-    // pacote nativo do desktop (krdc em KDE, gnome-connections em
-    // GNOME) já estava instalado — mas a lixeira é criada DENTRO do
-    // wrapper por `_mostrarLixeira`, então sumia junto. Resultado:
-    // "Abrir KRDC" sem lixeira, "Abrir GNOME Connections" sem
-    // lixeira. Com a Opção B, `aplicarEstadoInstalavel` detecta
-    // pré-existência via `SystemState` e já mostra "Abrir X +
-    // lixeira" — o caso deixou de precisar de tratamento especial,
-    // e o tratamento especial passou a ser prejudicial.
-    //
-    // As funções `_ajustarFerramentasPorDesktop` e
-    // `_esconderSePacoteInstalado` permanecem definidas em
-    // `aplicativos.html` como código morto, para minimizar o diff
-    // caso algo dependa delas em testes futuros.
+    // `_ajustarFerramentasPorDesktop()` foi removida daqui na v1.1.2
+    // (escondia o `.btn-flatpak-wrapper` inteiro, o que sumia a lixeira).
+    // O caso pré-existente agora é tratado pela Opção B do
+    // `aplicarEstadoInstalavel`.
 }
 
 (function() {
