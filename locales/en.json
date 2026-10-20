@@ -97,6 +97,8 @@
             "log_iniciando": "🚀 Starting update...",
             "aviso_reiniciar": "💡 It's recommended to restart your computer after applying system updates.",
 
+            "repositorios_titulo": "📦 Fedora Repositories",
+
             "rpm_titulo": "📦 Enable RPM Fusion (Free and Non-Free)",
             "rpm_desc": "Installs and syncs the official RPM Fusion repositories, adds AppStream metadata support and runs a security adjustment.",
             "btn_ativar_rpm": "📦 Enable RPM Fusion",
@@ -1138,7 +1140,104 @@
         "qemu_kvm_install": "QEMU/KVM was already configured before FAP. Removing it disables running virtual machines (VM disks remain intact). To revert manually:\n\n  sudo systemctl disable --now libvirtd\n  sudo dnf remove qemu-kvm libvirt virt-manager virt-install libvirt-daemon-config-network",
         "virtualbox_install": "VirtualBox was already installed before FAP. Removing it disables VMs (the .vdi disks remain). To revert manually:\n\n  sudo dnf remove VirtualBox akmod-VirtualBox VirtualBox-kmod",
         "gnome_boxes_install": "GNOME Boxes was already installed before FAP. Removing it disables VMs (disks remain). To revert manually:\n\n  sudo dnf remove gnome-boxes",
-        "realtime_setup": "Your user was already in the 'realtime' group before FAP. The trash icon does not appear here to avoid removing a configuration FAP didn't make. To undo manually:\n\n  sudo gpasswd -d $USER realtime\n  sudo dnf remove -y realtime-setup"
+        "realtime_setup": "Your user was already in the 'realtime' group before FAP. To undo manually:\n\n  sudo gpasswd -d $USER realtime\n  sudo dnf remove -y realtime-setup"
+    },
+
+    "origem": {
+        "flathub": {
+            "nome": "Flathub",
+            "tooltip": "Installed via Flatpak from Flathub. Updates with flatpak update. Sandbox isolated from the system.",
+            "atualizar": "flatpak update",
+            "remover": "Use the trash icon next to the button or flatpak uninstall <app-id>."
+        },
+        "fedora": {
+            "nome": "Fedora",
+            "tooltip": "Installed via DNF from the official Fedora repositories. Updates with dnf upgrade.",
+            "atualizar": "sudo dnf upgrade",
+            "remover": "Use the trash icon next to the button or sudo dnf remove <package>."
+        },
+        "rpmfusion": {
+            "nome": "RPM Fusion",
+            "tooltip": "Installed via DNF from the RPM Fusion repositories (not Fedora official). Updates with dnf upgrade while RPM Fusion is active.",
+            "atualizar": "sudo dnf upgrade",
+            "remover": "Use the trash icon next to the button or sudo dnf remove <package>."
+        },
+        "fabricante": {
+            "nome": "Vendor",
+            "tooltip": "Installed via DNF from the vendor's official repository. Updates with dnf upgrade while the repo is active. FAP added the repo in /etc/yum.repos.d/.",
+            "atualizar": "sudo dnf upgrade",
+            "remover": "Use the trash icon next to the button (removes the package and the .repo file)."
+        },
+        "download": {
+            "nome": "Download",
+            "tooltip": "Installed via an RPM downloaded from a URL (official site or GitHub). Doesn't update itself — click \"Install\" again to download the new version.",
+            "atualizar": "Click \"Install\" again to download the latest version.",
+            "remover": "Use the trash icon next to the button."
+        },
+        "comunidade": {
+            "nome": "Community",
+            "tooltip": "Installed via DNF from a community-maintained COPR repository. Updates with dnf upgrade while the COPR is active.",
+            "atualizar": "sudo dnf upgrade",
+            "remover": "Use the trash icon next to the button or disable the COPR manually."
+        },
+        "label_origem": "Origin",
+        "label_comando": "Exact command",
+        "label_atualizar": "How to update",
+        "label_remover": "How to remove"
+    },
+
+    "busca": {
+        "banner_filtro": "🔍 Filtering by \"{termo}\" — {n} item(s).",
+        "limpar_filtro": "Clear filter",
+        "item": "item",
+        "itens": "items"
+    },
+
+    "filtros": {
+        "label_estado": "State:",
+        "label_origem": "Origin:",
+        "estado": {
+            "todos": "All",
+            "nao_feitos": "Not done",
+            "feitos": "Done",
+            "preexistentes": "Pre-existing",
+            "pulados": "Skipped"
+        },
+        "origem": {
+            "todas": "All",
+            "flathub": "Flathub",
+            "fedora": "Fedora",
+            "rpmfusion": "RPM Fusion",
+            "fabricante": "Vendor",
+            "download": "Download",
+            "comunidade": "Community"
+        },
+        "limpar": "Clear filters"
+    },
+
+    "landing": {
+        "grupo_geral": "General use",
+        "grupo_gaming": "Gaming",
+        "grupo_producao": "Production",
+        "grupo_seguranca": "Security",
+        "faltam": "{n} steps left to get Fedora ready.",
+        "pronto": "Your Fedora is ready. 🎉",
+        "calculando": "Calculating progress..."
+    },
+
+    "sidebar": {
+        "busca_placeholder": "Search session or item...",
+        "na_btn": "Mark this session as N/A",
+        "na_btn_ativo": "Unmark N/A"
+    },
+
+    "na": {
+        "banner_texto": "This session is marked as not applicable.",
+        "desmarcar": "Unmark"
+    },
+
+    "refresh": {
+        "tooltip": "Reload system state (useful after installing something outside FAP)"
     },
 
     "seletor": {

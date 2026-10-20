@@ -97,6 +97,8 @@
             "log_iniciando": "🚀 Iniciando actualización...",
             "aviso_reiniciar": "💡 Se recomienda reiniciar el equipo después de aplicar actualizaciones del sistema.",
 
+            "repositorios_titulo": "📦 Repositorios de Fedora",
+
             "rpm_titulo": "📦 Activar RPM Fusion (Libre y No Libre)",
             "rpm_desc": "Instala y sincroniza los repositorios oficiales de RPM Fusion, añade soporte a metadatos de AppStream y ejecuta un ajuste de seguridad.",
             "btn_ativar_rpm": "📦 Activar RPM Fusion",
@@ -1139,6 +1141,103 @@
         "virtualbox_install": "VirtualBox ya estaba instalado antes de FAP. Eliminarlo deshabilita las VMs (los discos .vdi permanecen). Para revertir manualmente:\n\n  sudo dnf remove VirtualBox akmod-VirtualBox VirtualBox-kmod",
         "gnome_boxes_install": "GNOME Boxes ya estaba instalado antes de FAP. Eliminarlo deshabilita las VMs (los discos permanecen). Para revertir manualmente:\n\n  sudo dnf remove gnome-boxes",
         "realtime_setup": "Tu usuario ya estaba en el grupo 'realtime' antes de FAP. La papelera no aparece aquí para evitar eliminar una configuración que FAP no hizo. Para deshacer manualmente:\n\n  sudo gpasswd -d $USER realtime\n  sudo dnf remove -y realtime-setup"
+    },
+
+    "origem": {
+        "flathub": {
+            "nome": "Flathub",
+            "tooltip": "Instalado vía Flatpak desde Flathub. Se actualiza con flatpak update. Sandbox aislado del sistema.",
+            "atualizar": "flatpak update",
+            "remover": "Usa el ícono de papelera al lado del botón o flatpak uninstall <app-id>."
+        },
+        "fedora": {
+            "nome": "Fedora",
+            "tooltip": "Instalado vía DNF desde los repositorios oficiales de Fedora. Se actualiza con dnf upgrade.",
+            "atualizar": "sudo dnf upgrade",
+            "remover": "Usa el ícono de papelera al lado del botón o sudo dnf remove <paquete>."
+        },
+        "rpmfusion": {
+            "nome": "RPM Fusion",
+            "tooltip": "Instalado vía DNF desde los repositorios RPM Fusion (no oficiales de Fedora). Se actualiza con dnf upgrade mientras RPM Fusion esté activo.",
+            "atualizar": "sudo dnf upgrade",
+            "remover": "Usa el ícono de papelera al lado del botón o sudo dnf remove <paquete>."
+        },
+        "fabricante": {
+            "nome": "Fabricante",
+            "tooltip": "Instalado vía DNF desde el repositorio oficial del fabricante. Se actualiza con dnf upgrade mientras el repo esté activo. FAP añadió el repo en /etc/yum.repos.d/.",
+            "atualizar": "sudo dnf upgrade",
+            "remover": "Usa el ícono de papelera al lado del botón (elimina el paquete y el archivo .repo)."
+        },
+        "download": {
+            "nome": "Descarga",
+            "tooltip": "Instalado vía RPM descargado de una URL (sitio oficial o GitHub). No se actualiza solo — haz clic en \"Instalar\" nuevamente para descargar la versión nueva.",
+            "atualizar": "Haz clic en \"Instalar\" nuevamente para descargar la versión más reciente.",
+            "remover": "Usa el ícono de papelera al lado del botón."
+        },
+        "comunidade": {
+            "nome": "Comunidad",
+            "tooltip": "Instalado vía DNF desde un repositorio COPR mantenido por la comunidad. Se actualiza con dnf upgrade mientras el COPR esté activo.",
+            "atualizar": "sudo dnf upgrade",
+            "remover": "Usa el ícono de papelera al lado del botón o desactiva el COPR manualmente."
+        },
+        "label_origem": "Origen",
+        "label_comando": "Comando exacto",
+        "label_atualizar": "Cómo actualizar",
+        "label_remover": "Cómo eliminar"
+    },
+
+    "busca": {
+        "banner_filtro": "🔍 Filtrando por \"{termo}\" — {n} ítem(s).",
+        "limpar_filtro": "Limpiar filtro",
+        "item": "ítem",
+        "itens": "ítems"
+    },
+
+    "filtros": {
+        "label_estado": "Estado:",
+        "label_origem": "Origen:",
+        "estado": {
+            "todos": "Todos",
+            "nao_feitos": "No hechos",
+            "feitos": "Hechos",
+            "preexistentes": "Preexistentes",
+            "pulados": "Omitidos"
+        },
+        "origem": {
+            "todas": "Todas",
+            "flathub": "Flathub",
+            "fedora": "Fedora",
+            "rpmfusion": "RPM Fusion",
+            "fabricante": "Fabricante",
+            "download": "Descarga",
+            "comunidade": "Comunidad"
+        },
+        "limpar": "Limpiar filtros"
+    },
+
+    "landing": {
+        "grupo_geral": "Uso general",
+        "grupo_gaming": "Gaming",
+        "grupo_producao": "Producción",
+        "grupo_seguranca": "Seguridad",
+        "faltam": "Faltan {n} pasos para dejar Fedora completo.",
+        "pronto": "Tu Fedora está listo. 🎉",
+        "calculando": "Calculando progreso..."
+    },
+
+    "sidebar": {
+        "busca_placeholder": "Buscar sesión o ítem...",
+        "na_btn": "Marcar esta sesión como N/A",
+        "na_btn_ativo": "Desmarcar N/A"
+    },
+
+    "na": {
+        "banner_texto": "Esta sesión está marcada como no aplicable.",
+        "desmarcar": "Desmarcar"
+    },
+
+    "refresh": {
+        "tooltip": "Recargar estado del sistema (útil tras instalar algo fuera de FAP)"
     },
 
     "seletor": {
