@@ -15,78 +15,170 @@
 })();
 </script>
 <link rel="stylesheet" href="style.css">
+<style>
+    /* Patch: manter .bloqueado sem hover nem cor de destaque
+       (o .fap-sidebar-item.session-menu-item:hover tem a mesma
+       especificidade do .session-menu-item.bloqueado:hover e
+       aparece depois no CSS; este override com 4 classes vence). */
+    .fap-sidebar-item.session-menu-item.bloqueado:hover {
+        background-color: transparent;
+        color: var(--text-muted);
+        transform: none;
+    }
+    .fap-sidebar-item.session-menu-item.ativa.bloqueado:hover {
+        background-color: var(--bg-secondary);
+        color: var(--text-main);
+    }
+    /* Emoji fallback (quando SVG não disponível) */
+    .fap-sidebar-item-emoji {
+        font-size: 0.95rem;
+        line-height: 1;
+    }
+    .fap-layout.colapsada .fap-sidebar-item-emoji {
+        font-size: 1.05rem;
+    }
+    /* Indicador de busca ativa na sidebar */
+    .fap-sidebar-item.busca-hit-itens .fap-sidebar-item-count {
+        color: var(--accent-soft);
+        font-weight: 600;
+        opacity: 1;
+    }
+    .fap-sidebar-item.busca-hit-nome {
+        outline: 1px dashed var(--text-muted);
+        outline-offset: -2px;
+    }
+</style>
 </head>
-<body>
-<div class="container modo-guiado">
+<body class="fap-guiado">
 
-<!-- ===== HEADER ===== -->
-<div class="header-guide">
-    <div class="titulo">
-        <img src="icone_app.png" alt="FAP" style="width: 40px; height: 40px; border-radius: 50%; object-fit: contain; flex-shrink: 0;" onerror="this.style.display='none'">
-        <h1 data-i18n="guiado.titulo">Configuração do Fedora</h1>
-        <span class="badge-modo" data-i18n="guiado.badge_modo">🧭 Passo a Passo</span>
-        <span class="progresso-global" id="progresso-global" title="—">0/0</span>
-        <span style="color: var(--text-muted); font-size: 0.8rem; white-space: nowrap;">v<span class="fap-version"></span></span>
-    </div>
-    <div class="header-direita">
-        <div class="header-controles">
-            <div class="i18n-seletor-container" id="i18n-seletor"></div>
-            <div class="tema-toggle-container"></div>
-            <a href="index.html"
-               class="btn-voltar-inicio"
-               data-i18n-title="comum.voltar_inicio"
-               data-i18n-aria-label="comum.voltar_inicio"
-               aria-label="← Voltar ao início"
-               title="← Voltar ao início">
-                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
-                    <polyline points="9 22 9 12 15 12 15 22"/>
+<div class="fap-layout" id="fap-layout">
+
+    <!-- ============ SIDEBAR ============ -->
+    <aside class="fap-sidebar" id="fap-sidebar" role="navigation" aria-label="Sessões">
+        <div class="fap-sidebar-header">
+            <img src="icone_app.png" alt="" class="fap-sidebar-logo" onerror="this.style.display='none'">
+            <span class="fap-sidebar-titulo">FAP</span>
+            <button class="fap-sidebar-toggle" id="fap-sidebar-toggle" aria-expanded="true"
+                    aria-label="Colapsar menu lateral" title="Colapsar/expandir menu lateral">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <polyline points="15 18 9 12 15 6"/>
                 </svg>
-            </a>
+            </button>
         </div>
-    </div>
+        <div class="fap-sidebar-search">
+            <input type="search" id="fap-busca"
+                   placeholder="Buscar sessão ou item..."
+                   aria-label="Buscar sessão ou item"
+                   data-i18n-placeholder="sidebar.busca_placeholder"
+                   data-i18n-aria-label="sidebar.busca_placeholder"
+                   autocomplete="off"
+                   spellcheck="false">
+        </div>
+        <nav class="fap-sidebar-nav" id="fap-sidebar-nav" aria-label="Lista de sessões"></nav>
+        <div class="fap-sidebar-footer">
+            <button class="fap-sidebar-na-btn" id="fap-na-btn" type="button"
+                    title="Marcar esta sessão como não aplicável">
+                <span class="fap-sidebar-na-icon" aria-hidden="true">⊘</span>
+                <span class="fap-sidebar-na-label" data-i18n="sidebar.na_btn">Marcar esta sessão como N/A</span>
+            </button>
+        </div>
+    </aside>
+
+    <!-- ============ MAIN ============ -->
+    <main class="fap-main">
+
+        <div class="header-guide">
+            <div class="titulo">
+                <button class="fap-sidebar-hamburger" id="fap-hamburger" aria-label="Abrir menu lateral" title="Abrir menu lateral">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <line x1="3" y1="6" x2="21" y2="6"/>
+                        <line x1="3" y1="12" x2="21" y2="12"/>
+                        <line x1="3" y1="18" x2="21" y2="18"/>
+                    </svg>
+                </button>
+                <img src="icone_app.png" alt="FAP" style="width: 40px; height: 40px; border-radius: 50%; object-fit: contain; flex-shrink: 0;" onerror="this.style.display='none'">
+                <h1 data-i18n="guiado.titulo">Configuração do Fedora</h1>
+                <span class="badge-modo" data-i18n="guiado.badge_modo">🧭 Passo a Passo</span>
+                <span class="progresso-global" id="progresso-global" title="—">0/0</span>
+                <span style="color: var(--text-muted); font-size: 0.8rem; white-space: nowrap;">v<span class="fap-version"></span></span>
+            </div>
+            <div class="header-direita">
+                <div class="header-controles">
+                    <div class="i18n-seletor-container" id="i18n-seletor"></div>
+                    <div class="tema-toggle-container"></div>
+                    <button class="btn-refresh-estado" id="btn-refresh-estado" type="button"
+                            title="Recarregar estado do sistema (útil após instalar algo por fora do FAP)"
+                            aria-label="Recarregar estado do sistema"
+                            data-i18n-title="refresh.tooltip"
+                            data-i18n-aria-label="refresh.tooltip">
+                        <svg viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+                            <path d="M3 3v5h5"/>
+                            <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/>
+                            <path d="M16 16h5v5"/>
+                        </svg>
+                    </button>
+                    <a href="index.html"
+                       class="btn-voltar-inicio"
+                       data-i18n-title="comum.voltar_inicio"
+                       data-i18n-aria-label="comum.voltar_inicio"
+                       aria-label="← Voltar ao início"
+                       title="← Voltar ao início">
+                        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                            <polyline points="9 22 9 12 15 12 15 22"/>
+                        </svg>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="progress-guide">
+            <div class="barra">
+                <div class="fill" id="progress-guia-fill"></div>
+            </div>
+            <div class="info">
+                <span class="sessao-atual" id="progress-guia-text">1 de 14</span>
+            </div>
+        </div>
+
+        <div class="fap-na-banner" id="fap-na-banner" hidden>
+            <span class="fap-na-banner-texto" data-i18n="na.banner_texto">
+                Esta sessão está marcada como não aplicável.
+            </span>
+            <button class="fap-na-banner-limpar" id="fap-na-banner-limpar" type="button"
+                    data-i18n="na.desmarcar">Desmarcar</button>
+        </div>
+
+        <div class="fap-filtro-banner" id="fap-filtro-banner" hidden>
+            <span class="fap-filtro-banner-texto">🔍</span>
+            <button class="fap-filtro-banner-limpar" id="fap-filtro-banner-limpar" type="button"
+                    data-i18n="busca.limpar_filtro">Limpar filtro</button>
+        </div>
+
+        <div id="sessao-container">
+            <div class="loading-sessao">
+                <div class="spinner"></div>
+                <p id="loading-inicial-texto">Carregando sessão...</p>
+            </div>
+        </div>
+
+        <div class="nav-guide" id="nav-guide">
+            <div class="info">
+                <span id="info-sessao"><strong>1/14</strong> - Carregando...</span>
+            </div>
+            <div class="botoes">
+                <button class="btn-voltar" id="btn-anterior" onclick="sessaoAnterior()" data-i18n="comum.btn_anterior">◀ Anterior</button>
+                <button class="btn-proximo" id="btn-proximo" onclick="proximaSessao()" data-i18n="comum.btn_proximo">Próximo ▶</button>
+            </div>
+        </div>
+
+    </main>
 </div>
 
-<!-- ===== MENU DE SESSÕES FIXO ===== -->
-<!--
-    Substitui as bolinhas coloridas (.sessao-indicador).
-    Criado dinamicamente via JS (criarMenuSessoes).
-    Permanece visível durante a rolagem (position: sticky).
--->
-<div class="session-menu-wrapper" id="session-menu-wrapper" style="display: none;">
-    <div class="session-menu" id="session-menu" role="tablist" aria-label="Sessões"></div>
-</div>
+<div class="fap-sidebar-backdrop" id="fap-sidebar-backdrop"></div>
 
-<!-- ===== BARRA DE POSIÇÃO ===== -->
-<div class="progress-guide">
-    <div class="barra">
-        <div class="fill" id="progress-guia-fill"></div>
-    </div>
-    <div class="info">
-        <span class="sessao-atual" id="progress-guia-text">1 de 14</span>
-    </div>
-</div>
-
-<!-- ===== CONTAINER DAS SESSÕES ===== -->
-<div id="sessao-container">
-    <div class="loading-sessao">
-        <div class="spinner"></div>
-        <p id="loading-inicial-texto">Carregando sessão...</p>
-    </div>
-</div>
-
-<!-- ===== NAVEGAÇÃO ===== -->
-<div class="nav-guide" id="nav-guide">
-    <div class="info">
-        <span id="info-sessao"><strong>1/14</strong> - Carregando...</span>
-    </div>
-    <div class="botoes">
-        <button class="btn-voltar" id="btn-anterior" onclick="sessaoAnterior()" data-i18n="comum.btn_anterior">◀ Anterior</button>
-        <button class="btn-proximo" id="btn-proximo" onclick="proximaSessao()" data-i18n="comum.btn_proximo">Próximo ▶</button>
-    </div>
-</div>
-
-</div>
+<div class="fap-log-dock" id="fap-log-dock" hidden></div>
 
 <script src="i18n.js"></script>
 <script src="script.js"></script>
@@ -98,27 +190,10 @@
 var sessaoAtual = 0;
 var sessoesCarregadas = {};
 
-// Token de geração: cada chamada a carregarSessao() incrementa
-// este contador. Se outra chamada começar antes desta terminar,
-// a mais antiga percebe que foi cancelada e não escreve no DOM.
-// Sem isso, o carregamento da sessão 0 (disparado no boot) e o
-// da sessão 13 (via ?session=sobre-fap) podiam competir e deixar
-// a tela em branco.
 var _geracaoCarregamento = 0;
 
 // ------------------------------------------------------------
-// ÍCONES das sessões (emoji usado no menu fixo).
-// A ORDEM DESTE MAPA não importa — a ordem de exibição é
-// definida pela posição em SESSOES_PRINCIPAIS (script.js).
-//
-// IMPORTANTE: mantenha este mapa em sincronia com
-// SESSOES_PRINCIPAIS (script.js). Se você adicionar uma sessão
-// nova no array SESSOES, adicione também uma entrada aqui com o
-// mesmo id. Se você renomear uma sessão, atualize a chave aqui
-// também.
-//
-// Sessões sem entrada aqui NÃO quebram — só aparecem sem ícone
-// no menu (o chip fica com o número e o label, sem emoji).
+// Emoji fallback (usado quando SVG não estiver definido para a sessão)
 // ------------------------------------------------------------
 var ICONES_SESSOES = {
     'primeiros-passos': '🚀',
@@ -138,12 +213,107 @@ var ICONES_SESSOES = {
 };
 
 // ------------------------------------------------------------
-// i18n helpers locais (wrappers sobre tOr global)
+// SVG monocromáticos (currentColor, stroke 2, sem fill)
+// Estilo inspirado em Lucide/Feather. Inline para evitar 14 fetches.
+// Fallback: emoji de ICONES_SESSOES quando a chave não existir aqui.
+// ------------------------------------------------------------
+var SVG_ICONES_SESSOES = {
+    'primeiros-passos':
+        '<svg viewBox="0 0 24 24" aria-hidden="true">' +
+        '<path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"/>' +
+        '<path d="m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"/>' +
+        '<path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0"/>' +
+        '<path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"/>' +
+        '</svg>',
+    'codecs':
+        '<svg viewBox="0 0 24 24" aria-hidden="true">' +
+        '<path d="M9 18V5l12-2v13"/>' +
+        '<circle cx="6" cy="18" r="3"/>' +
+        '<circle cx="18" cy="16" r="3"/>' +
+        '</svg>',
+    'hardware':
+        '<svg viewBox="0 0 24 24" aria-hidden="true">' +
+        '<rect x="4" y="4" width="16" height="16" rx="2"/>' +
+        '<rect x="9" y="9" width="6" height="6"/>' +
+        '<path d="M15 2v2"/><path d="M15 20v2"/>' +
+        '<path d="M2 15h2"/><path d="M2 9h2"/>' +
+        '<path d="M20 15h2"/><path d="M20 9h2"/>' +
+        '<path d="M9 2v2"/><path d="M9 20v2"/>' +
+        '</svg>',
+    'dispositivos-perifericos':
+        '<svg viewBox="0 0 24 24" aria-hidden="true">' +
+        '<path d="M12 22v-5"/>' +
+        '<path d="M9 8V2"/><path d="M15 8V2"/>' +
+        '<path d="M18 8v5a4 4 0 0 1-4 4h-4a4 4 0 0 1-4-4V8Z"/>' +
+        '</svg>',
+    'producao-multimidia':
+        '<svg viewBox="0 0 24 24" aria-hidden="true">' +
+        '<rect x="2" y="6" width="14" height="12" rx="2"/>' +
+        '<path d="m22 8-6 4 6 4Z"/>' +
+        '</svg>',
+    'aplicativos':
+        '<svg viewBox="0 0 24 24" aria-hidden="true">' +
+        '<path d="m7.5 4.27 9 5.15"/>' +
+        '<path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/>' +
+        '<path d="m3.3 7 8.7 5 8.7-5"/>' +
+        '<path d="M12 22V12"/>' +
+        '</svg>',
+    'casa-escritorio':
+        '<svg viewBox="0 0 24 24" aria-hidden="true">' +
+        '<path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>' +
+        '<polyline points="9 22 9 12 15 12 15 22"/>' +
+        '</svg>',
+    'gaming':
+        '<svg viewBox="0 0 24 24" aria-hidden="true">' +
+        '<line x1="6" y1="11" x2="10" y2="11"/>' +
+        '<line x1="8" y1="9" x2="8" y2="13"/>' +
+        '<line x1="15" y1="12" x2="15.01" y2="12"/>' +
+        '<line x1="18" y1="10" x2="18.01" y2="10"/>' +
+        '<path d="M17.32 5H6.68a4 4 0 0 0-3.978 3.59c-.006.052-.01.101-.017.152C2.604 9.416 2 14.456 2 16a3 3 0 0 0 3 3c1 0 1.5-.5 2-1l1.414-1.414A2 2 0 0 1 9.828 16h4.344a2 2 0 0 1 1.414.586L17 18c.5.5 1 1 2 1a3 3 0 0 0 3-3c0-1.545-.604-6.584-.685-7.258-.007-.05-.011-.1-.017-.151A4 4 0 0 0 17.32 5z"/>' +
+        '</svg>',
+    'waydroid':
+        '<svg viewBox="0 0 24 24" aria-hidden="true">' +
+        '<rect x="5" y="2" width="14" height="20" rx="2"/>' +
+        '<path d="M12 18h.01"/>' +
+        '</svg>',
+    'virtualizacao':
+        '<svg viewBox="0 0 24 24" aria-hidden="true">' +
+        '<rect x="2" y="3" width="20" height="14" rx="2"/>' +
+        '<line x1="8" y1="21" x2="16" y2="21"/>' +
+        '<line x1="12" y1="17" x2="12" y2="21"/>' +
+        '</svg>',
+    'diagnostico':
+        '<svg viewBox="0 0 24 24" aria-hidden="true">' +
+        '<polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>' +
+        '</svg>',
+    'ajustes-manutencao':
+        '<svg viewBox="0 0 24 24" aria-hidden="true">' +
+        '<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>' +
+        '</svg>',
+    'estado-fedora':
+        '<svg viewBox="0 0 24 24" aria-hidden="true">' +
+        '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>' +
+        '</svg>',
+    'sobre-fap':
+        '<svg viewBox="0 0 24 24" aria-hidden="true">' +
+        '<circle cx="12" cy="12" r="10"/>' +
+        '<line x1="12" y1="16" x2="12" y2="12"/>' +
+        '<line x1="12" y1="8" x2="12.01" y2="8"/>' +
+        '</svg>'
+};
+
+function _iconeSessao(id) {
+    if (SVG_ICONES_SESSOES[id]) return SVG_ICONES_SESSOES[id];
+    var emoji = ICONES_SESSOES[id] || '•';
+    return '<span class="fap-sidebar-item-emoji" aria-hidden="true">' + emoji + '</span>';
+}
+
+// ------------------------------------------------------------
+// i18n helpers locais
 // ------------------------------------------------------------
 function _t(chave, fallback) {
     return (typeof tOr === 'function') ? tOr(chave, fallback) : fallback;
 }
-
 function _tVars(chave, fallback, vars) {
     return (typeof tOr === 'function') ? tOr(chave, fallback, vars) : fallback;
 }
@@ -154,6 +324,11 @@ function _tVars(chave, fallback, vars) {
 async function carregarSessao(index) {
     var container = document.getElementById('sessao-container');
     if (!container) return;
+
+    // Limpa o log dock ANTES de recarregar. O dock é filho de
+    // <body>, não de #sessao-container, então substituir o
+    // innerHTML do container não o limpa sozinho.
+    _limparLogDock();
 
     var minhaGeracao = ++_geracaoCarregamento;
 
@@ -170,8 +345,6 @@ async function carregarSessao(index) {
 
     await getProgress();
 
-    // Se outra chamada começou enquanto esperávamos o progresso,
-    // aborta — a geração mais nova cuida do DOM.
     if (minhaGeracao !== _geracaoCarregamento) return;
 
     try {
@@ -182,8 +355,6 @@ async function carregarSessao(index) {
 
         var html = await response.text();
 
-        // Checa de novo: se a geração mudou enquanto o fetch
-        // resolvia, não escreve no DOM.
         if (minhaGeracao !== _geracaoCarregamento) return;
         var bodyMatch = html.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
         var conteudo = bodyMatch ? bodyMatch[1] : html;
@@ -192,9 +363,6 @@ async function carregarSessao(index) {
 
         container.innerHTML = conteudoSemScripts;
 
-        // FIX #1: capturar textos originais ANTES de rodar os scripts da sessão
-        // e ANTES de restaurar estado. O HTML acabou de ser injetado do arquivo-
-        // fonte, então os botões ainda têm o texto original.
         container.querySelectorAll('.btn-executar').forEach(function(btn) {
             if (!btn.hasAttribute('data-texto-original')) {
                 btn.setAttribute('data-texto-original', btn.textContent);
@@ -213,24 +381,6 @@ async function carregarSessao(index) {
             });
         }
 
-        // ============================================================
-        // GUARD DE GERAÇÃO ANTES DE RESTAURAR ESTADO
-        // ============================================================
-        //
-        // Entre o `container.innerHTML = conteudoSemScripts` e este
-        // ponto, rodamos o `eval` dos `<script>` inline da sessão.
-        // Esse eval pode ter chamado `setTimeout`/`await` internos
-        // e, se outra sessão começou a carregar NESSE MEIO, nosso
-        // DOM já foi substituído.
-        //
-        // Sem este guard, `restaurarEstadoSessao` (e as chamadas
-        // seguintes: `inicializarLogsDaSessao`, `numerarSessao`,
-        // `I18N.aplicarTraducoes`) rodariam sobre o DOM da sessão
-        // NOVA, corrompendo-a.
-        //
-        // A checagem já existe antes do `container.innerHTML`, mas
-        // o `await fetch` pode resolver depois de uma segunda
-        // `carregarSessao()` — daí a redundância estratégica aqui.
         if (minhaGeracao !== _geracaoCarregamento) return;
 
         if (typeof restaurarEstadoSessao === 'function') {
@@ -249,6 +399,9 @@ async function carregarSessao(index) {
             }
         }
 
+        // Move o .terminal-log-wrapper da sessão para o dock fixo
+        _moverLogParaDock(container);
+
         numerarSessao(nomeSessao, container);
 
         if (typeof I18N !== 'undefined' && typeof I18N.aplicarTraducoes === 'function') {
@@ -261,8 +414,6 @@ async function carregarSessao(index) {
         console.log('✅ Sessão carregada: ' + nomeSessao);
 
     } catch (e) {
-        // Se fomos cancelados por uma geração mais nova, não sobrescreve
-        // o conteúdo que a chamada nova está montando.
         if (minhaGeracao !== _geracaoCarregamento) return;
 
         console.error('Erro ao carregar sessão:', e);
@@ -281,22 +432,408 @@ async function carregarSessao(index) {
 }
 
 // ------------------------------------------------------------
-// Decide em qual sessão abrir no boot
+// LOG DOCK — move o .terminal-log-wrapper da sessão para o
+// painel fixo. A referência ao .terminal-log (usada pelo SSE)
+// continua a mesma; só muda o pai do DOM.
 // ------------------------------------------------------------
-//
-// Prioridade:
-//   1. Parâmetro ?session=X na URL (deep-link) — se válido
-//   2. Chave 'fap_sessao_ativa' no localStorage — se válida
-//   3. Sessão 0 (fallback)
-//
-// O deep-link tem precedência porque o usuário o digitou
-// explicitamente agora. E ele ATUALIZA a chave de localStorage
-// (o irParaSessao() já faz isso), então o deep-link vira a nova
-// sessão ativa.
+
+var _observadorLogDock = null;
+
+function _limparLogDock() {
+    var dock = document.getElementById('fap-log-dock');
+    if (!dock) return;
+
+    // Desconecta o MutationObserver anterior antes de recriar. Sem
+    // isso, cada sessão carregada acumulava um observer vivo (o
+    // `null` só perdia a referência, não parava de observar).
+    if (_observadorLogDock) {
+        _observadorLogDock.disconnect();
+        _observadorLogDock = null;
+    }
+
+    dock.innerHTML = '';
+    dock.hidden = true;
+    document.body.classList.remove('log-dock-visivel', 'log-dock-expandido');
+}
+
+function _moverLogParaDock(container) {
+    var dock = document.getElementById('fap-log-dock');
+    if (!dock || !container) return;
+
+    var wrapper = container.querySelector('.terminal-log-wrapper');
+    if (!wrapper) {
+        _limparLogDock();
+        return;
+    }
+
+    dock.innerHTML = '';
+    dock.appendChild(wrapper);
+    dock.hidden = false;
+    document.body.classList.add('log-dock-visivel');
+
+    // O log SEMPRE inicia recolhido ao carregar uma sessão. O
+    // usuário pode expandir manualmente pelo toggle; o estado não
+    // persiste entre sessões nem entre reloads — por decisão de
+    // UX, preferimos um ponto de partida previsível.
+    var toggle = wrapper.querySelector('.terminal-log-toggle');
+    var log = wrapper.querySelector('.terminal-log');
+    if (toggle && log) {
+        toggle.classList.remove('expandido');
+        log.classList.remove('expandido');
+        document.body.classList.remove('log-dock-expandido');
+    }
+
+    // Observa mudanças de classe no toggle (script.js faz toggle
+    // via classList.toggle). Mantém body.log-dock-expandido
+    // sincronizado.
+    _observadorLogDock = new MutationObserver(function() {
+        var t = dock.querySelector('.terminal-log-toggle');
+        var exp = t && t.classList.contains('expandido');
+        document.body.classList.toggle('log-dock-expandido', !!exp);
+        try { localStorage.setItem('fap_log_expandido', exp ? '1' : '0'); } catch (e) {}
+    });
+    _observadorLogDock.observe(dock, { attributes: true, subtree: true, attributeFilter: ['class'] });
+}
+
+// ------------------------------------------------------------
+// SIDEBAR — criação e atualização
+// ------------------------------------------------------------
+
+function criarSidebar() {
+    var nav = document.getElementById('fap-sidebar-nav');
+    if (!nav) return;
+    if (nav.children.length > 0) return;
+
+    var total = SESSOES_PRINCIPAIS.length;
+    for (var i = 0; i < total; i++) {
+        var sessaoId = SESSOES_PRINCIPAIS[i];
+        var nome = nomeDaSessao(sessaoId);
+        var icone = _iconeSessao(sessaoId);
+
+        var item = document.createElement('div');
+        item.className = 'session-menu-item fap-sidebar-item';
+        item.dataset.index = String(i);
+        item.dataset.sessao = sessaoId;
+        item.setAttribute('role', 'tab');
+        item.setAttribute('tabindex', '0');
+        item.title = nome;
+
+        var chaveNome = 'sessoes.' + sessaoId + '.nome';
+        item.innerHTML =
+            '<span class="fap-sidebar-item-icon">' + icone + '</span>' +
+            '<span class="fap-sidebar-item-label" data-i18n="' + chaveNome + '">' + nome + '</span>' +
+            '<span class="fap-sidebar-item-progress" data-progress aria-hidden="true"></span>' +
+            '<span class="fap-sidebar-item-count" data-count></span>';
+
+        item.addEventListener('click', function() {
+            if (this.classList.contains('bloqueado')) {
+                if (typeof mostrarToast === 'function') {
+                    mostrarToast(_t('comum.navegacao_bloqueada',
+                        'Aguarde o término dos comandos desta sessão para trocar de sessão.'),
+                        'info', 4000);
+                }
+                return;
+            }
+            var idx = parseInt(this.dataset.index, 10);
+            if (idx !== sessaoAtual) irParaSessao(idx);
+        });
+
+        item.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                if (this.classList.contains('bloqueado')) return;
+                var idx = parseInt(this.dataset.index, 10);
+                if (idx !== sessaoAtual) irParaSessao(idx);
+            }
+        });
+
+        nav.appendChild(item);
+    }
+
+    atualizarSidebar();
+}
+
+function atualizarSidebar() {
+    var nav = document.getElementById('fap-sidebar-nav');
+    if (!nav) return;
+
+    var itens = nav.querySelectorAll('.session-menu-item');
+    itens.forEach(function(item, idx) {
+        var sessaoId = item.dataset.sessao;
+
+        item.classList.toggle('ativa', idx === sessaoAtual);
+        if (idx === sessaoAtual) {
+            item.setAttribute('aria-current', 'page');
+        } else {
+            item.removeAttribute('aria-current');
+        }
+
+        // Contagem (executados/total) e indicador de progresso
+        var c = (typeof _contagemSessao === 'function')
+            ? _contagemSessao(sessaoId)
+            : { feitos: 0, pulados: 0, total: 0, na: false };
+
+        item.classList.toggle('na', !!c.na);
+
+        var progEl = item.querySelector('[data-progress]');
+        if (progEl) {
+            if (c.na) progEl.textContent = '⊘';
+            else if (c.total > 0 && c.feitos >= c.total) progEl.textContent = '●';
+            else if (c.feitos > 0) progEl.textContent = '◐';
+            else progEl.textContent = '○';
+        }
+
+        var countEl = item.querySelector('[data-count]');
+        if (countEl) {
+            if (c.na) {
+                countEl.textContent = '';
+            } else {
+                var txt = c.feitos + '/' + c.total;
+                if (c.pulados > 0) txt += ' · ' + c.pulados + '⊘';
+                countEl.textContent = txt;
+                countEl.classList.toggle('pulados', c.pulados > 0);
+            }
+        }
+
+        item.classList.toggle('concluida', c.total > 0 && c.feitos >= c.total && !c.na);
+
+        // Tooltip com o nome da sessão (útil no modo colapsado)
+        item.setAttribute('title', nomeDaSessao(sessaoId));
+    });
+
+    var ativo = nav.querySelector('.session-menu-item.ativa');
+    if (ativo && typeof ativo.scrollIntoView === 'function') {
+        try {
+            ativo.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
+        } catch (e) {
+            ativo.scrollIntoView(false);
+        }
+    }
+}
+
+// ------------------------------------------------------------
+// BUSCA — configuração e renderização
+// ------------------------------------------------------------
+
+var _termoBuscaAtual = '';
+
+function _configurarBusca() {
+    var input = document.getElementById('fap-busca');
+    if (!input || input.hasAttribute('data-listeners-ready')) return;
+    input.setAttribute('data-listeners-ready', '1');
+
+    var debounce = null;
+    input.addEventListener('input', function() {
+        clearTimeout(debounce);
+        var termo = input.value.trim();
+        _termoBuscaAtual = termo;
+
+        if (termo.length < 2) {
+            _resetSidebarBusca();
+            return;
+        }
+
+        debounce = setTimeout(function() {
+            if (typeof _buscar !== 'function') return;
+            var res = _buscar(termo);
+            _aplicarDestaqueBusca(res, termo);
+        }, 100);
+    });
+
+    input.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            input.value = '';
+            _termoBuscaAtual = '';
+            _resetSidebarBusca();
+        }
+    });
+}
+
+function _resetSidebarBusca() {
+    var nav = document.getElementById('fap-sidebar-nav');
+    if (!nav) return;
+    nav.querySelectorAll('.session-menu-item').forEach(function(item) {
+        item.classList.remove('busca-hit-nome', 'busca-hit-itens');
+    });
+    atualizarSidebar();
+}
+
+function _aplicarDestaqueBusca(res, termo) {
+    var nav = document.getElementById('fap-sidebar-nav');
+    if (!nav) return;
+
+    var porSessao = {};
+    (res.itens || []).forEach(function(it) {
+        if (!porSessao[it.sessaoId]) porSessao[it.sessaoId] = 0;
+        porSessao[it.sessaoId]++;
+    });
+    var nomesHit = {};
+    (res.sessoes || []).forEach(function(s) { nomesHit[s.id] = true; });
+
+    nav.querySelectorAll('.session-menu-item').forEach(function(item) {
+        var id = item.dataset.sessao;
+        var hitNome = !!nomesHit[id];
+        var hitItens = porSessao[id] || 0;
+
+        item.classList.toggle('busca-hit-nome', hitNome && !hitItens);
+        item.classList.toggle('busca-hit-itens', hitItens > 0);
+
+        var countEl = item.querySelector('[data-count]');
+        if (!countEl) return;
+
+        if (hitItens > 0) {
+            // Sessão tem itens que casam: mostra "N item(ns)".
+            countEl.textContent = hitItens + ' ' +
+                (hitItens === 1
+                    ? _t('busca.item', 'item')
+                    : _t('busca.itens', 'itens'));
+            countEl.classList.add('pulados');
+        } else {
+            // Sem hit: restaura a contagem de progresso normal,
+            // sem herdar estado da busca anterior.
+            var c = (typeof _contagemSessao === 'function')
+                ? _contagemSessao(id)
+                : { feitos: 0, pulados: 0, total: 0, na: false };
+            if (c.na) {
+                countEl.textContent = '';
+                countEl.classList.remove('pulados');
+            } else {
+                var txt = c.feitos + '/' + c.total;
+                if (c.pulados > 0) txt += ' · ' + c.pulados + '⊘';
+                countEl.textContent = txt;
+                countEl.classList.toggle('pulados', c.pulados > 0);
+            }
+        }
+    });
+}
+
+// ------------------------------------------------------------
+// N/A
+// ------------------------------------------------------------
+
+function _configurarNA() {
+    var btn = document.getElementById('fap-na-btn');
+    if (btn && !btn.hasAttribute('data-listener-ready')) {
+        btn.setAttribute('data-listener-ready', '1');
+        btn.addEventListener('click', function() {
+            var sessaoId = SESSOES_PRINCIPAIS[sessaoAtual];
+            if (!sessaoId) return;
+            if (typeof _sessaoNA === 'function' && _sessaoNA(sessaoId)) {
+                _desmarcarSessaoNA(sessaoId);
+            } else {
+                _marcarSessaoNA(sessaoId);
+            }
+            _atualizarNAUI();
+            atualizarSidebar();
+        });
+    }
+    var bannerLimpar = document.getElementById('fap-na-banner-limpar');
+    if (bannerLimpar && !bannerLimpar.hasAttribute('data-listener-ready')) {
+        bannerLimpar.setAttribute('data-listener-ready', '1');
+        bannerLimpar.addEventListener('click', function() {
+            var sessaoId = SESSOES_PRINCIPAIS[sessaoAtual];
+            if (!sessaoId) return;
+            _desmarcarSessaoNA(sessaoId);
+            _atualizarNAUI();
+            atualizarSidebar();
+        });
+    }
+}
+
+function _atualizarNAUI() {
+    var sessaoId = SESSOES_PRINCIPAIS[sessaoAtual];
+    var ativo = sessaoId && typeof _sessaoNA === 'function' && _sessaoNA(sessaoId);
+
+    var btn = document.getElementById('fap-na-btn');
+    if (btn) {
+        btn.classList.toggle('ativo', !!ativo);
+        var label = btn.querySelector('.fap-sidebar-na-label');
+        if (label) {
+            label.textContent = ativo
+                ? _t('sidebar.na_btn_ativo', 'Desmarcar N/A')
+                : _t('sidebar.na_btn', 'Marcar esta sessão como N/A');
+        }
+    }
+
+    var banner = document.getElementById('fap-na-banner');
+    if (banner) banner.hidden = !ativo;
+}
+
+// ------------------------------------------------------------
+// HAMBURGER (mobile) e BACKDROP
+// ------------------------------------------------------------
+
+function _configurarHamburger() {
+    var hamburger = document.getElementById('fap-hamburger');
+    var sidebar = document.getElementById('fap-sidebar');
+    var backdrop = document.getElementById('fap-sidebar-backdrop');
+
+    if (hamburger && !hamburger.hasAttribute('data-listener-ready')) {
+        hamburger.setAttribute('data-listener-ready', '1');
+        hamburger.addEventListener('click', function() {
+            if (!sidebar) return;
+            sidebar.classList.add('aberta');
+            if (backdrop) backdrop.classList.add('visivel');
+        });
+    }
+    if (backdrop && !backdrop.hasAttribute('data-listener-ready')) {
+        backdrop.setAttribute('data-listener-ready', '1');
+        backdrop.addEventListener('click', function() {
+            if (sidebar) sidebar.classList.remove('aberta');
+            backdrop.classList.remove('visivel');
+        });
+    }
+}
+
+// ------------------------------------------------------------
+// REFRESH e FILTRO
+// ------------------------------------------------------------
+
+function _configurarRefresh() {
+    var btn = document.getElementById('btn-refresh-estado');
+    if (!btn || btn.hasAttribute('data-listener-ready')) return;
+    btn.setAttribute('data-listener-ready', '1');
+    btn.addEventListener('click', function() {
+        if (typeof _refreshEstadoSessao === 'function') {
+            _refreshEstadoSessao();
+        }
+    });
+}
+
+function _configurarFiltroBanner() {
+    var btn = document.getElementById('fap-filtro-banner-limpar');
+    if (!btn || btn.hasAttribute('data-listener-ready')) return;
+    btn.setAttribute('data-listener-ready', '1');
+    btn.addEventListener('click', function() {
+        if (typeof _limparFiltroSessao === 'function') {
+            _limparFiltroSessao();
+        }
+        // Também limpa o input de busca
+        var input = document.getElementById('fap-busca');
+        if (input) input.value = '';
+        _termoBuscaAtual = '';
+        _resetSidebarBusca();
+    });
+}
+
+// Quando o índice de busca termina de ser construído, re-roda a
+// busca se o usuário já tinha digitado algo. Sem isso, uma busca
+// feita antes do preload terminar (primeiros ~1-3s após abrir o
+// FAP) retornava vazia e não era refeita.
+document.addEventListener('fap-indice-pronto', function() {
+    if (_termoBuscaAtual && _termoBuscaAtual.length >= 2 && typeof _buscar === 'function') {
+        var res = _buscar(_termoBuscaAtual);
+        _aplicarDestaqueBusca(res, _termoBuscaAtual);
+    }
+});
+
+// ------------------------------------------------------------
+// NAVEGAÇÃO
+// ------------------------------------------------------------
+
 function irParaSessaoInicial() {
     var total = SESSOES_PRINCIPAIS.length;
 
-    // 1. Deep-link ?session=X
     try {
         var params = new URLSearchParams(window.location.search);
         var sessaoAlvo = params.get('session');
@@ -305,38 +842,52 @@ function irParaSessaoInicial() {
             irParaSessao(idx);
             return;
         }
-    } catch (e) { /* URLSearchParams indisponível ou URL malformada */ }
+    } catch (e) { /* ignore */ }
 
-    // 2. Sessão ativa salva
     try {
         var salvo = parseInt(localStorage.getItem('fap_sessao_ativa'), 10);
         if (!isNaN(salvo) && salvo >= 0 && salvo < total) {
             irParaSessao(salvo);
             return;
         }
-    } catch (e) { /* localStorage indisponível */ }
+    } catch (e) { /* ignore */ }
 
-    // 3. Fallback: primeira sessão
     irParaSessao(0);
 }
 
-// ------------------------------------------------------------
-// Navegar para uma sessão (usado pelo menu, botões e deep-link)
-// ------------------------------------------------------------
 function irParaSessao(index) {
     var total = SESSOES_PRINCIPAIS.length;
     if (index < 0 || index >= total) return;
 
+    var sessaoAnterior = sessaoAtual;
     sessaoAtual = index;
 
-    // Persiste a sessão ativa para que:
-    // 1. Ao trocar de idioma (que recarrega a página), o usuário
-    //    volte para a mesma sessão onde estava.
-    // 2. Ao fechar e reabrir o FAP, ele reabra na última sessão.
-    // A chave é lida em carregarSessaoInicial() no boot.
     try {
         localStorage.setItem('fap_sessao_ativa', String(index));
-    } catch (e) { /* localStorage indisponível */ }
+    } catch (e) { /* ignore */ }
+
+    // Aplicar filtro de busca após o carregamento? Determinado
+    // ANTES de limpar o termo, para não perder a intenção.
+    var termoAtivo = '';
+    var input = document.getElementById('fap-busca');
+    if (input) termoAtivo = input.value.trim();
+
+    var deveAplicarFiltro = false;
+    if (termoAtivo.length >= 2 && typeof _buscar === 'function') {
+        try {
+            var res = _buscar(termoAtivo);
+            if (res.itens && res.itens.some(function(it) {
+                return it.sessaoId === SESSOES_PRINCIPAIS[index];
+            })) {
+                deveAplicarFiltro = true;
+            }
+        } catch (e) { /* ignore */ }
+    }
+
+    // Trocar de sessão sempre limpa o filtro anterior
+    if (typeof _limparFiltroSessao === 'function') {
+        _limparFiltroSessao();
+    }
 
     carregarSessao(index);
 
@@ -356,14 +907,33 @@ function irParaSessao(index) {
     }
 
     atualizarBarraPosicao(index, total);
-    atualizarMenuSessoes();
+    atualizarSidebar();
+    _atualizarNAUI();
 
     setTimeout(carregarProgressoInicial, 300);
+
+    // Aplica filtro se o usuário veio de uma busca. Também limpa
+    // o termo de busca (é efêmero: a próxima navegação via
+    // sidebar não deve reaplicar).
+    if (deveAplicarFiltro && input) {
+        // Guarda o termo para usar depois que o HTML carregar
+        var termoParaAplicar = termoAtivo;
+        setTimeout(function() {
+            if (typeof _aplicarFiltroSessao === 'function') {
+                _aplicarFiltroSessao(termoParaAplicar);
+            }
+        }, 500);
+        // Limpa o input (a barra de busca fica "vazia" visualmente),
+        // mas mantém _termoBuscaAtual durante o carregamento para
+        // preservar o destaque da sidebar. Zeramos ao final.
+        setTimeout(function() {
+            if (input) input.value = '';
+            _termoBuscaAtual = '';
+            _resetSidebarBusca();
+        }, 800);
+    }
 }
 
-// ------------------------------------------------------------
-// Atualiza a barra de posição (progresso do fluxo)
-// ------------------------------------------------------------
 function atualizarBarraPosicao(atual, total) {
     var fill = document.getElementById('progress-guia-fill');
     var text = document.getElementById('progress-guia-text');
@@ -380,9 +950,6 @@ function atualizarBarraPosicao(atual, total) {
     }
 }
 
-// ------------------------------------------------------------
-// Navegação Anterior / Próximo
-// ------------------------------------------------------------
 function sessaoAnterior() {
     if (sessaoAtual > 0) irParaSessao(sessaoAtual - 1);
 }
@@ -395,140 +962,8 @@ function proximaSessao() {
 }
 
 // ============================================================
-// MENU DE SESSÕES FIXO (substitui as bolinhas coloridas)
+// SOBRESCRITAS (progresso → sidebar)
 // ============================================================
-//
-// Cria um chip clicável para cada sessão principal, com:
-// - ícone (emoji de ICONES_SESSOES)
-// - número da sessão
-// - nome da sessão (traduzido)
-// - estado: ativa (sessão atual) / concluída (todas as tarefas feitas)
-//
-// O menu é criado uma única vez (em criarMenuSessoes) e atualizado
-// a cada troca de sessão (em atualizarMenuSessoes).
-
-function criarMenuSessoes() {
-    var wrapper = document.getElementById('session-menu-wrapper');
-    var menu = document.getElementById('session-menu');
-    if (!wrapper || !menu) return;
-
-    // Se já foi criado, não duplica
-    if (menu.children.length > 0) return;
-
-    var total = SESSOES_PRINCIPAIS.length;
-    for (var i = 0; i < total; i++) {
-        var sessaoId = SESSOES_PRINCIPAIS[i];
-        var nome = nomeDaSessao(sessaoId);
-        var icone = ICONES_SESSOES[sessaoId] || '•';
-
-        var item = document.createElement('div');
-        item.className = 'session-menu-item';
-        item.dataset.index = String(i);
-        item.dataset.sessao = sessaoId;
-        item.setAttribute('role', 'tab');
-        item.setAttribute('tabindex', '0');
-        item.title = nome;
-
-        // O menu é construído antes do JSON de tradução terminar de
-        // carregar (o fetch é assíncrono). Por isso o texto inicial
-        // cai no fallback pt-BR. Adicionar data-i18n no <span> faz o
-        // aplicarTraducoes() do i18n.js encontrar e retraduzir o chip
-        // quando o JSON chegar — sem precisar reconstruir o menu.
-        var chaveNome = 'sessoes.' + sessaoId + '.nome';
-        item.innerHTML =
-            '<span class="session-icon">' + icone + '</span>' +
-            '<span class="session-numero">' + (i + 1) + '</span>' +
-            '<span class="session-label" data-i18n="' + chaveNome + '">' + nome + '</span>';
-
-        item.addEventListener('click', function() {
-            // Se o chip está bloqueado (há comando rodando na
-            // sessão atual), avisa o usuário e não navega. O
-            // `pointer-events` no CSS não é usado para permitir
-            // que o tooltip (title) funcione.
-            if (this.classList.contains('bloqueado')) {
-                if (typeof mostrarToast === 'function') {
-                    mostrarToast(_t('comum.navegacao_bloqueada',
-                        'Aguarde o término dos comandos desta sessão para trocar de sessão.'),
-                        'info', 4000);
-                }
-                return;
-            }
-            var idx = parseInt(this.dataset.index, 10);
-            if (idx !== sessaoAtual) irParaSessao(idx);
-        });
-
-        // Acessibilidade: Enter/Espaço também navegam
-        item.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                if (this.classList.contains('bloqueado')) {
-                    if (typeof mostrarToast === 'function') {
-                        mostrarToast(_t('comum.navegacao_bloqueada',
-                            'Aguarde o término dos comandos desta sessão para trocar de sessão.'),
-                            'info', 4000);
-                    }
-                    return;
-                }
-                var idx = parseInt(this.dataset.index, 10);
-                if (idx !== sessaoAtual) irParaSessao(idx);
-            }
-        });
-
-        menu.appendChild(item);
-    }
-
-    // Mostra o wrapper agora que tem itens
-    wrapper.style.display = '';
-
-    atualizarMenuSessoes();
-}
-
-function atualizarMenuSessoes() {
-    var menu = document.getElementById('session-menu');
-    if (!menu) return;
-
-    var itens = menu.querySelectorAll('.session-menu-item');
-    itens.forEach(function(item, idx) {
-        var sessaoId = item.dataset.sessao;
-
-        // Estado "ativa"
-        if (idx === sessaoAtual) {
-            item.classList.add('ativa');
-            item.setAttribute('aria-selected', 'true');
-        } else {
-            item.classList.remove('ativa');
-            item.setAttribute('aria-selected', 'false');
-        }
-
-        // Estado "concluída" (todas as tarefas não-sempre-clicáveis feitas)
-        if (typeof getStatusSessao === 'function' && getStatusSessao(sessaoId) === 'executado') {
-            item.classList.add('concluida');
-        } else {
-            item.classList.remove('concluida');
-        }
-    });
-
-    // Scroll automático para o item ativo (importante quando há
-    // muitas sessões e o menu rola horizontalmente em telas pequenas)
-    var ativo = menu.querySelector('.session-menu-item.ativa');
-    if (ativo && typeof ativo.scrollIntoView === 'function') {
-        try {
-            ativo.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-        } catch (e) {
-            // Alguns WebKitGTK antigos não aceitam options; fallback
-            ativo.scrollIntoView(false);
-        }
-    }
-}
-
-// ============================================================
-// SOBRESCRITAS (marcadores que disparam atualização do menu)
-// ============================================================
-//
-// As funções marcarComoExecutado / desmarcarComoExecutado /
-// marcarComoPulado do script.js atualizam o progresso, mas não
-// sabem do menu. Sobrescrevemos aqui para também atualizar o
-// menu após a mudança de estado.
 
 var marcarComoExecutadoOriginal = marcarComoExecutado;
 var desmarcarComoExecutadoOriginal = desmarcarComoExecutado;
@@ -537,46 +972,34 @@ var marcarComoPuladoOriginal = marcarComoPulado;
 marcarComoExecutado = async function(idComando) {
     await marcarComoExecutadoOriginal(idComando);
     setTimeout(function() {
-        atualizarMenuSessoes();
+        atualizarSidebar();
+        _atualizarNAUI();
     }, 100);
 };
 
 desmarcarComoExecutado = async function(idComando) {
     await desmarcarComoExecutadoOriginal(idComando);
-    atualizarMenuSessoes();
+    atualizarSidebar();
+    _atualizarNAUI();
 };
 
 marcarComoPulado = async function(idComando) {
     await marcarComoPuladoOriginal(idComando);
-    atualizarMenuSessoes();
+    atualizarSidebar();
 };
 
 // ============================================================
-// REAPLICAÇÃO DE TEXTOS DINÂMICOS APÓS O I18N CARREGAR
+// REAPLICAÇÃO DE TEXTOS DINÂMICOS
 // ============================================================
-//
-// Os elementos abaixo são preenchidos por JS durante o boot, ANTES
-// do JSON de tradução terminar de carregar (o fetch é assíncrono).
-// Resultado: em EN/ES, ficam em pt-BR até a próxima interação.
-//
-// Esta função reaplica os textos que dependem do idioma. É chamada
-// em dois momentos:
-//   1. Quando o i18n.js dispara 'i18n-pronto' (JSON recém-carregado)
-//   2. A cada 'sessao-carregada' (para garantir que os textos do
-//      rodapé/label também reflitam o idioma atual)
 
 function _reaplicarTextosDinamicos() {
     var total = SESSOES_PRINCIPAIS.length;
     if (total === 0) return;
 
-    // Guarda de sanidade: se por algum motivo sessaoAtual está fora
-    // do intervalo, reseta para 0 para não quebrar os lookups abaixo.
     if (sessaoAtual < 0 || sessaoAtual >= total) sessaoAtual = 0;
 
-    // 1. Barra de posição ("N de total")
     atualizarBarraPosicao(sessaoAtual, total);
 
-    // 2. Rodapé com o nome da sessão ("N/total - Sessão X")
     var infoSessao = document.getElementById('info-sessao');
     if (infoSessao) {
         var nomeAtual = nomeDaSessao(SESSOES_PRINCIPAIS[sessaoAtual]);
@@ -587,23 +1010,55 @@ function _reaplicarTextosDinamicos() {
         );
     }
 
-    // 3. Label "Sessão N" no topo da sessão carregada
     var container = document.getElementById('sessao-container');
     if (container && typeof numerarSessao === 'function') {
         numerarSessao(SESSOES_PRINCIPAIS[sessaoAtual], container);
     }
 
-    // 4. Menu de sessões (chips com data-i18n agora)
-    var menu = document.getElementById('session-menu');
-    if (menu && typeof I18N !== 'undefined' && typeof I18N.aplicarTraducoes === 'function') {
-        I18N.aplicarTraducoes(menu);
+    var nav = document.getElementById('fap-sidebar-nav');
+    if (nav && typeof I18N !== 'undefined' && typeof I18N.aplicarTraducoes === 'function') {
+        I18N.aplicarTraducoes(nav);
     }
+
+    atualizarSidebar();
+    _atualizarNAUI();
 }
 
 document.addEventListener('i18n-pronto', function() {
-    // Pequeno delay para garantir que o DOM já foi populado pelo
-    // carregarSessao inicial (que também é assíncrono).
     setTimeout(_reaplicarTextosDinamicos, 100);
+});
+
+// ============================================================
+// LISTENERS
+// ============================================================
+
+document.addEventListener('sessao-carregada', function(e) {
+    setTimeout(function() {
+        atualizarSidebar();
+        _reaplicarTextosDinamicos();
+    }, 150);
+
+    // Aplicar filtro de busca pós-carregamento se houver termo ativo
+    // e a sessão casar com itens. Este listener roda DEPOIS do
+    // carregamento bem-sucedido (o evento é disparado no fim de
+    // carregarSessao).
+    if (_termoBuscaAtual && _termoBuscaAtual.length >= 2 && e && e.detail && e.detail.sessao) {
+        setTimeout(function() {
+            if (typeof _aplicarFiltroSessao === 'function' && typeof _buscar === 'function') {
+                try {
+                    var res = _buscar(_termoBuscaAtual);
+                    if (res.itens && res.itens.some(function(it) {
+                        return it.sessaoId === e.detail.sessao;
+                    })) {
+                        // Não reaplica se o irParaSessao já cuidou disso
+                        if (typeof _filtroAtual !== 'undefined' && !_filtroAtual) {
+                            _aplicarFiltroSessao(_termoBuscaAtual);
+                        }
+                    }
+                } catch (err) { /* ignore */ }
+            }
+        }, 200);
+    }
 });
 
 // ============================================================
@@ -624,14 +1079,29 @@ document.addEventListener('DOMContentLoaded', function() {
         loadingTexto.textContent = _t('comum.spinner_carregando_sessao', 'Carregando sessão...');
     }
 
+    // Configurações específicas do guiado
+    var toggleBtn = document.getElementById('fap-sidebar-toggle');
+    if (toggleBtn && !toggleBtn.hasAttribute('data-listener-ready')) {
+        toggleBtn.setAttribute('data-listener-ready', '1');
+        toggleBtn.addEventListener('click', function() {
+            if (typeof _alternarSidebar === 'function') _alternarSidebar();
+        });
+    }
+
+    _configurarBusca();
+    _configurarNA();
+    _configurarHamburger();
+    _configurarRefresh();
+    _configurarFiltroBanner();
+
     if (typeof getProgress !== 'undefined' && typeof SESSOES_PRINCIPAIS !== 'undefined') {
-        criarMenuSessoes();
+        criarSidebar();
         irParaSessaoInicial();
     } else {
         console.warn('⏳ Aguardando script.js carregar...');
         setTimeout(function() {
             if (typeof getProgress !== 'undefined' && typeof SESSOES_PRINCIPAIS !== 'undefined') {
-                criarMenuSessoes();
+                criarSidebar();
                 irParaSessaoInicial();
             } else {
                 console.error('❌ script.js não foi carregado!');
@@ -646,15 +1116,6 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }, 200);
     }
-});
-
-// A cada sessão carregada, atualiza o menu (para refletir
-// mudanças de estado) e reaplica textos dinâmicos traduzidos
-document.addEventListener('sessao-carregada', function() {
-    setTimeout(function() {
-        atualizarMenuSessoes();
-        _reaplicarTextosDinamicos();
-    }, 150);
 });
 </script>
 </body>

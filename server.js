@@ -932,8 +932,17 @@ function commandExists(cmd) {
 // ============================================================
 
 function executarComandoComStream(comandoFinal, idComando, isReversao, callback) {
-    const precisaAutenticacao = !_cmdSemAutenticacao(comandoFinal) &&
-    !_idSemAuthValido(idComando, comandoFinal);
+    // Força line-buffering em comandos que tendem a bufferizar
+    // stdout quando não há TTY. Sem isso, o `flatpak install`
+    // imprime tudo de uma vez no final — o que faz o log parecer
+    // "travado" no começo e "explodir" no final.
+    if (/^\s*(?:sudo\s+)?(?:stdbuf\b[^\n]*?)?flatpak\s+/.test(comandoFinal) &&
+        !/^\s*stdbuf\b/.test(comandoFinal)) {
+        comandoFinal = 'stdbuf -oL -eL ' + comandoFinal;
+        }
+
+        const precisaAutenticacao = !_cmdSemAutenticacao(comandoFinal) &&
+        !_idSemAuthValido(idComando, comandoFinal);
 
     if (!precisaAutenticacao) {
         console.log(`[INFO] Comando SEM autenticação: ${comandoFinal.substring(0, 50)}...`);

@@ -18,6 +18,38 @@
 </div>
 
 <!-- ============================================================
+FILTROS — ESTADO + ORIGEM
+============================================================
+Os dois filtros são combináveis (AND lógico). "Pré-existentes"
+significa app instalado no sistema mas NÃO pelo FAP. "Pulados"
+significa app que o usuário marcou como pulado (não tem UI de
+marcação ainda; o filtro só é útil quando a UI existir).
+-->
+<div class="fap-filtros" id="fap-filtros-apps">
+<div class="fap-filtros-grupo">
+<span class="fap-filtros-label" data-i18n="filtros.label_estado">Estado:</span>
+<button type="button" class="fap-filtro-chip ativo" data-filtro-grupo="estado" data-filtro-valor="todos" data-i18n="filtros.estado.todos">Todos</button>
+<button type="button" class="fap-filtro-chip" data-filtro-grupo="estado" data-filtro-valor="nao_feitos" data-i18n="filtros.estado.nao_feitos">Não feitos</button>
+<button type="button" class="fap-filtro-chip" data-filtro-grupo="estado" data-filtro-valor="feitos" data-i18n="filtros.estado.feitos">Feitos</button>
+<button type="button" class="fap-filtro-chip" data-filtro-grupo="estado" data-filtro-valor="preexistentes" data-i18n="filtros.estado.preexistentes">Pré-existentes</button>
+<button type="button" class="fap-filtro-chip" data-filtro-grupo="estado" data-filtro-valor="pulados" data-i18n="filtros.estado.pulados">Pulados</button>
+</div>
+
+<div class="fap-filtros-grupo">
+<span class="fap-filtros-label" data-i18n="filtros.label_origem">Origem:</span>
+<button type="button" class="fap-filtro-chip ativo" data-filtro-grupo="origem" data-filtro-valor="todas" data-i18n="filtros.origem.todas">Todas</button>
+<button type="button" class="fap-filtro-chip" data-filtro-grupo="origem" data-filtro-valor="flathub" data-i18n="filtros.origem.flathub">Flathub</button>
+<button type="button" class="fap-filtro-chip" data-filtro-grupo="origem" data-filtro-valor="fedora" data-i18n="filtros.origem.fedora">Fedora</button>
+<button type="button" class="fap-filtro-chip" data-filtro-grupo="origem" data-filtro-valor="rpmfusion" data-i18n="filtros.origem.rpmfusion">RPM Fusion</button>
+<button type="button" class="fap-filtro-chip" data-filtro-grupo="origem" data-filtro-valor="fabricante" data-i18n="filtros.origem.fabricante">Fabricante</button>
+<button type="button" class="fap-filtro-chip" data-filtro-grupo="origem" data-filtro-valor="download" data-i18n="filtros.origem.download">Download</button>
+<button type="button" class="fap-filtro-chip" data-filtro-grupo="origem" data-filtro-valor="comunidade" data-i18n="filtros.origem.comunidade">Comunidade</button>
+</div>
+
+<button type="button" class="fap-filtros-limpar" style="display: none;" data-i18n="filtros.limpar">Limpar filtros</button>
+</div>
+
+<!-- ============================================================
 BLOCO 1 — PRODUTIVIDADE E ESCRITÓRIO
 ============================================================ -->
 <details class="acordeao">
@@ -1552,6 +1584,12 @@ async function restaurarEstadoSessao() {
     });
 
     restaurarEstadoSessao();
+
+    // Inicializa os filtros de estado + origem. A função está em
+    // script.js e é idempotente (não registra listeners duas vezes).
+    if (typeof _inicializarFiltrosApps === 'function') {
+        _inicializarFiltrosApps();
+    }
 
     console.log('📦 Componente aplicativos carregado!');
 })();

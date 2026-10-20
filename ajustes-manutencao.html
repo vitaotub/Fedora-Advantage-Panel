@@ -1531,16 +1531,49 @@ function _aplicarEstadoBotoesGrub(aplicado) {
 // ------------------------------------------------------------
 
 async function restaurarEstadoSessao() {
-    // --- Idioma: one-shot ---
-    ['idioma-packs', 'idioma-hunspell', 'idioma-localectl'].forEach(function(id) {
-        if (isExecutado(id)) {
-            var btn = document.getElementById('btn-' + id);
-            if (btn) {
-                btn.textContent = getTextoAposExecucao(id);
-                btn.style.backgroundColor = '#4b5563';
-                btn.style.cursor = 'default';
-                btn.disabled = true;
-            }
+    // --- Idioma: one-shot com detecção ---
+    //
+    // Cada um dos 3 botões de idioma agora detecta pré-existência via
+    // SystemState:
+    //   • idioma-packs     → pacote langpacks-pt_BR
+    //   • idioma-hunspell  → pacote hunspell-br (com fallback pt-BR)
+    //   • idioma-localectl → SystemState.localeLang() === 'pt_BR.UTF-8'
+    var idiomaPacksJa = false;
+    var idiomaHunspellJa = false;
+    var idiomaLocaleJa = false;
+    try {
+        idiomaPacksJa = SystemState.pacoteInstalado('langpacks-pt_BR');
+        idiomaHunspellJa =
+            SystemState.pacoteInstalado('hunspell-br') ||
+            SystemState.pacoteInstalado('hunspell-pt-BR');
+        idiomaLocaleJa = (SystemState.localeLang() || '').indexOf('pt_BR') === 0;
+    } catch (e) { /* SystemState indisponível */ }
+
+    var mapaIdioma = {
+        'idioma-packs': idiomaPacksJa,
+        'idioma-hunspell': idiomaHunspellJa,
+        'idioma-localectl': idiomaLocaleJa
+    };
+
+    Object.keys(mapaIdioma).forEach(function(id) {
+        var btn = document.getElementById('btn-' + id);
+        if (!btn) return;
+        var feito = isExecutado(id);
+        var preExistente = mapaIdioma[id] && !feito;
+
+        if (feito) {
+            btn.textContent = getTextoAposExecucao(id);
+            btn.style.backgroundColor = '#4b5563';
+            btn.style.cursor = 'default';
+            btn.disabled = true;
+            btn.title = '';
+        } else if (preExistente) {
+            btn.textContent = _t('comum.ja_estava_ativo', '✅ Já estava ativo');
+            btn.style.backgroundColor = '#4b5563';
+            btn.style.cursor = 'default';
+            btn.disabled = true;
+            btn.title = _t('comum.tooltip_preexistente_recurso',
+                'Este recurso já estava ativo antes do FAP. O FAP não foi o responsável pela configuração, mas está tratando como ativo normalmente.');
         }
     });
 

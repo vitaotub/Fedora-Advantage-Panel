@@ -308,6 +308,15 @@ async function _detectarLocalRtc() {
     return out.trim() === 'yes';
 }
 
+// Lang/locale atual do sistema. Usado pelo botão "idioma-localectl"
+// (sessão 12) para detectar se o `localectl set-locale` já foi
+// aplicado — pelo FAP ou por fora.
+async function _detectarLocaleLang() {
+    var out = await _exec('localectl status 2>/dev/null');
+    var match = out.match(/System Locale:\s*LANG=(\S+)/);
+    return match ? match[1] : '';
+}
+
 async function _detectarArquivosConfig() {
     var home = process.env.HOME || ('/home/' + (process.env.USER || 'user'));
 
@@ -394,7 +403,8 @@ async function scanSystemState() {
                                        _detectarKernelParams(),
                                        _detectarArquivosConfig(),
                                        _detectarWaydroid(),
-                                       _detectarLocalRtc()
+                                       _detectarLocalRtc(),
+                                       _detectarLocaleLang()
     ]);
 
     var dados = {
@@ -406,7 +416,8 @@ async function scanSystemState() {
         services_active: resultados[4],
         config_files_present: resultados[6],
         waydroid: resultados[7],
-        local_rtc: resultados[8]
+        local_rtc: resultados[8],
+        locale_lang: resultados[9]
     };
 
     _cache = { dados: dados, ts: agora };

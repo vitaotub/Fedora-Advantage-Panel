@@ -2,12 +2,56 @@
 
 **🌐 Language:** [Português (BR)](README.md) | English | [Español](README.es.md)
 
-![Version](https://img.shields.io/badge/Version-v1.1.2--10192026-orange?style=flat-square)
-![Fedora](https://img.shields.io/badge/Fedora-44+-294172?style=flat-square&logo=fedora)
+![Version](https://img.shields.io/badge/Version-v1.2.0--10202026-orange?style=flat-square)
+![Fedora](https://img.shields.io/badge/Fedora-44%20%7C%2045-294172?style=flat-square&logo=fedora)
 ![License](https://img.shields.io/badge/License-GPL--3.0-green?style=flat-square)
 ![Languages](https://img.shields.io/badge/Languages-PT--BR%20%7C%20EN%20%7C%20ES-3c67e3?style=flat-square)
 
 > Getting your Fedora ready to "play" — visual, fast, no terminal.
+
+## 📖 What it is
+
+**Fedora Advantage Panel (FAP)** is a visual automation panel for Fedora Linux. It turns a clean installation into a complete system — codecs, drivers, repositories, tools — through clicks, without opening the terminal.
+
+A single button, **Start Setup**, walks you through **14 guided sessions** step by step. Each button remembers its own state: close FAP, reopen it, and it shows exactly where you stopped.
+
+## 📸 Screenshots
+
+### Landing page — your Fedora at a glance
+
+![FAP landing page](prints/01-landing.png)
+
+On boot, FAP queries the real system state (active repositories, installed apps, applied tunings) and shows **4 progress bars** — General use, Gaming, Production and Security. The line below summarizes it: *"{n} steps left to get Fedora ready."* When everything is done, it becomes *"Your Fedora is ready. 🎉"*.
+
+### Lateral navigation + search
+
+![FAP sidebar](prints/02-sidebar.png)
+
+Collapsible sidebar with the 14 sessions, each with icon, name and progress indicator (`●` done, `◐` partial, `○` not started, `⊘` N/A). It has **global search** — type "vlc" or "steam" and the sidebar filters both sessions and inner items. Click a result and the session opens already filtered.
+
+In collapsed mode, each icon gets its own **neon effect** on hover, for quick session identification.
+
+### Package origin, filters and badges
+
+![FAP filters and origin badges](prints/03-filtros.png)
+
+Each app shows where it comes from — **Flathub, Fedora, RPM Fusion, Vendor, Download or Community**. Each origin has a distinct color (blue, red, orange, violet, amber, cyan) for quick identification. Hover anywhere on the button and the tooltip shows the origin; click the colored badge to open a popover with the **exact command**, **how to update** and **how to remove**.
+
+Combinable filters (state + origin) let you see only what's done, only what's missing, only pre-existing items (installed before FAP), or only skipped ones.
+
+### Real-time log with Matrix theme
+
+![FAP real-time log](prints/04-log.png)
+
+Everything FAP does passes through a **fixed terminal at the bottom**, with colors distinguishing normal output, success and real error. The log starts collapsed (click the `[▲/▼]` toggle to expand) and follows the sidebar when it collapses. Closing FAP does not kill running commands — the process tree is shut down correctly.
+
+## 🎯 Who it's for
+
+- **Those starting with Fedora** who want it ready for daily use (codecs, repositories, apps) without searching through 20 tutorials.
+- **Those coming from Ubuntu/Mint** who want the same fluid initial setup experience.
+- **Linux gamers** who want Steam, Heroic, Lutris, Proton, MangoHud and similar up and running fast.
+- **Long-time Fedora users** who want to automate post-install (drivers, COPRs, kernel tunings).
+- **Anyone setting up someone else's PC** (family, friends) without the terminal.
 
 ## 🚀 Installation
 
@@ -15,20 +59,16 @@
 bash <(curl -s https://raw.githubusercontent.com/vitaotub/Fedora-Advantage-Panel/main/install.sh)
 ```
 
-**Commands available after installing:**
+**Commands after installing:**
 
 ```bash
-fap                       # Launch (normal mode)
-fap-compat                # Launch (compatibility mode — older GPUs)
-./install.sh --update     # Update
-./install.sh --uninstall  # Uninstall
+fap              # launch FAP
+fap-compat       # compatibility mode (older GPUs, VMs)
+fap --update     # update (or click the badge inside FAP)
+fap --uninstall  # uninstall
 ```
 
-## 📖 About
-
-Fedora Advantage Panel (FAP) is a visual automation panel for Fedora Linux. It turns a clean installation into a complete system — codecs, drivers, repositories, tools — through clicks, without opening the terminal.
-
-**Single entry point.** The **"Start"** button walks you through 14 guided sessions step by step. Each button remembers its own state. Closing and reopening FAP shows exactly where you stopped.
+Updates are applied **on top of the existing installation** — no need to uninstall between versions. Progress, theme and language are preserved.
 
 ## ✨ The 14 Sessions
 
@@ -49,110 +89,38 @@ Fedora Advantage Panel (FAP) is a visual automation panel for Fedora Linux. It t
 | 13 | 🐧 Fedora Status | Version, Atomic/Silverblue detection, SELinux management |
 | 14 | 📖 About FAP | Update/uninstall, dynamic changelog, change history |
 
-## 🎨 Features
+## 🛡️ Safety and transparency
 
-### Interface and usability
+- **Never installs anything without you seeing it.** Every command is visible in the real-time log.
+- **Pre-existing detection.** If you already had VLC, Steam or the NVIDIA driver before FAP, the button shows "Open" from the start, with a tooltip explaining the origin.
+- **13 critical items protected.** Drivers, codecs, CUPS, Samba, virtualization: if they existed before FAP, the trash icon does not appear.
+- **Real language detection.** The 3 translation buttons (packs, hunspell, locale) query the system state — if already applied, they show "✅ Already active" instead of re-running `dnf install`.
+- **Authentication via `pkexec`.** Native password dialog from your desktop.
+- **Smart locking.** While a `dnf` command is running, other `dnf` buttons from other sessions are locked. The Flatpak queue handles the global lock.
+- **Native WebKitGTK container.** Own interface. Compatibility mode (`fap-compat`) for older GPUs.
+- **`install.sh` refuses to run as root.** Installs into `~/.local/share` and uses `sudo` only where needed.
 
-- **Dark and light interface** with real-time toggle, no page reload
-- **Multilingual** (PT-BR, EN, ES) with a header selector
-- **Real-time logs** per command, with colors distinguishing normal output, success, and real errors
-- **Smart lock** — prevents `rpm` lock conflicts and freezes session navigation while a command is running
-- **Resumable session** — each button remembers its state in `.progresso.json`; close and reopen shows where you stopped
+## 🎨 Interface Features (v1.2)
 
-### App installation
-
-- **Unified trash icon** — every installable app has a removal icon next to it, which removes the package and, when applicable, disables the source repository
-- **Origin by app type** — FAP automatically picks the best install method:
-  - **Flatpak (Flathub)** — when there's no official Fedora repo nor package in the distro repos
-  - **`dnf` (official Fedora repos or RPM Fusion)** — when the distro packages the software
-  - **RPM via vendor's official repo** — when the vendor ships for Fedora (Brave, Vivaldi, Edge browsers)
-  - **RPM downloaded from URL** — when that's the only option. Supports both a static URL (OnlyOffice) and a URL resolved at runtime via the GitHub API (ArtCraft Suite, RustDesk, Lightworks, Rclone Manager). `--setopt=localpkg_gpgcheck=0` required on Fedora 44/45
-- **Flatpak queue** — clicking on multiple apps in sequence enqueues and installs them one at a time, avoiding Flathub lock errors
-- **"Open" button** on all GUI apps — launches in its own session, surviving FAP closing
-- **Detection of externally installed apps** — if you already have an app installed before FAP, the button appears as "Open" from the start
-- **Real system state awareness** — on boot, FAP queries `GET /system-state` and detects already-active repositories, installed apps, groups, kernel params, config files and RTC (UTC or local). **Apps installed externally** (before FAP) are treated **identically to apps installed by FAP itself**: they show "🚀 Open X" + trash icon, with a tooltip that explains the origin; the trash's `confirm()` prefixes an extra warning before removing. **Exception:** 13 high-risk items are protected — gray "✅ Already active" button with tooltip, no trash (see 🔒 Protection of critical items). **Kernel params, hardware drivers and system toggles** also detect real state: they show "✅ Already active" and the revert enabled when the setting already exists on the system
-- **Smart codec removal** — the trash icon for codecs swaps `ffmpeg` back to `ffmpeg-free` and reinstalls base Fedora plugins
-- **Client state cache invalidated after removal** — when you remove an app or change the RTC, FAP discards the `/system-state` cache to reflect the new state immediately
+- **High-contrast black/gray theme** in dark; light theme keeps the Fedora blues.
+- **Collapsible lateral sidebar** with monochrome SVG icons and **per-session neon effect** in collapsed mode.
+- **Global search** with an index built in the background at boot — **covers all 14 sessions**, including session 6 (Apps) with its Flatpaks and DNF apps.
+- **Origin badges** (6 variants with distinct colors) with tooltip on the entire button and popover showing exact command, how to update and how to remove.
+- **Combinable filters** (state + origin) in session 6, always in two rows.
+- **Status card on landing** with 4 bars computed at boot.
+- **Fixed log dock** of 160px, always starts collapsed, with internal scroll.
+- **N/A sessions** removed from the progress calculation.
+- **🔄 header button** that reloads the system state without closing FAP.
 
 ### 🔒 Protection of critical items
 
-With Option B (pre-existing treated as installed), every app now has a trash icon. This is the desired behavior for everyday apps — uninstalling a Flatpak that was already on the system is reversible in one click. But for **13 high-risk items**, allowing removal through FAP would be destructive: it can take down services, change user groups, or drag along base Fedora packages.
+**13 high-risk items** have removal blocked when pre-existing. The button shows "✅ Already active" with a tooltip including the exact manual revert command.
 
-**For these 13 items, the trash icon only appears if FAP itself installed them.** If you already had them before FAP, the button shows a gray "✅ Already active" with a tooltip — including the exact command for manual revert.
+## 🖥️ Requirements and support
 
-**Protected items:**
-
-| Item | Session | Reason |
-|---|---|---|
-| Essential codecs | 2 | `ffmpeg` → `ffmpeg-free` swap is destructive |
-| Extras tainted (DVD) | 2 | Breaks commercial DVD playback |
-| Microsoft fonts | 2 | Record includes `fontconfig` (base package) |
-| Vulkan/Mesa AMD | 3 | Removes games and 3D apps |
-| VA-API AMD | 3 | Removes video acceleration |
-| VA-API AMD (alternative) | 3 | Same |
-| NVIDIA driver | 3 | Leaves GPU without driver until reboot |
-| Intel Media Driver | 3 | Removes Intel video acceleration |
-| Printing support | 7 | All printers stop |
-| Samba | 7 | Network shares stop |
-| QEMU/KVM | 10 | VMs stop running |
-| VirtualBox | 10 | VMs stop running |
-| GNOME Boxes | 10 | VMs stop running |
-
-For all other apps (low/medium risk), the trash icon remains available even if pre-existing — the `confirmMsg` already warns about data preservation and removal is reversible.
-
-### Native WebKitGTK container
-
-- **Own interface**, no dependency on external browsers
-- **Native container in WebKitGTK 4.1 + GTK3**, compiled at install time
-- **Compatibility mode** (`fap-compat`) for GPUs without 3D acceleration — forces software rendering via Mesa/llvmpipe
-- **No annoying popups** — Chromium EULA suppressed and WebKit permissions (geolocation, camera, microphone) automatically denied
-
-### Authentication and security
-
-- **Universal `pkexec`** — integrated password dialog on all desktops (KDE uses `polkit-kde-agent`, GNOME uses `polkit-gnome`, etc.), no need to type the password in the terminal
-- **Read-only commands in whitelist** — `rpm -q`, `uname -r`, `gtk-launch`, `flatpak`, `systemctl --user` and similar run without asking for a password
-- **GUI app launching without password** — `setsid -f gtk-launch`, `setsid -f lightworks`, `setsid -f desktopeditors` and variants are whitelisted
-- **App opening receives the correct user env** — `gtk-launch` and `waydroid show-full-ui` are in `COMANDOS_USER_CONTEXT`, so `node server.js` adjusts `XDG_RUNTIME_DIR` and `DBUS_SESSION_BUS_ADDRESS` automatically
-- **FAP update and uninstall run as the user**, with `SUDO_ASKPASS` (zenity/kdialog) for internal privileged steps — avoids files ending up owned by root
-- **Shell injection blocking** — commands with `;`, `&&`, `|`, `$(...)` or `&` are rejected by the whitelist and require authentication
-
-### Lifecycle
-
-- **Clean shutdown** — closing the FAP window ends the Node.js server and frees port 3000 automatically. Nothing is left in memory.
-- **Protected process tree** — if a `dnf` command is running when FAP closes, the entire process tree is killed via PGID, avoiding orphan locks on `rpm`
-- **Persistent log** — each session writes a `/tmp/fap-YYYYMMDD-HHMMSS.log` file, with automatic cleanup of logs older than 7 days
-- **`install.sh` refuses to run as root** — installs into the user's `$HOME`, with internal `sudo` only for the steps that need it
-
-### ArtCraft Suite
-
-Open-source alternatives (written in Rust) to Adobe and Microsoft Office products. Each app has its own GitHub repository and its `.x86_64` RPM in the latest release — FAP resolves the URL at runtime, always downloading the latest published version:
-
-- 🖼️ **PhotoCraft** — photo editing
-- ✏️ **VectorCraft** — vector illustration
-- 🎬 **FilmCraft** — video editing
-- 💡 **LightCraft** — 3D lighting
-- 📄 **PDFCraft** — PDF editing
-- ✨ **EffectCraft** — visual effects
-- 🎨 **DesignCraft** — graphic design
-- 🖌️ **FigCraft** — vectors and illustration
-- 📽️ **DeckCraft** — presentations
-- 📊 **GridCraft** — spreadsheets
-- 📝 **WordCraft** — text editor
-- 📐 **CadCraft** — CAD
-- 🔊 **SoundCraft** — audio editing
-
-### Automatic hardware detection
-
-- **Hardware scanner** via `lspci` / `lsusb`, cross-referenced with a community-maintained vendor map
-- **NVIDIA detection** with heuristics to suggest the correct driver series (`akmod-nvidia`, `580xx`, `470xx`, or `390xx`), with special handling for the GTX 745 (which is Maxwell, not Kepler)
-- **RPM Fusion check** — warns if the repository isn't active before trying to install drivers that depend on it
-- **Secure Boot check** — warns if it's enabled and the NVIDIA driver will need MOK signing
-
-## 🖥️ Supported Desktops
-
-GNOME, KDE Plasma, XFCE, Cinnamon, MATE, LXQt, LXDE, Budgie, Sway, Hyprland, i3 and other tiling WMs.
-
-The `pkexec` authentication works on all of them — the password dialog is managed by the desktop's polkit agent.
+- **Fedora 44 or 45** (developed and extensively tested on both).
+- **GNOME, KDE Plasma, XFCE, Cinnamon, MATE, LXQt, LXDE, Budgie, Sway, Hyprland, i3** and other tiling WMs.
+- **PT-BR, EN and ES.** Switchable in the FAP header.
 
 ## 🔄 Update and uninstall
 
@@ -167,6 +135,14 @@ Or click the update badge (appears automatically when a new version is on GitHub
 ./install.sh --uninstall
 ```
 Or use the button in the **About FAP** session (with double confirmation).
+
+## 🐛 Feedback, bugs and suggestions
+
+FAP is an open-source project (GPL-3.0), maintained by **VitãoTub** in his spare time.
+
+- **Bugs:** open an [issue](https://github.com/vitaotub/Fedora-Advantage-Panel/issues) with the output of `/tmp/fap-*.log` (if possible) and the Fedora version.
+- **Suggestions:** also via issue.
+- **Screenshots:** if something looks odd, a print helps a lot.
 
 ## 📄 License
 

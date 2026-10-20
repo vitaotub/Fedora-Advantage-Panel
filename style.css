@@ -3,33 +3,39 @@
  * ============================================ */
 
 :root {
-    --bg-primary: #0b111e;
-    --bg-card: #151f32;
-    --accent: #3c67e3;
-    --accent-hover: #527bee;
-    --text-main: #f3f4f6;
-    --text-muted: #9ca3af;
-    --border: #24334d;
+    /* ---- Fundos (preto/cinza — tema dark "realmente preto") ---- */
+    --bg-primary: #0a0a0a;
+    --bg-card: #161616;
+    --bg-secondary: #1e1e1e;
+    --bg-tertiary: #050505;
+    --bg-comando: rgba(0, 0, 0, 0.3);
+    --bg-input: #1a1a1a;
+
+    /* ---- Acentos (cinza — substituem o azul do Fedora) ---- */
+    --accent: #3a3a3a;
+    --accent-hover: #4d4d4d;
+    --accent-soft: #c0c0c0;
+    --accent-rgb: 58, 58, 58;
+
+    /* ---- Texto ---- */
+    --text-main: #f5f5f5;
+    --text-muted: #a3a3a3;
+
+    /* ---- Bordas ---- */
+    --border: #2a2a2a;
+
+    /* ---- Semânticos (mantidos) ---- */
     --warning-bg: rgba(245, 158, 11, 0.1);
     --warning-border: #f59e0b;
+    --warning-soft: #f59e0b;
     --success-bg: rgba(52, 211, 153, 0.1);
     --success-border: #34d399;
+    --success-soft: #34d399;
+    --success: #34d399;
     --danger: #ef4444;
     --danger-hover: #dc2626;
-    --success: #34d399;
 
-    /* Auxiliares (tema escuro) */
-    --bg-secondary: #1a2236;
-    --bg-tertiary: #0a0e1a;
-    --bg-comando: rgba(0, 0, 0, 0.2);
-    --bg-input: #1a2236;
-
-    /* Cores temáticas de acento */
-    --accent-soft: #60a5fa;
-    --warning-soft: #f59e0b;
-    --success-soft: #34d399;
-
-    /* Matrix theme */
+    /* ---- Matrix (preservado — verde do log) ---- */
     --matrix-green: #00ff41;
     --matrix-green-dim: #00cc33;
     --matrix-green-glow: rgba(0, 255, 65, 0.6);
@@ -43,27 +49,29 @@
 [data-tema="claro"] {
     --bg-primary: #f3f4f6;
     --bg-card: #ffffff;
-    --accent: #3c67e3;
-    --accent-hover: #527bee;
-    --text-main: #1f2937;
-    --text-muted: #4b5563;
-    --border: #d1d5db;
-    --warning-bg: rgba(245, 158, 11, 0.15);
-    --warning-border: #d97706;
-    --success-bg: rgba(5, 150, 105, 0.15);
-    --success-border: #059669;
-    --danger: #ef4444;
-    --danger-hover: #dc2626;
-    --success: #059669;
-
     --bg-secondary: #e5e7eb;
     --bg-tertiary: #f9fafb;
     --bg-comando: rgba(0, 0, 0, 0.03);
     --bg-input: #ffffff;
 
+    --accent: #3c67e3;
+    --accent-hover: #527bee;
     --accent-soft: #2563eb;
+    --accent-rgb: 60, 103, 227;
+
+    --text-main: #1f2937;
+    --text-muted: #4b5563;
+    --border: #d1d5db;
+
+    --warning-bg: rgba(245, 158, 11, 0.15);
+    --warning-border: #d97706;
     --warning-soft: #b45309;
+    --success-bg: rgba(5, 150, 105, 0.15);
+    --success-border: #059669;
     --success-soft: #047857;
+    --success: #059669;
+    --danger: #ef4444;
+    --danger-hover: #dc2626;
 
     --matrix-green: #00ff41;
     --matrix-green-dim: #00cc33;
@@ -111,7 +119,7 @@ body {
 }
 
 .bloco-comando.destaque {
-    border-left: 4px solid var(--accent, #3c67e3);
+    border-left: 4px solid var(--accent, #3a3a3a);
 }
 
 .comando-info h3 {
@@ -173,7 +181,7 @@ body {
     margin-top: 1.25rem;
     margin-bottom: 0.25rem;
     font-size: 0.8rem;
-    color: var(--text-muted, #9ca3af);
+    color: var(--text-muted, #a3a3a3);
 }
 
 .grupo-botoes + .info-extra {
@@ -190,32 +198,7 @@ body {
 
 /* ============================================================
  * BOTÕES
- * ============================================================
- * Esquema de cores semântico (v1.0.0-10012026):
- *
- *   1. AZUL   (.btn-executar, padrão) — ação principal
- *              instalar, executar, aplicar, detectar, atualizar,
- *              configurar, ativar. É a cor da maioria dos botões.
- *
- *   2. VERDE  (.btn-executar.verde) — abrir aplicativo
- *              só para botões "Abrir X" (aparecem após o install).
- *
- *   3. VERMELHO (.btn-executar.vermelho) — remover/reverter
- *              desinstalar, reverter, desativar, remover.
- *
- *   4. VERMELHO DESTRUTIVO (.btn-executar.destrutivo) — exceção
- *              ações irreversíveis: desinstalar FAP, remover repo
- *              Fedora Flatpak, remover Waydroid completamente.
- *              Vermelho + contorno tracejado, para dar peso visual.
- *
- * Botão cinza = botão DESABILITADO. Nunca use cinza como estado
- * normal — o `:disabled` já aplica `opacity: 0.5` + cursor
- * `not-allowed` automaticamente.
- *
- * As classes antigas (.ativo, .roxo, .laranja, .azul-claro,
- * .verde-escuro, .cinza) foram removidas. Se algum HTML ainda
- * tiver essas classes, elas caem no .btn-executar padrão (azul).
- */
+ * ============================================================ */
 
 .grupo-botoes {
     display: inline-flex;
@@ -263,7 +246,6 @@ body {
     transform: none;
 }
 
-/* --- Verde: abrir aplicativo --- */
 .btn-executar.verde {
     background-color: #10b981;
 }
@@ -272,7 +254,6 @@ body {
     background-color: #059669;
 }
 
-/* --- Vermelho: remover / reverter / desativar --- */
 .btn-executar.vermelho {
     background-color: #ef4444;
 }
@@ -281,14 +262,6 @@ body {
     background-color: #dc2626;
 }
 
-/* --- Vermelho destrutivo: ações irreversíveis ---
- *
- * Usa `outline` em vez de `border` para não deslocar o layout
- * (outline não ocupa espaço no box model). O `outline-offset`
- * negativo puxa o contorno para dentro do botão, criando o
- * efeito de "borda tracejada interna" sem alterar padding ou
- * dimensão.
- */
 .btn-executar.destrutivo {
     background-color: var(--danger);
     outline: 2px dashed rgba(255, 255, 255, 0.45);
@@ -300,8 +273,6 @@ body {
     outline-color: rgba(255, 255, 255, 0.7);
 }
 
-/* --- Botão de reverter genérico (legado, mantido para
- *     compatibilidade com sessões futuras) --- */
 .btn-reverter {
     background-color: var(--danger);
     color: white;
@@ -420,16 +391,8 @@ body {
     margin-bottom: 0;
 }
 
-/* ============================================================
- * ACÓRDEÃO PRINCIPAL
- * ============================================================
- * Cada sessão começa com um retângulo azul cujo conteúdo é a
- * própria descrição da sessão. É um <div> estático, não um
- * <details> — puramente informativo.
- */
-
 .acordeao-principal {
-    background-color: rgba(60, 103, 227, 0.04);
+    background-color: rgba(var(--accent-rgb), 0.04);
     border: 1px solid var(--accent);
     border-left: 4px solid var(--accent);
     border-radius: 8px;
@@ -484,11 +447,16 @@ body {
 .progress-fill {
     height: 100%;
     width: 0%;
-    background: linear-gradient(90deg, #3c67e3, #527bee, #3c67e3);
+    background: linear-gradient(90deg, #3a3a3a, #5a5a5a, #3a3a3a);
     background-size: 200% 100%;
     border-radius: 4px;
     transition: width 0.5s ease;
     animation: shimmer 2s infinite linear;
+}
+
+[data-tema="claro"] .progress-fill {
+    background: linear-gradient(90deg, #3c67e3, #527bee, #3c67e3);
+    background-size: 200% 100%;
 }
 
 @keyframes shimmer {
@@ -626,9 +594,6 @@ body {
     color: var(--matrix-green);
 }
 
-/* Vermelho distinguível do verde Matrix. Antes usava #4dff4d
- * (verde claro), quase idêntico a .success — erros e sucessos
- * ficavam visualmente confundíveis. */
 .terminal-log .log-line.error {
     color: #ff6b6b;
     text-shadow:
@@ -704,7 +669,7 @@ body {
 .custom-select-trigger {
     background-color: var(--bg-input);
     color: var(--text-main);
-    border: 1px solid #3c67e3;
+    border: 1px solid var(--accent);
     border-radius: 6px;
     padding: 0.4rem 0.8rem;
     cursor: pointer;
@@ -715,12 +680,12 @@ body {
 }
 
 .custom-select-trigger:hover {
-    border-color: #527bee;
+    border-color: var(--accent-hover);
 }
 
 .custom-select-trigger.open {
-    border-color: #527bee;
-    box-shadow: 0 0 0 2px rgba(60, 103, 227, 0.3);
+    border-color: var(--accent-hover);
+    box-shadow: 0 0 0 2px rgba(var(--accent-rgb), 0.3);
 }
 
 .custom-select-arrow {
@@ -740,7 +705,7 @@ body {
     right: 0;
     margin-top: 4px;
     background-color: var(--bg-primary);
-    border: 1px solid #3c67e3;
+    border: 1px solid var(--accent);
     border-radius: 6px;
     padding: 0.2rem 0;
     list-style: none;
@@ -780,7 +745,7 @@ body {
 .kernel-dropdown {
     background-color: var(--bg-input) !important;
     color: var(--text-main) !important;
-    border: 1px solid #3c67e3 !important;
+    border: 1px solid var(--accent) !important;
     border-radius: 6px;
     padding: 0.4rem 0.8rem;
     font-size: 0.9rem;
@@ -789,7 +754,7 @@ body {
     appearance: none;
     -webkit-appearance: none;
     -moz-appearance: none;
-    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2360a5fa' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
     background-repeat: no-repeat;
     background-position: right 0.6rem center;
     background-size: 1em;
@@ -798,8 +763,8 @@ body {
 
 .kernel-dropdown:focus {
     outline: none;
-    border-color: #527bee !important;
-    box-shadow: 0 0 0 2px rgba(60, 103, 227, 0.3);
+    border-color: var(--accent-hover) !important;
+    box-shadow: 0 0 0 2px rgba(var(--accent-rgb), 0.3);
 }
 
 .kernel-dropdown option {
@@ -818,8 +783,8 @@ body {
  * ============================================================ */
 
 .sessao-container {
-    background-color: var(--bg-card, #151f32);
-    border: 1px solid var(--border, #24334d);
+    background-color: var(--bg-card, #161616);
+    border: 1px solid var(--border, #2a2a2a);
     border-radius: 12px;
     padding: 2rem;
     margin-bottom: 2rem;
@@ -843,7 +808,7 @@ body {
     padding: 0.15rem 0.6rem;
     border-radius: 10px;
     background-color: var(--bg-secondary);
-    color: var(--text-muted, #9ca3af);
+    color: var(--text-muted, #a3a3a3);
     margin-right: 0.5rem;
     vertical-align: middle;
 }
@@ -851,7 +816,7 @@ body {
 .sessao-descricao {
     font-size: 1rem;
     line-height: 1.6;
-    color: var(--text-main, #f3f4f6);
+    color: var(--text-main, #f5f5f5);
     margin-bottom: 1.25rem;
 }
 
@@ -890,8 +855,8 @@ body {
 }
 
 .header-guide .titulo .badge-modo {
-    background-color: rgba(60, 103, 227, 0.2);
-    color: var(--accent);
+    background-color: rgba(var(--accent-rgb), 0.2);
+    color: var(--accent-soft);
     border: 1px solid var(--accent);
     padding: 0.2rem 0.8rem;
     border-radius: 12px;
@@ -900,10 +865,6 @@ body {
     flex-shrink: 0;
 }
 
-/* ============================================================
- * HEADER-DIREITA
- * ============================================================ */
-
 .header-direita {
     display: flex;
     align-items: center;
@@ -911,10 +872,6 @@ body {
     flex-wrap: nowrap;
     flex-shrink: 0;
 }
-
-/* ============================================================
- * HEADER-CONTROLES
- * ============================================================ */
 
 .header-controles {
     display: flex;
@@ -952,7 +909,7 @@ body {
     -webkit-appearance: none;
     -moz-appearance: none;
     padding-right: 2rem;
-    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2360a5fa' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
     background-repeat: no-repeat;
     background-position: right 0.6rem center;
     background-size: 1em;
@@ -966,7 +923,7 @@ body {
 .i18n-seletor-container select.i18n-seletor:focus {
     outline: none;
     border-color: var(--accent-hover);
-    box-shadow: 0 0 0 2px rgba(60, 103, 227, 0.3);
+    box-shadow: 0 0 0 2px rgba(var(--accent-rgb), 0.3);
 }
 
 .i18n-seletor-container select.i18n-seletor option {
@@ -1009,7 +966,7 @@ body {
 
 .btn-tema:focus {
     outline: none;
-    box-shadow: 0 0 0 2px rgba(60, 103, 227, 0.3);
+    box-shadow: 0 0 0 2px rgba(var(--accent-rgb), 0.3);
 }
 
 /* ============================================================
@@ -1042,7 +999,7 @@ body {
 
 .btn-voltar-inicio:focus {
     outline: none;
-    box-shadow: 0 0 0 2px rgba(60, 103, 227, 0.3);
+    box-shadow: 0 0 0 2px rgba(var(--accent-rgb), 0.3);
 }
 
 .btn-voltar-inicio svg {
@@ -1058,16 +1015,7 @@ body {
 
 /* ============================================================
  * BADGE "ATUALIZAÇÃO DISPONÍVEL"
- * ============================================================
- * Botão circular flutuante no canto superior direito do
- * .version-badge. Só ícone SVG — sem texto.
- *
- * O pai (.version-badge, definido em index.html) tem
- * `position: relative`, então o posicionamento absoluto ancora
- * nele. O `border` de 2px na cor do fundo da página cria um
- * "recorte" que separa visualmente o badge do retângulo da
- * versão, sem precisar de overflow ou clip-path.
- */
+ * ============================================================ */
 
 .badge-atualizacao {
     position: absolute;
@@ -1156,9 +1104,13 @@ body {
 .progress-guide .barra .fill {
     height: 100%;
     width: 0%;
-    background: linear-gradient(90deg, #3c67e3, #34d399);
+    background: linear-gradient(90deg, #7a7a7a, #34d399);
     border-radius: 4px;
     transition: width 0.5s ease;
+}
+
+[data-tema="claro"] .progress-guide .barra .fill {
+    background: linear-gradient(90deg, #3c67e3, #34d399);
 }
 
 .progress-guide .info {
@@ -1284,7 +1236,7 @@ body {
 }
 
 /* ============================================================
- * RESPONSIVIDADE
+ * RESPONSIVIDADE (legado — index.html)
  * ============================================================ */
 
 @media (max-width: 768px) {
@@ -1326,11 +1278,7 @@ body {
 
 /* ============================================================
  * FEEDBACK TÁTIL
- * ============================================================
- * Dá uma resposta visual imediata ao clique, sem depender do
- * JS. O :active dispara antes do :hover, então o efeito é
- * sentido mesmo em cliques rápidos.
- */
+ * ============================================================ */
 
 .btn-executar:active:not(:disabled),
 .btn-reverter:active:not(:disabled),
@@ -1345,10 +1293,7 @@ body {
 
 /* ============================================================
  * PROGRESSO GLOBAL
- * ============================================================
- * Mostrado no header de guiado.html e manutenção.
- * "N/M" onde N é o número de sessões concluídas.
- */
+ * ============================================================ */
 
 .progresso-global {
     display: inline-flex;
@@ -1370,17 +1315,7 @@ body {
 
 /* ============================================================
  * TOASTS
- * ============================================================
- * O container é um overlay full-viewport com pointer-events: none
- * e overflow: hidden. Os toasts são alinhados ao topo-direito
- * dentro dele.
- *
- * Correção crítica: antes, o container tinha `position: fixed;
- * top: 1rem; right: 1rem` sem largura explícita. Como `body` do
- * index.html é `display: flex`, o toast virava um segundo flex
- * item e empurrava o conteúdo para a esquerda. Com o overlay
- * full-viewport + overflow: hidden, nada vaza.
- */
+ * ============================================================ */
 
 .fap-toast-container {
     position: fixed;
@@ -1445,15 +1380,14 @@ body {
 }
 
 /* ============================================================
- * MENU DE SESSÕES FIXO
+ * MENU DE SESSÕES (legado — mantido por compatibilidade)
  * ============================================================
- * Substitui as bolinhas coloridas por um menu horizontal de
- * "chips" clicáveis, fixo no topo da página.
- *
- * A sessão ativa é destacada com borda + fundo colorido.
- * O menu tem scroll horizontal automático quando há mais
- * sessões que espaço disponível. Em telas pequenas, quebra em
- * múltiplas linhas via flex-wrap.
+ * O menu horizontal do topo é substituído pela sidebar lateral
+ * (ver seção REDESIGN no fim do arquivo). As classes continuam
+ * definidas para não quebrar HTMLs antigos. Os itens da sidebar
+ * REAPROVEITAM .session-menu-item (via JS) por decisão de
+ * compatibilidade — `_atualizarBloqueioNavegacao` e
+ * `_sessaoAtualId` continuam funcionando.
  */
 
 .session-menu-wrapper {
@@ -1508,7 +1442,7 @@ body {
     background-color: var(--accent);
     color: #fff;
     border-color: var(--accent);
-    box-shadow: 0 0 0 2px rgba(60, 103, 227, 0.25);
+    box-shadow: 0 0 0 2px rgba(var(--accent-rgb), 0.25);
     font-weight: 600;
 }
 
@@ -1538,7 +1472,6 @@ body {
     opacity: 1;
 }
 
-/* Sessões concluídas ganham um pequeno check visual */
 .session-menu-item.concluida::after {
     content: '✓';
     font-size: 0.7rem;
@@ -1551,18 +1484,6 @@ body {
     color: #fff;
 }
 
-/* ============================================================
- * MENU DE SESSÕES — ESTADO BLOQUEADO
- * ============================================================
- * Aplicado aos chips do menu quando há um comando rodando na
- * sessão atual. Enquanto isso, o usuário não pode trocar de
- * sessão (ver `_atualizarBloqueioNavegacao()` no script.js).
- *
- * O chip continua visível e mostra o nome/ícone — só fica com
- * aparência de inativo. O bloqueio real do clique é feito no
- * JS (guiado.html), para que o tooltip (title) funcione.
- */
-
 .session-menu-item.bloqueado {
     opacity: 0.5;
     cursor: not-allowed;
@@ -1570,19 +1491,16 @@ body {
 }
 
 .session-menu-item.bloqueado:hover {
-    /* Cancela o efeito de hover do estado normal */
     border-color: var(--border);
     color: var(--text-muted);
     transform: none;
 }
 
 .session-menu-item.ativa.bloqueado {
-    /* Mesmo bloqueado, o chip da sessão atual continua destacado */
     opacity: 0.7;
     filter: grayscale(0.2);
 }
 
-/* Em telas médias, o menu quebra em mais linhas */
 @media (max-width: 900px) {
     .session-menu-wrapper {
         margin: -1rem -1rem 1rem -1rem;
@@ -1617,10 +1535,7 @@ body {
 
 /* ============================================================
  * DASHBOARD
- * ============================================================
- * Grid de cards usada pela sessão de diagnóstico.
- * Mostra métricas de sistema, progresso, tema e idioma.
- */
+ * ============================================================ */
 
 .dashboard-grid {
     display: grid;
@@ -1640,7 +1555,7 @@ body {
 .dashboard-card:hover {
     border-color: var(--accent);
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(60, 103, 227, 0.15);
+    box-shadow: 0 4px 12px rgba(var(--accent-rgb), 0.15);
 }
 
 .dashboard-card .dashboard-titulo {
@@ -1697,13 +1612,8 @@ body {
 }
 
 /* ============================================================
- * ESTILOS ESPECÍFICOS DAS SESSÕES
- * ============================================================
- * As sessões em geral usam os mesmos componentes
- * (bloco-comando, acordeao, progress-container, terminal-log)
- * definidos acima. Este bloco é reservado para estilos
- * adicionais que possam surgir.
- */
+ * LISTAS / BLOCOS INFO
+ * ============================================================ */
 
 .lista-info {
     list-style: none;
@@ -1736,7 +1646,6 @@ body {
     word-break: break-word;
 }
 
-/* Bloco informativo (para anti-cheat awareness, SELinux, etc) */
 .bloco-info {
     background-color: var(--bg-secondary);
     border-left: 3px solid var(--accent);
@@ -1754,13 +1663,7 @@ body {
 
 /* ============================================================
  * ACORDEÃO ANINHADO
- * ============================================================
- * Corrige a rotação da seta (::after) quando um acordeão está
- * dentro de outro. A regra padrão gira 180deg em [open], mas
- * dentro de um acordeão pai o navegador pode herdar o estado
- * do pai. Forçamos o estado baseado no atributo [open] do
- * próprio elemento, sem herança.
- */
+ * ============================================================ */
 
 .acordeao .acordeao summary::after {
     transform: rotate(0deg);
@@ -1772,21 +1675,7 @@ body {
 
 /* ============================================================
  * WRAPPER DE FLATPAK COM ÍCONE DE DESINSTALAR
- * ============================================================
- * Estrutura:
- *   <div class="btn-flatpak-wrapper">
- *     <button class="btn-executar">...</button>
- *     <button class="btn-flatpak-uninstall">🗑️</button>
- *   </div>
- *
- * O wrapper posiciona o botão principal e o ícone lado a lado,
- * com o ícone no canto direito. O ícone é `display: none` por
- * padrão — o JS o exibe quando o app é instalado.
- *
- * IMPORTANTE: o ícone é um IRMÃO do botão, não um filho. Isso
- * permite que ele continue clicável mesmo quando o botão
- * principal está disabled (após a instalação).
- */
+ * ============================================================ */
 
 .btn-flatpak-wrapper {
     position: relative;
@@ -1847,14 +1736,11 @@ body {
     pointer-events: none;
 }
 
-/* Quando dentro do grid-launchers, o wrapper ocupa a célula
- * inteira (assim o botão fica com a largura que teria sozinho) */
 .grid-launchers .btn-flatpak-wrapper,
 .grid-launchers .launcher-item .btn-flatpak-wrapper {
     width: 100%;
 }
 
-/* Em telas estreitas, empilha o ícone abaixo se necessário */
 @media (max-width: 480px) {
     .btn-flatpak-wrapper {
         flex-wrap: wrap;
@@ -1862,25 +1748,8 @@ body {
 }
 
 /* ============================================================
- * ESTADOS DE BOTÕES — padrão unificado v1.0.0-10062026+
- * ============================================================
- *
- * `aplicarEstadoInstalavel` (em script.js) alterna o mesmo botão
- * entre três estados visuais, sem recriar elementos:
- *
- *   data-estado="instalado-abrir"
- *     → botão verde com texto de "Abrir X"; clique chama o handler
- *       do botão de abrir que estava escondido. A lixeira aparece
- *       ao lado (criada por `_mostrarLixeira`).
- *
- *   data-estado="instalado-sem-abrir"
- *     → botão cinza com "✅ Nome do recurso instalado"; sem
- *       handler de clique. Usado em módulos de kernel, pacotes
- *       sem interface gráfica e configurações de sistema.
- *
- *   (sem data-estado)
- *     → estado original (azul, clicável, texto de instalar).
- */
+ * ESTADOS DE BOTÕES — padrão unificado
+ * ============================================================ */
 
 .btn-executar[data-estado="instalado-abrir"] {
     background-color: #10b981 !important;
@@ -1893,4 +1762,937 @@ body {
 .btn-executar[data-estado="instalado-sem-abrir"] {
     background-color: #4b5563 !important;
     cursor: default;
+}
+
+/* ============================================================
+ * ============================================================
+ * REDESIGN — SIDEBAR, BADGES, POPOVER, FILTROS, LOG DOCK
+ * ============================================================
+ * ============================================================
+ *
+ * Aplicado em guiado.html. O <body> ganha a classe .fap-guiado
+ * (via JS) OU é detectado por :has(.fap-layout), para sobrescrever
+ * o layout centralizado usado pelo index.html.
+ */
+
+body.fap-guiado,
+body:has(.fap-layout) {
+    padding: 0;
+    display: block;
+    justify-content: initial;
+    align-items: initial;
+    min-height: 100vh;
+}
+
+.fap-layout {
+    display: grid;
+    grid-template-columns: var(--fap-sidebar-width, 220px) minmax(0, 1fr);
+    min-height: 100vh;
+    max-width: 100%;
+    transition: grid-template-columns 0.2s ease;
+}
+
+.fap-layout.colapsada {
+    --fap-sidebar-width: 56px;
+}
+
+.fap-main {
+    min-width: 0;
+    padding: 2rem 2rem 5rem 2rem;
+    transition: padding 0.2s ease;
+}
+
+body.log-dock-visivel .fap-main {
+    padding-bottom: 4rem;
+}
+
+body.log-dock-visivel.log-dock-expandido .fap-main {
+    padding-bottom: 210px;
+}
+
+/* ---- SIDEBAR ---- */
+
+.fap-sidebar {
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+    overflow-x: hidden;
+    background-color: var(--bg-card);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    width: var(--fap-sidebar-width, 220px);
+    transition: width 0.2s ease;
+    z-index: 120;
+}
+
+.fap-sidebar-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 0.85rem;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+}
+
+.fap-sidebar-logo {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    object-fit: contain;
+    flex-shrink: 0;
+}
+
+.fap-sidebar-titulo {
+    flex: 1;
+    min-width: 0;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text-main);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.fap-sidebar-toggle {
+    background: transparent;
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    width: 30px;
+    height: 30px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    flex-shrink: 0;
+    padding: 0;
+    transition: all 0.15s ease;
+}
+
+.fap-sidebar-toggle:hover {
+    background-color: var(--bg-secondary);
+    color: var(--text-main);
+}
+
+.fap-sidebar-toggle svg {
+    width: 16px;
+    height: 16px;
+    stroke: currentColor;
+    fill: none;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    transition: transform 0.2s ease;
+}
+
+.fap-layout.colapsada .fap-sidebar-titulo {
+    display: none;
+}
+
+.fap-layout.colapsada .fap-sidebar-header {
+    justify-content: center;
+    padding: 0.75rem 0.25rem;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.fap-layout.colapsada .fap-sidebar-toggle svg {
+    transform: rotate(180deg);
+}
+
+.fap-sidebar-search {
+    padding: 0.5rem 0.75rem;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+}
+
+.fap-sidebar-search input {
+    width: 100%;
+    background-color: var(--bg-input);
+    color: var(--text-main);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0.4rem 0.6rem;
+    font-size: 0.85rem;
+    font-family: inherit;
+}
+
+.fap-sidebar-search input:focus {
+    outline: none;
+    border-color: var(--text-muted);
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.08);
+}
+
+.fap-layout.colapsada .fap-sidebar-search {
+    display: none;
+}
+
+.fap-sidebar-nav {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 0.5rem 0.35rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    min-height: 0;
+}
+
+.fap-sidebar-item.session-menu-item {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    padding: 0.5rem 0.6rem;
+    border: none;
+    border-radius: 8px;
+    background-color: transparent;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    white-space: nowrap;
+    overflow: hidden;
+    text-align: left;
+    width: 100%;
+    justify-content: flex-start;
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.fap-sidebar-item.session-menu-item:hover {
+    background-color: var(--bg-secondary);
+    color: var(--text-main);
+    border-color: transparent;
+    transform: none;
+}
+
+.fap-sidebar-item.session-menu-item.ativa {
+    background-color: var(--bg-secondary);
+    color: var(--text-main);
+    box-shadow: none;
+    font-weight: 600;
+    border: none;
+}
+
+.fap-sidebar-item.session-menu-item.ativa::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 6px;
+    bottom: 6px;
+    width: 3px;
+    background-color: var(--text-main);
+    border-radius: 0 2px 2px 0;
+}
+
+.fap-sidebar-item-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+}
+
+.fap-sidebar-item-icon svg {
+    width: 18px;
+    height: 18px;
+    stroke: currentColor;
+    fill: none;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.fap-sidebar-item-label {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.fap-sidebar-item-progress {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    flex-shrink: 0;
+    font-variant-numeric: tabular-nums;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.fap-sidebar-item-count {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
+    flex-shrink: 0;
+    padding: 0 0.3rem;
+    opacity: 0.75;
+}
+
+.fap-sidebar-item-count.pulados {
+    color: var(--warning-soft);
+    opacity: 0.9;
+}
+
+/* Neon por sessão — visível apenas no modo colapsado, no hover.
+ *  Cada sessão tem uma cor distinta para identificação rápida.
+ *  Aplicado no container do ícone; o SVG usa stroke: currentColor,
+ *  então herda a cor automaticamente. */
+.fap-layout.colapsada .fap-sidebar-item[data-sessao="primeiros-passos"]         { --neon-sessao: #ff6b35; }
+.fap-layout.colapsada .fap-sidebar-item[data-sessao="codecs"]                   { --neon-sessao: #00e5ff; }
+.fap-layout.colapsada .fap-sidebar-item[data-sessao="hardware"]                 { --neon-sessao: #ff3860; }
+.fap-layout.colapsada .fap-sidebar-item[data-sessao="dispositivos-perifericos"] { --neon-sessao: #00ff9d; }
+.fap-layout.colapsada .fap-sidebar-item[data-sessao="producao-multimidia"]      { --neon-sessao: #b967ff; }
+.fap-layout.colapsada .fap-sidebar-item[data-sessao="aplicativos"]              { --neon-sessao: #ffd93d; }
+.fap-layout.colapsada .fap-sidebar-item[data-sessao="casa-escritorio"]          { --neon-sessao: #06d6a0; }
+.fap-layout.colapsada .fap-sidebar-item[data-sessao="gaming"]                   { --neon-sessao: #ff006e; }
+.fap-layout.colapsada .fap-sidebar-item[data-sessao="waydroid"]                 { --neon-sessao: #3bceac; }
+.fap-layout.colapsada .fap-sidebar-item[data-sessao="virtualizacao"]            { --neon-sessao: #6c7bff; }
+.fap-layout.colapsada .fap-sidebar-item[data-sessao="diagnostico"]              { --neon-sessao: #ffbe0b; }
+.fap-layout.colapsada .fap-sidebar-item[data-sessao="ajustes-manutencao"]       { --neon-sessao: #9d4edd; }
+.fap-layout.colapsada .fap-sidebar-item[data-sessao="estado-fedora"]            { --neon-sessao: #60a5fa; }
+.fap-layout.colapsada .fap-sidebar-item[data-sessao="sobre-fap"]                { --neon-sessao: #f472b6; }
+
+.fap-layout.colapsada .fap-sidebar-item .fap-sidebar-item-icon {
+    transition: color 0.2s ease, filter 0.2s ease;
+}
+
+.fap-layout.colapsada .fap-sidebar-item:hover .fap-sidebar-item-icon {
+    color: var(--neon-sessao, currentColor);
+    filter:
+    drop-shadow(0 0 4px var(--neon-sessao, transparent))
+    drop-shadow(0 0 10px var(--neon-sessao, transparent));
+}
+    opacity: 0.55;
+}
+
+.fap-sidebar-item.na .fap-sidebar-item-progress {
+    color: var(--danger);
+}
+
+.fap-layout.colapsada .fap-sidebar-item.session-menu-item {
+    justify-content: center;
+    padding: 0.55rem 0;
+}
+
+.fap-layout.colapsada .fap-sidebar-item-label,
+.fap-layout.colapsada .fap-sidebar-item-count {
+    display: none;
+}
+
+.fap-layout.colapsada .fap-sidebar-item-icon {
+    width: 22px;
+    height: 22px;
+}
+
+.fap-layout.colapsada .fap-sidebar-item-icon svg {
+    width: 20px;
+    height: 20px;
+}
+
+.fap-layout.colapsada .fap-sidebar-item-progress {
+    position: absolute;
+    bottom: 2px;
+    right: 4px;
+    font-size: 0.55rem;
+}
+
+.fap-sidebar-footer {
+    padding: 0.5rem 0.5rem;
+    border-top: 1px solid var(--border);
+    flex-shrink: 0;
+}
+
+.fap-sidebar-na-btn {
+    width: 100%;
+    background-color: transparent;
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0.4rem 0.5rem;
+    font-size: 0.75rem;
+    font-family: inherit;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+.fap-sidebar-na-btn:hover {
+    background-color: var(--bg-secondary);
+    color: var(--text-main);
+}
+
+.fap-sidebar-na-btn.ativo {
+    background-color: var(--danger);
+    color: white;
+    border-color: var(--danger);
+}
+
+.fap-sidebar-na-btn .fap-sidebar-na-label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.fap-layout.colapsada .fap-sidebar-na-btn .fap-sidebar-na-label {
+    display: none;
+}
+
+/* ---- HAMBURGER (mobile) ---- */
+
+.fap-sidebar-hamburger {
+    display: none;
+    background-color: var(--bg-input);
+    color: var(--text-main);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    width: 38px;
+    height: 38px;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    padding: 0;
+    flex-shrink: 0;
+}
+
+.fap-sidebar-hamburger svg {
+    width: 18px;
+    height: 18px;
+    stroke: currentColor;
+    fill: none;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.fap-sidebar-backdrop {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 110;
+}
+
+.fap-sidebar-backdrop.visivel {
+    display: block;
+}
+
+/* ---- REFRESH BUTTON (header) ---- */
+
+.btn-refresh-estado {
+    background-color: var(--bg-input);
+    color: var(--text-main);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    width: 38px;
+    height: 38px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    padding: 0;
+    flex-shrink: 0;
+    transition: all 0.15s ease;
+}
+
+.btn-refresh-estado:hover {
+    background-color: var(--bg-secondary);
+    border-color: var(--text-muted);
+}
+
+.btn-refresh-estado:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.1);
+}
+
+.btn-refresh-estado svg {
+    width: 18px;
+    height: 18px;
+    stroke: currentColor;
+    fill: none;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.btn-refresh-estado.girando svg {
+    animation: spin 0.8s linear infinite;
+}
+
+.btn-refresh-estado.sucesso {
+    color: var(--success);
+    border-color: var(--success);
+}
+
+/* ---- BADGE DE ORIGEM ---- */
+
+.fap-badge-origem {
+    position: absolute;
+    left: 6px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 16px;
+    height: 16px;
+    border-radius: 3px;
+    cursor: pointer;
+    z-index: 2;
+    display: inline-block;
+    transition: transform 0.1s ease;
+}
+
+/* Área de hover maior que o badge visual, sem afetar o layout. */
+.fap-badge-origem::before {
+    content: '';
+    position: absolute;
+    inset: -4px;
+    border-radius: 5px;
+}
+
+.fap-badge-origem:hover {
+    transform: translateY(-50%) scale(1.15);
+}
+
+.fap-badge-origem:focus-visible {
+    outline: 2px solid var(--text-main);
+    outline-offset: 2px;
+}
+
+/* Paleta dos badges: 6 famílias de cor distintas para máxima
+ d istinção a 14×14. Antes Fedora/Flathub eram ambos azuis e                          *
+ RPM Fusion/Fabricante ambos laranjas — confundiam. */
+.fap-badge-origem[data-origem="flathub"]    { background-color: #3b82f6; } /* azul   */
+.fap-badge-origem[data-origem="fedora"]     { background-color: #dc2626; } /* vermelho */
+.fap-badge-origem[data-origem="rpmfusion"]  { background-color: #ea580c; } /* laranja */
+.fap-badge-origem[data-origem="fabricante"] { background-color: #9333ea; } /* violeta */
+.fap-badge-origem[data-origem="download"]   { background-color: #ca8a04; } /* âmbar  */
+.fap-badge-origem[data-origem="comunidade"] { background-color: #0891b2; } /* ciano  */
+
+.btn-flatpak-wrapper:has(.fap-badge-origem) .btn-executar {
+    padding-left: 1.75rem;
+}
+
+/* ---- POPOVER "SOBRE ESTE APP" ---- */
+
+.fap-popover {
+    position: fixed;
+    z-index: 10000;
+    background-color: var(--bg-card);
+    color: var(--text-main);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+    padding: 0;
+    max-width: 360px;
+    min-width: 260px;
+    font-size: 0.85rem;
+    line-height: 1.45;
+}
+
+.fap-popover-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.6rem 0.8rem;
+    border-bottom: 1px solid var(--border);
+    gap: 0.5rem;
+}
+
+.fap-popover-titulo {
+    font-weight: 600;
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.fap-popover-titulo .fap-badge-origem {
+    position: static;
+    transform: none;
+    flex-shrink: 0;
+}
+
+.fap-popover-close {
+    background: transparent;
+    color: var(--text-muted);
+    border: none;
+    font-size: 1.1rem;
+    line-height: 1;
+    cursor: pointer;
+    padding: 0.15rem 0.35rem;
+    border-radius: 4px;
+    flex-shrink: 0;
+}
+
+.fap-popover-close:hover {
+    background-color: var(--bg-secondary);
+    color: var(--text-main);
+}
+
+.fap-popover-body {
+    padding: 0.65rem 0.8rem;
+}
+
+.fap-popover-row {
+    margin-bottom: 0.55rem;
+}
+
+.fap-popover-row:last-child {
+    margin-bottom: 0;
+}
+
+.fap-popover-label {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 600;
+    display: block;
+    margin-bottom: 0.2rem;
+}
+
+.fap-popover-value {
+    font-size: 0.85rem;
+    color: var(--text-main);
+}
+
+.fap-popover-code {
+    display: block;
+    background-color: var(--bg-tertiary);
+    color: var(--matrix-green);
+    font-family: "SFMono-Regular", Consolas, monospace;
+    font-size: 0.75rem;
+    padding: 0.4rem 0.5rem;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+    word-break: break-all;
+    white-space: pre-wrap;
+    text-shadow: 0 0 3px rgba(0, 255, 65, 0.3);
+}
+
+/* ---- FILTROS (sessão 6) ---- */
+
+.fap-filtros {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    background-color: var(--bg-comando);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-bottom: 1rem;
+}
+
+.fap-filtros-grupo {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    flex-wrap: wrap;
+    width: 100%;
+}
+
+.fap-filtros-label {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-right: 0.25rem;
+}
+
+.fap-filtro-chip {
+    background-color: var(--bg-secondary);
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 0.25rem 0.65rem;
+    font-size: 0.78rem;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.fap-filtro-chip:hover {
+    color: var(--text-main);
+    border-color: var(--text-muted);
+}
+
+.fap-filtro-chip.ativo {
+    background-color: var(--text-main);
+    color: var(--bg-primary);
+    border-color: var(--text-main);
+    font-weight: 600;
+}
+
+.fap-filtros-limpar {
+    background: transparent;
+    color: var(--danger);
+    border: 1px solid var(--danger);
+    border-radius: 20px;
+    padding: 0.25rem 0.65rem;
+    font-size: 0.78rem;
+    font-family: inherit;
+    cursor: pointer;
+    align-self: flex-end;
+    transition: all 0.15s ease;
+}
+
+.fap-filtros-limpar:hover {
+    background-color: var(--danger);
+    color: white;
+}
+
+.fap-filtro-banner {
+    background-color: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.6rem 1rem;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    font-size: 0.85rem;
+    color: var(--text-main);
+}
+
+.fap-filtro-banner[hidden] {
+    display: none;
+}
+
+.fap-filtro-banner-limpar {
+    background: transparent;
+    color: var(--accent-soft);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 0.25rem 0.6rem;
+    font-size: 0.8rem;
+    font-family: inherit;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.fap-filtro-banner-limpar:hover {
+    background-color: var(--bg-tertiary);
+    border-color: var(--text-muted);
+}
+
+/* ---- LOG DOCK (painel fixo na parte inferior) ---- */
+
+.fap-log-dock {
+    position: fixed;
+    bottom: 0;
+    left: var(--fap-sidebar-width, 220px);
+    right: 0;
+    z-index: 60;
+    background-color: var(--bg-primary);
+    border-top: 1px solid var(--border);
+    transition: left 0.2s ease;
+}
+
+.fap-log-dock[hidden] {
+    display: none;
+}
+
+.fap-log-dock .terminal-log-wrapper {
+    margin-top: 0;
+    padding: 0 1rem 0.5rem 1rem;
+}
+
+.fap-log-dock .terminal-log-toggle {
+    border-radius: 0;
+    background-color: var(--bg-secondary);
+    border-bottom: 1px solid var(--border);
+    padding: 0.5rem 1rem;
+}
+
+.fap-log-dock .terminal-log-toggle:hover {
+    background-color: var(--bg-tertiary);
+}
+
+.fap-log-dock .terminal-log {
+    height: 160px;
+    min-height: 160px;
+    max-height: 160px;
+    margin-top: 0;
+    border-radius: 0 0 6px 6px;
+}
+
+/* Recolhido: anula a altura fixa. Especificidade (0,3,0) vence o
+ *  seletor acima (0,2,0), garantindo que o toggle continue
+ *  funcionando mesmo com height/min/max fixos. */
+.fap-log-dock .terminal-log:not(.expandido) {
+    height: 0;
+    min-height: 0;
+    max-height: 0;
+    padding: 0;
+    overflow: hidden;
+    opacity: 0;
+}
+
+/* Sincroniza o log dock com o colapso da sidebar. O dock é filho
+ *  de <body> (não de .fap-layout), então a variável
+ *  --fap-sidebar-width não o alcança. A classe é aplicada no
+ *  <body> por _alternarSidebar() e _inicializarSidebar(). */
+body.sidebar-colapsada .fap-log-dock {
+    left: 56px;
+}
+
+/* ---- BANNER N/A (dentro da sessão) ---- */
+
+.fap-na-banner {
+    background-color: var(--warning-bg);
+    border: 1px solid var(--warning-border);
+    border-left: 4px solid var(--warning-border);
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    font-size: 0.9rem;
+    color: var(--warning-soft);
+}
+
+.fap-na-banner[hidden] {
+    display: none;
+}
+
+.fap-na-banner-limpar {
+    background-color: transparent;
+    color: var(--warning-soft);
+    border: 1px solid var(--warning-border);
+    border-radius: 6px;
+    padding: 0.3rem 0.75rem;
+    font-size: 0.8rem;
+    font-family: inherit;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: all 0.15s ease;
+}
+
+.fap-na-banner-limpar:hover {
+    background-color: var(--warning-border);
+    color: white;
+}
+
+/* ---- CARD DE STATUS NA LANDING ---- */
+
+.fap-status-placeholder {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    margin: 0.75rem 0;
+}
+
+.fap-status-barras {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin: 1.5rem 0;
+}
+
+.fap-status-barra {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.fap-status-barra-label {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.85rem;
+    color: var(--text-main);
+    font-weight: 500;
+}
+
+.fap-status-barra-count {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    font-variant-numeric: tabular-nums;
+}
+
+.fap-status-barra-track {
+    width: 100%;
+    height: 8px;
+    background-color: var(--bg-secondary);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.fap-status-barra-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #7a7a7a, var(--success));
+    border-radius: 4px;
+    transition: width 0.5s ease;
+}
+
+.fap-status-barra-fill.completo {
+    background: linear-gradient(90deg, var(--success), #10b981);
+}
+
+@media (max-width: 600px) {
+    .fap-status-barras {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ---- RESPONSIVIDADE DO REDESIGN ---- */
+
+/*
+ * Auto-colapso: a classe .colapsada é aplicada por JS (via
+ * `manual ?? auto`, com auto = matchMedia('(max-width: 1099px)')).
+ * NÃO usamos media query para auto-colapsar — só para ajustar a
+ * aparência em telas pequenas (drawer).
+ */
+
+@media (max-width: 768px) {
+    .fap-layout {
+        grid-template-columns: 1fr;
+    }
+
+    .fap-sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        width: 260px;
+        transform: translateX(-100%);
+        transition: transform 0.2s ease;
+        z-index: 200;
+        height: 100vh;
+    }
+
+    .fap-sidebar.aberta {
+        transform: translateX(0);
+    }
+
+    .fap-sidebar-hamburger {
+        display: inline-flex;
+    }
+
+    .fap-main {
+        padding: 1rem 1rem 5rem 1rem;
+    }
+
+    .fap-log-dock {
+        left: 0;
+    }
+}
+
+@media (max-width: 600px) {
+    .fap-filtros-limpar {
+        align-self: flex-start;
+    }
 }

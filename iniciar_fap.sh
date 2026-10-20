@@ -827,9 +827,9 @@ abrir_firefox() {
     log_info "🦊 Abrindo Firefox (aguarde fechar a janela para encerrar o servidor)..."
 
     if [ "$DEBUG" = true ]; then
-        firefox --profile "$perfil_dir" --window-size 950,850 --new-window "$url" 2>&1 | tee -a "$LOG_FILE"
+        firefox --profile "$perfil_dir" --window-size 1280,900 --new-window "$url" 2>&1 | tee -a "$LOG_FILE"
     else
-        firefox --profile "$perfil_dir" --window-size 950,850 --new-window "$url" > /dev/null 2>&1
+        firefox --profile "$perfil_dir" --window-size 1280,900 --new-window "$url" > /dev/null 2>&1
     fi
 
     log_info "🦊 Firefox fechado"
@@ -857,9 +857,9 @@ abrir_chromium() {
     log_info "🌐 Abrindo $binario (aguarde fechar a janela para encerrar o servidor)..."
 
     if [ "$DEBUG" = true ]; then
-        $binario --user-data-dir="$perfil_dir" --app="$url" --window-size=950,850 2>&1 | tee -a "$LOG_FILE"
+        $binario --user-data-dir="$perfil_dir" --app="$url" --window-size=1280,900 2>&1 | tee -a "$LOG_FILE"
     else
-        $binario --user-data-dir="$perfil_dir" --app="$url" --window-size=950,850 > /dev/null 2>&1
+        $binario --user-data-dir="$perfil_dir" --app="$url" --window-size=1280,900 > /dev/null 2>&1
     fi
 
     log_info "🌐 $binario fechado"

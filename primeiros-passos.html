@@ -602,9 +602,10 @@ async function restaurarEstadoSessao() {
     _aplicarEstadoOneShotOuPreExistente('rpm-fusion', rpmFusionJaAtivo);
 
     // --- Flatpak / Flathub ---
-    var flatpakJaAtivo =
-        SystemState.remoteFlatpakAtivo('flathub') &&
-        SystemState.repoAtivo('flathub');
+    // `remoteFlatpakAtivo('flathub')` sozinho já basta: Flathub é um
+    // remote Flatpak, não um repo DNF. A condição antiga exigia
+    // também `repoAtivo('flathub')`, que sempre retornava false.
+    var flatpakJaAtivo = SystemState.remoteFlatpakAtivo('flathub');
     _aplicarEstadoOneShotOuPreExistente('flatpak-setup', flatpakJaAtivo);
 
     // --- Remoção do repo Fedora Flatpak ---
