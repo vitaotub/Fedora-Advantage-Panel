@@ -2849,6 +2849,18 @@ async function _executarRemocaoApp(idComando) {
     var info = APPS_REMOVIVEIS[idComando];
     if (!info) return;
 
+    // Garante que o estado do sistema está carregado ANTES de
+    // decidir "instalado vs não instalado". O cache cliente pode
+    // estar vazio (`_dados = null`) por: (a) `SystemState.carregar()`
+    // ainda em andamento (boot, reload), (b) `invalidar()` recente
+    // (remoção anterior, refresh), (c) fetch falhou. Em qualquer
+    // desses casos, `appJaInstaladoNoSistema` retorna `false` e a
+    // remoção seria bloqueada indevidamente — mesmo com o botão
+    // exibindo "Abrir X".
+    if (typeof SystemState !== 'undefined') {
+        try { await SystemState.carregar(); } catch (e) { /* ignore */ }
+    }
+
     var marcadoPeloFap = isExecutado(idComando);
     var instaladoNoSistema = false;
     try {
@@ -2857,7 +2869,19 @@ async function _executarRemocaoApp(idComando) {
         instaladoNoSistema = false;
     }
 
-    if (!marcadoPeloFap && !instaladoNoSistema) {
+    // Rede de segurança: o botão é a fonte visual da verdade. Se
+    // `aplicarEstadoInstalavel` marcou `data-estado` como
+    // "instalado-*", foi porque `isExecutado` ou
+    // `appJaInstaladoNoSistema` retornou `true` em algum momento.
+    // Uma nova consulta pode retornar `false` por race condition
+    // (cache invalidado, rede), e nesse caso é melhor tentar a
+    // remoção e mostrar o erro real no log do que bloquear com um
+    // alerta enganoso.
+    var btnInstall = document.getElementById('btn-' + idComando);
+    var estadoVisual = btnInstall ? btnInstall.getAttribute('data-estado') : null;
+    var visualDizInstalado = estadoVisual === 'instalado-abrir' || estadoVisual === 'instalado-sem-abrir';
+
+    if (!marcadoPeloFap && !instaladoNoSistema && !visualDizInstalado) {
         alert(_tVars('comum.nao_instalado',
                      (info.nome || idComando) + ' não está instalado.',
                      { nome: info.nome || idComando }));
