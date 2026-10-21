@@ -2,7 +2,7 @@
 
 **🌐 Idioma:** [Português (BR)](README.md) | [English](README.en.md) | Español
 
-![Versión](https://img.shields.io/badge/Versi%C3%B3n-v1.2.0--10202026-orange?style=flat-square)
+![Versión](https://img.shields.io/badge/Versi%C3%B3n-v1.2.1--10212026-orange?style=flat-square)
 ![Fedora](https://img.shields.io/badge/Fedora-44%20%7C%2045-294172?style=flat-square&logo=fedora)
 ![Licencia](https://img.shields.io/badge/Licencia-GPL--3.0-green?style=flat-square)
 ![Idiomas](https://img.shields.io/badge/Idiomas-PT--BR%20%7C%20EN%20%7C%20ES-3c67e3?style=flat-square)
@@ -104,7 +104,7 @@ Las actualizaciones se aplican **sobre la instalación existente** — no es nec
 
 - **Tema negro/gris de alto contraste** en dark; el tema claro mantiene los azules Fedora.
 - **Barra lateral colapsable** con íconos SVG monocromáticos y **efecto neón por sesión** en modo colapsado.
-- **Búsqueda global** con índice construido en segundo plano al arrancar — **cubre las 14 sesiones**, incluyendo la sesión 6 (Aplicaciones) con sus Flatpaks y apps DNF.
+- **Búsqueda global** con índice construido en segundo plano al arrancar — cubre las 14 sesiones.
 - **Insignias de origen** (6 variantes con colores distintos) con tooltip en cualquier parte del botón y popover.
 - **Filtros combinables** (estado + origen) en la sesión 6, siempre en dos filas.
 - **Tarjeta de estado en la landing** con 4 barras calculadas al arrancar.

@@ -2,7 +2,7 @@
 
 **🌐 Language:** [Português (BR)](README.md) | English | [Español](README.es.md)
 
-![Version](https://img.shields.io/badge/Version-v1.2.0--10202026-orange?style=flat-square)
+![Version](https://img.shields.io/badge/Version-v1.2.1--10212026-orange?style=flat-square)
 ![Fedora](https://img.shields.io/badge/Fedora-44%20%7C%2045-294172?style=flat-square&logo=fedora)
 ![License](https://img.shields.io/badge/License-GPL--3.0-green?style=flat-square)
 ![Languages](https://img.shields.io/badge/Languages-PT--BR%20%7C%20EN%20%7C%20ES-3c67e3?style=flat-square)
@@ -43,7 +43,7 @@ Combinable filters (state + origin) let you see only what's done, only what's mi
 
 ![FAP real-time log](prints/04-log.png)
 
-Everything FAP does passes through a **fixed terminal at the bottom**, with colors distinguishing normal output, success and real error. The log starts collapsed (click the `[▲/▼]` toggle to expand) and follows the sidebar when it collapses. Closing FAP does not kill running commands — the process tree is shut down correctly.
+Everything FAP does passes through a **fixed terminal at the bottom**, with colors distinguishing normal output, success and real error. The log starts collapsed (click the `[▲/▼]` toggle to expand) and follows the sidebar when it collapses.
 
 ## 🎯 Who it's for
 
@@ -75,7 +75,7 @@ Updates are applied **on top of the existing installation** — no need to unins
 | # | Session | What it does |
 |---|---|---|
 | 1 | 🚀 First Steps | System update, RPM Fusion, Flathub, Terra Repository (with warnings about optional subrepositories) |
-| 2 | 🔤 Codecs | Complete multimedia codecs (official RPM Fusion `multimedia` group), commercial DVD, Microsoft fonts |
+| 2 | 🔤 Codecs | Complete multimedia codecs, commercial DVD, Microsoft fonts |
 | 3 | 🖥️ Hardware | AMD/NVIDIA/Intel drivers, CoreCtrl, LACT, GPU overclocking |
 | 4 | 🔌 Devices | Automatic hardware detection, community COPR drivers, controllers, firmware |
 | 5 | 🎬 Media Production | OBS Studio, virtual camera, EasyEffects |
@@ -94,21 +94,21 @@ Updates are applied **on top of the existing installation** — no need to unins
 - **Never installs anything without you seeing it.** Every command is visible in the real-time log.
 - **Pre-existing detection.** If you already had VLC, Steam or the NVIDIA driver before FAP, the button shows "Open" from the start, with a tooltip explaining the origin.
 - **13 critical items protected.** Drivers, codecs, CUPS, Samba, virtualization: if they existed before FAP, the trash icon does not appear.
-- **Real language detection.** The 3 translation buttons (packs, hunspell, locale) query the system state — if already applied, they show "✅ Already active" instead of re-running `dnf install`.
+- **Real language detection.** The 3 translation buttons query the system state — if already applied, they show "✅ Already active".
 - **Authentication via `pkexec`.** Native password dialog from your desktop.
 - **Smart locking.** While a `dnf` command is running, other `dnf` buttons from other sessions are locked. The Flatpak queue handles the global lock.
 - **Native WebKitGTK container.** Own interface. Compatibility mode (`fap-compat`) for older GPUs.
-- **`install.sh` refuses to run as root.** Installs into `~/.local/share` and uses `sudo` only where needed.
+- **`install.sh` refuses to run as root.** Installs into `~/.local/share`.
 
 ## 🎨 Interface Features (v1.2)
 
 - **High-contrast black/gray theme** in dark; light theme keeps the Fedora blues.
 - **Collapsible lateral sidebar** with monochrome SVG icons and **per-session neon effect** in collapsed mode.
-- **Global search** with an index built in the background at boot — **covers all 14 sessions**, including session 6 (Apps) with its Flatpaks and DNF apps.
-- **Origin badges** (6 variants with distinct colors) with tooltip on the entire button and popover showing exact command, how to update and how to remove.
+- **Global search** with an index built in the background at boot — covers all 14 sessions.
+- **Origin badges** (6 variants with distinct colors) with tooltip on the entire button and popover.
 - **Combinable filters** (state + origin) in session 6, always in two rows.
 - **Status card on landing** with 4 bars computed at boot.
-- **Fixed log dock** of 160px, always starts collapsed, with internal scroll.
+- **Fixed log dock** of 160px, always starts collapsed.
 - **N/A sessions** removed from the progress calculation.
 - **🔄 header button** that reloads the system state without closing FAP.
 

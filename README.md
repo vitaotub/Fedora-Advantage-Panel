@@ -2,7 +2,7 @@
 
 **🌐 Idioma:** Português (BR) | [English](README.en.md) | [Español](README.es.md)
 
-![Versão](https://img.shields.io/badge/Vers%C3%A3o-v1.2.0--10202026-orange?style=flat-square)
+![Versão](https://img.shields.io/badge/Vers%C3%A3o-v1.2.1--10212026-orange?style=flat-square)
 ![Fedora](https://img.shields.io/badge/Fedora-44%20%7C%2045-294172?style=flat-square&logo=fedora)
 ![Licença](https://img.shields.io/badge/Licen%C3%A7a-GPL--3.0-green?style=flat-square)
 ![Idiomas](https://img.shields.io/badge/Idiomas-PT--BR%20%7C%20EN%20%7C%20ES-3c67e3?style=flat-square)
@@ -94,7 +94,7 @@ Atualizações são feitas **em cima da instalação existente** — não precis
 - **Nunca instala nada sem você ver.** Todo comando fica visível no log em tempo real.
 - **Detecção de pré-existência.** Se você já tinha VLC, Steam ou driver NVIDIA antes do FAP, o botão mostra "Abrir" desde o início, com tooltip avisando a origem.
 - **13 itens críticos protegidos.** Drivers, codecs, CUPS, Samba, virtualização: se já existiam antes do FAP, a lixeira não aparece. Evita quebrar o sistema sem querer.
-- **Detecção real de idiomas.** Os 3 botões de tradução (packs, hunspell, locale) consultam o estado do sistema — se já estava aplicado, mostram "✅ Já estava ativo" em vez de refazer o `dnf install`.
+- **Detecção real de idiomas.** Os 3 botões de tradução consultam o estado do sistema — se já estava aplicado, mostram "✅ Já estava ativo".
 - **Autenticação via `pkexec`.** Diálogo de senha nativo do seu desktop, nunca digitada no terminal.
 - **Bloqueio inteligente.** Enquanto um comando `dnf` está rodando, outros botões `dnf` de outras sessões ficam travados. A fila de Flatpaks resolve o lock global.
 - **Container nativo WebKitGTK.** Interface própria, sem depender do Firefox/Chromium. Modo compatibilidade (`fap-compat`) para GPUs antigas.
@@ -102,10 +102,10 @@ Atualizações são feitas **em cima da instalação existente** — não precis
 
 ## 🎨 Recursos da Interface (v1.2)
 
-- **Tema preto/cinza de alto contraste** no dark; tema claro mantém os azuis Fedora. Badge da versão, relógio e links do rodapé legíveis em ambos.
+- **Tema preto/cinza de alto contraste** no dark; tema claro mantém os azuis Fedora.
 - **Sidebar lateral colapsável** com ícones SVG monocromáticos e **efeito neon por sessão** no modo colapsado.
-- **Busca global** com índice construído em background no boot — **cobre todas as 14 sessões**, incluindo a sessão 6 (Aplicativos) com seus Flatpaks e apps DNF.
-- **Badges de origem** (6 variantes com cores distintas) com tooltip em qualquer parte do botão e popover mostrando comando exato, como atualizar e como remover.
+- **Busca global** com índice construído em background no boot — cobre todas as 14 sessões.
+- **Badges de origem** (6 variantes com cores distintas) com tooltip em qualquer parte do botão e popover com comando exato, como atualizar e como remover.
 - **Filtros combináveis** (estado + origem) na sessão 6, sempre em duas linhas.
 - **Card de status na landing** com 4 barras calculadas no boot.
 - **Log dock fixo** de 160px, sempre inicia colapsado, com scroll interno.
