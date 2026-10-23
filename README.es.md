@@ -2,7 +2,7 @@
 
 **🌐 Idioma:** [Português (BR)](README.md) | [English](README.en.md) | Español
 
-![Versión](https://img.shields.io/badge/Versi%C3%B3n-v1.2.1--10212026-orange?style=flat-square)
+![Versión](https://img.shields.io/badge/Versi%C3%B3n-v1.2.2--10232026-orange?style=flat-square)
 ![Fedora](https://img.shields.io/badge/Fedora-44%20%7C%2045-294172?style=flat-square&logo=fedora)
 ![Licencia](https://img.shields.io/badge/Licencia-GPL--3.0-green?style=flat-square)
 ![Idiomas](https://img.shields.io/badge/Idiomas-PT--BR%20%7C%20EN%20%7C%20ES-3c67e3?style=flat-square)
@@ -21,13 +21,13 @@ Un único botón, **Iniciar Configuración**, te lleva por **14 sesiones guiadas
 
 ![Página de inicio del FAP](prints/01-landing.png)
 
-Al arrancar, FAP consulta el estado real del sistema (repositorios activos, apps instaladas, ajustes aplicados) y muestra **4 barras de progreso** — Uso general, Gaming, Producción y Seguridad. La línea de abajo resume: *"Faltan {n} pasos para dejar Fedora completo."* Cuando todo está listo, se convierte en *"Tu Fedora está listo. 🎉"*.
+Al arrancar, FAP consulta el estado real del sistema y muestra **4 barras de progreso** — Uso general, Gaming, Producción y Seguridad. La línea de abajo resume: *"Faltan {n} pasos para dejar Fedora completo."* Cuando todo está listo, se convierte en *"Tu Fedora está listo. 🎉"*.
 
 ### Navegación lateral + búsqueda
 
 ![Barra lateral del FAP](prints/02-sidebar.png)
 
-Barra lateral retráctil con las 14 sesiones, cada una con ícono, nombre e indicador de progreso (`●` completada, `◐` parcial, `○` no iniciada, `⊘` N/A). Tiene **búsqueda global** — escribe "vlc" o "steam" y la barra filtra tanto sesiones como ítems internos. Haz clic en un resultado y la sesión se abre ya filtrada.
+Barra lateral retráctil con las 14 sesiones. Tiene **búsqueda global** — escribe "vlc" o "steam" y la barra filtra tanto sesiones como ítems internos.
 
 En modo colapsado, cada ícono recibe su propio **efecto neón** al pasar el mouse.
 
@@ -35,23 +35,23 @@ En modo colapsado, cada ícono recibe su propio **efecto neón** al pasar el mou
 
 ![Filtros y origen de paquetes del FAP](prints/03-filtros.png)
 
-Cada aplicación muestra de dónde viene — **Flathub, Fedora, RPM Fusion, Fabricante, Descarga o Comunidad**. Cada origen tiene un color distinto (azul, rojo, naranja, violeta, ámbar, cian) para identificación rápida. Pasa el mouse en cualquier parte del botón y el tooltip muestra el origen; haz clic en la insignia de color para abrir un popover con el **comando exacto**, **cómo actualizar** y **cómo eliminar**.
+Cada aplicación muestra de dónde viene — **Flathub, Fedora, RPM Fusion, Fabricante, Descarga o Comunidad**, cada origen con un color distinto. Pasa el mouse en cualquier parte del botón y el tooltip muestra el origen; haz clic en la insignia para abrir un popover con el **comando exacto**, **cómo actualizar** y **cómo eliminar**.
 
-Los filtros combinables (estado + origen) te permiten ver solo lo que está hecho, solo lo que falta, solo los preexistentes, o solo los omitidos.
+Los filtros combinables (estado + origen) están en la sesión 6.
 
 ### Registro en tiempo real con tema Matrix
 
 ![Registro en tiempo real del FAP](prints/04-log.png)
 
-Todo lo que FAP hace pasa por un **terminal fijo en la parte inferior**, con colores que distinguen salida normal, éxito y error real. El registro comienza colapsado (haz clic en el toggle `[▲/▼]` para expandir) y acompaña la barra lateral cuando se colapsa.
+Todo lo que FAP hace pasa por un **terminal fijo en la parte inferior**, con colores que distinguen salida normal, éxito y error real. El registro comienza colapsado y acompaña la barra lateral.
 
 ## 🎯 Para quién es
 
 - **Quien está empezando con Fedora** y quiere dejarlo listo para uso diario.
 - **Quien viene de Ubuntu/Mint** y quiere la misma fluidez de configuración inicial.
-- **Quien juega en Linux** y quiere Steam, Heroic, Lutris, Proton, MangoHud y similares funcionando rápido.
+- **Quien juega en Linux** y quiere Steam, Heroic, Lutris, Proton, MangoHud y similares.
 - **Quien ya usa Fedora desde hace tiempo** y quiere automatizar el post-instalación.
-- **Quien administra la PC de otra persona** (familia, amigos) sin terminal.
+- **Quien administra la PC de otra persona** sin terminal.
 
 ## 🚀 Instalación
 
@@ -74,43 +74,55 @@ Las actualizaciones se aplican **sobre la instalación existente** — no es nec
 
 | # | Sesión | Qué hace |
 |---|---|---|
-| 1 | 🚀 Primeros Pasos | Actualización del sistema, RPM Fusion, Flathub, Terra Repository |
-| 2 | 🔤 Códecs | Códecs multimedia completos, DVD comercial, fuentes Microsoft |
-| 3 | 🖥️ Hardware | Controladores AMD/NVIDIA/Intel, CoreCtrl, LACT, overclock de GPU |
-| 4 | 🔌 Dispositivos | Detección automática de hardware, controladores COPR, mandos, firmware |
+| 1 | 🚀 Primeros Pasos | Actualización, RPM Fusion, Flathub, Terra Repository |
+| 2 | 🔤 Códecs | Códecs completos, DVD comercial, fuentes Microsoft |
+| 3 | 🖥️ Hardware | Controladores AMD/NVIDIA/Intel, CoreCtrl, LACT, overclock |
+| 4 | 🔌 Dispositivos | Detección automática, controladores COPR, mandos, firmware |
 | 5 | 🎬 Producción Multimedia | OBS Studio, cámara virtual, EasyEffects |
-| 6 | 📦 Aplicaciones | Flatpaks seleccionados, 20+ apps `dnf`, navegadores vía RPM oficial, **Suite ArtCraft (13 apps)** y herramientas de acceso remoto |
+| 6 | 📦 Aplicaciones | Flatpaks, 20+ apps `dnf`, **ArtCraft Launcher**, acceso remoto, **utilidades** |
 | 7 | 🏠 Hogar y Oficina | CUPS, Samba, LocalSend, KeePassXC |
-| 8 | 🎮 Gaming | Steam nativo, Heroic (Flatpak), Lutris, Wine, GameMode, emuladores |
+| 8 | 🎮 Gaming | Steam nativo, Heroic, Lutris, Wine, GameMode, emuladores |
 | 9 | 📱 Waydroid | Android en Linux vía contenedor |
 | 10 | 🖥️ Virtualización | QEMU/KVM, VirtualBox, GNOME Boxes |
-| 11 | 📊 Diagnóstico | Panel del sistema, salud del disco (SMART), temperaturas, journal de errores |
-| 12 | 🛠️ Ajustes y Mantenimiento | Ajustes de rendimiento y audio, DNF, dual-boot, configuración interactiva del GRUB, kernels |
-| 13 | 🐧 Estado de Fedora | Versión, detección de Atomic/Silverblue, gestión de SELinux |
-| 14 | 📖 Acerca de FAP | Actualizar/desinstalar, changelog dinámico, historial de cambios |
+| 11 | 📊 Diagnóstico | Panel del sistema, SMART, temperaturas, journal |
+| 12 | 🛠️ Ajustes y Mantenimiento | Ajustes, DNF, dual-boot, GRUB, kernels |
+| 13 | 🐧 Estado de Fedora | Versión, Atomic/Silverblue, SELinux |
+| 14 | 📖 Acerca de FAP | Actualizar/desinstalar, changelog |
+
+### 📦 Sesión 6 — bloques y destacados
+
+- **📄 Productividad y Oficina** — OnlyOffice, Obsidian, Thunderbird, Okular, Kate, Joplin, Foliate, **Visual Studio Code**.
+- **🎬 Entretenimiento y Multimedia** — Haruna, VLC, MPV, Spotify, Plex, Stremio.
+- **🎨 Herramientas Gráficas** — Krita, Inkscape, Pinta, GIMP, Darktable, FreeCAD, LibreCAD, Cura, Upscayl, XnView MP, **Drawy**.
+- **🎨 Suite ArtCraft** — **ArtCraft Launcher** (instala/actualiza las 13 apps de la suite por la propia interfaz del launcher).
+- **🌐 Internet y Comunicación** — Opera, Brave, Edge, Chromium, Zoom, Vivaldi, Discord, Telegram, **Firefox**, **Packet**.
+- **🎞️ Edición de Vídeo, Audio y 3D** — Kdenlive, Shotcut, Pitivi, OpenShot, Avidemux, Lightworks, Drift, Blender, Ardour, LMMS, Audacity.
+- **☁️ Sincronización en la Nube** — Rclone Manager.
+- **📡 Herramientas de Acceso Remoto** — RustDesk, Remmina, GNOME Connections, KRDC.
+- **🔧 Utilidades** — **Gear Lever** (gestor de AppImages).
 
 ## 🛡️ Seguridad y transparencia
 
 - **Nunca instala nada sin que lo veas.** Todo comando es visible en el registro en tiempo real.
-- **Detección de preexistencia.** Si ya tenías VLC, Steam o el controlador NVIDIA antes de FAP, el botón muestra "Abrir" desde el inicio.
-- **13 ítems críticos protegidos.** Controladores, códecs, CUPS, Samba, virtualización: si existían antes de FAP, la papelera no aparece.
-- **Detección real de idiomas.** Los 3 botones de traducción consultan el estado del sistema — si ya estaba aplicado, muestran "✅ Ya estaba activo".
-- **Autenticación vía `pkexec`.** Diálogo de contraseña nativo de tu escritorio.
-- **Bloqueo inteligente.** Mientras un comando `dnf` está en ejecución, otros botones `dnf` quedan bloqueados. La cola de Flatpaks maneja el bloqueo global.
-- **Contenedor WebKitGTK nativo.** Interfaz propia. Modo compatibilidad (`fap-compat`) para GPUs antiguas.
+- **Detección de preexistencia.** Apps instaladas antes de FAP aparecen como "Abrir" desde el inicio.
+- **13 ítems críticos protegidos.** Controladores, códecs, CUPS, Samba, virtualización: si existían antes, la papelera no aparece.
+- **Detección real de idiomas.** Los 3 botones de traducción consultan el estado del sistema.
+- **Autenticación vía `pkexec`.** Diálogo de contraseña nativo.
+- **Bloqueo inteligente.** `dnf` bloquea otros `dnf`; la cola de Flatpaks maneja el bloqueo global.
+- **Contenedor WebKitGTK nativo.** Interfaz propia, sin dependencia de Firefox/Chromium. `fap-compat` para GPUs antiguas.
 - **`install.sh` se niega a ejecutarse como root.** Instala en `~/.local/share`.
 
 ## 🎨 Características de la Interfaz (v1.2)
 
-- **Tema negro/gris de alto contraste** en dark; el tema claro mantiene los azules Fedora.
+- **Tema negro/gris de alto contraste** en dark; el claro mantiene los azules Fedora.
 - **Barra lateral colapsable** con íconos SVG monocromáticos y **efecto neón por sesión** en modo colapsado.
-- **Búsqueda global** con índice construido en segundo plano al arrancar — cubre las 14 sesiones.
-- **Insignias de origen** (6 variantes con colores distintos) con tooltip en cualquier parte del botón y popover.
-- **Filtros combinables** (estado + origen) en la sesión 6, siempre en dos filas.
-- **Tarjeta de estado en la landing** con 4 barras calculadas al arrancar.
+- **Búsqueda global** con índice en segundo plano cubriendo las 14 sesiones.
+- **Insignias de origen** (6 variantes) con tooltip en cualquier parte del botón y popover.
+- **Filtros combinables** (estado + origen) en la sesión 6.
+- **Tarjeta de estado en la landing** con 4 barras.
 - **Dock de registro fijo** de 160px, siempre comienza colapsado.
 - **Sesiones N/A** eliminadas del cálculo de progreso.
-- **Botón 🔄 en el encabezado** que recarga el estado del sistema sin cerrar FAP.
+- **Botón 🔄 en el encabezado** que recarga el estado del sistema.
 
 ### 🔒 Protección de ítems críticos
 
@@ -120,7 +132,7 @@ Las actualizaciones se aplican **sobre la instalación existente** — no es nec
 
 - **Fedora 44 o 45** (desarrollado y probado ampliamente en ambos).
 - **GNOME, KDE Plasma, XFCE, Cinnamon, MATE, LXQt, LXDE, Budgie, Sway, Hyprland, i3** y otros tiling WMs.
-- **PT-BR, EN y ES.** Cambiable en el encabezado de FAP.
+- **PT-BR, EN y ES.**
 
 ## 🔄 Actualizar y desinstalar
 
@@ -134,13 +146,13 @@ O haz clic en el badge de actualización o usa el botón en la sesión **Acerca 
 ```bash
 ./install.sh --uninstall
 ```
-O usa el botón en la sesión **Acerca de FAP** (con doble confirmación).
+O usa el botón en la sesión **Acerca de FAP**.
 
 ## 🐛 Feedback, bugs y sugerencias
 
 FAP es un proyecto open-source (GPL-3.0), mantenido por **VitãoTub** en su tiempo libre.
 
-- **Bugs:** abre un [issue](https://github.com/vitaotub/Fedora-Advantage-Panel/issues) con la salida de `/tmp/fap-*.log` (si es posible).
+- **Bugs:** abre un [issue](https://github.com/vitaotub/Fedora-Advantage-Panel/issues) con la salida de `/tmp/fap-*.log` y la versión de Fedora.
 - **Sugerencias:** también vía issue.
 - **Capturas de pantalla:** si algo se ve raro, una captura ayuda mucho.
 

@@ -176,6 +176,15 @@ id="btn-selinux-setroubleshoot-install"
 data-i18n="sessoes.estado-fedora.btn_setroubleshoot_install">
 📦 Instalar setroubleshoot
 </button>
+<button class="btn-executar verde"
+style="display: none;"
+onclick="abrirSetroubleshoot()"
+data-comando="abrir-setroubleshoot"
+data-logbox="log-sessao-estado-fedora"
+id="btn-abrir-setroubleshoot"
+data-i18n="sessoes.estado-fedora.btn_setroubleshoot_abrir">
+🚀 Abrir setroubleshoot
+</button>
 </div>
 </div>
 <div class="progress-container" id="progress-selinux-setroubleshoot-install">
@@ -265,6 +274,9 @@ data-i18n="sessoes.estado-fedora.btn_selinux_gui_open">
 
 function _t(chave, fallback) {
 return (typeof tOr === 'function') ? tOr(chave, fallback) : fallback;
+}
+function _tVars(chave, fallback, vars) {
+return (typeof tOr === 'function') ? tOr(chave, fallback, vars) : fallback;
 }
 
 // ============================================================
@@ -384,9 +396,21 @@ btn.style.opacity = '1';
 // VERSÃO DO FEDORA
 // ============================================================
 
-async function verificarVersaoFedora() {
+async function verificarVersaoFedora(silencioso) {
 var idComando = 'fedora-version-check';
 var resultadoEl = document.getElementById('diag-fedora-version');
+
+// `silencioso = true` é usado pelo auto-load em restaurarEstadoSessao
+// (não gera log nem spinner). `silencioso = false/undefined` é o
+// clique no botão — roda um comando rápido para dar sinal visível
+// mesmo quando `/system-info` já trouxe os dados do auto-load. Sem
+// isso, o clique re-renderiza dados idênticos e o botão parece
+// "não fazer nada".
+if (!silencioso) {
+await _executarLeitura(idComando,
+'cat /etc/fedora-release 2>/dev/null; uname -r',
+_t('sessoes.estado-fedora.btn_verificar_versao', '🔍 Verificar Versão do Fedora'));
+}
 
 var sys = await _fetchJSON('/system-info');
 
@@ -409,7 +433,7 @@ resultadoEl.style.display = 'block';
 
 var html = '';
 if (!fedora) {
-html = '<div class="aviso-caixa">⚠️ Não foi possível determinar a versão do Fedora. Confira o log acima para detalhes.</div>';
+html = '<div class="aviso-caixa">' + _t('sessoes.estado-fedora.versao_indisponivel', '⚠️ Não foi possível determinar a versão do Fedora. Confira o log acima para detalhes.') + '</div>';
 } else {
 var statusClass = 'aviso-caixa';
 var statusTexto = '';
@@ -417,21 +441,21 @@ var statusTexto = '';
 if (versaoNumero != null) {
 if (versaoNumero >= 43 && versaoNumero <= 45) {
 statusClass = 'aviso-sucesso';
-statusTexto = '✅ Versão suportada. O FAP foi desenvolvido e testado nesta faixa.';
+statusTexto = _t('sessoes.estado-fedora.versao_suportada', '✅ Versão suportada. O FAP foi desenvolvido e testado nesta faixa.');
 } else if (versaoNumero < 43) {
-statusTexto = '⚠️ Versão antiga (< 43). Alguns comandos podem falhar. Considere atualizar o Fedora.';
+statusTexto = _t('sessoes.estado-fedora.versao_antiga', '⚠️ Versão antiga (< 43). Alguns comandos podem falhar. Considere atualizar o Fedora.');
 } else {
-statusTexto = '⚠️ Versão muito nova (> 45). Pode haver mudanças não testadas. Se encontrar problemas, reporte.';
+statusTexto = _t('sessoes.estado-fedora.versao_nova', '⚠️ Versão muito nova (> 45). Pode haver mudanças não testadas. Se encontrar problemas, reporte.');
 }
 }
 
 html =
 '<div class="' + statusClass + '">' + statusTexto + '</div>' +
 '<ul class="lista-info">' +
-'<li><span class="label">Distribuição</span><span class="valor">' + _escapeHTML(fedora) + '</span></li>' +
-'<li><span class="label">Versão</span><span class="valor">' + (versaoNumero || '—') + '</span></li>' +
-'<li><span class="label">Kernel</span><span class="valor">' + _escapeHTML(kernel || '—') + '</span></li>' +
-'<li><span class="label">Suporte do FAP</span><span class="valor">43 — 45</span></li>' +
+'<li><span class="label">' + _t('sessoes.estado-fedora.label_distribuicao', 'Distribuição') + '</span><span class="valor">' + _escapeHTML(fedora) + '</span></li>' +
+'<li><span class="label">' + _t('sessoes.estado-fedora.label_versao', 'Versão') + '</span><span class="valor">' + (versaoNumero || '—') + '</span></li>' +
+'<li><span class="label">' + _t('sessoes.estado-fedora.label_kernel', 'Kernel') + '</span><span class="valor">' + _escapeHTML(kernel || '—') + '</span></li>' +
+'<li><span class="label">' + _t('sessoes.estado-fedora.label_suporte_fap', 'Suporte do FAP') + '</span><span class="valor">43 — 45</span></li>' +
 '</ul>';
 }
 
@@ -485,24 +509,22 @@ resultadoEl.style.display = 'block';
 if (isAtomic) {
 resultadoEl.innerHTML =
 '<div class="aviso-caixa">' +
-'⚠️ <strong>Sistema imutável detectado.</strong> Você está rodando uma variante Atomic/Silverblue do Fedora. ' +
-'Os comandos <code>dnf install</code> do FAP <strong>não vão funcionar</strong> nesta sessão — o sistema base é protegido. ' +
-'Apenas os comandos baseados em Flatpak (a maioria das sessões de Aplicativos e Gaming) funcionam.' +
+_t('sessoes.estado-fedora.atomic_aviso', '⚠️ <strong>Sistema imutável detectado.</strong> Você está rodando uma variante Atomic/Silverblue do Fedora. Os comandos <code>dnf install</code> do FAP <strong>não vão funcionar</strong> nesta sessão — o sistema base é protegido. Apenas os comandos baseados em Flatpak (a maioria das sessões de Aplicativos e Gaming) funcionam.') +
 '</div>' +
 '<ul class="lista-info">' +
-'<li><span class="label">Tipo</span><span class="valor">Imutável (Atomic)</span></li>' +
-'<li><span class="label">Variante</span><span class="valor">' + _escapeHTML(variante) + '</span></li>' +
-'<li><span class="label">Gerenciador</span><span class="valor">rpm-ostree</span></li>' +
+'<li><span class="label">' + _t('sessoes.estado-fedora.label_tipo', 'Tipo') + '</span><span class="valor">' + _t('sessoes.estado-fedora.atomic_imutavel', 'Imutável (Atomic)') + '</span></li>' +
+'<li><span class="label">' + _t('sessoes.estado-fedora.label_variante', 'Variante') + '</span><span class="valor">' + _escapeHTML(variante) + '</span></li>' +
+'<li><span class="label">' + _t('sessoes.estado-fedora.label_gerenciador', 'Gerenciador') + '</span><span class="valor">rpm-ostree</span></li>' +
 '</ul>';
 } else {
 resultadoEl.innerHTML =
 '<div class="aviso-sucesso">' +
-'✅ <strong>Sistema tradicional detectado.</strong> Todos os comandos do FAP funcionam normalmente.' +
+_t('sessoes.estado-fedora.atomic_ok', '✅ <strong>Sistema tradicional detectado.</strong> Todos os comandos do FAP funcionam normalmente.') +
 '</div>' +
 '<ul class="lista-info">' +
-'<li><span class="label">Tipo</span><span class="valor">Tradicional</span></li>' +
-'<li><span class="label">Variante</span><span class="valor">' + _escapeHTML(variante) + '</span></li>' +
-'<li><span class="label">Gerenciador</span><span class="valor">dnf</span></li>' +
+'<li><span class="label">' + _t('sessoes.estado-fedora.label_tipo', 'Tipo') + '</span><span class="valor">' + _t('sessoes.estado-fedora.atomic_tradicional', 'Tradicional') + '</span></li>' +
+'<li><span class="label">' + _t('sessoes.estado-fedora.label_variante', 'Variante') + '</span><span class="valor">' + _escapeHTML(variante) + '</span></li>' +
+'<li><span class="label">' + _t('sessoes.estado-fedora.label_gerenciador', 'Gerenciador') + '</span><span class="valor">dnf</span></li>' +
 '</ul>';
 }
 }
@@ -536,7 +558,7 @@ var modoConfig = (sys && sys.selinux_modo) ? String(sys.selinux_modo) : '—';
 if (logBox) {
 var linha = document.createElement('div');
 linha.className = 'log-line success';
-linha.textContent = '✅ Modo atual: ' + modo + ' (config: ' + modoConfig + ')';
+linha.textContent = _tVars('sessoes.estado-fedora.selinux_log_atual', '✅ Modo atual: {modo} (config: {config})', { modo: modo, config: modoConfig });
 logBox.appendChild(linha);
 logBox.scrollTop = logBox.scrollHeight;
 }
@@ -548,20 +570,20 @@ var modoLower = modo.toLowerCase();
 var statusHtml = '';
 
 if (modoLower === 'enforcing') {
-statusHtml = '<div class="aviso-sucesso">✅ <strong>Enforcing</strong> — regras ativas e bloqueios reais. É o padrão recomendado do Fedora.</div>';
+statusHtml = _t('sessoes.estado-fedora.selinux_status_enforcing', '<div class="aviso-sucesso">✅ <strong>Enforcing</strong> — regras ativas e bloqueios reais. É o padrão recomendado do Fedora.</div>');
 } else if (modoLower === 'permissive') {
-statusHtml = '<div class="aviso-caixa">⚠️ <strong>Permissive</strong> — regras ativas, mas apenas registra sem bloquear. Bom para diagnóstico, mas reduz a segurança.</div>';
+statusHtml = _t('sessoes.estado-fedora.selinux_status_permissive', '<div class="aviso-caixa">⚠️ <strong>Permissive</strong> — regras ativas, mas apenas registra sem bloquear. Bom para diagnóstico, mas reduz a segurança.</div>');
 } else if (modoLower === 'disabled') {
-statusHtml = '<div class="aviso-caixa" style="border-color: #ef4444; color: #ef4444;">❌ <strong>Disabled</strong> — regras desativadas. Recomendamos reativar o SELinux.</div>';
+statusHtml = _t('sessoes.estado-fedora.selinux_status_disabled', '<div class="aviso-caixa" style="border-color: #ef4444; color: #ef4444;">❌ <strong>Disabled</strong> — regras desativadas. Recomendamos reativar o SELinux.</div>');
 } else {
-statusHtml = '<div class="aviso-caixa">Modo não reconhecido: ' + _escapeHTML(modo) + '</div>';
+statusHtml = _tVars('sessoes.estado-fedora.selinux_status_outro', '<div class="aviso-caixa">Modo não reconhecido: {modo}</div>', { modo: _escapeHTML(modo) });
 }
 
 resultadoEl.innerHTML =
 statusHtml +
 '<ul class="lista-info">' +
-'<li><span class="label">Modo atual</span><span class="valor">' + _escapeHTML(modo) + '</span></li>' +
-'<li><span class="label">Modo na config</span><span class="valor">' + _escapeHTML(modoConfig) + '</span></li>' +
+'<li><span class="label">' + _t('sessoes.estado-fedora.selinux_label_modo_atual', 'Modo atual') + '</span><span class="valor">' + _escapeHTML(modo) + '</span></li>' +
+'<li><span class="label">' + _t('sessoes.estado-fedora.selinux_label_modo_config', 'Modo na config') + '</span><span class="valor">' + _escapeHTML(modoConfig) + '</span></li>' +
 '</ul>';
 }
 }
@@ -605,11 +627,11 @@ resultadoEl.style.display = 'block';
 
 var msg = '';
 if (total === 0) {
-msg = '<div class="aviso-sucesso">✅ Nenhum aviso de SELinux (AVC denial) nas últimas 24 horas.</div>';
+msg = _t('sessoes.estado-fedora.selinux_avc_nenhum', '<div class="aviso-sucesso">✅ Nenhum aviso de SELinux (AVC denial) nas últimas 24 horas.</div>');
 } else if (total < 5) {
-msg = '<div class="aviso-caixa">ℹ️ ' + total + ' aviso(s) de SELinux nas últimas 24h. Poucos avisos isolados geralmente são inofensivos.</div>';
+msg = _tVars('sessoes.estado-fedora.selinux_avc_poucos', '<div class="aviso-caixa">ℹ️ {n} aviso(s) de SELinux nas últimas 24h. Poucos avisos isolados geralmente são inofensivos.</div>', { n: total });
 } else {
-msg = '<div class="aviso-caixa" style="border-color: #ef4444; color: #ef4444;">⚠️ ' + total + ' avisos de SELinux nas últimas 24h. Pode indicar um problema recorrente. Consulte o log acima e considere instalar o <strong>setroubleshoot</strong> para diagnóstico em português claro.</div>';
+msg = _tVars('sessoes.estado-fedora.selinux_avc_muitos', '<div class="aviso-caixa" style="border-color: #ef4444; color: #ef4444;">⚠️ {n} avisos de SELinux nas últimas 24h. Pode indicar um problema recorrente. Consulte o log acima e considere instalar o <strong>setroubleshoot</strong> para diagnóstico em português claro.</div>', { n: total });
 }
 
 resultadoEl.innerHTML = msg;
@@ -626,7 +648,14 @@ var idComando = 'selinux-setroubleshoot-install';
 var comando = 'sudo dnf install -y setroubleshoot-server setools-console policycoreutils-python-utils';
 await executarComandoGenerico(idComando, comando,
 _t('sessoes.estado-fedora.btn_setroubleshoot_install', '📦 Instalar setroubleshoot'),
-function() { aplicarEstadoInstalavel(idComando, null); });
+function() { aplicarEstadoInstalavel(idComando, 'abrir-setroubleshoot'); });
+}
+
+function abrirSetroubleshoot() {
+    // `sealert -b` abre o browser do setroubleshoot (GUI que lista
+    // os AVCs analisados). O daemon `setroubleshootd` (dbus-activated)
+    // inicia automaticamente no primeiro uso.
+    abrirFerramentaExterna('sealert -b', 'selinux-setroubleshoot-install', 'setroubleshoot');
 }
 
 // ============================================================
@@ -649,8 +678,8 @@ abrirFerramentaExterna('gtk-launch system-config-selinux', 'selinux-gui-install'
 // RESTAURAR ESTADO DA SESSÃO
 // ============================================================
 function restaurarEstadoSessao() {
-// setroubleshoot é um pacote sem GUI própria → Estado 3 (cinza).
-aplicarEstadoInstalavel('selinux-setroubleshoot-install', null);
+// setroubleshoot tem GUI via `sealert -b` → Estado 2 (verde "Abrir").
+aplicarEstadoInstalavel('selinux-setroubleshoot-install', 'abrir-setroubleshoot');
 
 // Gerenciador SELinux tem GUI → Estado 2 (verde + "Abrir").
 aplicarEstadoInstalavel('selinux-gui-install', 'abrir-selinux-gui');
@@ -665,10 +694,11 @@ btn.style.cursor = 'pointer';
 }
 });
 
-// Auto-verifica a versão do Fedora ao entrar
+// Auto-verifica a versão do Fedora ao entrar (silencioso — não
+// polui o log; o clique no botão é que dá feedback visível).
 setTimeout(function() {
 if (!isExecutado('fedora-version-check')) {
-verificarVersaoFedora();
+verificarVersaoFedora(true);
 }
 }, 400);
 }

@@ -840,12 +840,13 @@ async function restaurarEstadoSessao() {
         else if (id === 'waydroid-extras-prep') preExistente = wd.extras_prepared;
 
         if (preExistente) {
-            b.textContent = '✅ Já foi feito (antes do FAP)';
+            b.textContent = _t('sessoes.waydroid.ja_feito_preexistente', '✅ Já foi feito (antes do FAP)');
             b.style.backgroundColor = '#4b5563';
             b.style.cursor = 'not-allowed';
             b.disabled = true;
             b.style.opacity = '0.7';
-            b.title = 'Este passo já foi cumprido no sistema antes do FAP. O FAP não foi a causa — para desfazer, use o terminal.';
+            b.title = _t('sessoes.waydroid.tooltip_preexistente_waydroid',
+                         'Este passo já foi cumprido no sistema antes do FAP. O FAP não foi a causa — para desfazer, use o terminal.');
             return;
         }
 

@@ -977,7 +977,8 @@ function restaurarEstadoSessao() {
             btnPresets.disabled = true;
             btnPresets.style.opacity = '1';
         } else {
-            btnPresets.textContent = btnPresets.getAttribute('data-texto-original') || btnPresets.textContent;
+            // `_textoOriginalTraduzido` respeita o idioma corrente.
+            btnPresets.textContent = _textoOriginalTraduzido(btnPresets) || btnPresets.textContent;
             btnPresets.style.backgroundColor = '';
             btnPresets.style.cursor = 'pointer';
             btnPresets.disabled = false;

@@ -208,7 +208,7 @@ Detecta a geração da sua GPU NVIDIA e instala automaticamente a série de driv
 
 <!-- Painel de detecção — preenchido por JS via /hardware-scan -->
 <div id="nvidia-detection-panel" class="bloco-info">
-<span style="color: var(--text-muted);">⏳ Detectando hardware...</span>
+<span style="color: var(--text-muted);" data-i18n="sessoes.hardware.nvidia_detectando">⏳ Detectando hardware...</span>
 </div>
 
 <div class="botoes-flex">
@@ -672,7 +672,8 @@ function _aplicarEstadoNvidia(info) {
         installBtn.disabled = true;
         installBtn.style.cursor = 'not-allowed';
         installBtn.style.opacity = '0.5';
-        installBtn.title = 'Nenhuma GPU NVIDIA detectada neste sistema';
+        installBtn.title = _t('sessoes.hardware.nvidia_sem_gpu_curto',
+                              'Nenhuma GPU NVIDIA detectada neste sistema');
     } else if (installBtn) {
         installBtn.title = '';
     }
@@ -697,7 +698,8 @@ function _aplicarEstadoNvidia(info) {
             btn.disabled = true;
             btn.style.cursor = 'not-allowed';
             btn.style.opacity = '0.5';
-            btn.title = 'Nenhuma GPU NVIDIA detectada neste sistema';
+            btn.title = _t('sessoes.hardware.nvidia_sem_gpu_curto',
+                          'Nenhuma GPU NVIDIA detectada neste sistema');
         } else {
             btn.disabled = false;
             btn.style.cursor = 'pointer';

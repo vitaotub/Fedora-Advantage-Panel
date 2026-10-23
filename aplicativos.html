@@ -94,6 +94,11 @@ BLOCO 1 — PRODUTIVIDADE E ESCRITÓRIO
 <button class="btn-executar" onclick="instalarDnf('instalar-foliate')" data-comando="instalar-foliate" data-logbox="log-sessao-aplicativos" id="btn-instalar-foliate" data-i18n="sessoes.aplicativos.btn_foliate">📖 Foliate</button>
 </div>
 </div>
+<div class="launcher-item">
+<div class="btn-flatpak-wrapper">
+<button class="btn-executar" onclick="instalarFlatpak('instalar-vscode')" data-comando="instalar-vscode" data-logbox="log-sessao-aplicativos" id="btn-instalar-vscode" data-i18n="sessoes.aplicativos.btn_vscode">💻 Visual Studio Code</button>
+</div>
+</div>
 </div>
 
 <div class="progress-container" id="progress-instalar-onlyoffice"><div class="progress-bar"><div class="progress-fill" id="progress-fill-instalar-onlyoffice"></div></div><div class="progress-text"><span class="status" id="progress-status-instalar-onlyoffice">⏳ Iniciando...</span><span class="percentage" id="progress-percent-instalar-onlyoffice">0%</span></div></div>
@@ -103,6 +108,7 @@ BLOCO 1 — PRODUTIVIDADE E ESCRITÓRIO
 <div class="progress-container" id="progress-instalar-kate"><div class="progress-bar"><div class="progress-fill" id="progress-fill-instalar-kate"></div></div><div class="progress-text"><span class="status" id="progress-status-instalar-kate">⏳ Iniciando...</span><span class="percentage" id="progress-percent-instalar-kate">0%</span></div></div>
 <div class="progress-container" id="progress-instalar-joplin"><div class="progress-bar"><div class="progress-fill" id="progress-fill-instalar-joplin"></div></div><div class="progress-text"><span class="status" id="progress-status-instalar-joplin">⏳ Iniciando...</span><span class="percentage" id="progress-percent-instalar-joplin">0%</span></div></div>
 <div class="progress-container" id="progress-instalar-foliate"><div class="progress-bar"><div class="progress-fill" id="progress-fill-instalar-foliate"></div></div><div class="progress-text"><span class="status" id="progress-status-instalar-foliate">⏳ Iniciando...</span><span class="percentage" id="progress-percent-instalar-foliate">0%</span></div></div>
+<div class="progress-container" id="progress-instalar-vscode"><div class="progress-bar"><div class="progress-fill" id="progress-fill-instalar-vscode"></div></div><div class="progress-text"><span class="status" id="progress-status-instalar-vscode">⏳ Iniciando...</span><span class="percentage" id="progress-percent-instalar-vscode">0%</span></div></div>
 
 </div>
 </details>
@@ -219,6 +225,11 @@ BLOCO 3 — FERRAMENTAS GRÁFICAS
 <button class="btn-executar" onclick="instalarFlatpak('instalar-xnviewmp')" data-comando="instalar-xnviewmp" data-logbox="log-sessao-aplicativos" id="btn-instalar-xnviewmp" data-i18n="sessoes.aplicativos.btn_xnviewmp">🖼️ XnView MP</button>
 </div>
 </div>
+<div class="launcher-item">
+<div class="btn-flatpak-wrapper">
+<button class="btn-executar" onclick="instalarFlatpak('instalar-drawy')" data-comando="instalar-drawy" data-logbox="log-sessao-aplicativos" id="btn-instalar-drawy" data-i18n="sessoes.aplicativos.btn_drawy">🎨 Drawy</button>
+</div>
+</div>
 </div>
 
 <div class="progress-container" id="progress-instalar-krita"><div class="progress-bar"><div class="progress-fill" id="progress-fill-instalar-krita"></div></div><div class="progress-text"><span class="status" id="progress-status-instalar-krita">⏳ Iniciando...</span><span class="percentage" id="progress-percent-instalar-krita">0%</span></div></div>
@@ -231,6 +242,7 @@ BLOCO 3 — FERRAMENTAS GRÁFICAS
 <div class="progress-container" id="progress-instalar-cura"><div class="progress-bar"><div class="progress-fill" id="progress-fill-instalar-cura"></div></div><div class="progress-text"><span class="status" id="progress-status-instalar-cura">⏳ Iniciando...</span><span class="percentage" id="progress-percent-instalar-cura">0%</span></div></div>
 <div class="progress-container" id="progress-instalar-upscayl"><div class="progress-bar"><div class="progress-fill" id="progress-fill-instalar-upscayl"></div></div><div class="progress-text"><span class="status" id="progress-status-instalar-upscayl">⏳ Iniciando...</span><span class="percentage" id="progress-percent-instalar-upscayl">0%</span></div></div>
 <div class="progress-container" id="progress-instalar-xnviewmp"><div class="progress-bar"><div class="progress-fill" id="progress-fill-instalar-xnviewmp"></div></div><div class="progress-text"><span class="status" id="progress-status-instalar-xnviewmp">⏳ Iniciando...</span><span class="percentage" id="progress-percent-instalar-xnviewmp">0%</span></div></div>
+<div class="progress-container" id="progress-instalar-drawy"><div class="progress-bar"><div class="progress-fill" id="progress-fill-instalar-drawy"></div></div><div class="progress-text"><span class="status" id="progress-status-instalar-drawy">⏳ Iniciando...</span><span class="percentage" id="progress-percent-instalar-drawy">0%</span></div></div>
 
 </div>
 </details>
@@ -279,185 +291,52 @@ data-i18n="sessoes.aplicativos.btn_abrir_instalador">
 </details>
 
 <!-- ============================================================
-BLOCO 4 — SUÍTE ARTCRAFT
+BLOCO 4 — SUÍTE ARTCRAFT (LAUNCHER)
 ============================================================ -->
 <details class="acordeao">
 <summary data-i18n="sessoes.aplicativos.bloco_artcraft_titulo">🎨 Suíte ArtCraft (Adobe e Office no Linux)</summary>
 <div class="acordeao-conteudo">
 
 <p data-i18n-html="sessoes.aplicativos.bloco_artcraft_desc">
-Estes softwares são desenvolvidos em <strong>Rust</strong>, são <strong>código livre</strong>
-e são alternativas recentes aos produtos da Adobe e do Microsoft Office. Cada aplicativo
-tem sua própria especialidade (edição de fotos, vetores, vídeo, áudio, design, PDF,
-apresentações, planilhas, editor de texto e CAD).
+O <strong>ArtCraft Launcher</strong> é o instalador oficial da suíte ArtCraft — um
+conjunto de apps open-source, desenvolvidos em <strong>Rust</strong>, que são alternativas
+aos produtos da Adobe e do Microsoft Office (edição de fotos, vetores, vídeo, áudio,
+design, PDF, apresentações, planilhas, editor de texto e CAD).
 </p>
 
 <div class="aviso-caixa" data-i18n-html="sessoes.aplicativos.bloco_artcraft_aviso">
-ℹ️ <strong>Sobre suporte:</strong> estes são projetos independentes, mantidos por desenvolvedores
-da comunidade. Se algo não funcionar, reporte o bug diretamente no repositório GitHub do
-projeto afetado — o FAP apenas instala os pacotes oficiais publicados por eles.
+ℹ️ <strong>Como funciona:</strong> instale o launcher abaixo. Depois de aberto, ele
+mostra todos os apps disponíveis da suíte, permite escolher quais instalar e mantém
+tudo atualizado. O FAP instala apenas o launcher — os apps individuais são gerenciados
+por ele, sempre na versão mais recente publicada pelo desenvolvedor.
 </div>
 
-<div class="grid-launchers">
-
-<div class="launcher-item">
+<div class="botoes-flex">
 <div class="btn-flatpak-wrapper">
-<button class="btn-executar" onclick="executarArtCraft('photocraft')" data-comando="instalar-photocraft" data-logbox="log-sessao-aplicativos" id="btn-instalar-photocraft" data-i18n="sessoes.aplicativos.btn_photocraft">
-🖼️ PhotoCraft
+<button class="btn-executar"
+onclick="instalarArtCraftLauncher()"
+data-comando="instalar-artcraft-launcher"
+data-logbox="log-sessao-aplicativos"
+id="btn-instalar-artcraft-launcher"
+data-i18n="sessoes.aplicativos.btn_artcraft_launcher">
+🎨 Instalar ArtCraft Launcher
 </button>
 </div>
-<button class="btn-executar verde" style="display: none;" onclick="abrirArtCraft('photocraft')" data-comando="abrir-photocraft" data-logbox="log-sessao-aplicativos" id="btn-abrir-photocraft" data-i18n="sessoes.aplicativos.btn_abrir_photocraft">
-🚀 Abrir PhotoCraft
-</button>
-</div>
-
-<div class="launcher-item">
-<div class="btn-flatpak-wrapper">
-<button class="btn-executar" onclick="executarArtCraft('vectorcraft')" data-comando="instalar-vectorcraft" data-logbox="log-sessao-aplicativos" id="btn-instalar-vectorcraft" data-i18n="sessoes.aplicativos.btn_vectorcraft">
-✏️ VectorCraft
-</button>
-</div>
-<button class="btn-executar verde" style="display: none;" onclick="abrirArtCraft('vectorcraft')" data-comando="abrir-vectorcraft" data-logbox="log-sessao-aplicativos" id="btn-abrir-vectorcraft" data-i18n="sessoes.aplicativos.btn_abrir_vectorcraft">
-🚀 Abrir VectorCraft
-</button>
-</div>
-
-<div class="launcher-item">
-<div class="btn-flatpak-wrapper">
-<button class="btn-executar" onclick="executarArtCraft('filmcraft')" data-comando="instalar-filmcraft" data-logbox="log-sessao-aplicativos" id="btn-instalar-filmcraft" data-i18n="sessoes.aplicativos.btn_filmcraft">
-🎬 FilmCraft
-</button>
-</div>
-<button class="btn-executar verde" style="display: none;" onclick="abrirArtCraft('filmcraft')" data-comando="abrir-filmcraft" data-logbox="log-sessao-aplicativos" id="btn-abrir-filmcraft" data-i18n="sessoes.aplicativos.btn_abrir_filmcraft">
-🚀 Abrir FilmCraft
+<button class="btn-executar verde"
+style="display: none;"
+onclick="abrirArtCraftLauncher()"
+data-comando="abrir-artcraft-launcher"
+data-logbox="log-sessao-aplicativos"
+id="btn-abrir-artcraft-launcher"
+data-i18n="sessoes.aplicativos.btn_abrir_artcraft_launcher">
+🚀 Abrir ArtCraft Launcher
 </button>
 </div>
 
-<div class="launcher-item">
-<div class="btn-flatpak-wrapper">
-<button class="btn-executar" onclick="executarArtCraft('lightcraft')" data-comando="instalar-lightcraft" data-logbox="log-sessao-aplicativos" id="btn-instalar-lightcraft" data-i18n="sessoes.aplicativos.btn_lightcraft">
-💡 LightCraft
-</button>
+<div class="progress-container" id="progress-instalar-artcraft-launcher">
+<div class="progress-bar"><div class="progress-fill" id="progress-fill-instalar-artcraft-launcher"></div></div>
+<div class="progress-text"><span class="status" id="progress-status-instalar-artcraft-launcher">⏳ Iniciando...</span><span class="percentage" id="progress-percent-instalar-artcraft-launcher">0%</span></div>
 </div>
-<button class="btn-executar verde" style="display: none;" onclick="abrirArtCraft('lightcraft')" data-comando="abrir-lightcraft" data-logbox="log-sessao-aplicativos" id="btn-abrir-lightcraft" data-i18n="sessoes.aplicativos.btn_abrir_lightcraft">
-🚀 Abrir LightCraft
-</button>
-</div>
-
-<div class="launcher-item">
-<div class="btn-flatpak-wrapper">
-<button class="btn-executar" onclick="executarArtCraft('pdfcraft')" data-comando="instalar-pdfcraft" data-logbox="log-sessao-aplicativos" id="btn-instalar-pdfcraft" data-i18n="sessoes.aplicativos.btn_pdfcraft">
-📄 PDFCraft
-</button>
-</div>
-<button class="btn-executar verde" style="display: none;" onclick="abrirArtCraft('pdfcraft')" data-comando="abrir-pdfcraft" data-logbox="log-sessao-aplicativos" id="btn-abrir-pdfcraft" data-i18n="sessoes.aplicativos.btn_abrir_pdfcraft">
-🚀 Abrir PDFCraft
-</button>
-</div>
-
-<div class="launcher-item">
-<div class="btn-flatpak-wrapper">
-<button class="btn-executar" onclick="executarArtCraft('effectcraft')" data-comando="instalar-effectcraft" data-logbox="log-sessao-aplicativos" id="btn-instalar-effectcraft" data-i18n="sessoes.aplicativos.btn_effectcraft">
-✨ EffectCraft
-</button>
-</div>
-<button class="btn-executar verde" style="display: none;" onclick="abrirArtCraft('effectcraft')" data-comando="abrir-effectcraft" data-logbox="log-sessao-aplicativos" id="btn-abrir-effectcraft" data-i18n="sessoes.aplicativos.btn_abrir_effectcraft">
-🚀 Abrir EffectCraft
-</button>
-</div>
-
-<div class="launcher-item">
-<div class="btn-flatpak-wrapper">
-<button class="btn-executar" onclick="executarArtCraft('designcraft')" data-comando="instalar-designcraft" data-logbox="log-sessao-aplicativos" id="btn-instalar-designcraft" data-i18n="sessoes.aplicativos.btn_designcraft">
-🎨 DesignCraft
-</button>
-</div>
-<button class="btn-executar verde" style="display: none;" onclick="abrirArtCraft('designcraft')" data-comando="abrir-designcraft" data-logbox="log-sessao-aplicativos" id="btn-abrir-designcraft" data-i18n="sessoes.aplicativos.btn_abrir_designcraft">
-🚀 Abrir DesignCraft
-</button>
-</div>
-
-<div class="launcher-item">
-<div class="btn-flatpak-wrapper">
-<button class="btn-executar" onclick="executarArtCraft('figcraft')" data-comando="instalar-figcraft" data-logbox="log-sessao-aplicativos" id="btn-instalar-figcraft" data-i18n="sessoes.aplicativos.btn_figcraft">
-🖌️ FigCraft
-</button>
-</div>
-<button class="btn-executar verde" style="display: none;" onclick="abrirArtCraft('figcraft')" data-comando="abrir-figcraft" data-logbox="log-sessao-aplicativos" id="btn-abrir-figcraft" data-i18n="sessoes.aplicativos.btn_abrir_figcraft">
-🚀 Abrir FigCraft
-</button>
-</div>
-
-<div class="launcher-item">
-<div class="btn-flatpak-wrapper">
-<button class="btn-executar" onclick="executarArtCraft('deckcraft')" data-comando="instalar-deckcraft" data-logbox="log-sessao-aplicativos" id="btn-instalar-deckcraft" data-i18n="sessoes.aplicativos.btn_deckcraft">
-📽️ DeckCraft
-</button>
-</div>
-<button class="btn-executar verde" style="display: none;" onclick="abrirArtCraft('deckcraft')" data-comando="abrir-deckcraft" data-logbox="log-sessao-aplicativos" id="btn-abrir-deckcraft" data-i18n="sessoes.aplicativos.btn_abrir_deckcraft">
-🚀 Abrir DeckCraft
-</button>
-</div>
-
-<div class="launcher-item">
-<div class="btn-flatpak-wrapper">
-<button class="btn-executar" onclick="executarArtCraft('gridcraft')" data-comando="instalar-gridcraft" data-logbox="log-sessao-aplicativos" id="btn-instalar-gridcraft" data-i18n="sessoes.aplicativos.btn_gridcraft">
-📊 GridCraft
-</button>
-</div>
-<button class="btn-executar verde" style="display: none;" onclick="abrirArtCraft('gridcraft')" data-comando="abrir-gridcraft" data-logbox="log-sessao-aplicativos" id="btn-abrir-gridcraft" data-i18n="sessoes.aplicativos.btn_abrir_gridcraft">
-🚀 Abrir GridCraft
-</button>
-</div>
-
-<div class="launcher-item">
-<div class="btn-flatpak-wrapper">
-<button class="btn-executar" onclick="executarArtCraft('wordcraft')" data-comando="instalar-wordcraft" data-logbox="log-sessao-aplicativos" id="btn-instalar-wordcraft" data-i18n="sessoes.aplicativos.btn_wordcraft">
-📝 WordCraft
-</button>
-</div>
-<button class="btn-executar verde" style="display: none;" onclick="abrirArtCraft('wordcraft')" data-comando="abrir-wordcraft" data-logbox="log-sessao-aplicativos" id="btn-abrir-wordcraft" data-i18n="sessoes.aplicativos.btn_abrir_wordcraft">
-🚀 Abrir WordCraft
-</button>
-</div>
-
-<div class="launcher-item">
-<div class="btn-flatpak-wrapper">
-<button class="btn-executar" onclick="executarArtCraft('cadcraft')" data-comando="instalar-cadcraft" data-logbox="log-sessao-aplicativos" id="btn-instalar-cadcraft" data-i18n="sessoes.aplicativos.btn_cadcraft">
-📐 CadCraft
-</button>
-</div>
-<button class="btn-executar verde" style="display: none;" onclick="abrirArtCraft('cadcraft')" data-comando="abrir-cadcraft" data-logbox="log-sessao-aplicativos" id="btn-abrir-cadcraft" data-i18n="sessoes.aplicativos.btn_abrir_cadcraft">
-🚀 Abrir CadCraft
-</button>
-</div>
-
-<div class="launcher-item">
-<div class="btn-flatpak-wrapper">
-<button class="btn-executar" onclick="executarArtCraft('soundcraft')" data-comando="instalar-soundcraft" data-logbox="log-sessao-aplicativos" id="btn-instalar-soundcraft" data-i18n="sessoes.aplicativos.btn_soundcraft">
-🔊 SoundCraft
-</button>
-</div>
-<button class="btn-executar verde" style="display: none;" onclick="abrirArtCraft('soundcraft')" data-comando="abrir-soundcraft" data-logbox="log-sessao-aplicativos" id="btn-abrir-soundcraft" data-i18n="sessoes.aplicativos.btn_abrir_soundcraft">
-🚀 Abrir SoundCraft
-</button>
-</div>
-
-</div>
-
-<div class="progress-container" id="progress-instalar-photocraft"><div class="progress-bar"><div class="progress-fill" id="progress-fill-instalar-photocraft"></div></div><div class="progress-text"><span class="status" id="progress-status-instalar-photocraft">⏳ Iniciando...</span><span class="percentage" id="progress-percent-instalar-photocraft">0%</span></div></div>
-<div class="progress-container" id="progress-instalar-vectorcraft"><div class="progress-bar"><div class="progress-fill" id="progress-fill-instalar-vectorcraft"></div></div><div class="progress-text"><span class="status" id="progress-status-instalar-vectorcraft">⏳ Iniciando...</span><span class="percentage" id="progress-percent-instalar-vectorcraft">0%</span></div></div>
-<div class="progress-container" id="progress-instalar-filmcraft"><div class="progress-bar"><div class="progress-fill" id="progress-fill-instalar-filmcraft"></div></div><div class="progress-text"><span class="status" id="progress-status-instalar-filmcraft">⏳ Iniciando...</span><span class="percentage" id="progress-percent-instalar-filmcraft">0%</span></div></div>
-<div class="progress-container" id="progress-instalar-lightcraft"><div class="progress-bar"><div class="progress-fill" id="progress-fill-instalar-lightcraft"></div></div><div class="progress-text"><span class="status" id="progress-status-instalar-lightcraft">⏳ Iniciando...</span><span class="percentage" id="progress-percent-instalar-lightcraft">0%</span></div></div>
-<div class="progress-container" id="progress-instalar-pdfcraft"><div class="progress-bar"><div class="progress-fill" id="progress-fill-instalar-pdfcraft"></div></div><div class="progress-text"><span class="status" id="progress-status-instalar-pdfcraft">⏳ Iniciando...</span><span class="percentage" id="progress-percent-instalar-pdfcraft">0%</span></div></div>
-<div class="progress-container" id="progress-instalar-effectcraft"><div class="progress-bar"><div class="progress-fill" id="progress-fill-instalar-effectcraft"></div></div><div class="progress-text"><span class="status" id="progress-status-instalar-effectcraft">⏳ Iniciando...</span><span class="percentage" id="progress-percent-instalar-effectcraft">0%</span></div></div>
-<div class="progress-container" id="progress-instalar-designcraft"><div class="progress-bar"><div class="progress-fill" id="progress-fill-instalar-designcraft"></div></div><div class="progress-text"><span class="status" id="progress-status-instalar-designcraft">⏳ Iniciando...</span><span class="percentage" id="progress-percent-instalar-designcraft">0%</span></div></div>
-<div class="progress-container" id="progress-instalar-figcraft"><div class="progress-bar"><div class="progress-fill" id="progress-fill-instalar-figcraft"></div></div><div class="progress-text"><span class="status" id="progress-status-instalar-figcraft">⏳ Iniciando...</span><span class="percentage" id="progress-percent-instalar-figcraft">0%</span></div></div>
-<div class="progress-container" id="progress-instalar-deckcraft"><div class="progress-bar"><div class="progress-fill" id="progress-fill-instalar-deckcraft"></div></div><div class="progress-text"><span class="status" id="progress-status-instalar-deckcraft">⏳ Iniciando...</span><span class="percentage" id="progress-percent-instalar-deckcraft">0%</span></div></div>
-<div class="progress-container" id="progress-instalar-gridcraft"><div class="progress-bar"><div class="progress-fill" id="progress-fill-instalar-gridcraft"></div></div><div class="progress-text"><span class="status" id="progress-status-instalar-gridcraft">⏳ Iniciando...</span><span class="percentage" id="progress-percent-instalar-gridcraft">0%</span></div></div>
-<div class="progress-container" id="progress-instalar-wordcraft"><div class="progress-bar"><div class="progress-fill" id="progress-fill-instalar-wordcraft"></div></div><div class="progress-text"><span class="status" id="progress-status-instalar-wordcraft">⏳ Iniciando...</span><span class="percentage" id="progress-percent-instalar-wordcraft">0%</span></div></div>
-<div class="progress-container" id="progress-instalar-cadcraft"><div class="progress-bar"><div class="progress-fill" id="progress-fill-instalar-cadcraft"></div></div><div class="progress-text"><span class="status" id="progress-status-instalar-cadcraft">⏳ Iniciando...</span><span class="percentage" id="progress-percent-instalar-cadcraft">0%</span></div></div>
-<div class="progress-container" id="progress-instalar-soundcraft"><div class="progress-bar"><div class="progress-fill" id="progress-fill-instalar-soundcraft"></div></div><div class="progress-text"><span class="status" id="progress-status-instalar-soundcraft">⏳ Iniciando...</span><span class="percentage" id="progress-percent-instalar-soundcraft">0%</span></div></div>
 
 </div>
 </details>
@@ -512,6 +391,16 @@ BLOCO 5 — INTERNET E COMUNICAÇÃO
 <button class="btn-executar" onclick="instalarFlatpak('instalar-telegram')" data-comando="instalar-telegram" data-logbox="log-sessao-aplicativos" id="btn-instalar-telegram" data-i18n="sessoes.aplicativos.btn_telegram">✈️ Telegram</button>
 </div>
 </div>
+<div class="launcher-item">
+<div class="btn-flatpak-wrapper">
+<button class="btn-executar" onclick="instalarDnf('instalar-firefox')" data-comando="instalar-firefox" data-logbox="log-sessao-aplicativos" id="btn-instalar-firefox" data-i18n="sessoes.aplicativos.btn_firefox">🦊 Mozilla Firefox</button>
+</div>
+</div>
+<div class="launcher-item">
+<div class="btn-flatpak-wrapper">
+<button class="btn-executar" onclick="instalarFlatpak('instalar-packet')" data-comando="instalar-packet" data-logbox="log-sessao-aplicativos" id="btn-instalar-packet" data-i18n="sessoes.aplicativos.btn_packet">📦 Packet</button>
+</div>
+</div>
 </div>
 
 <div class="progress-container" id="progress-instalar-opera"><div class="progress-bar"><div class="progress-fill" id="progress-fill-instalar-opera"></div></div><div class="progress-text"><span class="status" id="progress-status-instalar-opera">⏳ Iniciando...</span><span class="percentage" id="progress-percent-instalar-opera">0%</span></div></div>
@@ -522,6 +411,8 @@ BLOCO 5 — INTERNET E COMUNICAÇÃO
 <div class="progress-container" id="progress-instalar-vivaldi"><div class="progress-bar"><div class="progress-fill" id="progress-fill-instalar-vivaldi"></div></div><div class="progress-text"><span class="status" id="progress-status-instalar-vivaldi">⏳ Iniciando...</span><span class="percentage" id="progress-percent-instalar-vivaldi">0%</span></div></div>
 <div class="progress-container" id="progress-instalar-discord"><div class="progress-bar"><div class="progress-fill" id="progress-fill-instalar-discord"></div></div><div class="progress-text"><span class="status" id="progress-status-instalar-discord">⏳ Iniciando...</span><span class="percentage" id="progress-percent-instalar-discord">0%</span></div></div>
 <div class="progress-container" id="progress-instalar-telegram"><div class="progress-bar"><div class="progress-fill" id="progress-fill-instalar-telegram"></div></div><div class="progress-text"><span class="status" id="progress-status-instalar-telegram">⏳ Iniciando...</span><span class="percentage" id="progress-percent-instalar-telegram">0%</span></div></div>
+<div class="progress-container" id="progress-instalar-firefox"><div class="progress-bar"><div class="progress-fill" id="progress-fill-instalar-firefox"></div></div><div class="progress-text"><span class="status" id="progress-status-instalar-firefox">⏳ Iniciando...</span><span class="percentage" id="progress-percent-instalar-firefox">0%</span></div></div>
+<div class="progress-container" id="progress-instalar-packet"><div class="progress-bar"><div class="progress-fill" id="progress-fill-instalar-packet"></div></div><div class="progress-text"><span class="status" id="progress-status-instalar-packet">⏳ Iniciando...</span><span class="percentage" id="progress-percent-instalar-packet">0%</span></div></div>
 
 </div>
 </details>
@@ -742,6 +633,31 @@ BLOCO 8 — FERRAMENTAS DE ACESSO REMOTO
 </div>
 </details>
 
+<!-- ============================================================
+BLOCO NOVO — UTILITÁRIOS
+============================================================ -->
+<details class="acordeao">
+<summary data-i18n="sessoes.aplicativos.bloco_utilidades_titulo">🔧 Utilitários</summary>
+<div class="acordeao-conteudo">
+
+<p data-i18n="sessoes.aplicativos.bloco_utilidades_desc">Ferramentas de sistema que não se encaixam nas outras categorias.</p>
+
+<div class="grid-launchers">
+<div class="launcher-item">
+<div class="btn-flatpak-wrapper">
+<button class="btn-executar" onclick="instalarFlatpak('instalar-gear-lever')" data-comando="instalar-gear-lever" data-logbox="log-sessao-aplicativos" id="btn-instalar-gear-lever" data-i18n="sessoes.aplicativos.btn_gear_lever">⚙️ Gear Lever</button>
+</div>
+</div>
+</div>
+
+<div class="progress-container" id="progress-instalar-gear-lever">
+<div class="progress-bar"><div class="progress-fill" id="progress-fill-instalar-gear-lever"></div></div>
+<div class="progress-text"><span class="status" id="progress-status-instalar-gear-lever">⏳ Iniciando...</span><span class="percentage" id="progress-percent-instalar-gear-lever">0%</span></div>
+</div>
+
+</div>
+</details>
+
 <div class="terminal-log sessao-compartilhado" id="log-sessao-aplicativos"></div>
 </div>
 
@@ -789,7 +705,11 @@ var APPS_FLATPAK = {
     'instalar-openshot': { appId: 'org.openshot.OpenShot', fallback: '🎬 OpenShot' },
     'instalar-drift': { appId: 'org.cutwire.Drift', fallback: '🎬 Drift' },
     'instalar-blender': { appId: 'org.blender.Blender', fallback: '🧊 Blender' },
-    'instalar-audacity': { appId: 'org.audacityteam.Audacity', fallback: '🎙️ Audacity' }
+    'instalar-audacity': { appId: 'org.audacityteam.Audacity', fallback: '🎙️ Audacity' },
+    'instalar-vscode':     { appId: 'com.visualstudio.code',     fallback: '💻 Visual Studio Code' },
+    'instalar-drawy':      { appId: 'org.kde.drawy',             fallback: '🎨 Drawy' },
+    'instalar-gear-lever': { appId: 'it.mijorus.gearlever',      fallback: '⚙️ Gear Lever' },
+    'instalar-packet':     { appId: 'io.github.nozwock.Packet',  fallback: '📦 Packet' }
 };
 
 // ============================================================
@@ -816,7 +736,8 @@ var APPS_DNF = {
     'instalar-avidemux':    { pacotes: ['avidemux'],                       fallback: '✂️ Avidemux' },
     'instalar-ardour':      { pacotes: ['ardour8'],                        fallback: '🎵 Ardour' },
     'instalar-lmms':        { pacotes: ['lmms'],                           fallback: '🎹 LMMS' },
-    'instalar-chromium':    { pacotes: ['chromium'],                       fallback: '🌐 Chromium' }
+    'instalar-chromium':    { pacotes: ['chromium'],                       fallback: '🌐 Chromium' },
+    'instalar-firefox':     { pacotes: ['firefox'],                        fallback: '🦊 Mozilla Firefox' }
 };
 
 // ============================================================
@@ -925,7 +846,8 @@ var _CMD_ABRIR_DNF = {
     'instalar-avidemux':    'gtk-launch org.avidemux.Avidemux',
     'instalar-ardour':      'ardour8',
     'instalar-lmms':        'lmms',
-    'instalar-chromium':    'chromium-browser'
+    'instalar-chromium':    'chromium-browser',
+    'instalar-firefox':     'firefox'
 };
 
 var _CMD_ABRIR_RPM_REPO = {
@@ -1110,21 +1032,23 @@ registrarAppRemovivel('instalar-krdc', {
     nome: 'KRDC'
 });
 
-// --- Suíte ArtCraft ---
+// --- ArtCraft Launcher (v1.2.2) ---
+//
+// O FAP instala apenas o launcher oficial. Os 13 apps da suíte
+// são gerenciados pelo próprio launcher (instala, atualiza,
+// remove), sempre na versão mais recente publicada no GitHub.
+registrarAppRemovivel('instalar-artcraft-launcher', {
+    tipo: 'dnf',
+    pacotes: ['artcraft-launcher'],
+    nome: 'ArtCraft Launcher'
+});
 
-registrarAppRemovivel('instalar-photocraft',  { tipo: 'dnf', pacotes: ['photocraft'],  nome: 'PhotoCraft' });
-registrarAppRemovivel('instalar-vectorcraft', { tipo: 'dnf', pacotes: ['vectorcraft'], nome: 'VectorCraft' });
-registrarAppRemovivel('instalar-filmcraft',   { tipo: 'dnf', pacotes: ['filmcraft'],   nome: 'FilmCraft' });
-registrarAppRemovivel('instalar-lightcraft',  { tipo: 'dnf', pacotes: ['lightcraft'],  nome: 'LightCraft' });
-registrarAppRemovivel('instalar-pdfcraft',    { tipo: 'dnf', pacotes: ['pdfcraft'],    nome: 'PDFCraft' });
-registrarAppRemovivel('instalar-effectcraft', { tipo: 'dnf', pacotes: ['effectcraft'], nome: 'EffectCraft' });
-registrarAppRemovivel('instalar-designcraft', { tipo: 'dnf', pacotes: ['designcraft'], nome: 'DesignCraft' });
-registrarAppRemovivel('instalar-figcraft',    { tipo: 'dnf', pacotes: ['figcraft'],    nome: 'FigCraft' });
-registrarAppRemovivel('instalar-deckcraft',   { tipo: 'dnf', pacotes: ['deckcraft'],   nome: 'DeckCraft' });
-registrarAppRemovivel('instalar-gridcraft',   { tipo: 'dnf', pacotes: ['gridcraft'],   nome: 'GridCraft' });
-registrarAppRemovivel('instalar-wordcraft',   { tipo: 'dnf', pacotes: ['wordcraft'],   nome: 'WordCraft' });
-registrarAppRemovivel('instalar-cadcraft',    { tipo: 'dnf', pacotes: ['cadcraft'],    nome: 'CadCraft' });
-registrarAppRemovivel('instalar-soundcraft',  { tipo: 'dnf', pacotes: ['soundcraft'],  nome: 'SoundCraft' });
+// --- 5 apps novos (v1.2.2) ---
+registrarAppRemovivel('instalar-firefox',    { tipo: 'dnf',     pacotes: ['firefox'],                nome: 'Mozilla Firefox' });
+registrarAppRemovivel('instalar-vscode',     { tipo: 'flatpak', appId: 'com.visualstudio.code',      nome: 'Visual Studio Code' });
+registrarAppRemovivel('instalar-drawy',      { tipo: 'flatpak', appId: 'org.kde.drawy',              nome: 'Drawy' });
+registrarAppRemovivel('instalar-gear-lever', { tipo: 'flatpak', appId: 'it.mijorus.gearlever',       nome: 'Gear Lever' });
+registrarAppRemovivel('instalar-packet',     { tipo: 'flatpak', appId: 'io.github.nozwock.Packet',    nome: 'Packet' });
 
 // ============================================================
 // INSTALADORES
@@ -1244,7 +1168,7 @@ function abrirLightworks() {
 async function instalarRcloneManager() {
     var comando =
         'RPM_URL=$(curl -s https://api.github.com/repos/Zarestia-Dev/rclone-manager/releases/latest ' +
-        '| grep -oP \'"browser_download_url":\\s*"\\K[^"]*\\.x86_64\\.rpm\' ' +
+        '| grep -oP \'"browser_download_url":\\s*"\\K[^"]*x86_64\\.rpm\' ' +
         '| head -1) && ' +
         'if [ -z "$RPM_URL" ]; then ' +
         'echo "❌ Nenhum RPM .x86_64 encontrado na release mais recente do rclone-manager"; ' +
@@ -1345,77 +1269,117 @@ async function abrirInstaladorAffinity() {
 }
 
 // ============================================================
-// SUÍTE ARTCRAFT
+// SUÍTE ARTCRAFT — LAUNCHER (v1.2.2)
 // ============================================================
+//
+// O FAP instala o launcher oficial (RPM do GitHub Releases).
+// Os 13 apps da suíte são instalados/atualizados/removidos
+// pelo próprio launcher — o FAP não gerencia mais cada app
+// individualmente. A URL do RPM é resolvida em runtime via
+// GitHub API (sempre a última versão publicada).
 
-var ARTCRAFT_REPOS = {
-    'photocraft':  { repo: 'storytold/photocraft',  bin: 'photocraft',  nome: 'PhotoCraft' },
-    'vectorcraft': { repo: 'storytold/vectorcraft', bin: 'vectorcraft', nome: 'VectorCraft' },
-    'filmcraft':   { repo: 'storytold/filmcraft',   bin: 'filmcraft',   nome: 'FilmCraft' },
-    'lightcraft':  { repo: 'storytold/lightcraft',  bin: 'lightcraft',  nome: 'LightCraft' },
-    'pdfcraft':    { repo: 'storytold/pdfcraft',    bin: 'pdfcraft',    nome: 'PDFCraft' },
-    'effectcraft': { repo: 'storytold/effectcraft', bin: 'effectcraft', nome: 'EffectCraft' },
-    'designcraft': { repo: 'storytold/designcraft', bin: 'designcraft', nome: 'DesignCraft' },
-    'figcraft':    { repo: 'storytold/figcraft',    bin: 'figcraft',    nome: 'FigCraft' },
-    'deckcraft':   { repo: 'storytold/deckcraft',   bin: 'deckcraft',   nome: 'DeckCraft' },
-    'gridcraft':   { repo: 'storytold/gridcraft',   bin: 'gridcraft',   nome: 'GridCraft' },
-    'wordcraft':   { repo: 'storytold/wordcraft',   bin: 'wordcraft',   nome: 'WordCraft' },
-    'cadcraft':    { repo: 'storytold/cadcraft',    bin: 'cadcraft',    nome: 'CadCraft' },
-    'soundcraft':  { repo: 'storytold/soundcraft',  bin: 'soundcraft',  nome: 'SoundCraft' }
-};
+async function instalarArtCraftLauncher() {
+    var idComando = 'instalar-artcraft-launcher';
+    var logBox = _getLogBox(idComando);
 
-async function executarArtCraft(appId) {
-    var info = ARTCRAFT_REPOS[appId];
-    if (!info) {
-        console.error('[artcraft] App não mapeado:', appId);
+    // ============================================================
+    // RESOLUÇÃO DA URL NO FRONTEND (NÃO dentro do pkexec)
+    // ============================================================
+    //
+    // A versão anterior resolvia a URL com `curl` DENTRO do pkexec
+    // (script executado como root). O log mostrava "Nenhum RPM
+    // x86_64 encontrado" mesmo com o asset publicado — o `curl`
+    // rodando como root recebia resposta vazia da API do GitHub
+    // (rate limit por IP, restrição de CA no ambiente do pkexec,
+    // ou PATH reduzido).
+    //
+    // Aqui, a resolução acontece no WebKitGTK (roda como o usuário),
+    // que tem conectividade normal e certificados CA corretos. A
+    // URL resolvida é passada como argumento para o `dnf install`,
+    // que usa `libcurl` interno (não o binário `curl`) — dois
+    // mecanismos independentes.
+    //
+    // SEM FALLBACK FIXO: se o fetch falhar, aborta com mensagem
+    // clara. O FAP não pode fixar uma versão antiga — o princípio
+    // é sempre instalar a mais recente publicada.
+    var rpmUrl = null;
+
+    if (logBox) {
+        logBox.style.display = 'block';
+        var linha = document.createElement('div');
+        linha.className = 'log-line info';
+        linha.textContent = '🔍 Consultando a release mais recente do GitHub...';
+        logBox.appendChild(linha);
+        logBox.scrollTop = logBox.scrollHeight;
+    }
+
+    try {
+        var r = await fetch(
+            'https://api.github.com/repos/storytold/craft-launcher/releases/latest',
+            { cache: 'no-store' }
+        );
+        if (r.ok) {
+            var data = await r.json();
+            var assets = Array.isArray(data.assets) ? data.assets : [];
+            for (var i = 0; i < assets.length; i++) {
+                if (/x86_64\.rpm$/i.test(assets[i].name)) {
+                    rpmUrl = assets[i].browser_download_url;
+                    break;
+                }
+            }
+        } else {
+            console.warn('[ArtCraft] API retornou HTTP', r.status);
+        }
+    } catch (e) {
+        console.warn('[ArtCraft] Falha ao consultar API:', e.message);
+    }
+
+    if (!rpmUrl) {
+        if (logBox) {
+            var err = document.createElement('div');
+            err.className = 'log-line error';
+            err.textContent = '❌ Não foi possível resolver a URL do RPM x86_64 mais recente do ArtCraft Launcher.';
+            logBox.appendChild(err);
+
+            var hint1 = document.createElement('div');
+            hint1.className = 'log-line info';
+            hint1.textContent = '   Verifique manualmente: https://github.com/storytold/craft-launcher/releases/latest';
+            logBox.appendChild(hint1);
+
+            var hint2 = document.createElement('div');
+            hint2.className = 'log-line info';
+            hint2.textContent = '   Causa provável: rate limit do GitHub API (60 req/h por IP). Aguarde alguns minutos e tente de novo.';
+            logBox.appendChild(hint2);
+
+            logBox.scrollTop = logBox.scrollHeight;
+        }
         return;
     }
-    var idComando = 'instalar-' + appId;
-    var idAbrir = 'abrir-' + appId;
-    var chaveI18n = 'sessoes.aplicativos.btn_' + appId;
-    var nomeAcao = _t(chaveI18n, info.nome);
 
-    var comando =
-        'JSON=$(curl -sL --max-time 30 "https://api.github.com/repos/' + info.repo + '/releases/latest") && ' +
-        'if [ -z "$JSON" ]; then ' +
-        '  echo "❌ Falha ao contatar a API do GitHub."; ' +
-        '  echo "   Verifique sua conexão de rede e tente novamente."; ' +
-        '  exit 1; ' +
-        'fi && ' +
-        'if echo "$JSON" | grep -q \'"message"\'; then ' +
-        '  echo "⚠️ API do GitHub respondeu com erro:"; ' +
-        '  echo "$JSON" | head -3; ' +
-        '  echo "   Tente novamente em alguns minutos."; ' +
-        '  echo "   Alternativa: https://github.com/' + info.repo + '/releases/latest"; ' +
-        '  exit 1; ' +
-        'fi && ' +
-        'URL=$(echo "$JSON" | node -e "' +
-        '  let d=\'\';' +
-        '  process.stdin.on(\'data\', c => d += c);' +
-        '  process.stdin.on(\'end\', () => {' +
-        '    try {' +
-        '      const j = JSON.parse(d);' +
-        '      const a = (j.assets || []).find(x => /x86[_-]64\\.rpm$/i.test(x.name));' +
-        '      if (a) console.log(a.browser_download_url);' +
-        '    } catch (e) { process.exit(1); }' +
-        '  });' +
-        '") && ' +
-        '[ -n "$URL" ] || { ' +
-        '  echo "❌ Release encontrada, mas sem arquivo .x86_64.rpm."; ' +
-        '  echo "   Consulte: https://github.com/' + info.repo + '/releases/latest"; ' +
-        '  exit 1; ' +
-        '} && ' +
-        'echo "📦 Baixando: $URL" && ' +
-        'sudo dnf install -y --setopt=localpkg_gpgcheck=0 "$URL"';
+    if (logBox) {
+        var okLinha = document.createElement('div');
+        okLinha.className = 'log-line success';
+        okLinha.textContent = '📦 URL resolvida: ' + rpmUrl;
+        logBox.appendChild(okLinha);
+        logBox.scrollTop = logBox.scrollHeight;
+    }
 
-    await executarComandoGenerico(idComando, comando, nomeAcao,
-        function() { aplicarEstadoInstalavel(idComando, idAbrir); });
+    // O `dnf install <URL>` usa libcurl interno — mecanismo distinto
+    // do binário `curl` que estava falhando dentro do pkexec.
+    var comando = 'sudo dnf install -y --setopt=localpkg_gpgcheck=0 "' + rpmUrl + '"';
+
+    await executarComandoGenerico(
+        idComando,
+        comando,
+        _t('sessoes.aplicativos.btn_artcraft_launcher', '🎨 Instalar ArtCraft Launcher'),
+        function() {
+            aplicarEstadoInstalavel('instalar-artcraft-launcher', 'abrir-artcraft-launcher');
+        }
+    );
 }
 
-function abrirArtCraft(appId) {
-    var info = ARTCRAFT_REPOS[appId];
-    if (!info) return;
-    abrirFerramentaExterna(info.bin, 'instalar-' + appId, info.nome);
+function abrirArtCraftLauncher() {
+    abrirFerramentaExterna('artcraft-launcher', 'instalar-artcraft-launcher', 'ArtCraft Launcher');
 }
 
 // ============================================================
@@ -1562,10 +1526,15 @@ async function restaurarEstadoSessao() {
         aplicarEstadoInstalavel(id, _derivarIdAbrir(id));
     });
 
-    // Suíte ArtCraft.
-    Object.keys(ARTCRAFT_REPOS).forEach(function(appId) {
-        aplicarEstadoInstalavel('instalar-' + appId, 'abrir-' + appId);
-    });
+    // ArtCraft Launcher (v1.2.2).
+    aplicarEstadoInstalavel('instalar-artcraft-launcher', 'abrir-artcraft-launcher');
+
+    // 5 apps novos (v1.2.2).
+    aplicarEstadoInstalavel('instalar-firefox', 'abrir-firefox');
+    aplicarEstadoInstalavel('instalar-vscode', 'abrir-vscode');
+    aplicarEstadoInstalavel('instalar-drawy', 'abrir-drawy');
+    aplicarEstadoInstalavel('instalar-gear-lever', 'abrir-gear-lever');
+    aplicarEstadoInstalavel('instalar-packet', 'abrir-packet');
 
     atualizarBotaoAbrirRclone();
     aplicarEstadoToggle('instalar-rclone-manager', 'desfazer-rclone-manager');

@@ -413,8 +413,23 @@ function _marcarBotaoConcluido(idComando) {
 function _resetarBotao(idComando, fallbackText) {
     var btn = document.getElementById('btn-' + idComando);
     if (!btn) return;
-    var original = btn.getAttribute('data-texto-original') || fallbackText;
-    btn.textContent = original;
+    // Respeita o idioma atual. Sem isso, `btn.textContent = original`
+    // (PT-BR) quebrava a exibição em en/es quando o reset era disparado
+    // em runtime (ex.: "Reverter" de um toggle via _resetarIrmao). A
+    // tradução ficava "grudada" em pt-BR até a próxima recarga da
+    // sessão — o `aplicarTraducoes` só roda no load.
+    //
+    // `_textoOriginalTraduzido` (script.js) retorna _t(data-i18n, ...)
+    // quando o botão tem data-i18n, ou data-texto-original (PT-BR)
+    // quando não tem. Nesse segundo caso, o fallbackText já vem
+    // traduzido do chamador (sempre `_t(...)`), então usamos ele.
+    var originalTraduzido;
+    if (btn.hasAttribute('data-i18n')) {
+        originalTraduzido = _textoOriginalTraduzido(btn);
+    } else {
+        originalTraduzido = fallbackText || btn.getAttribute('data-texto-original') || btn.textContent || '';
+    }
+    btn.textContent = originalTraduzido;
     btn.style.backgroundColor = '';
     btn.style.cursor = 'pointer';
     btn.disabled = false;

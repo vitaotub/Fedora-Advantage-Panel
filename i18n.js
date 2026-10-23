@@ -303,6 +303,16 @@
             var chave = el.getAttribute('data-i18n');
             var valor = buscarChave(estado.strings, chave);
             if (typeof valor === 'string') {
+                // Pula elementos gerenciados por estado (aplicarEstadoInstalavel,
+                // aplicarEstadoToggle, _marcarBotaoConcluido, _resetarBotao,
+                // aplicarEstadoItemCompleto). Esses helpers setam data-texto-original
+                // (pela IIFE da sessão) e depois trocam textContent para refletir o
+                // estado atual (Abrir/Concluído/Bloqueado). Sobrescrever aqui
+                // reverteria para o texto de instalar — bug visível em en/es.
+                var original = el.getAttribute('data-texto-original');
+                if (original !== null && el.textContent !== original) {
+                    continue;
+                }
                 el.textContent = interpolar(valor);
             }
         }

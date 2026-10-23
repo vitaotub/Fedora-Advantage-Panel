@@ -882,19 +882,13 @@ var SESSOES = [
         'instalar-gnome-connections': { textoConcluido: '✅ GNOME Connections instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_gnome_connections' },
         'instalar-krdc': { textoConcluido: '✅ KRDC instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_krdc' },
 
-        'instalar-photocraft':  { textoConcluido: '✅ PhotoCraft instalado',  textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_photocraft' },
-        'instalar-vectorcraft': { textoConcluido: '✅ VectorCraft instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_vectorcraft' },
-        'instalar-filmcraft':   { textoConcluido: '✅ FilmCraft instalado',   textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_filmcraft' },
-        'instalar-lightcraft':  { textoConcluido: '✅ LightCraft instalado',  textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_lightcraft' },
-        'instalar-pdfcraft':    { textoConcluido: '✅ PDFCraft instalado',    textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_pdfcraft' },
-        'instalar-effectcraft': { textoConcluido: '✅ EffectCraft instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_effectcraft' },
-        'instalar-designcraft': { textoConcluido: '✅ DesignCraft instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_designcraft' },
-        'instalar-figcraft':    { textoConcluido: '✅ FigCraft instalado',    textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_figcraft' },
-        'instalar-deckcraft':   { textoConcluido: '✅ DeckCraft instalado',   textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_deckcraft' },
-        'instalar-gridcraft':   { textoConcluido: '✅ GridCraft instalado',   textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_gridcraft' },
-        'instalar-wordcraft':   { textoConcluido: '✅ WordCraft instalado',   textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_wordcraft' },
-        'instalar-cadcraft':    { textoConcluido: '✅ CadCraft instalado',    textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_cadcraft' },
-        'instalar-soundcraft':  { textoConcluido: '✅ SoundCraft instalado',  textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_soundcraft' },
+        'instalar-artcraft-launcher': { textoConcluido: '✅ ArtCraft Launcher instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_artcraft_launcher' },
+
+        'instalar-firefox':     { textoConcluido: '✅ Firefox instalado',    textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_firefox' },
+        'instalar-vscode':      { textoConcluido: '✅ VS Code instalado',    textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_vscode', flatpakId: 'com.visualstudio.code' },
+        'instalar-drawy':       { textoConcluido: '✅ Drawy instalado',      textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_drawy', flatpakId: 'org.kde.drawy' },
+        'instalar-gear-lever':  { textoConcluido: '✅ Gear Lever instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_gear_lever', flatpakId: 'it.mijorus.gearlever' },
+        'instalar-packet':      { textoConcluido: '✅ Packet instalado',     textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_packet', flatpakId: 'io.github.nozwock.Packet' },
 
         'instalar-lightworks': { textoConcluido: '✅ Lightworks instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_lightworks' },
         'instalar-rclone-manager': {
@@ -973,7 +967,10 @@ var SESSOES = [
             flatpakId: 'net.davidotek.pupgui2'
         },
         'vkbasalt-install': { textoConcluido: '✅ vkBasalt instalado', textoConcluidoKey: 'sessoes.gaming.texto_concluido_vkbasalt' },
-        'gamemode-presets-apply': { textoConcluido: '✅ Presets aplicados' },
+        'gamemode-presets-apply': {
+            textoConcluido: '✅ Presets aplicados',
+            textoConcluidoKey: 'sessoes.gaming.texto_concluido_gamemode_presets'
+        },
         'controller-test-install': { textoConcluido: '✅ Ferramenta instalada', textoConcluidoKey: 'sessoes.gaming.texto_concluido_controller_test' },
         'retroarch-install': {
             textoConcluido: '✅ RetroArch instalado',
@@ -1941,8 +1938,14 @@ function aplicarEstadoToggle(idInstall, idRevert, esconderRevertSeNaoFeito, preE
         }
     }
 
-    var textoOriginalInstall = installBtn.getAttribute('data-texto-original') || installBtn.textContent;
-    var textoOriginalRevert = revertBtn.getAttribute('data-texto-original') || revertBtn.textContent;
+    // `_textoOriginalTraduzido` resolve para `_t(data-i18n, fallback)`
+    // — mesma escolha feita por `restaurarBotaoAposExecucao` (que já
+    // era language-aware). Antes, ler direto de `data-texto-original`
+    // fazia o botão voltar em PT-BR quando `aplicarEstadoToggle` era
+    // chamado em runtime (ex.: `_atualizarSecaoNvidia` após reverter
+    // o driver) — o `aplicarTraducoes` só roda no load.
+    var textoOriginalInstall = _textoOriginalTraduzido(installBtn) || installBtn.textContent;
+    var textoOriginalRevert = _textoOriginalTraduzido(revertBtn) || revertBtn.textContent;
     var corOriginalInstall = _corOriginalDoBotao(installBtn);
 
     var efetivamenteFeito = installFeito || preExistente;
@@ -2747,9 +2750,15 @@ function aplicarEstadoInstalavel(idInstall, idAbrir, idRemover, preExistente) {
             if (preExistente && !instalado) {
                 btnInstall.title = _t('comum.tooltip_preexistente_app',
                                       'Este app já estava instalado antes do FAP. A lixeira remove o app do sistema, mas o FAP não foi o responsável pela instalação.');
+                btnInstall.setAttribute('data-title-origem', '1');
+            } else {
+                // FAP instalou. O tooltip de origem ("de onde o pacote
+                // vem") não faz sentido num botão que agora diz "Abrir X"
+                // — o pacote já está instalado. A badge continua
+                // mostrando a origem ao hover.
+                btnInstall.title = '';
+                btnInstall.removeAttribute('data-title-origem');
             }
-            // else: preserva o tooltip de origem (setado por
-            // _renderizarBadgeOrigem no topo da função).
         } else {
             btnInstall.textContent = getTextoAposExecucao(idInstall);
             btnInstall.style.backgroundColor = '#4b5563';
@@ -3281,19 +3290,13 @@ var _MAPA_ORIGEM = {
     'instalar-rustdesk': 'download',
     'instalar-lightworks': 'download',
     'instalar-rclone-manager': 'download',
-    'instalar-photocraft': 'download',
-    'instalar-vectorcraft': 'download',
-    'instalar-filmcraft': 'download',
-    'instalar-lightcraft': 'download',
-    'instalar-pdfcraft': 'download',
-    'instalar-effectcraft': 'download',
-    'instalar-designcraft': 'download',
-    'instalar-figcraft': 'download',
-    'instalar-deckcraft': 'download',
-    'instalar-gridcraft': 'download',
-    'instalar-wordcraft': 'download',
-    'instalar-cadcraft': 'download',
-    'instalar-soundcraft': 'download',
+    'instalar-artcraft-launcher': 'download',
+
+    'instalar-firefox': 'fedora',
+    'instalar-vscode': 'flathub',
+    'instalar-drawy': 'flathub',
+    'instalar-gear-lever': 'flathub',
+    'instalar-packet': 'flathub',
 
     // ---- Sessão 6 - Comunidade ----
     'instalar-affinity': 'comunidade',
@@ -3464,7 +3467,12 @@ function _renderizarBadgeOrigem(idInstall) {
         badge.setAttribute('title', textoOrig.tooltip);
         badge.setAttribute('aria-label', textoOrig.nome + ': ' + textoOrig.tooltip);
 
-        if (!btn.title) {
+        // Aplica tooltip no botão apenas se ele NÃO estiver no estado
+        // "instalado-abrir". Quando o botão virou "Abrir X", o
+        // tooltip sobre origem do pacote não faz sentido — o pacote
+        // já está instalado. A badge continua mostrando a origem.
+        var estadoAtual = btn.getAttribute('data-estado');
+        if (!btn.title && estadoAtual !== 'instalado-abrir') {
             btn.title = textoOrig.nome + ' — ' + textoOrig.tooltip;
             btn.setAttribute('data-title-origem', '1');
         }
@@ -3477,6 +3485,9 @@ function _renderizarBadgesFixas() {
         if (!id) return;
         if (!_origemDoApp(id)) return;
         if (btn.classList.contains('btn-flatpak-uninstall')) return;
+        // Pula botões no estado "Abrir X" — o tooltip de origem não
+        // faz sentido aqui (guard espelhado em _renderizarBadgeOrigem).
+        if (btn.getAttribute('data-estado') === 'instalado-abrir') return;
         _renderizarBadgeOrigem(id);
     });
 }

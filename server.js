@@ -120,7 +120,10 @@ const COMANDOS_SEM_AUTENTICACAO = [
 'setsid -f rustdesk',
 'setsid -f waydroid show-full-ui',
 'setsid -f keepassxc',
+'setsid -f firefox',
 'setsid -f okular',
+'setsid -f artcraft-launcher',
+'setsid -f sealert',
 // Editores/apps que NÃO usam gtk-launch (não têm .desktop
 // com o binário). Precisam de entrada própria.
 'setsid -f lightworks',

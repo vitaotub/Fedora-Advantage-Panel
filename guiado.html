@@ -369,6 +369,17 @@ async function carregarSessao(index) {
             }
         });
 
+        // Aguarda o estado real do sistema antes de chamar restaurarEstadoSessao.
+        // Sem isso, sessões com restaurarEstadoSessao SÍNCRONO (aplicativos,
+        // codecs, virtualizacao, gaming, casa-escritorio, diagnostico,
+        // estado-fedora, producao-multimidia, sobre-fap) leem SystemState._dados
+        // = null e appJaInstaladoNoSistema retorna false para tudo — a detecção
+        // de pré-existente depende da corrida entre /system-state e o fetch do
+        // HTML. É a causa do "em espanhol funciona, em inglês não".
+        if (typeof SystemState !== 'undefined' && typeof SystemState.carregar === 'function') {
+            try { await SystemState.carregar(); } catch (e) { /* ignore */ }
+        }
+
         if (scriptMatch) {
             scriptMatch.forEach(function(script) {
                 var scriptContent = script.replace(/<script[^>]*>/, '').replace(/<\/script>/, '');

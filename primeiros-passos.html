@@ -679,8 +679,11 @@ function _aplicarEstadoOneShotOuPreExistente(idComando, jaAtivoNoSistema) {
             : '';
     } else {
         // Restaura o texto original e o estado azul clicável.
-        var original = btn.getAttribute('data-texto-original') || btn.textContent;
-        btn.textContent = original;
+        // `_textoOriginalTraduzido` respeita o idioma corrente — antes,
+        // ler direto de `data-texto-original` (PT-BR) quebrava a exibição
+        // em en/es quando o botão era resetado em runtime (o
+        // `aplicarTraducoes` só roda no load).
+        btn.textContent = _textoOriginalTraduzido(btn) || btn.textContent;
         btn.style.backgroundColor = '';
         btn.style.cursor = 'pointer';
         btn.disabled = false;
