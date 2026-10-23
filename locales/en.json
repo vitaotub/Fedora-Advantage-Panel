@@ -227,7 +227,9 @@
             "intel_media_titulo": "Intel Video Acceleration (VA-API)",
             "intel_media_desc": "The <code>intel-media-driver</code> package enables hardware video acceleration on Intel iGPUs Skylake (6th generation) or newer. It reduces CPU usage when watching 4K videos, using the browser and editing video. Older chips (Haswell or earlier) use the i965 driver, which already ships with Fedora.",
             "btn_intel_media_instalar": "🎬 Install Intel Media Driver",
-            "texto_concluido_intel_media": "🎬 Intel Media Driver installed"
+            "texto_concluido_intel_media": "🎬 Intel Media Driver installed",
+            "nvidia_sem_gpu_curto": "No NVIDIA GPU detected on this system",
+            "nvidia_detectando": "⏳ Detecting hardware..."
         },
 
         "dispositivos-perifericos": {
@@ -452,6 +454,21 @@
             "texto_concluido_lmms": "✅ LMMS installed",
             "btn_audacity": "🎙️ Audacity",
             "texto_concluido_audacity": "✅ Audacity installed",
+
+            "btn_firefox": "🦊 Mozilla Firefox",
+            "texto_concluido_firefox": "✅ Firefox installed",
+            "btn_vscode": "💻 Visual Studio Code",
+            "texto_concluido_vscode": "✅ VS Code installed",
+            "btn_drawy": "🎨 Drawy",
+            "texto_concluido_drawy": "✅ Drawy installed",
+            "btn_gear_lever": "⚙️ Gear Lever",
+            "texto_concluido_gear_lever": "✅ Gear Lever installed",
+            "btn_packet": "📦 Packet",
+            "texto_concluido_packet": "✅ Packet installed",
+
+            "bloco_utilidades_titulo": "🔧 Utilities",
+            "bloco_utilidades_desc": "System tools that don't fit in other categories.",
+
             "rclone_aviso": "ℹ️ <strong>Cloud account setup:</strong> Rclone Manager is a graphical interface for Rclone. It lets you configure access to Google Drive, OneDrive, Dropbox, S3, and dozens of other cloud storage services. After installing, open Rclone Manager and follow the guide inside its interface to add your accounts. <strong>If you need the Rclone CLI, Rclone Manager itself offers an option to install it.</strong> Setting up the accounts is done by you, inside Rclone Manager.",
             "btn_rclone": "☁️ Install Rclone",
             "texto_concluido_rclone": "✅ Rclone installed",
@@ -517,49 +534,19 @@
             "btn_abrir_lmms": "🚀 Open LMMS",
             "btn_abrir_lightworks": "🚀 Open Lightworks",
             "btn_abrir_audacity": "🚀 Open Audacity",
+            "btn_abrir_firefox": "🚀 Open Firefox",
+            "btn_abrir_vscode": "🚀 Open VS Code",
+            "btn_abrir_drawy": "🚀 Open Drawy",
+            "btn_abrir_gear_lever": "🚀 Open Gear Lever",
+            "btn_abrir_packet": "🚀 Open Packet",
+            "btn_abrir_artcraft_launcher": "🚀 Open ArtCraft Launcher",
 
             "bloco_artcraft_titulo": "🎨 ArtCraft Suite (Adobe and Office on Linux)",
-            "bloco_artcraft_desc": "These apps are developed in <strong>Rust</strong>, are <strong>open source</strong>, and are recent alternatives to Adobe and Microsoft Office products. Each app has its own specialty (photo editing, vector, video, audio, design, PDF, presentations, spreadsheets, text editor and CAD).",
-            "bloco_artcraft_aviso": "ℹ️ <strong>About support:</strong> these are independent projects, maintained by community developers. If something doesn't work, report the bug directly in the GitHub repository of the affected project — FAP only installs the official packages published by them.",
-            "btn_photocraft": "🖼️ PhotoCraft",
-            "texto_concluido_photocraft": "✅ PhotoCraft installed",
-            "btn_abrir_photocraft": "🚀 Open PhotoCraft",
-            "btn_vectorcraft": "✏️ VectorCraft",
-            "texto_concluido_vectorcraft": "✅ VectorCraft installed",
-            "btn_abrir_vectorcraft": "🚀 Open VectorCraft",
-            "btn_filmcraft": "🎬 FilmCraft",
-            "texto_concluido_filmcraft": "✅ FilmCraft installed",
-            "btn_abrir_filmcraft": "🚀 Open FilmCraft",
-            "btn_lightcraft": "💡 LightCraft",
-            "texto_concluido_lightcraft": "✅ LightCraft installed",
-            "btn_abrir_lightcraft": "🚀 Open LightCraft",
-            "btn_pdfcraft": "📄 PDFCraft",
-            "texto_concluido_pdfcraft": "✅ PDFCraft installed",
-            "btn_abrir_pdfcraft": "🚀 Open PDFCraft",
-            "btn_effectcraft": "✨ EffectCraft",
-            "texto_concluido_effectcraft": "✅ EffectCraft installed",
-            "btn_abrir_effectcraft": "🚀 Open EffectCraft",
-            "btn_designcraft": "🎨 DesignCraft",
-            "texto_concluido_designcraft": "✅ DesignCraft installed",
-            "btn_abrir_designcraft": "🚀 Open DesignCraft",
-            "btn_figcraft": "🖌️ FigCraft",
-            "texto_concluido_figcraft": "✅ FigCraft installed",
-            "btn_abrir_figcraft": "🚀 Open FigCraft",
-            "btn_deckcraft": "📽️ DeckCraft",
-            "texto_concluido_deckcraft": "✅ DeckCraft installed",
-            "btn_abrir_deckcraft": "🚀 Open DeckCraft",
-            "btn_gridcraft": "📊 GridCraft",
-            "texto_concluido_gridcraft": "✅ GridCraft installed",
-            "btn_abrir_gridcraft": "🚀 Open GridCraft",
-            "btn_wordcraft": "📝 WordCraft",
-            "texto_concluido_wordcraft": "✅ WordCraft installed",
-            "btn_abrir_wordcraft": "🚀 Open WordCraft",
-            "btn_cadcraft": "📐 CadCraft",
-            "texto_concluido_cadcraft": "✅ CadCraft installed",
-            "btn_abrir_cadcraft": "🚀 Open CadCraft",
-            "btn_soundcraft": "🔊 SoundCraft",
-            "texto_concluido_soundcraft": "✅ SoundCraft installed",
-            "btn_abrir_soundcraft": "🚀 Open SoundCraft"
+            "bloco_artcraft_desc": "The <strong>ArtCraft Launcher</strong> is the official installer for the ArtCraft suite — a set of open-source apps, developed in <strong>Rust</strong>, that are alternatives to Adobe and Microsoft Office products (photo editing, vector, video, audio, design, PDF, presentations, spreadsheets, text editor and CAD).",
+            "bloco_artcraft_aviso": "ℹ️ <strong>How it works:</strong> install the launcher below. Once opened, it shows all available apps in the suite, lets you choose which ones to install and keeps everything up to date. FAP installs only the launcher — individual apps are managed by it, always on the latest version published by the developer.",
+            "btn_artcraft_launcher": "🎨 Install ArtCraft Launcher",
+            "texto_concluido_artcraft_launcher": "✅ ArtCraft Launcher installed",
+            "btn_abrir_artcraft_launcher": "🚀 Open ArtCraft Launcher"
         },
 
         "casa-escritorio": {
@@ -709,7 +696,8 @@
             "dica_gamescope_label": "🖥️ Gamescope (resolution and FPS limit):",
             "dica_combo_label": "⚡ Full combination (Gamescope + MangoHud + GameMode):",
             "dica_vkbasalt_label": "🎨 vkBasalt (after installing and enabling vkBasalt):",
-            "dicas_nota": "ℹ️ Replace the <code>-W</code> and <code>-H</code> values with the desired resolution. <code>-r 60</code> limits FPS to 60 — remove it if you want unlimited FPS."
+            "dicas_nota": "ℹ️ Replace the <code>-W</code> and <code>-H</code> values with the desired resolution. <code>-r 60</code> limits FPS to 60 — remove it if you want unlimited FPS.",
+            "texto_concluido_gamemode_presets": "✅ Presets applied"
         },
 
         "waydroid": {
@@ -784,7 +772,9 @@
             "open_waiting_short": "Opening Waydroid...",
             "checking_container": "Checking container status...",
             "zona_perigo_titulo": "🗑️ Remove Waydroid Completely",
-            "nada_remover": "✅ Nothing to remove"
+            "nada_remover": "✅ Nothing to remove",
+            "ja_feito_preexistente": "✅ Already done (before FAP)",
+            "tooltip_preexistente_waydroid": "This step was already done on the system before FAP. FAP was not the cause — to undo, use the terminal."
         },
 
         "virtualizacao": {
@@ -1064,6 +1054,7 @@
             "setroubleshoot_desc": "Installs <strong>setroubleshoot</strong>, an official Fedora package that automatically analyzes each AVC and suggests a fix — in plain language, without SELinux jargon. It's what turns \"usuário_u:role_r:tipo_t\" into \"Apache cannot read files in /var/www/html, you should run such command\".",
             "setroubleshoot_info": "ℹ️ <strong>What is installed:</strong> <code>setroubleshoot-server</code> (analysis engine), <code>setools-console</code> (CLI tools) and <code>policycoreutils-python-utils</code> (policy utilities). Warnings appear automatically in the desktop notification menu when an AVC is generated.",
             "btn_setroubleshoot_install": "📦 Install setroubleshoot",
+            "btn_setroubleshoot_abrir": "🚀 Open setroubleshoot",
             "texto_concluido_setroubleshoot": "✅ setroubleshoot installed",
             "selinux_gui_titulo": "🖥️ SELinux Manager (Graphical Interface)",
             "selinux_gui_desc": "Installs <strong>policycoreutils-gui</strong>, which provides a complete graphical interface to manage SELinux: booleans, file contexts, port mapping, users, and other advanced settings. It's the friendliest way to view and adjust SELinux on Fedora.",
@@ -1074,7 +1065,32 @@
             "texto_concluido_selinux_gui": "✅ SELinux Manager installed",
             "selinux_desabilitar_titulo": "⚠️ About disabling SELinux",
             "selinux_desabilitar_desc": "Many tutorials on the internet recommend disabling SELinux when something doesn't work. This is <strong>not a good practice</strong> on Fedora — the system is designed to work with it enabled, and disabling masks problems instead of solving them.",
-            "selinux_desabilitar_info": "ℹ️ <strong>If you need to change the mode:</strong> the official tool is <code>setenforce</code>. Running <code>sudo setenforce 0</code> sets it to permissive until the next boot. To make it permanent, edit <code>/etc/selinux/config</code> (we don't do this automatically — it's your decision)."
+            "selinux_desabilitar_info": "ℹ️ <strong>If you need to change the mode:</strong> the official tool is <code>setenforce</code>. Running <code>sudo setenforce 0</code> sets it to permissive until the next boot. To make it permanent, edit <code>/etc/selinux/config</code> (we don't do this automatically — it's your decision).",
+            "versao_indisponivel": "⚠️ Could not determine the Fedora version. Check the log above for details.",
+            "versao_suportada": "✅ Supported version. FAP is developed and tested in this range.",
+            "versao_antiga": "⚠️ Old version (< 43). Some commands may fail. Consider upgrading Fedora.",
+            "versao_nova": "⚠️ Very new version (> 45). There may be untested changes. If you find problems, report them.",
+            "label_distribuicao": "Distribution",
+            "label_versao": "Version",
+            "label_kernel": "Kernel",
+            "label_suporte_fap": "FAP support",
+            "atomic_aviso": "⚠️ <strong>Immutable system detected.</strong> You are running an Atomic/Silverblue Fedora variant. FAP's <code>dnf install</code> commands <strong>will not work</strong> in this session — the base system is protected. Only Flatpak-based commands (most of the Apps and Gaming sessions) work.",
+            "atomic_ok": "✅ <strong>Traditional system detected.</strong> All FAP commands work normally.",
+            "label_tipo": "Type",
+            "atomic_imutavel": "Immutable (Atomic)",
+            "atomic_tradicional": "Traditional",
+            "label_variante": "Variant",
+            "label_gerenciador": "Manager",
+            "selinux_status_enforcing": "<div class=\"aviso-sucesso\">✅ <strong>Enforcing</strong> — active rules with real blocks. It is the recommended Fedora default.</div>",
+            "selinux_status_permissive": "<div class=\"aviso-caixa\">⚠️ <strong>Permissive</strong> — active rules, but only logs without blocking. Good for diagnosis, but reduces security.</div>",
+            "selinux_status_disabled": "<div class=\"aviso-caixa\" style=\"border-color: #ef4444; color: #ef4444;\">❌ <strong>Disabled</strong> — rules disabled. We recommend re-enabling SELinux.</div>",
+            "selinux_status_outro": "<div class=\"aviso-caixa\">Unrecognized mode: {modo}</div>",
+            "selinux_label_modo_atual": "Current mode",
+            "selinux_label_modo_config": "Mode in config",
+            "selinux_log_atual": "✅ Current mode: {modo} (config: {config})",
+            "selinux_avc_nenhum": "<div class=\"aviso-sucesso\">✅ No SELinux warnings (AVC denial) in the last 24 hours.</div>",
+            "selinux_avc_poucos": "<div class=\"aviso-caixa\">ℹ️ {n} SELinux warning(s) in the last 24h. A few isolated warnings are usually harmless.</div>",
+            "selinux_avc_muitos": "<div class=\"aviso-caixa\" style=\"border-color: #ef4444; color: #ef4444;\">⚠️ {n} SELinux warnings in the last 24h. May indicate a recurring problem. Check the log above and consider installing <strong>setroubleshoot</strong> for plain-language diagnosis.</div>"
         },
 
         "sobre-fap": {
