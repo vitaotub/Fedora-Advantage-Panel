@@ -843,6 +843,23 @@ print_success "PATH já configurado"
 fi
 }
 
+# ============================================================
+# DESINSTALAÇÃO DEFENSIVA
+# ============================================================
+#
+# `set -e` é perigoso no bloco de desinstalação: um único `rm`
+# que falhe (permissão, arquivo já removido, symlink quebrado)
+# aborta o script inteiro, deixando metade dos arquivos no lugar.
+#
+# Como o FAP chama `install.sh --uninstall` via `bash <(curl ...)`
+# (subprocesso do node, sem TTY), qualquer `sudo` que peça senha
+# trava silenciosamente. O `SUDO_ASKPASS` do server.js pode não
+# estar disponível no ambiente do subprocesso.
+#
+# Solução: desabilitar `set -e`, envolver cada remoção com
+# `|| true`, e usar `find -delete` (que não precisa de sudo) em
+# vez de `sudo rm` para logs em /tmp.
+
 desinstalar() {
 print_header
 print_warning "Desinstalando Fedora Advantage Panel..."
@@ -852,24 +869,36 @@ print_info "Desinstalação cancelada"
 exit 0
 fi
 
+set +e
+
+local removidos=0
+local falhas=0
+local caminho_falhou=()
+
+_remover() {
+    local caminho="$1"
+    local tipo="$2"
+    if [ -e "$caminho" ] || [ -L "$caminho" ]; then
+        if rm -rf "$caminho" 2>/dev/null; then
+            print_success "$tipo removido: $caminho"
+            removidos=$((removidos + 1))
+        else
+            print_warning "Não foi possível remover: $caminho (permissão?)"
+            caminho_falhou+=("$caminho")
+            falhas=$((falhas + 1))
+        fi
+    fi
+}
+
 print_step "Removendo arquivos..."
 
 # ─── 1. Diretório de instalação ─────────────────────────────
-if [ -d "$INSTALL_DIR" ]; then
-rm -rf "$INSTALL_DIR"
-print_success "Diretório removido: $INSTALL_DIR"
-fi
+_remover "$INSTALL_DIR" "Diretório"
 
 # ─── 2. Symlinks em ~/.local/bin ────────────────────────────
-# NOTA: usamos `-L` (testa symlink) em vez de `-f` (segue o
-# symlink). Como o INSTALL_DIR foi removido acima, os symlinks
-# ficam "quebrados" e `-f` retorna false — pulando a remoção.
 local links=("fap" "fap-compat" "fap-container")
 for link in "${links[@]}"; do
-if [ -L "$BIN_DIR/$link" ] || [ -e "$BIN_DIR/$link" ]; then
-rm -f "$BIN_DIR/$link"
-print_success "Link removido: $BIN_DIR/$link"
-fi
+    _remover "$BIN_DIR/$link" "Link"
 done
 
 # ─── 3. Atalhos .desktop ────────────────────────────────────
@@ -880,60 +909,47 @@ local atalhos=(
 "$DESKTOP_FILE_COMPAT_OLD"
 )
 for atalho in "${atalhos[@]}"; do
-if [ -L "$atalho" ] || [ -e "$atalho" ]; then
-rm -f "$atalho"
-print_success "Atalho removido: $atalho"
-fi
+    _remover "$atalho" "Atalho"
 done
 
 # ─── 4. Ícone hicolor ──────────────────────────────────────
-if [ -f "$HOME/.local/share/icons/hicolor/256x256/apps/fap-container.png" ]; then
-rm -f "$HOME/.local/share/icons/hicolor/256x256/apps/fap-container.png"
-gtk-update-icon-cache -f -t "$HOME/.local/share/icons/hicolor" 2>/dev/null || true
-print_success "Ícone removido do hicolor"
+local icone="$HOME/.local/share/icons/hicolor/256x256/apps/fap-container.png"
+if [ -f "$icone" ]; then
+    if rm -f "$icone" 2>/dev/null; then
+        gtk-update-icon-cache -f -t "$HOME/.local/share/icons/hicolor" 2>/dev/null || true
+        print_success "Ícone removido do hicolor"
+        removidos=$((removidos + 1))
+    else
+        print_warning "Não foi possível remover o ícone do hicolor"
+        falhas=$((falhas + 1))
+    fi
 fi
 
 # ─── 5. Dados e cache do WebKitGTK ──────────────────────────
-# O fap-container (WebKitGTK) cria esses dois diretórios em
-# runtime. Sem removê-los, o cache HTTP e o localStorage ficam
-# órfãos no sistema (incluindo o badge de atualização).
-if [ -d "$HOME/.cache/fap-container" ]; then
-rm -rf "$HOME/.cache/fap-container"
-print_success "Cache do WebKitGTK removido: ~/.cache/fap-container"
-fi
-
-if [ -d "$HOME/.local/share/fap-container" ]; then
-rm -rf "$HOME/.local/share/fap-container"
-print_success "Dados do WebKitGTK removidos: ~/.local/share/fap-container"
-fi
-
-if [ -d "$HOME/.config/fap-container" ]; then
-rm -rf "$HOME/.config/fap-container"
-print_success "Configurações do FAP removidas: ~/.config/fap-container"
-fi
+_remover "$HOME/.cache/fap-container" "Cache WebKitGTK"
+_remover "$HOME/.local/share/fap-container" "Dados WebKitGTK"
+_remover "$HOME/.config/fap-container" "Configurações FAP"
 
 # ─── 6. Logs temporários ────────────────────────────────────
-# Os arquivos /tmp/fap-out-*.log são criados pelo kdesu/pkexec
-# (que rodam como root) e ficam com owner root. O `rm -f` como
-# usuário comum falha com "Operação não permitida", o que faz o
-# `set -e` abortar o script inteiro. Solução: tentar como user
-# primeiro, e escalar para sudo apenas se sobrar algo.
+#
+# Logs em /tmp pertencem ao usuário (instalação) ou ao root
+# (pkexec). `find -delete` funciona sem sudo quando o dono é o
+# usuário; para os do root, tentamos sudo com askpass, mas
+# falha é tolerada.
 print_step "Removendo logs temporários..."
 
-# Logs do usuário (sempre removíveis)
-rm -f /tmp/fap-install-*.log 2>/dev/null || true
-rm -f /tmp/fap-waydroid-ui.log 2>/dev/null || true
-rm -f /tmp/fap-askpass-*.sh 2>/dev/null || true
+find /tmp -maxdepth 1 -name 'fap-*.log' -user "$(id -un)" -delete 2>/dev/null || true
+find /tmp -maxdepth 1 -name 'fap-out-*.log' -user "$(id -un)" -delete 2>/dev/null || true
+find /tmp -maxdepth 1 -name 'fap-askpass-*.sh' -user "$(id -un)" -delete 2>/dev/null || true
+find /tmp -maxdepth 1 -name 'fap-cmd-*.sh' -user "$(id -un)" -delete 2>/dev/null || true
 
-# Logs de comandos autenticados — podem pertencer ao root
-if ls /tmp/fap-out-*.log >/dev/null 2>&1; then
-if ! rm -f /tmp/fap-out-*.log 2>/dev/null; then
-print_info "Alguns logs pertencem ao root (kdesu/pkexec). Removendo com sudo..."
-sudo rm -f /tmp/fap-out-*.log 2>/dev/null || true
-fi
+# Logs de root (best-effort, sem travar se não houver askpass)
+if [ -n "$SUDO_ASKPASS" ] && [ -x "$SUDO_ASKPASS" ]; then
+    sudo -A rm -f /tmp/fap-out-*.log 2>/dev/null || true
+    sudo -A rm -f /tmp/fap-cmd-*.sh 2>/dev/null || true
 fi
 
-print_success "Logs temporários removidos"
+print_success "Logs temporários processados"
 
 # ─── 7. Limpeza de PATH nos rc files ────────────────────────
 remover_linha_path() {
@@ -944,20 +960,22 @@ if [ ! -f "$arquivo" ]; then
 return 0
 fi
 
-# Só faz backup se o arquivo realmente contém a linha a remover.
-# Se não contém, não mexe — evita criar backup de arquivo que
-# não foi alterado.
 if ! grep -qF "$linha_a_remover" "$arquivo"; then
 return 0
 fi
 
-# Backup atômico com timestamp, mantido por segurança caso o
-# usuário queira restaurar manualmente.
 local backup="${arquivo}.fap-backup-$(date +%Y%m%d-%H%M%S)"
-cp "$arquivo" "$backup"
-grep -vF "$linha_a_remover" "$arquivo" > "${arquivo}.tmp"
-mv "${arquivo}.tmp" "$arquivo"
-print_success "Linha removida de: $arquivo (backup: $backup)"
+if cp "$arquivo" "$backup" 2>/dev/null; then
+    if grep -vF "$linha_a_remover" "$arquivo" > "${arquivo}.tmp" 2>/dev/null && \
+       mv "${arquivo}.tmp" "$arquivo" 2>/dev/null; then
+        print_success "Linha removida de: $arquivo (backup: $backup)"
+    else
+        print_warning "Não foi possível reescrever: $arquivo"
+        rm -f "${arquivo}.tmp" 2>/dev/null || true
+    fi
+else
+    print_warning "Não foi possível criar backup de: $arquivo"
+fi
 }
 
 remover_linha_path "$HOME/.bashrc"
@@ -968,8 +986,26 @@ remover_linha_path "$HOME/.profile"
 update-desktop-database ~/.local/share/applications/ 2>/dev/null || true
 kbuildsycoca6 --noincremental 2>/dev/null || kbuildsycoca5 --noincremental 2>/dev/null || true
 
+# ============================================================
+# RELATÓRIO FINAL
+# ============================================================
 echo ""
-print_success "✅ FAP completamente desinstalado!"
+if [ $falhas -eq 0 ]; then
+    print_success "✅ FAP completamente desinstalado! ($removidos caminhos removidos)"
+else
+    print_warning "⚠️ Desinstalação parcial: $removidos removidos, $falhas falharam"
+    print_info "Caminhos que não puderam ser removidos:"
+    for c in "${caminho_falhou[@]}"; do
+        echo "  - $c"
+    done
+    print_info ""
+    print_info "Para remover manualmente, rode com sudo:"
+    for c in "${caminho_falhou[@]}"; do
+        echo "  sudo rm -rf $c"
+    done
+fi
+
+set -e
 }
 
 atualizar() {
