@@ -188,7 +188,15 @@ async function desinstalarFAP() {
     _bloquearSessao(idComando);
 
     try {
-        var comando = 'echo "s" | bash <(curl -s https://raw.githubusercontent.com/vitaotub/Fedora-Advantage-Panel/main/install.sh) --uninstall';
+        // Roda sob `setsid -f` para criar sessão própria. Sem isso,
+        // o `install.sh --uninstall` é filho do node — e quando o
+        // próprio `install.sh` remove o diretório onde o node está
+        // rodando (ou o node recebe SIGTERM no meio), o bash filho
+        // é morto junto, abortando a desinstalação no meio.
+        //
+        // `setsid -f` desacopla: o `install.sh` continua até o fim,
+        // mesmo que o node (e o container FAP) morram no processo.
+        var comando = 'setsid -f bash -c \'echo "s" | bash <(curl -s https://raw.githubusercontent.com/vitaotub/Fedora-Advantage-Panel/main/install.sh) --uninstall\'';
         var response = await fetch(API_URL + '/executar', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
