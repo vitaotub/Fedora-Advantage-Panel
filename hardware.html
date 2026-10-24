@@ -341,6 +341,10 @@ registrarAppRemovivel('vulkan-amd', {
     tipo: 'dnf',
     pacotes: ['mesa-vulkan-drivers', 'mesa-vulkan-drivers.i686', 'vulkan-tools', 'vulkan-loader', 'mesa-dri-drivers', 'mesa-dri-drivers.i686'],
     nome: 'Vulkan e Mesa 3D',
+    // Mesa/Vulkan vêm em qualquer Fedora com GUI. O usuário pediu
+    // que o botão mostre "Instalar" até o FAP instalar (e não
+    // porque o sistema já tinha).
+    ignorarPreExistente: true,
     // MITIGAÇÃO (v1.1.2): pré-existente NÃO pode ser removido.
     // Remove Mesa 3D + Vulkan — jogos e apps 3D param de
     // funcionar até reinstalar.
@@ -356,6 +360,11 @@ registrarAppRemovivel('vaapi-amd', {
     tipo: 'dnf',
     pacotes: ['ffmpeg-libs', 'libva', 'libva-utils', 'mesa-va-drivers-freeworld', 'mesa-va-drivers-freeworld.i686'],
     nome: 'VA-API AMD',
+    // libva/ffmpeg-libs são pré-instalados no Fedora. Flag força
+    // "Instalar" até o FAP instalar. Observação: o botão também
+    // sofre com conflito de mesa-dri-drivers no Fedora 44 — ver
+    // correção de `executarVaapi` (abaixo).
+    ignorarPreExistente: true,
     // MITIGAÇÃO (v1.1.2): pré-existente NÃO pode ser removido.
     // Remove aceleração de vídeo por hardware — CPU sobe muito
     // ao reproduzir vídeo em HD/4K.
@@ -448,7 +457,16 @@ async function executarVulkan() {
 
 async function executarVaapi() {
     var idComando = 'vaapi-amd';
-    var comando = 'sudo dnf install ffmpeg-libs libva libva-utils -y && sudo dnf install mesa-va-drivers-freeworld mesa-va-drivers-freeworld.i686 -y';
+    // `dnf swap` em vez de `dnf install`: o mesa-va-drivers-freeworld
+    // (RPM Fusion) SUBSTITUI o mesa-va-drivers (Fedora), não convive
+    // com ele. Instalar sem swap dispara conflito de dependência no
+    // Fedora 44 (mesa-libgl requer mesa-dri-drivers da mesma versão,
+    // que o RPM Fusion ainda não empacotou para i686). O swap é a
+    // receita oficial do RPM Fusion.
+    var comando =
+        'sudo dnf install -y ffmpeg-libs libva libva-utils && ' +
+        'sudo dnf swap mesa-va-drivers mesa-va-drivers-freeworld --allowerasing -y && ' +
+        'sudo dnf swap mesa-vdpau-drivers mesa-vdpau-drivers-freeworld --allowerasing -y';
     await executarComandoGenerico(idComando, comando,
         _t('sessoes.hardware.btn_vaapi_padrao', '🚀 Instalação Padrão'),
         function() { aplicarEstadoInstalavel('vaapi-amd', null); });
