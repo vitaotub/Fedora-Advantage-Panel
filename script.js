@@ -474,6 +474,15 @@ function appJaInstaladoNoSistema(idComando) {
     var info = APPS_REMOVIVEIS[idComando];
     if (!info) return false;
 
+    // Alguns pacotes vêm pré-instalados no Fedora (fontes MS,
+    // Mesa, CUPS, etc.). Para esses, o usuário pediu que o FAP
+    // mostre "Instalar" mesmo quando o pacote já existe — o botão
+    // só passa para "Já instalado" se o FAP instalou. A flag é
+    // definida no próprio registro (registrarAppRemovivel).
+    if (info.ignorarPreExistente === true) {
+        return false;
+    }
+
     if (info.modo === 'desfazerTudo') {
         if (Array.isArray(info.pacotes) && info.pacotes.length > 0) {
             for (var i = 0; i < info.pacotes.length; i++) {
@@ -1926,7 +1935,15 @@ function aplicarEstadoToggle(idInstall, idRevert, esconderRevertSeNaoFeito, preE
 
     if (preExistente === undefined) {
         try {
-            preExistente = appJaInstaladoNoSistema(idInstall);
+            // Mesmo raciocínio do appJaInstaladoNoSistema: se o
+            // comando pediu para ignorar pré-existência, o toggle
+            // começa em "não feito" mesmo que o sistema tenha.
+            var infoCmd = APPS_REMOVIVEIS[idInstall];
+            if (infoCmd && infoCmd.ignorarPreExistente === true) {
+                preExistente = false;
+            } else {
+                preExistente = appJaInstaladoNoSistema(idInstall);
+            }
         } catch (e) {
             preExistente = false;
         }
