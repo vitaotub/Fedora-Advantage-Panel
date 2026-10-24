@@ -13,6 +13,97 @@ que exibe a seção da versão atual dentro do FAP, na sessão **Sobre o FAP**.
 
 ---
 
+## v1.2.3-10242026
+
+Correções de bugs encontrados durante a rodada de testes em uma instalação
+limpa do Fedora 44 (notebook com GPU AMD Barceló), e melhoria de UX no
+fechamento do FAP após desinstalação.
+
+### 🐛 Corrigido
+
+- **Pacotes pré-instalados no Fedora sendo marcados como "já instalados
+  pelo FAP"** — Fontes Microsoft (`fontconfig`), Vulkan/Mesa
+  (`mesa-vulkan-drivers`, `mesa-dri-drivers`), VA-API (`ffmpeg-libs`,
+  `libva`), CUPS (`cups`, `avahi`, `ghostscript`) e Samba vêm por padrão
+  em qualquer Fedora Workstation com GUI. O botão mostrava
+  "✅ Já estava ativo" numa instalação limpa, antes do usuário clicar em
+  nada. Adicionada flag `ignorarPreExistente: true` no registro de
+  `registrarAppRemovivel` — esses botões começam em "Instalar" e só
+  passam para "Concluído" quando o FAP realmente instala. A detecção
+  continua funcionando para o resto do FAP.
+
+- **Erro de conflito de pacotes ao instalar VA-API no Fedora 44** —
+  `sudo dnf install mesa-va-drivers-freeworld mesa-va-drivers-freeworld.i686`
+  disparava `mesa-libgl requires mesa-dri-drivers, but none of the
+  providers can be installed`. Causa: o `mesa-va-drivers-freeworld.i686`
+  exige `mesa-dri-drivers.i686` na versão exata, mas o Fedora 44 está
+  eliminando o multilib i686 e o RPM Fusion pode não ter a versão
+  correspondente. Correção: instalação padrão instala só x86_64
+  (`sudo dnf install -y ffmpeg-libs libva libva-utils mesa-va-drivers-freeworld`),
+  sem `swap` e sem `.i686`. Quem precisa de 32-bit (Steam) instala
+  manualmente.
+
+- **`dnf swap` desnecessário no VA-API** — no Fedora 44, o
+  `mesa-va-drivers-freeworld` instala em `/usr/lib64/dri-freeworld/`,
+  diretório separado do `mesa-va-drivers` do Fedora. Não há mais conflito
+  de arquivos, então `dnf install` puro é a receita correta. O `swap`
+  (receita antiga) disparava erro de `mesa-filesystem`. Trocado em
+  `executarVaapi` (hardware.html) e em `DRIVER_COMMANDS` de
+  `driver-amd-vaapi-install`/`remove` (dispositivos-perifericos.html).
+
+- **Botão "Desinstalar FAP" não desinstalava nada** — três bugs
+  encadeados:
+  1. `install.sh` rodava com `cwd = $INSTALL_DIR`, e `rm -rf` no
+     diretório atual falha com `EBUSY`. Corrigido com `cd ~` no início
+     de `desinstalar()`.
+  2. O `echo "s" |` era consumido pelo `curl` dentro de `<(...)` antes
+     do `install.sh` rodar, então o `read` nunca recebia o `"s"` e caía
+     no default `"n"`. Corrigido com flag `-y`/`--yes` que pula o
+     prompt, sem depender de stdin.
+  3. `bash <(curl ...) --uninstall` era filho do node; quando o
+     `install.sh` removia o diretório do node (ou o node recebia
+     SIGTERM), o bash filho era morto junto. Corrigido rodando sob
+     `setsid -f bash -c '...'`.
+
+  Complementado por: `_remover` com fallback `sudo rm` (para arquivos
+  criados por root), relatório final de sucessos/falhas, `install.sh`
+  não aborta mais no primeiro `rm` com falha (`set +e`).
+
+- **Terminal e container do FAP não fechavam após desinstalação** — o
+  `install.sh --uninstall` removia os arquivos mas não avisava o node
+  nem o `fap-container`, que ficavam "zumbis" até o usuário fechar a
+  janela manualmente. Adicionado endpoint `POST /shutdown` no
+  `server.js`, que mata o `fap-container` e encerra o node
+  graciosamente. O `install.sh` chama `/shutdown` no final da
+  desinstalação. Quando o container fecha, o `iniciar_fap.sh` (que
+  estava bloqueante no `abrir_navegador`) detecta e fecha o terminal.
+
+### ⚠️ Nota de atualização
+
+- **`server.js`** ganhou o endpoint `POST /shutdown` e o regex do
+  `PADROES_UPDATE_WHITELIST` foi expandido para aceitar
+  `setsid -f bash -c '... --uninstall -y'`. Reabra o FAP depois de
+  atualizar.
+- **`install.sh`** ganhou a função `desinstalar()` reescrita (defensiva)
+  e a flag `-y`/`--yes`. Aplica em `~/Downloads/fap/install.sh` **e**
+  `~/.local/share/fedora-advantage-panel/install.sh` para manter
+  sincronia.
+- **`sobre-fap.html`** mudou o comando do botão de desinstalação para
+  `setsid -f bash -c '... --uninstall -y'`.
+- **`.progresso.json`** não muda de formato. `fap-container` não precisa
+  ser recompilado.
+- **Nenhum efeito em**: waydroid, gaming, virtualização, diagnóstico,
+  estado-fedora, sobre-fap (fora do comando de desinstalação).
+
+### 🧪 Não testado nesta release
+
+- **Waydroid** — ambiente de teste é VM, sem suporte a container
+  Android. Continua como pendência desde a `1.2.2`.
+- **Hardware NVIDIA real** — ambiente de teste sem GPU NVIDIA. Continua
+  como pendência desde a `1.2.2`.
+
+---
+
 ## v1.2.2-10232026
 
 A Suíte ArtCraft deixa de instalar os 13 apps individualmente e passa a
@@ -23,191 +114,7 @@ ArtCraft Launcher + Firefox), de consistência i18n (botões com status
 diferente em PT/EN/ES) e de UX (feedback do "Verificar Versão", tooltip
 indevido em botões "Abrir X", setroubleshoot sem botão de abrir).
 
-Os 13 apps antigos (PhotoCraft, VectorCraft, FilmCraft, LightCraft, PDFCraft,
-EffectCraft, DesignCraft, FigCraft, DeckCraft, GridCraft, WordCraft,
-CadCraft e SoundCraft) **saíram do FAP**. Quem já os tinha instalado
-continua com eles funcionando — só não aparecem mais na interface. Para
-desinstalar, use o terminal (`sudo dnf remove <pacote>`).
-
-### ✨ Novo — ArtCraft Launcher
-
-- **O FAP agora instala apenas o launcher oficial** da suíte ArtCraft
-  ([storytold/craft-launcher](https://github.com/storytold/craft-launcher)).
-  O launcher é um RPM baixado direto do GitHub Releases e resolve a URL
-  em runtime via GitHub API — sempre a versão mais recente publicada.
-
-- **A resolução da URL acontece no frontend** (WebKitGTK, roda como
-  usuário), não dentro do `pkexec`. Motivo: rodando como root, o `curl`
-  recebia resposta vazia da API do GitHub (rate limit por IP, restrição
-  de CA no ambiente do pkexec, PATH reduzido). O `fetch` do frontend tem
-  CA correto e conectividade normal; a URL resolvida é passada como
-  argumento para o `dnf install` (que usa `libcurl` interno, mecanismo
-  distinto do binário `curl`). Sem fallback fixo: se o `fetch` falhar,
-  aborta com mensagem clara e link para verificação manual — nunca
-  instala versão antiga.
-
-- **A instalação usa `--setopt=localpkg_gpgcheck=0`** (RPM não assinado,
-  exigência do Fedora 44/45).
-
-- **A lixeira remove apenas o pacote `artcraft-launcher`**. Os apps
-  instalados *pelo launcher* **não são removidos junto** — o launcher
-  tem sua própria gestão de remoção.
-
-- **Botão "Abrir"** chama o binário direto `artcraft-launcher`
-  (`/usr/bin/artcraft-launcher`). O `gtk-launch` não funciona porque o
-  nome do `.desktop` é `ai.storyteller.artcraft-launcher.desktop`.
-
-### ✨ Novo — 5 aplicativos na sessão 6
-
-- **Mozilla Firefox** (RPM, repo oficial do Fedora) — bloco **Internet e Comunicação**.
-- **Visual Studio Code** (Flatpak `com.visualstudio.code`) — bloco **Produtividade e Escritório**.
-- **Drawy** (Flatpak `org.kde.drawy`) — bloco **Ferramentas Gráficas**.
-- **Gear Lever** (Flatpak `it.mijorus.gearlever`) — bloco **Utilitários** (novo).
-- **Packet** (Flatpak `io.github.nozwock.Packet`) — bloco **Internet e Comunicação**.
-
-### ✨ Novo — Bloco "🔧 Utilitários"
-
-- Acordeão novo na sessão 6, dedicado a ferramentas de sistema que não
-  se encaixam nas outras categorias. Inaugurado com o **Gear Lever**
-  (gerenciador de AppImages — instala, atualiza e integra ao menu).
-
-### 🐛 Corrigido — ciclo 1 (bugs funcionais)
-
-- **5 apps novos não instalavam** — `instalar-vscode`, `instalar-drawy`,
-  `instalar-gear-lever`, `instalar-packet` (Flatpak) e `instalar-firefox`
-  (DNF) estavam sem entrada em `APPS_FLATPAK` / `APPS_DNF`. O clique caía
-  num `return` silencioso — sem log, sem progresso, sem botão cinza.
-  Adicionadas as 5 entradas + `_CMD_ABRIR_DNF` para o Firefox.
-
-- **ArtCraft Launcher não instalava** — o regex `\.x86_64\.rpm` exigia
-  um ponto literal antes de `x86_64`, mas o asset se chama
-  `artcraft-launcher-0.7.0-linux-x86_64.rpm` (hífen). O `grep -oP` não
-  casava.
-
-- **Firefox pedia senha de root ao abrir** — `setsid -f firefox` não
-  estava em `COMANDOS_SEM_AUTENTICACAO`. Adicionado à whitelist.
-  Comando simplificado: `gtk-launch firefox` → `firefox` (binário direto).
-
-- **ArtCraft Launcher não abria** — `gtk-launch artcraft-launcher`
-  falhava porque o nome do `.desktop` é
-  `ai.storyteller.artcraft-launcher.desktop`. Trocado para binário
-  direto `artcraft-launcher`, adicionado à whitelist do `server.js`.
-
-### 🐛 Corrigido — ciclo 2 (consistência i18n)
-
-Sintomas: botões com status diferente em PT-BR vs EN/ES. Detecção de
-pré-existente inconsistente entre idiomas (funcionava em ES, falhava em
-EN).
-
-- **`i18n.js` → `aplicarTraducoes`** sobrescrevia `textContent` de
-  botões gerenciados por estado. Corrigido com skip de elementos cujo
-  `textContent !== data-texto-original`.
-
-- **`guiado.html` → `carregarSessao`** não aguardava
-  `SystemState.carregar()` antes de `restaurarEstadoSessao()`. Sessões
-  com `restaurarEstadoSessao` síncrono liam `SystemState._dados = null`
-  em boot, fazendo `appJaInstaladoNoSistema` retornar `false` para tudo.
-  Era a causa do "em espanhol funciona, em inglês não" — dependia da
-  corrida entre `/system-state` e o fetch do HTML.
-
-- **`_resetarBotao`** (Ajustes) e **`aplicarEstadoToggle`** (Hardware,
-  Dispositivos, Gaming) usavam `data-texto-original` direto — voltava
-  PT-BR em runtime. Corrigido com `_textoOriginalTraduzido`.
-
-- **`waydroid.html`**, **`hardware.html`** (NVIDIA), **`estado-fedora.html`**,
-  **`script.js`** (Gaming presets) — ~30 strings PT-BR hardcoded que
-  escapavam do `data-i18n`.
-
-- **`primeiros-passos.html`** e **`gaming.html`** — 2 branches latentes
-  com a mesma causa, corrigidos por consistência.
-
-### 🐛 Corrigido — ciclo 3 (UX e tooltips)
-
-- **Botão "Abrir setroubleshoot" agora existe** — `aplicarEstadoInstalavel`
-  era chamado com `idAbrir = null`, então o botão nunca virava "Abrir X".
-  Adicionado botão verde (oculto) + função `abrirSetroubleshoot()` que
-  chama `sealert -b`, e `setsid -f sealert` à whitelist do `server.js`.
-
-- **"Verificar Versão do Fedora" com feedback visível** — auto-load
-  silencioso (`verificarVersaoFedora(true)`) não polui o log; clique no
-  botão roda `cat /etc/fedora-release; uname -r` e dá sinal visível
-  (~1s no botão + linha no log dock).
-
-- **Tooltip de origem indevido em botões "Abrir X"** — quando o FAP
-  instalava um pacote, o botão "Abrir X" continuava com tooltip de
-  origem ("Instalado via DNF dos repositórios oficiais..."). Adicionado
-  guard em `_renderizarBadgeOrigem` e `_renderizarBadgesFixas`
-  (`data-estado !== 'instalado-abrir'`), e o branch `instalado-abrir`
-  de `aplicarEstadoInstalavel` limpa `title`/`data-title-origem` quando
-  FAP instalou. Pré-existente **continua** com seu tooltip próprio.
-
-### 🗑️ Removido
-
-- **13 apps ArtCraft individuais** de `script.js` → `SESSOES.aplicativos.comandos`
-  e `_MAPA_ORIGEM`.
-
-- **13 `.launcher-item`** e seus progress containers de `aplicativos.html`.
-
-- **`ARTCRAFT_REPOS`** (objeto de 13 repos), `executarArtCraft` e
-  `abrirArtCraft` de `aplicativos.html`.
-
-- **13 `registrarAppRemovivel`** dos apps ArtCraft.
-
-- **13×4 chaves** dos locales `en.json` e `es.json`.
-
-### 🌐 Internacionalização
-
-Chaves novas em `locales/en.json` e `locales/es.json`:
-
-- **Sessão 6:** `btn_artcraft_launcher`, `texto_concluido_artcraft_launcher`,
-  `btn_abrir_artcraft_launcher`, `bloco_artcraft_desc`, `bloco_artcraft_aviso`,
-  `btn_firefox`/`texto_concluido_firefox`/`btn_abrir_firefox`,
-  `btn_vscode`/`texto_concluido_vscode`/`btn_abrir_vscode`,
-  `btn_drawy`/`texto_concluido_drawy`/`btn_abrir_drawy`,
-  `btn_gear_lever`/`texto_concluido_gear_lever`/`btn_abrir_gear_lever`,
-  `btn_packet`/`texto_concluido_packet`/`btn_abrir_packet`,
-  `bloco_utilidades_titulo`, `bloco_utilidades_desc`.
-
-- **Waydroid:** `ja_feito_preexistente`, `tooltip_preexistente_waydroid`.
-
-- **Hardware:** `nvidia_sem_gpu_curto`, `nvidia_detectando`.
-
-- **Gaming:** `texto_concluido_gamemode_presets`.
-
-- **Estado do Fedora:** `versao_indisponivel`, `versao_suportada`,
-  `versao_antiga`, `versao_nova`, `label_distribuicao`, `label_versao`,
-  `label_kernel`, `label_suporte_fap`, `atomic_aviso`, `atomic_ok`,
-  `label_tipo`, `atomic_imutavel`, `atomic_tradicional`,
-  `label_variante`, `label_gerenciador`, `selinux_status_enforcing`,
-  `selinux_status_permissive`, `selinux_status_disabled`,
-  `selinux_status_outro`, `selinux_label_modo_atual`,
-  `selinux_label_modo_config`, `selinux_log_atual`,
-  `selinux_avc_nenhum`, `selinux_avc_poucos`, `selinux_avc_muitos`,
-  `btn_setroubleshoot_abrir`.
-
-### ⚠️ Nota de atualização
-
-- **`server.js`** ganhou 3 entradas em `COMANDOS_SEM_AUTENTICACAO`:
-  `setsid -f firefox`, `setsid -f artcraft-launcher`, `setsid -f sealert`.
-  Reabra o FAP depois de atualizar — o processo `node` carrega o array
-  uma única vez, no boot.
-
-- **Quem já tinha apps ArtCraft instalados via FAP:** os apps continuam
-  instalados e funcionando. O `.progresso.json` mantém os IDs órfãos
-  até o próximo boot, quando `_limparIdsOrfaos` os remove
-  automaticamente.
-
-- **`fap-container`** não precisa ser recompilado.
-
-### 🧪 Não testado nesta release
-
-- **Waydroid em sistema com Android instalado** — ambiente de teste é
-  VM, sem suporte a container Android.
-- **Hardware NVIDIA real** — ambiente de teste sem GPU NVIDIA.
-- Testadores com esses dois hardwares devem reportar problemas via
-  issue no GitHub.
-
----
+Disponível nas [releases do GitHub](https://github.com/vitaotub/Fedora-Advantage-Panel/releases/tag/v1.2.2-10232026).
 
 ## v1.2.1-10212026
 
