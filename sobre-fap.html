@@ -196,7 +196,11 @@ async function desinstalarFAP() {
         //
         // `setsid -f` desacopla: o `install.sh` continua até o fim,
         // mesmo que o node (e o container FAP) morram no processo.
-        var comando = 'setsid -f bash -c \'echo "s" | bash <(curl -s https://raw.githubusercontent.com/vitaotub/Fedora-Advantage-Panel/main/install.sh) --uninstall\'';
+        //
+        // `-y` pula o prompt de confirmação. NÃO usar `echo "s" |`
+        // porque o `curl` dentro de `<( ... )` consome o stdin antes
+        // do `install.sh` rodar — o `echo "s"` nunca chega ao `read`.
+        var comando = 'setsid -f bash -c \'bash <(curl -s https://raw.githubusercontent.com/vitaotub/Fedora-Advantage-Panel/main/install.sh) --uninstall -y\'';
         var response = await fetch(API_URL + '/executar', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
