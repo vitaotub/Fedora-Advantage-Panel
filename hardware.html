@@ -460,9 +460,19 @@ async function executarVaapi() {
     // `dnf swap` em vez de `dnf install`: o mesa-va-drivers-freeworld
     // (RPM Fusion) SUBSTITUI o mesa-va-drivers (Fedora), não convive
     // com ele. Instalar sem swap dispara conflito de dependência no
-    // Fedora 44 (mesa-libgl requer mesa-dri-drivers da mesma versão,
-    // que o RPM Fusion ainda não empacotou para i686). O swap é a
-    // receita oficial do RPM Fusion.
+    // Fedora 44.
+    //
+    // IMPORTANTE — sem `.i686`:
+    // O multilib i686 está sendo eliminado no Fedora 44, e o
+    // RPM Fusion pode não ter `mesa-dri-drivers.i686` na versão
+    // exata que o `mesa-va-drivers-freeworld.i686` exige. Isso
+    // dispara o erro "mesa-libgl requires mesa-dri-drivers, but
+    // none of the providers can be installed" — visto no Barceló.
+    //
+    // A instalação padrão (x86_64) cobre a aceleração de vídeo
+    // do dia a dia (Firefox, VLC, MPV). Quem precisa de 32-bit
+    // (Steam, Wine com jogos antigos) pode instalar o `.i686`
+    // manualmente, ou usar o botão "Alternativa".
     var comando =
         'sudo dnf install -y ffmpeg-libs libva libva-utils && ' +
         'sudo dnf swap mesa-va-drivers mesa-va-drivers-freeworld --allowerasing -y && ' +
