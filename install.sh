@@ -1109,6 +1109,38 @@ if pgrep -f "node .*${fap_install_dir_original}/server\.js" > /dev/null 2>&1; th
 fi
 
 # ============================================================
+# ENCERRAR O SERVIDOR E O CONTAINER (se estiverem rodando)
+# ============================================================
+#
+# Após remover os arquivos, o `node server.js` ainda está vivo
+# em memória (só perdeu o arquivo no disco). O container
+# (fap-container) também continua aberto. Sem encerrar os dois,
+# o terminal do iniciar_fap.sh fica pendurado até o usuário
+# fechar a janela manualmente.
+#
+# O server.js tem um endpoint `/shutdown` que:
+#   1. mata o fap-container (janela fecha)
+#   2. mata as árvores de processos filhos
+#   3. fecha SSEs
+#   4. sai
+#
+# Quando o container fecha, o iniciar_fap.sh (que está com
+# `wait` no container) percebe, mata o node (que já está saindo)
+# e fecha o terminal.
+#
+# Só chamamos se o node estiver respondendo (curl rápido).
+# Se o node já morreu, curl falha em <1s, e não há nada a fazer.
+print_step "Encerrando servidor e container..."
+if curl -s --max-time 2 -X POST http://127.0.0.1:3000/shutdown > /dev/null 2>&1; then
+    print_success "Servidor e container encerrados"
+    # Aguarda o node sair de verdade antes de sair, para o
+    # terminal do iniciar_fap.sh fechar junto.
+    sleep 1
+else
+    print_info "Servidor já estava encerrado"
+fi
+
+# ============================================================
 # RELATÓRIO FINAL
 # ============================================================
 echo ""
