@@ -896,9 +896,36 @@ desinstalar() {
 print_header
 print_warning "Desinstalando Fedora Advantage Panel..."
 
-if ! _perguntar_sim_nao "Tem certeza?" "n"; then
-print_info "Desinstalação cancelada"
-exit 0
+# ============================================================
+# FLAG `-y` / `--yes`: pula o prompt de confirmação
+# ============================================================
+#
+# O `--uninstall` era chamado como `echo "s" | bash <(curl ...)`.
+# O problema: o `curl` dentro de `<( ... )` consome o stdin do
+# pipe antes do `install.sh` rodar, então o `echo "s"` chegava
+# ao `curl` (não ao `read`). Resultado: o `install.sh` recebia
+# stdin vazio e caía no default "n".
+#
+# A correção: o `server.js` (via `sobre-fap.html`) passa a chamar
+# com a flag `-y`, que pula o prompt diretamente. O fallback do
+# `read` (via stdin) continua funcionando para uso interativo no
+# terminal (`bash install.sh --uninstall`).
+local auto_confirm=false
+for arg in "$@"; do
+    case "$arg" in
+        -y|--yes)
+            auto_confirm=true
+            ;;
+    esac
+done
+
+if [ "$auto_confirm" = false ]; then
+    if ! _perguntar_sim_nao "Tem certeza?" "n"; then
+        print_info "Desinstalação cancelada"
+        exit 0
+    fi
+else
+    print_info "Desinstalação confirmada (--yes)"
 fi
 
 set +e
@@ -1271,7 +1298,8 @@ case "$1" in
 mostrar_ajuda
 ;;
 --uninstall)
-desinstalar
+shift
+desinstalar "$@"
 exit 0
 ;;
 --update)
