@@ -233,6 +233,11 @@ registrarAppRemovivel('fontes-ms-all', {
     tipo: 'dnf',
     pacotes: ['cabextract', 'fontconfig'],
     nome: 'Fontes Microsoft',
+    // `fontconfig` vem em qualquer Fedora com GUI, então a detecção
+    // ingênua marca o botão como pré-existente mesmo numa instalação
+    // limpa. Esta flag força o botão a começar em "Instalar" — só
+    // passa para "Concluído" se o FAP instalar as fontes.
+    ignorarPreExistente: true,
     confirmMsg: '⚠️ Remover as fontes Microsoft?\n\n' +
                 'Documentos em LibreOffice/OnlyOffice podem quebrar a formatação ' +
                 'até que as fontes sejam reinstaladas.\n\n' +
