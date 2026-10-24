@@ -266,6 +266,9 @@ registrarAppRemovivel('cups-install', {
     tipo: 'dnf',
     pacotes: ['cups', 'cups-filters', 'avahi', 'avahi-tools', 'system-config-printer', 'ghostscript'],
     nome: 'Suporte a Impressão (CUPS)',
+    // Cups/avahi/ghostscript vêm instalados no Fedora Workstation.
+    // Flag força o botão a começar em "Instalar" até o FAP rodar.
+    ignorarPreExistente: true,
     // MITIGAÇÃO (v1.1.2): pré-existente NÃO pode ser removido.
     // Remove CUPS + Avahi — todas as impressoras param de
     // funcionar (local e rede), sem aviso claro. Se o usuário
@@ -283,6 +286,8 @@ registrarAppRemovivel('samba-install', {
     tipo: 'dnf',
     pacotes: ['samba', 'samba-client', 'cifs-utils'],
     nome: 'Samba',
+    // Samba pode vir instalado por dependência. Mesma lógica do CUPS.
+    ignorarPreExistente: true,
     // MITIGAÇÃO (v1.1.2): pré-existente NÃO pode ser removido.
     // Remove Samba — compartilhamentos locais e acesso a pastas
     // Windows na rede param de funcionar.
