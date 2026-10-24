@@ -457,26 +457,19 @@ async function executarVulkan() {
 
 async function executarVaapi() {
     var idComando = 'vaapi-amd';
-    // `dnf swap` em vez de `dnf install`: o mesa-va-drivers-freeworld
-    // (RPM Fusion) SUBSTITUI o mesa-va-drivers (Fedora), não convive
-    // com ele. Instalar sem swap dispara conflito de dependência no
-    // Fedora 44.
+    // Receita oficial do RPM Fusion para o Fedora 44: o pacote
+    // `mesa-va-drivers-freeworld` agora instala em
+    // /usr/lib64/dri-freeworld/ — diretório separado, sem conflito
+    // de arquivos com o `mesa-va-drivers` do Fedora. Por isso o
+    // `dnf install` puro funciona, e o `dnf swap` (receita antiga)
+    // é desnecessário e dispara erro de `mesa-filesystem`.
     //
-    // IMPORTANTE — sem `.i686`:
-    // O multilib i686 está sendo eliminado no Fedora 44, e o
-    // RPM Fusion pode não ter `mesa-dri-drivers.i686` na versão
-    // exata que o `mesa-va-drivers-freeworld.i686` exige. Isso
-    // dispara o erro "mesa-libgl requires mesa-dri-drivers, but
-    // none of the providers can be installed" — visto no Barceló.
-    //
-    // A instalação padrão (x86_64) cobre a aceleração de vídeo
-    // do dia a dia (Firefox, VLC, MPV). Quem precisa de 32-bit
-    // (Steam, Wine com jogos antigos) pode instalar o `.i686`
-    // manualmente, ou usar o botão "Alternativa".
+    // Sem `.i686`: o multilib está sendo eliminado no Fedora 44, e
+    // o `.i686` pode não ter dependências compatíveis. A instalação
+    // x86_64 cobre aceleração do dia a dia (Firefox, VLC, MPV).
+    // Quem precisa de 32-bit (Steam) instala o `.i686` manualmente.
     var comando =
-        'sudo dnf install -y ffmpeg-libs libva libva-utils && ' +
-        'sudo dnf swap mesa-va-drivers mesa-va-drivers-freeworld --allowerasing -y && ' +
-        'sudo dnf swap mesa-vdpau-drivers mesa-vdpau-drivers-freeworld --allowerasing -y';
+        'sudo dnf install -y ffmpeg-libs libva libva-utils mesa-va-drivers-freeworld';
     await executarComandoGenerico(idComando, comando,
         _t('sessoes.hardware.btn_vaapi_padrao', '🚀 Instalação Padrão'),
         function() { aplicarEstadoInstalavel('vaapi-amd', null); });
