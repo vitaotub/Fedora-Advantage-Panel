@@ -2465,6 +2465,53 @@ const server = http.createServer((req, res) => {
     }
 
     // ----------------------------------------------------------
+    // /shutdown — encerra o FAP graciosamente após desinstalação
+    // ----------------------------------------------------------
+    //
+    // Chamado pelo `install.sh --uninstall` (via `curl`) depois
+    // de remover os arquivos. A ordem é:
+    //
+    //   1. install.sh remove arquivos (server.js, sessões, etc.)
+    //   2. install.sh faz `curl -X POST /shutdown`
+    //   3. server.js mata o fap-container (janela fecha)
+    //   4. iniciar_fap.sh percebe o container fechado, mata o node
+    //   5. O terminal fecha
+    //
+    // Sem isso, o node e o container ficam "zumbis" até o usuário
+    // fechar a janela manualmente.
+    if (req.method === 'POST' && url === '/shutdown') {
+        console.log('[FAP] /shutdown recebido — encerrando container e servidor');
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true, message: 'Shutdown iniciado' }));
+
+        // Mata o container primeiro (janela fecha). Depois o
+        // _encerrarGraciosamente mata as árvores de processos e
+        // fecha SSEs. Não usamos `pkill -f fap-container` sem
+        // qualificação para não matar containers de outros projetos.
+        try {
+            const containerPath = path.join(__dirname, 'fap-container');
+            const result = spawnSync('pkill', ['-f', 'fap-container.*--url http://localhost:' + PORT],
+                { timeout: 3000 });
+            if (result.status === 0) {
+                console.log('[FAP] Container encerrado via pkill');
+            } else {
+                console.warn('[FAP] pkill do container não encontrou processo');
+            }
+        } catch (e) {
+            console.warn('[FAP] Falha ao encerrar container:', e.message);
+        }
+
+        // Aguarda o container fechar antes de sair (o
+        // iniciar_fap.sh precisa ver o container fechado para
+        // matar o node e fechar o terminal).
+        setTimeout(function() {
+            _encerrarGraciosamente('SHUTDOWN');
+        }, 500);
+
+        return;
+    }
+
+    // ----------------------------------------------------------
     // 404
     // ----------------------------------------------------------
     res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
