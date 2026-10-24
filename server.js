@@ -205,7 +205,10 @@ const IDS_SEM_AUTENTICACAO = new Set(['atualizar-fap', 'desinstalar-fap']);
 
 const PADROES_UPDATE_WHITELIST = [
     /^bash <\(curl -s https:\/\/raw\.githubusercontent\.com\/vitaotub\/Fedora-Advantage-Panel\/main\/install\.sh\) --update$/,
-    /^echo "s" \| bash <\(curl -s https:\/\/raw\.githubusercontent\.com\/vitaotub\/Fedora-Advantage-Panel\/main\/install\.sh\) --uninstall$/
+    // Comando original, sem setsid (mantido para compatibilidade)
+    /^echo "s" \| bash <\(curl -s https:\/\/raw\.githubusercontent\.com\/vitaotub\/Fedora-Advantage-Panel\/main\/install\.sh\) --uninstall$/,
+    // Novo: sob setsid -f bash -c '...', desacoplado do node
+    /^setsid -f bash -c 'echo "s" \| bash <\(curl -s https:\/\/raw\.githubusercontent\.com\/vitaotub\/Fedora-Advantage-Panel\/main\/install\.sh\) --uninstall'$/
 ];
 
 function _idSemAuthValido(idComando, comando) {
