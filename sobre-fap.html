@@ -210,29 +210,56 @@ async function desinstalarFAP() {
             logBox.appendChild(errorLine);
             logBox.scrollTop = logBox.scrollHeight;
             completarProgresso(idComando, false);
-        } else {
-            var sucesso = await aguardarConclusaoReal(idComando, 180000);
+                } else {
+            // ============================================================
+            // DESINSTALAÇÃO DESACOPLADA
+            // ============================================================
+            //
+            // O `setsid -f` desacopla o `install.sh` do node, então o
+            // SSE nunca recebe um evento `end` — `aguardarConclusaoReal`
+            // só resolveria por timeout (3 minutos) ou prematuramente
+            // (se o shell que invoca o setsid retornar antes do
+            // install.sh terminar). Nenhum dos dois é correto.
+            //
+            // Solução: não espera o SSE. Confirma que o comando foi
+            // disparado e mostra uma mensagem clara de "em andamento",
+            // com instrução para abrir o log do install.sh. O
+            // `install.sh` roda em background e termina sozinho,
+            // independente do FAP.
+            var successLine = document.createElement('div');
+            successLine.className = 'log-line success';
+            successLine.textContent = '🚀 ' + _t('sessoes.sobre-fap.desinstalar_log_iniciado',
+                'Desinstalação iniciada em background. O FAP será fechado automaticamente quando o install.sh terminar.');
+            logBox.appendChild(successLine);
+            logBox.scrollTop = logBox.scrollHeight;
 
-            if (sucesso) {
-                var successLine = document.createElement('div');
-                successLine.className = 'log-line success';
-                // Log final traduzido via chave i18n (antes era PT-BR hardcoded).
-                successLine.textContent = _t('sessoes.sobre-fap.desinstalar_log_sucesso',
-                    '✅ FAP desinstalado com sucesso!');
-                logBox.appendChild(successLine);
-                logBox.scrollTop = logBox.scrollHeight;
+            // Mostra o comando para o usuário acompanhar manualmente
+            var cmdLine = document.createElement('div');
+            cmdLine.className = 'log-line info';
+            cmdLine.textContent = '📋 Para acompanhar: tail -f /tmp/fap-install-*.log';
+            logBox.appendChild(cmdLine);
 
-                try {
-                    localStorage.removeItem('fap_progress');
-                    localStorage.removeItem('fap_tema');
-                    localStorage.removeItem('fap_lang');
-                } catch (e) { /* ignore */ }
+            // Limpa localStorage (o FAP vai sumir; não adianta manter
+            // estado que será recriado vazio na próxima instalação)
+            try {
+                localStorage.removeItem('fap_progress');
+                localStorage.removeItem('fap_tema');
+                localStorage.removeItem('fap_lang');
+                localStorage.removeItem('fap_sessao_ativa');
+            } catch (e) { /* ignore */ }
 
-                alert(_t('sessoes.sobre-fap.desinstalar_msg_final',
-                    '✅ Fedora Advantage Panel foi desinstalado completamente do seu computador.\n\nVocê pode fechar esta janela agora.'));
+            alert(_t('sessoes.sobre-fap.desinstalar_msg_em_andamento',
+                '🗑️ Desinstalação iniciada!\n\n' +
+                'O FAP será removido em segundo plano. ' +
+                'Isso pode levar alguns segundos.\n\n' +
+                'O container do FAP será fechado automaticamente. ' +
+                'Se ele não fechar sozinho em 1 minuto, feche manualmente.\n\n' +
+                'Para acompanhar: tail -f /tmp/fap-install-*.log'));
 
-                try { window.close(); } catch (e) { /* usuário fecha manualmente */ }
-            }
+            // Não fecha a janela — deixa o `install.sh` fechar o
+            // container quando terminar (via pkill do `iniciar_fap.sh`
+            // ou simplesmente porque o server.js morre). Se ele não
+            // fechar, o usuário fecha manualmente.
         }
     } catch (e) {
         var errorLine2 = document.createElement('div');
