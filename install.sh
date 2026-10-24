@@ -70,17 +70,49 @@ _perguntar_sim_nao() {
     local prompt="$1"
     local default="$2"  # "s" ou "n"
 
-    # stdin não é TTY → usa o default, sem bloquear.
-    if [ ! -t 0 ]; then
-        echo "$prompt (não-interativo, usando padrão: $default)"
-        [ "$default" = "s" ]
+    # ============================================================
+    # CASO 1 — stdin é TTY: pergunta normalmente, bloqueando
+    # ============================================================
+    if [ -t 0 ]; then
+        local resposta
+        read -p "$prompt (s/N): " -n 1 -r resposta
+        echo
+        [[ $resposta =~ ^[Ss]$ ]]
         return $?
     fi
 
-    local resposta
-    read -p "$prompt (s/N): " -n 1 -r resposta
-    echo
-    [[ $resposta =~ ^[Ss]$ ]]
+    # ============================================================
+    # CASO 2 — stdin NÃO é TTY: pode ter conteúdo (`echo "s" |`)
+    # ou estar vazio (`< /dev/null`). Precisamos distinguir.
+    # ============================================================
+    #
+    # `read -t 0` retorna 0 se houver dados disponíveis no stdin
+    # (buffer não-vazio), e != 0 se não houver. Usamos isso como
+    # sonda: se houver dados, lemos normalmente; se não houver,
+    # caímos no default.
+    #
+    # Antes, a função assumia que "stdin não-TTY" == "sem dados",
+    # e respondia sempre com o default. Isso quebrava o fluxo do
+    # botão "Desinstalar FAP", que invoca:
+    #
+    #   setsid -f bash -c 'echo "s" | bash <(curl ...) --uninstall'
+    #
+    # O `echo "s" |` alimenta o stdin com "s\n", mas a função
+    # curto-circuitava para o default "n" antes de ler.
+    local resposta=""
+    if read -t 0 -n 1 -r resposta 2>/dev/null; then
+        # Havia 1 byte disponível no stdin (provavelmente o "s"
+        # do `echo "s" |`). Consumimos o resto da linha para não
+        # deixar lixo no buffer.
+        read -t 1 -r _resto 2>/dev/null || true
+        [[ $resposta =~ ^[Ss]$ ]]
+        return $?
+    fi
+
+    # stdin vazio: usa o default, sem bloquear.
+    echo "$prompt (não-interativo, usando padrão: $default)"
+    [ "$default" = "s" ]
+    return $?
 }
 
 # ============================================================
