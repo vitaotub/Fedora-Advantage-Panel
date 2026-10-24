@@ -871,23 +871,65 @@ fi
 
 set +e
 
+# ============================================================
+# SAIR DO $INSTALL_DIR ANTES DE REMOVER
+# ============================================================
+#
+# `rm -rf` não consegue remover o diretório de trabalho atual
+# (o kernel retorna EBUSY). Quando o install.sh foi chamado para
+# --update, `instalar_fap()` fez `cd "$INSTALL_DIR"`. Se não
+# sairmos daqui, o `rm -rf "$INSTALL_DIR"` falha silenciosamente
+# e a desinstalação "não faz nada" — exatamente o sintoma
+# relatado. Fazemos cd ~ antes de qualquer remoção.
+cd "$HOME" 2>/dev/null || cd / 2>/dev/null || true
+
 local removidos=0
 local falhas=0
 local caminho_falhou=()
 
+# ============================================================
+# _remover — tenta como usuário, cai para sudo se necessário
+# ============================================================
+#
+# Alguns arquivos dentro do FAP podem ter sido criados por root
+# (ex.: `sudo make install`, ou testes rodados como root). `rm`
+# como usuário falha com "permissão negada". O fallback `sudo rm`
+# resolve — mas só se houver como pedir senha. O FAP invoca o
+# install.sh via `setsid -f bash -c` (correção 2 no server.js),
+# então o sudo tem um TTY ou usa o SUDO_ASKPASS do ambiente.
+#
+# Se nem `rm` nem `sudo rm` funcionarem, reportamos no final.
 _remover() {
     local caminho="$1"
     local tipo="$2"
-    if [ -e "$caminho" ] || [ -L "$caminho" ]; then
-        if rm -rf "$caminho" 2>/dev/null; then
-            print_success "$tipo removido: $caminho"
-            removidos=$((removidos + 1))
-        else
-            print_warning "Não foi possível remover: $caminho (permissão?)"
-            caminho_falhou+=("$caminho")
-            falhas=$((falhas + 1))
-        fi
+    if [ ! -e "$caminho" ] && [ ! -L "$caminho" ]; then
+        return 0
     fi
+
+    # Tentativa 1: como usuário
+    if rm -rf "$caminho" 2>/dev/null; then
+        print_success "$tipo removido: $caminho"
+        removidos=$((removidos + 1))
+        return 0
+    fi
+
+    # Tentativa 2: com sudo (arquivos criados por root)
+    if sudo -n rm -rf "$caminho" 2>/dev/null; then
+        print_success "$tipo removido (sudo): $caminho"
+        removidos=$((removidos + 1))
+        return 0
+    fi
+
+    if sudo rm -rf "$caminho" 2>/dev/null; then
+        print_success "$tipo removido (sudo): $caminho"
+        removidos=$((removidos + 1))
+        return 0
+    fi
+
+    print_warning "Não foi possível remover: $caminho (permissão?)"
+    caminho_falhou+=("$caminho")
+    falhas=$((falhas + 1))
+    return 1
 }
 
 print_step "Removendo arquivos..."
