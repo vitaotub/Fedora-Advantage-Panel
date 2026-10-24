@@ -1029,6 +1029,27 @@ update-desktop-database ~/.local/share/applications/ 2>/dev/null || true
 kbuildsycoca6 --noincremental 2>/dev/null || kbuildsycoca5 --noincremental 2>/dev/null || true
 
 # ============================================================
+# ENCERRA O FAP (o container precisa fechar depois da remoção)
+# ============================================================
+#
+# Como o `--uninstall` roda desacoplado do node (setsid -f), o
+# node continua rodando mesmo depois que o `$INSTALL_DIR` foi
+# removido. O container fica aberto apontando para um servidor
+# que não existe mais. Matamos o node do FAP (cirurgicamente, só
+# o do `$INSTALL_DIR` original) e o container fecha sozinho.
+#
+# O caminho original precisa ser capturado ANTES do `rm -rf`, então
+# usamos uma variável separada que não é afetada pela remoção.
+local fap_install_dir_original="$INSTALL_DIR"
+
+if pgrep -f "node .*${fap_install_dir_original}/server\.js" > /dev/null 2>&1; then
+    print_info "🔄 Encerrando o servidor do FAP..."
+    pkill -TERM -f "node .*${fap_install_dir_original}/server\.js" 2>/dev/null || true
+    sleep 1
+    pkill -KILL -f "node .*${fap_install_dir_original}/server\.js" 2>/dev/null || true
+fi
+
+# ============================================================
 # RELATÓRIO FINAL
 # ============================================================
 echo ""
