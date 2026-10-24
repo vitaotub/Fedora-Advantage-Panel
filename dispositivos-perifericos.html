@@ -267,12 +267,13 @@ function _tVars(chave, fallback, vars) {
 var DRIVER_COMMANDS = {
     'driver-nvidia-install': 'sudo dnf install -y akmod-nvidia',
     'driver-nvidia-remove': 'sudo dnf remove -y akmod-nvidia xorg-x11-drv-nvidia* nvidia-settings',
-    // `--allowerasing` no swap: se o RPM Fusion ainda não tiver
-    // empacotado alguma dependência na versão exata (comum em
-    // transições do Fedora), o `dnf` recusa o swap sem essa flag.
-    // Adicionada em ambos os lados (install e remove) por simetria.
-    'driver-amd-vaapi-install': 'sudo dnf swap mesa-va-drivers mesa-va-drivers-freeworld --allowerasing -y && sudo dnf swap mesa-vdpau-drivers mesa-vdpau-drivers-freeworld --allowerasing -y',
-    'driver-amd-vaapi-remove': 'sudo dnf swap mesa-va-drivers-freeworld mesa-va-drivers --allowerasing -y && sudo dnf swap mesa-vdpau-drivers-freeworld mesa-vdpau-drivers --allowerasing -y',
+    // Receita atual do RPM Fusion para o Fedora 44: o
+    // `mesa-va-drivers-freeworld` instala em /usr/lib64/dri-freeworld/,
+    // diretório separado do `mesa-va-drivers` do Fedora — sem conflito
+    // de arquivos. `dnf install` puro é a receita correta; `swap`
+    // (receita antiga) dispara erro de `mesa-filesystem`.
+    'driver-amd-vaapi-install': 'sudo dnf install -y mesa-va-drivers-freeworld',
+    'driver-amd-vaapi-remove': 'sudo dnf remove -y mesa-va-drivers-freeworld',
     'driver-intel-media-install': 'sudo dnf install -y intel-media-driver',
     'driver-intel-media-remove': 'sudo dnf remove -y intel-media-driver',
     'driver-realtek-r8168-install': 'sudo dnf install -y akmod-r8168',
