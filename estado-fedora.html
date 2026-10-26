@@ -694,13 +694,19 @@ btn.style.cursor = 'pointer';
 }
 });
 
-// Auto-verifica a versão do Fedora ao entrar (silencioso — não
-// polui o log; o clique no botão é que dá feedback visível).
-setTimeout(function() {
-if (!isExecutado('fedora-version-check')) {
-verificarVersaoFedora(true);
-}
-}, 400);
+// ============================================================
+// SEM AUTO-LOAD (v1.2.4)
+// ============================================================
+//
+// Antes, o painel da versão do Fedora era preenchido
+// automaticamente no boot. Na v1.2.4, o usuário pediu que as
+// informações só aparecessem DEPOIS do clique em "Verificar
+// Versão do Fedora" — consistência com o resto da sessão
+// (que só mostra dados após ação explícita).
+//
+// O clique em "Verificar Versão do Fedora" já chama
+// `verificarVersaoFedora()` (sem `silencioso`), que roda o
+// comando e preenche o painel.
 }
 
 // ============================================================

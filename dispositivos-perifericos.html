@@ -144,22 +144,6 @@ Driver <code>xpadneo</code> para controles Xbox One/Series via Bluetooth e dongl
 <div class="progress-container" id="progress-driver-xpadneo-remove"><div class="progress-bar"><div class="progress-fill" id="progress-fill-driver-xpadneo-remove"></div></div><div class="progress-text"><span class="status" id="progress-status-driver-xpadneo-remove">⏳ Iniciando...</span><span class="percentage" id="progress-percent-driver-xpadneo-remove">0%</span></div></div>
 </div>
 
-<!-- Broadcom BCM43xx -->
-<div class="bloco-comando">
-<div class="comando-info">
-<h3 data-i18n="sessoes.dispositivos-perifericos.broadcom_titulo">Broadcom BCM43xx (Wi-Fi)</h3>
-<p data-i18n-html="sessoes.dispositivos-perifericos.broadcom_desc">
-Driver proprietário <code>akmod-wl</code> para chips Wi-Fi Broadcom (comuns em notebooks antigos e MacBooks). Vive no RPM Fusion Nonfree — que já é ativado na Sessão 1 (Primeiros Passos). Só instale se o driver open-source (<code>brcmfmac</code>/<code>b43</code>) não funcionar.
-</p>
-<div class="grupo-botoes">
-<button class="btn-executar" onclick="executarDriverCopr('driver-broadcom-wl-install')" data-comando="driver-broadcom-wl-install" data-logbox="log-sessao-dispositivos-perifericos" id="btn-driver-broadcom-wl-install" data-i18n="sessoes.dispositivos-perifericos.btn_broadcom_instalar">📦 Instalar akmod-wl</button>
-<button class="btn-executar vermelho" onclick="executarReverterItem('driver-broadcom-wl-remove', null, 'driver-broadcom-wl-install')" data-comando="driver-broadcom-wl-remove" data-logbox="log-sessao-dispositivos-perifericos" id="btn-driver-broadcom-wl-remove" data-i18n="sessoes.dispositivos-perifericos.btn_broadcom_reverter">🗑️ Reverter</button>
-</div>
-</div>
-<div class="progress-container" id="progress-driver-broadcom-wl-install"><div class="progress-bar"><div class="progress-fill" id="progress-fill-driver-broadcom-wl-install"></div></div><div class="progress-text"><span class="status" id="progress-status-driver-broadcom-wl-install">⏳ Iniciando...</span><span class="percentage" id="progress-percent-driver-broadcom-wl-install">0%</span></div></div>
-<div class="progress-container" id="progress-driver-broadcom-wl-remove"><div class="progress-bar"><div class="progress-fill" id="progress-fill-driver-broadcom-wl-remove"></div></div><div class="progress-text"><span class="status" id="progress-status-driver-broadcom-wl-remove">⏳ Iniciando...</span><span class="percentage" id="progress-percent-driver-broadcom-wl-remove">0%</span></div></div>
-</div>
-
 </div>
 </details>
 
@@ -282,7 +266,12 @@ var DRIVER_COMMANDS = {
     'driver-broadcom-wl-remove': 'sudo dnf remove -y akmod-wl',
     'driver-openrazer-install':
         'CURRENT_KERNEL=$(uname -r) && ' +
-        'sudo dnf install -y kernel-devel-${CURRENT_KERNEL} kernel-headers-${CURRENT_KERNEL} && ' +
+        // `kernel-headers` é pacote genérico (sem versão). A versão
+        // anterior usava `kernel-headers-${CURRENT_KERNEL}`, que não
+        // existe no Fedora — o `dnf install` falhava com "Nenhuma
+        // correspondência para o argumento". `kernel-devel` já puxa
+        // `kernel-headers` como dependência.
+        'sudo dnf install -y kernel-devel-${CURRENT_KERNEL} kernel-headers && ' +
         'sudo dnf install -y polychromatic && ' +
         'if dnf info akmod-openrazer 2>/dev/null | grep -q "^Available Packages"; then ' +
         '  echo "ℹ️ akmod-openrazer disponível — usando akmod (recompila em todo kernel novo)."; ' +
@@ -627,12 +616,17 @@ async function executarCoprEnable(idComando) {
         .replace('copr-', 'driver-')
         .replace('-enable', '-install');
 
+    // Timeout de 60s (em vez de 30 min). Comando é rápido
+    // (`dnf config-manager addrepo`), e o fallback via /progress
+    // do `aguardarConclusaoEEntao` detecta o sucesso mesmo se o
+    // SSE perder o 'end'.
     await executarComandoGenerico(idComando, cmd,
         _t('sessoes.dispositivos-perifericos.ativando_repo', 'Ativando repositório...'),
         function() {
             var idRemove = idInstall.replace('-install', '-remove');
             aplicarEstadoItemCompleto(idComando, idInstall, idRemove);
-        });
+        },
+        false, 60000);
 }
 
 async function executarDriverCopr(idComando) {

@@ -609,17 +609,38 @@ async function restaurarEstadoSessao() {
     _aplicarEstadoOneShotOuPreExistente('flatpak-setup', flatpakJaAtivo);
 
     // --- Remoção do repo Fedora Flatpak ---
-    // (só faz sentido marcar como "concluído" se o repo Fedora
-    // realmente não existe mais — mas isso não é detectável de
-    // forma confiável sem consultar `flatpak remotes`, e a remoção
-    // é one-shot irreversível; mantemos o comportamento atual.)
-    if (isExecutado('remover-repo-fedora-flatpak')) {
-        var btnRem = document.getElementById('btn-remover-repo-fedora-flatpak');
-        if (btnRem) {
+    //
+    // Detecta se o remote `fedora` ou `fedora-testing` existe.
+    // Se o FAP já removeu → cinza "concluído".
+    // Se o usuário removeu manualmente → cinza "já removido".
+    // Se o remote existe → azul, clicável.
+    var btnRem = document.getElementById('btn-remover-repo-fedora-flatpak');
+    if (btnRem) {
+        var fedoraRemoto = SystemState.remoteFlatpakAtivo('fedora');
+        var fedoraTestingRemoto = SystemState.remoteFlatpakAtivo('fedora-testing');
+        var remotoExiste = fedoraRemoto || fedoraTestingRemoto;
+        var feitoPeloFap = isExecutado('remover-repo-fedora-flatpak');
+
+        if (feitoPeloFap) {
             btnRem.textContent = getTextoAposExecucao('remover-repo-fedora-flatpak');
             btnRem.style.backgroundColor = '#4b5563';
             btnRem.style.cursor = 'default';
             btnRem.disabled = true;
+            btnRem.title = '';
+        } else if (!remotoExiste) {
+            btnRem.textContent = _t('sessoes.primeiros-passos.remover_fedora_flatpak_ja_removido', '✅ Já removido (antes do FAP)');
+            btnRem.style.backgroundColor = '#4b5563';
+            btnRem.style.cursor = 'not-allowed';
+            btnRem.disabled = true;
+            btnRem.title = _t('sessoes.primeiros-passos.tooltip_ja_removido_fedora_flatpak', 'O repositório Fedora Flatpak já havia sido removido antes do FAP.');
+        } else {
+            // Reset para o estado inicial (azul, clicável)
+            btnRem.textContent = btnRem.getAttribute('data-texto-original') ||
+                _t('sessoes.primeiros-passos.btn_remover_fedora_flatpak', '🚫 Remover repositório Fedora Flatpak');
+            btnRem.style.backgroundColor = '';
+            btnRem.style.cursor = 'pointer';
+            btnRem.disabled = false;
+            btnRem.title = '';
         }
     }
 

@@ -329,6 +329,12 @@ Tarefas periódicas que mantêm o sistema limpo e controlável: limpeza de cache
 </div>
 </div>
 
+<!-- Preview do que será aplicado ao clicar em "Aplicar Recomendada" -->
+<div id="grub-preview" style="display: none; margin-top: 1.5rem; padding: 1rem 1.25rem; background-color: var(--bg-secondary); border: 1px solid var(--accent); border-left: 4px solid var(--accent); border-radius: 8px;">
+<h4 style="margin: 0 0 0.75rem 0; font-size: 1rem; color: var(--text-main);" data-i18n="sessoes.ajustes-manutencao.grub_preview_titulo">🔍 O que será aplicado ao clicar em "Aplicar Recomendada"</h4>
+<div id="grub-preview-conteudo"></div>
+</div>
+
 <div class="grupo-botoes" style="margin-top: 1.5rem;">
 <button class="btn-executar"
 onclick="executarGrubAplicarRecomendado()"
@@ -1175,6 +1181,106 @@ function _renderizarPainelGrub(info) {
 
     html += '</div>';
     painel.innerHTML = html;
+
+    // Renderiza o preview das mudanças que o botão "Aplicar
+    // Recomendada" fará, comparando os valores atuais (parseados
+    // do `/etc/default/grub`) com os valores recomendados.
+    _renderizarPreviewGrub(params, info);
+}
+
+// ============================================================
+// PREVIEW DAS MUDANÇAS DO GRUB
+// ============================================================
+//
+// Compara o valor atual de cada parâmetro com o valor que
+// seria aplicado pelo botão "Aplicar Configuração Recomendada".
+// Mostra o diff num formato `chave: atual → novo`.
+//
+// Parâmetros que o FAP altera (ver `executarGrubAplicarRecomendado`):
+//   • GRUB_TIMEOUT = 10
+//   • GRUB_TIMEOUT_STYLE = menu
+//   • GRUB_GFXMODE = <resolução detectada>
+//   • GRUB_DISABLE_OS_PROBER = false (dual boot) / true (single boot)
+//   • GRUB_DEFAULT = saved
+//   • GRUB_DISABLE_SUBMENU = true
+//   • GRUB_TERMINAL_OUTPUT = "console"
+//   • GRUB_CMDLINE_LINUX = "rhgb quiet"
+//   • GRUB_DISABLE_RECOVERY = "true"
+function _renderizarPreviewGrub(params, info) {
+    var preview = document.getElementById('grub-preview');
+    var conteudo = document.getElementById('grub-preview-conteudo');
+    if (!preview || !conteudo) return;
+
+    // Mapa de valores atuais: { chave: valor }
+    var atual = {};
+    params.forEach(function(p) {
+        atual[p.chave] = p.valor;
+    });
+
+    var res = (info.detectedRes && info.detectedRes !== '0x0') ? info.detectedRes : '1024x768';
+    var osProber = info.dualBoot ? 'false' : 'true';
+
+    // Valores recomendados (espelho do que `executarGrubAplicarRecomendado`
+    // aplica no `/etc/default/grub`).
+    var recomendados = [
+        { chave: 'GRUB_TIMEOUT',            novo: '10' },
+        { chave: 'GRUB_TIMEOUT_STYLE',      novo: 'menu' },
+        { chave: 'GRUB_GFXMODE',            novo: res },
+        { chave: 'GRUB_DISABLE_OS_PROBER',  novo: osProber },
+        { chave: 'GRUB_DEFAULT',            novo: 'saved' },
+        { chave: 'GRUB_DISABLE_SUBMENU',    novo: 'true' },
+        { chave: 'GRUB_TERMINAL_OUTPUT',    novo: '"console"' },
+        { chave: 'GRUB_CMDLINE_LINUX',      novo: '"rhgb quiet"' },
+        { chave: 'GRUB_DISABLE_RECOVERY',   novo: '"true"' }
+    ];
+
+    var html = '<ul class="lista-info">';
+    var mudancas = 0;
+
+    recomendados.forEach(function(item) {
+        var valorAtual = atual[item.chave];
+        var temAtual = (typeof valorAtual === 'string' && valorAtual.length > 0);
+        var igual = temAtual && valorAtual === item.novo;
+
+        if (igual) return;  // não mostra parâmetros que já estão como recomendado
+        mudancas++;
+
+        html += '<li style="flex-direction: column; align-items: flex-start; padding: 0.5rem 0;">';
+        html += '<div style="display: flex; justify-content: space-between; width: 100%; gap: 1rem; align-items: baseline;">';
+        html += '<code style="color: var(--accent-soft);">' + _escapeHTML(item.chave) + '</code>';
+        html += '<div style="display: flex; gap: 0.5rem; align-items: center; font-size: 0.85rem;">';
+        if (temAtual) {
+            html += '<span style="color: var(--text-muted); text-decoration: line-through;">' + _escapeHTML(valorAtual) + '</span>';
+            html += '<span style="color: var(--text-muted);">→</span>';
+        } else {
+            html += '<span style="color: var(--text-muted); font-style: italic;">' +
+                    _t('sessoes.ajustes-manutencao.grub_preview_ausente', 'ausente') +
+                    '</span>';
+            html += '<span style="color: var(--text-muted);">→</span>';
+        }
+        html += '<span style="color: var(--success); font-weight: 600;">' + _escapeHTML(item.novo) + '</span>';
+        html += '</div>';
+        html += '</div>';
+        html += '</li>';
+    });
+
+    html += '</ul>';
+
+    if (mudancas === 0) {
+        html = '<div class="aviso-sucesso">✅ ' +
+            _t('sessoes.ajustes-manutencao.grub_preview_sem_mudancas',
+                'A configuração atual já corresponde à recomendada. Nada será alterado.') +
+            '</div>';
+    } else {
+        html += '<div class="info-extra" style="margin-top: 0.75rem;">ℹ️ ' +
+            _tVars('sessoes.ajustes-manutencao.grub_preview_rodape',
+                '{n} parâmetro(s) serão alterados. Backup automático em /etc/default/grub.fap-backup.',
+                { n: mudancas }) +
+            '</div>';
+    }
+
+    conteudo.innerHTML = html;
+    preview.style.display = 'block';
 }
 
 function _escapeHTML(s) {
@@ -1314,6 +1420,10 @@ async function executarGrubAplicarRecomendado() {
             statusDiv.innerHTML = '✅ <strong>Configuração aplicada!</strong><br>' +
                 'Menu do GRUB sempre visível, 10s, resolução ' + res + '.';
         }
+
+        // Esconde o preview (não há mais nada a aplicar)
+        var previewEl = document.getElementById('grub-preview');
+        if (previewEl) previewEl.style.display = 'none';
 
         // Aplica o estado correto nos dois botões:
         //   aplicar → cinza, desabilitado, texto de concluído

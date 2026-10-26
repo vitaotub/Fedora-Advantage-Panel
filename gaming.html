@@ -356,16 +356,16 @@ Ferramentas para quem quer tirar o máximo do Fedora em jogos: versões específ
 <!-- Controller Test -->
 <div class="bloco-comando">
 <div class="comando-info">
-<h3 data-i18n="sessoes.gaming.controller_test_titulo">Teste de Controle</h3>
-<p data-i18n="sessoes.gaming.controller_test_desc">Instala uma ferramenta gráfica para testar botões, dead zones dos analógicos, resposta dos gatilhos e vibração do controle. Útil para diagnosticar controles com drift ou botões que não respondem.</p>
+<h3 data-i18n="sessoes.gaming.joystick_prefs_titulo">Preferências de Joysticks</h3>
+<p data-i18n="sessoes.gaming.joystick_prefs_desc">Instala o <strong>Joystick Preferences</strong> (jstest-gtk), uma ferramenta gráfica para testar botões, dead zones dos analógicos, resposta dos gatilhos e vibração do controle. Útil para diagnosticar controles com drift ou botões que não respondem.</p>
 <div class="grupo-botoes">
 <div class="btn-flatpak-wrapper">
-<button class="btn-executar" onclick="executarControllerTest()" data-comando="controller-test-install" data-logbox="log-sessao-gaming" id="btn-controller-test-install" data-i18n="sessoes.gaming.btn_controller_test">
-📦 Instalar Teste de Controle
+<button class="btn-executar" onclick="executarControllerTest()" data-comando="controller-test-install" data-logbox="log-sessao-gaming" id="btn-controller-test-install" data-i18n="sessoes.gaming.btn_joystick_prefs">
+📦 Instalar Preferências de Joysticks
 </button>
 </div>
-<button class="btn-executar verde" style="display: none;" onclick="abrirControllerTest()" data-comando="abrir-controller-test" data-logbox="log-sessao-gaming" id="btn-abrir-controller-test" data-i18n="sessoes.gaming.btn_abrir_controller_test">
-🚀 Abrir Teste de Controle
+<button class="btn-executar verde" style="display: none;" onclick="abrirControllerTest()" data-comando="abrir-controller-test" data-logbox="log-sessao-gaming" id="btn-abrir-controller-test" data-i18n="sessoes.gaming.btn_abrir_joystick_prefs">
+🚀 Abrir Preferências de Joysticks
 </button>
 </div>
 </div>
@@ -682,7 +682,7 @@ registrarAppRemovivel('vkbasalt-install',   { tipo: 'dnf', pacotes: ['vkBasalt']
 registrarAppRemovivel('controller-test-install', {
     tipo: 'dnf',
     pacotes: ['jstest-gtk'],
-    nome: 'Teste de Controle'
+    nome: 'Preferências de Joysticks'
 });
 
 // NTSYNC usa "desfazer tudo" porque deixa /etc/modules-load.d/ntsync.conf órfão.
@@ -869,12 +869,14 @@ async function executarGameModePresets() {
 async function executarControllerTest() {
     const idComando = 'controller-test-install';
     await executarComandoGenerico(idComando, 'sudo dnf install -y jstest-gtk',
-        _t('sessoes.gaming.btn_controller_test', '📦 Instalar Teste de Controle'),
+        _t('sessoes.gaming.btn_joystick_prefs', '📦 Instalar Preferências de Joysticks'),
         function() { aplicarEstadoInstalavel(idComando, 'abrir-controller-test'); });
 }
 
 function abrirControllerTest() {
-    abrirFerramentaExterna('gtk-launch jstest-gtk', 'controller-test-install', 'Teste de Controle');
+    // Binário direto (o `gtk-launch` falha porque o `.desktop`
+    // se chama `jstest-gtk.desktop`, não `controller-test.desktop`).
+    abrirFerramentaExterna('jstest-gtk', 'controller-test-install', 'Preferências de Joysticks');
 }
 
 // ------------------------------------------------------------

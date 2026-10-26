@@ -378,6 +378,40 @@ var SystemState = (function() {
         .then(function(dados) {
             _dados = dados || {};
             _promessa = null;
+
+            // ============================================================
+            // RETRY: flatpaks vazios + Flathub ativo
+            // ============================================================
+            //
+            // O `/system-state` do server tem cache de 60s. Na
+            // primeira chamada ao boot, o `flatpak list` pode não
+            // ter rodado ainda, e `flatpaks_installed` volta vazio
+            // mesmo com OBS/EasyEffects/etc. instalados via Flatpak.
+            //
+            // Sintoma: botão "Instalar" no OBS/EasyEffects numa
+            // instalação que já os tem. Ao sair/reabrir a sessão,
+            // o botão vira "Abrir" (o cache atualizou).
+            //
+            // A correção: se vier vazio com Flathub ativo, pedimos
+            // um refresh (que invalida o cache do server) e
+            // tentamos de novo UMA vez. Se o segundo retorno
+            // ainda vier vazio, aceitamos — pode ser um sistema
+            // sem Flatpaks instalados.
+            var flatpaks = Array.isArray(_dados.flatpaks_installed) ? _dados.flatpaks_installed : [];
+            var repos = Array.isArray(_dados.repos_enabled) ? _dados.repos_enabled : [];
+            var flathubAtivo = repos.indexOf('flatpak:flathub') !== -1;
+
+            if (flatpaks.length === 0 && flathubAtivo) {
+                console.log('[SystemState] flatpaks vazios com Flathub ativo — refetch com ?refresh=1');
+                return fetch(API_URL + '/system-state?refresh=1', { cache: 'no-store' })
+                .then(function(r) { return r.ok ? r.json() : null; })
+                .then(function(dados2) {
+                    if (dados2) _dados = dados2;
+                    return _dados;
+                })
+                .catch(function() { return _dados; });
+            }
+
             return _dados;
         })
         .catch(function(e) {
@@ -980,7 +1014,10 @@ var SESSOES = [
             textoConcluido: '✅ Presets aplicados',
             textoConcluidoKey: 'sessoes.gaming.texto_concluido_gamemode_presets'
         },
-        'controller-test-install': { textoConcluido: '✅ Ferramenta instalada', textoConcluidoKey: 'sessoes.gaming.texto_concluido_controller_test' },
+        'controller-test-install': {
+            textoConcluido: '✅ Preferências de Joysticks instaladas',
+            textoConcluidoKey: 'sessoes.gaming.texto_concluido_joystick_prefs'
+        },
         'retroarch-install': {
             textoConcluido: '✅ RetroArch instalado',
             textoConcluidoKey: 'sessoes.gaming.texto_concluido_retroarch',
@@ -2391,7 +2428,7 @@ async function _dispararFlatpak(idComando, comando, nomeAcao, onSucesso) {
 // EXECUTAR COMANDO GENÉRICO
 // ============================================================
 
-async function executarComandoGenerico(idComando, comando, nomeAcao, onSucesso, ehFlatpak) {
+async function executarComandoGenerico(idComando, comando, nomeAcao, onSucesso, ehFlatpak, timeoutMs) {
     const logBox = _getLogBox(idComando);
     const btn = document.getElementById('btn-' + idComando);
 
@@ -2453,7 +2490,7 @@ async function executarComandoGenerico(idComando, comando, nomeAcao, onSucesso, 
         }
 
         if (typeof onSucesso === 'function') {
-            aguardarConclusaoEEntao(idComando, onSucesso);
+            aguardarConclusaoEEntao(idComando, onSucesso, timeoutMs);
         }
     } catch (e) {
         const errorLine = document.createElement('div');
@@ -2472,12 +2509,17 @@ async function executarComandoGenerico(idComando, comando, nomeAcao, onSucesso, 
 }
 
 var _executarComandoGenericoOriginal = executarComandoGenerico;
-executarComandoGenerico = async function(idComando, comando, nomeAcao, onSucesso, ehFlatpak) {
+executarComandoGenerico = async function(idComando, comando, nomeAcao, onSucesso, ehFlatpak, timeoutMs) {
     var isFlatpak = ehFlatpak || /^\s*flatpak\s+install\b/.test(comando);
     if (isFlatpak) {
         return await _enfileirarFlatpak(idComando, comando, nomeAcao, onSucesso);
     }
-    return await _executarComandoGenericoOriginal(idComando, comando, nomeAcao, onSucesso, ehFlatpak);
+    // `timeoutMs` precisa ser repassado — a assinatura da sobrescrita
+    // omite o parâmetro, e chamadas como a do `executarCoprEnable`
+    // (`..., false, 60000`) perdiam o valor, caindo no default de 30
+    // minutos do `aguardarConclusaoEEntao`. Com o repasse, o fallback
+    // via `/progress` dispara em 60s em vez de 30min.
+    return await _executarComandoGenericoOriginal(idComando, comando, nomeAcao, onSucesso, ehFlatpak, timeoutMs);
 };
 
 // ============================================================
@@ -3111,8 +3153,35 @@ function mostrarBotaoDesinstalar(idComando) {
     }
 }
 
-async function aguardarConclusaoEEntao(idComando, onSucesso) {
-    const sucesso = await aguardarConclusaoReal(idComando, 1800000);
+async function aguardarConclusaoEEntao(idComando, onSucesso, timeoutMs) {
+    var sucesso = await aguardarConclusaoReal(idComando, timeoutMs || 1800000);
+
+    // ============================================================
+    // FALLBACK: se o SSE perdeu o 'end', verifica /progress
+    // ============================================================
+    //
+    // O `completarProgresso` só roda quando o SSE entrega `end`.
+    // Se a conexão SSE não estava estabelecida quando o comando
+    // terminou (raro, mas acontece com comandos muito rápidos como
+    // `dnf config-manager addrepo`), o `end` é perdido e o botão
+    // fica travado em 30%.
+    //
+    // Detecção: se o timeout do `aguardarConclusaoReal` disparou
+    // (retornou `null`), pedimos `/progress` diretamente. Se o id
+    // estiver lá, o comando rodou — completamos manualmente.
+    if (sucesso === null) {
+        try {
+            var r = await fetch(API_URL + '/progress', { cache: 'no-store' });
+            if (r.ok) {
+                var data = await r.json();
+                if (data.executados && data.executados.includes(idComando)) {
+                    completarProgresso(idComando, true);
+                    sucesso = true;
+                }
+            }
+        } catch (e) { /* ignore */ }
+    }
+
     if (sucesso) {
         onSucesso(idComando);
     }
@@ -3476,23 +3545,21 @@ function _renderizarBadgeOrigem(idInstall) {
         wrapper.insertBefore(badge, wrapper.firstChild);
     }
 
-    // Sempre reaplica tooltips (badge + botão). O `!btn.title`
-    // garante que o tooltip de pré-existente (mais específico)
-    // não seja sobrescrito pelo genérico de origem.
+    // Sempre reaplica o tooltip do badge. NÃO aplicamos tooltip
+    // de origem no botão inteiro — a informação "de onde o pacote
+    // vem" fica só no quadrado colorido. Passar o mouse no botão
+    // (fora do quadrado) não mostra tooltip de origem. Isso é
+    // consistente com o comportamento dos botões "Abrir X"
+    // (que não exibem tooltip de origem) e evita a duplicidade
+    // "Fedora — Instalado via DNF..." que aparecia antes.
+    //
+    // O tooltip de pré-existente (setado por aplicarEstadoInstalavel)
+    // NÃO é tocado por esta função — ele é independente e continua
+    // funcionando normalmente.
     var textoOrig = _textoOrigem(origem);
     if (textoOrig) {
         badge.setAttribute('title', textoOrig.tooltip);
         badge.setAttribute('aria-label', textoOrig.nome + ': ' + textoOrig.tooltip);
-
-        // Aplica tooltip no botão apenas se ele NÃO estiver no estado
-        // "instalado-abrir". Quando o botão virou "Abrir X", o
-        // tooltip sobre origem do pacote não faz sentido — o pacote
-        // já está instalado. A badge continua mostrando a origem.
-        var estadoAtual = btn.getAttribute('data-estado');
-        if (!btn.title && estadoAtual !== 'instalado-abrir') {
-            btn.title = textoOrig.nome + ' — ' + textoOrig.tooltip;
-            btn.setAttribute('data-title-origem', '1');
-        }
     }
 }
 
@@ -3502,9 +3569,11 @@ function _renderizarBadgesFixas() {
         if (!id) return;
         if (!_origemDoApp(id)) return;
         if (btn.classList.contains('btn-flatpak-uninstall')) return;
-        // Pula botões no estado "Abrir X" — o tooltip de origem não
-        // faz sentido aqui (guard espelhado em _renderizarBadgeOrigem).
-        if (btn.getAttribute('data-estado') === 'instalado-abrir') return;
+        // O guard `data-estado === 'instalado-abrir'` foi removido
+        // na v1.2.4: `_renderizarBadgeOrigem` agora só toca no
+        // tooltip do badge, nunca no tooltip do botão. Portanto,
+        // rodar em botões "Abrir X" é inofensivo (e necessário
+        // para o badge ser criado).
         _renderizarBadgeOrigem(id);
     });
 }

@@ -740,7 +740,12 @@ async function executarCoolerControl() {
 }
 
 function abrirCoolerControl() {
-    abrirFerramentaExterna('gtk-launch coolercontrol', 'coolercontrol-install', 'CoolerControl');
+    // Binário direto. O `.desktop` se chama
+    // `org.coolercontrol.CoolerControl.desktop` (não
+    // `coolercontrol.desktop`), então `gtk-launch coolercontrol`
+    // falha com "no such application". `/usr/bin/coolercontrol`
+    // existe e abre a GUI normalmente.
+    abrirFerramentaExterna('coolercontrol', 'coolercontrol-install', 'CoolerControl');
 }
 
 // ============================================================

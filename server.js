@@ -148,6 +148,8 @@ const COMANDOS_SEM_AUTENTICACAO = [
 'setsid -f inkscape',
 'setsid -f gimp',
 'setsid -f darktable',
+'setsid -f coolercontrol',
+'setsid -f jstest-gtk',
 'setsid -f freecad',
 'setsid -f librecad',
 'setsid -f kdenlive',
@@ -2049,6 +2051,13 @@ const server = http.createServer((req, res) => {
     //
     // Read-only, sem autenticação. Cache de 5min em memória.
     if (req.method === 'GET' && url === '/system-state') {
+        // `?refresh=1` invalida o cache do server. Usado pelo
+        // frontend quando detecta `flatpaks_installed` vazio com
+        // Flathub ativo (timing: server consultou `/system-state`
+        // antes do `flatpak list` terminar no boot).
+        if (query.get('refresh') === '1') {
+            systemStateService.invalidarCache();
+        }
         systemStateService.scanSystemState().then(function(dados) {
             res.writeHead(200, {
                 'Content-Type': 'application/json',

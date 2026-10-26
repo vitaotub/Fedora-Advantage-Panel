@@ -13,87 +13,118 @@ que exibe a seção da versão atual dentro do FAP, na sessão **Sobre o FAP**.
 
 ---
 
-## v1.2.3-10242026
+## v1.2.4-10262026
 
-Correções de bugs encontrados durante a rodada de testes em uma instalação
-limpa do Fedora 44 (notebook com GPU AMD Barceló), e melhoria de UX no
-fechamento do FAP após desinstalação.
+Rodada de testes em instalação limpa do Fedora 44 revelou uma série de
+inconsistências entre sessões. Correções de detecção de hardware, estado
+inicial de botões, comportamento de tooltips, e feedback visual em
+operações de repositório. Nenhuma feature nova — apenas consistência,
+manutenção e otimizações.
 
 ### 🐛 Corrigido
 
-- **Pacotes pré-instalados no Fedora sendo marcados como "já instalados
-  pelo FAP"** — Fontes Microsoft (`fontconfig`), Vulkan/Mesa
-  (`mesa-vulkan-drivers`, `mesa-dri-drivers`), VA-API (`ffmpeg-libs`,
-  `libva`), CUPS (`cups`, `avahi`, `ghostscript`) e Samba vêm por padrão
-  em qualquer Fedora Workstation com GUI. O botão mostrava
-  "✅ Já estava ativo" numa instalação limpa, antes do usuário clicar em
-  nada. Adicionada flag `ignorarPreExistente: true` no registro de
-  `registrarAppRemovivel` — esses botões começam em "Instalar" e só
-  passam para "Concluído" quando o FAP realmente instala. A detecção
-  continua funcionando para o resto do FAP.
+- **Sessão 1 — botão "Remover repositório Fedora Flatpak" não detectava
+  estado real.** Iniciava habilitado mesmo quando o remote `fedora` /
+  `fedora-testing` já havia sido removido manualmente. Agora consulta
+  `SystemState.remoteFlatpakAtivo`: se o remote não existe, mostra
+  "✅ Já removido (antes do FAP)" em cinza, desabilitado.
 
-- **Erro de conflito de pacotes ao instalar VA-API no Fedora 44** —
-  `sudo dnf install mesa-va-drivers-freeworld mesa-va-drivers-freeworld.i686`
-  disparava `mesa-libgl requires mesa-dri-drivers, but none of the
-  providers can be installed`. Causa: o `mesa-va-drivers-freeworld.i686`
-  exige `mesa-dri-drivers.i686` na versão exata, mas o Fedora 44 está
-  eliminando o multilib i686 e o RPM Fusion pode não ter a versão
-  correspondente. Correção: instalação padrão instala só x86_64
-  (`sudo dnf install -y ffmpeg-libs libva libva-utils mesa-va-drivers-freeworld`),
-  sem `swap` e sem `.i686`. Quem precisa de 32-bit (Steam) instala
-  manualmente.
+- **Sessão 3 — seções AMD e Intel sem detecção de hardware.** O botão
+  "Instalar Intel Media Driver" aparecia habilitado em APU AMD. As
+  seções AMD e Intel agora têm a mesma verificação da NVIDIA: se o
+  hardware do vendor não está presente (`lspci` + `hardware_map.json`),
+  a seção fica cinza, desabilitada, com aviso "Nenhuma GPU X detectada
+  neste sistema". AMD detecta `1002` (GPU) e `1022` (APU); Intel detecta
+  `8086` (iGPU).
 
-- **`dnf swap` desnecessário no VA-API** — no Fedora 44, o
-  `mesa-va-drivers-freeworld` instala em `/usr/lib64/dri-freeworld/`,
-  diretório separado do `mesa-va-drivers` do Fedora. Não há mais conflito
-  de arquivos, então `dnf install` puro é a receita correta. O `swap`
-  (receita antiga) disparava erro de `mesa-filesystem`. Trocado em
-  `executarVaapi` (hardware.html) e em `DRIVER_COMMANDS` de
-  `driver-amd-vaapi-install`/`remove` (dispositivos-perifericos.html).
+- **Sessão 4 — OpenRazer falhava com `kernel-headers-${VERSION}`.** O
+  comando `sudo dnf install -y kernel-devel-${CURRENT_KERNEL} kernel-headers-${CURRENT_KERNEL}`
+  falhava com "Nenhuma correspondência para o argumento:
+  kernel-headers-7.x.x". `kernel-headers` é pacote genérico (sem
+  versão) no Fedora. Corrigido para `kernel-headers` sem sufixo.
 
-- **Botão "Desinstalar FAP" não desinstalava nada** — três bugs
-  encadeados:
-  1. `install.sh` rodava com `cwd = $INSTALL_DIR`, e `rm -rf` no
-     diretório atual falha com `EBUSY`. Corrigido com `cd ~` no início
-     de `desinstalar()`.
-  2. O `echo "s" |` era consumido pelo `curl` dentro de `<(...)` antes
-     do `install.sh` rodar, então o `read` nunca recebia o `"s"` e caía
-     no default `"n"`. Corrigido com flag `-y`/`--yes` que pula o
-     prompt, sem depender de stdin.
-  3. `bash <(curl ...) --uninstall` era filho do node; quando o
-     `install.sh` removia o diretório do node (ou o node recebia
-     SIGTERM), o bash filho era morto junto. Corrigido rodando sob
-     `setsid -f bash -c '...'`.
+- **Sessão 4 — botão "Ativar repositório" da OpenRazer travava em 30%.**
+  O comando era rápido (`dnf config-manager addrepo`), mas o SSE podia
+  perder o `end` se a conexão não estivesse estabelecida quando o
+  comando terminava. Adicionado fallback em `aguardarConclusaoEEntao`:
+  se o timeout disparar, consulta `/progress` e completa o progresso
+  manualmente se o id estiver marcado. Timeout do `executarCoprEnable`
+  reduzido para 60s.
 
-  Complementado por: `_remover` com fallback `sudo rm` (para arquivos
-  criados por root), relatório final de sucessos/falhas, `install.sh`
-  não aborta mais no primeiro `rm` com falha (`set +e`).
+- **Sessão 4 — Broadcom duplicado.** O driver aparecia em "Detecção
+  automática" (via `hardware_map.json`) e em "Drivers da comunidade
+  (COPR)" (bloco HTML dedicado). Removido o bloco dedicado; Broadcom
+  fica apenas na detecção automática (aparece só quando o hardware é
+  detectado).
 
-- **Terminal e container do FAP não fechavam após desinstalação** — o
-  `install.sh --uninstall` removia os arquivos mas não avisava o node
-  nem o `fap-container`, que ficavam "zumbis" até o usuário fechar a
-  janela manualmente. Adicionado endpoint `POST /shutdown` no
-  `server.js`, que mata o `fap-container` e encerra o node
-  graciosamente. O `install.sh` chama `/shutdown` no final da
-  desinstalação. Quando o container fecha, o `iniciar_fap.sh` (que
-  estava bloqueante no `abrir_navegador`) detecta e fecha o terminal.
+- **Sessão 5 — OBS Studio e EasyEffects não detectados.** Ambos estavam
+  instalados via Flatpak, mas `SystemState.flatpakInstalado` retornava
+  `false` porque o `/system-state` do server era consultado antes do
+  `flatpak list` terminar (cache de 60s). Adicionado retry em
+  `SystemState.carregar`: se `flatpaks_installed` vier vazio com
+  `flatpak:flathub` ativo, refetch com `?refresh=1` (que invalida o
+  cache do server via `systemStateService.invalidarCache()`).
+
+- **Sessão 6 — aviso redundante do Lightworks.** O `<div class="aviso-caixa">`
+  sobre Lightworks não atualizar sozinho era redundante com o badge de
+  origem "Download" no botão. Removido o aviso (HTML + chave
+  `lightworks_aviso` dos locales).
+
+- **Tooltip de origem duplicado em todo o FAP.** Botões com badge
+  colorido mostravam dois tooltips diferentes: "Instalado via DNF..."
+  (no badge) e "Fedora — Instalado via DNF..." (no botão). O
+  `_renderizarBadgeOrigem` aplicava tooltip no botão inteiro, e o
+  `aplicarEstadoInstalavel` limpava-o a cada render, causando
+  inconsistência. Correção: tooltip de origem **só no badge**.
+  `_renderizarBadgeOrigem` não toca mais em `btn.title`. O tooltip de
+  pré-existente (setado por `aplicarEstadoInstalavel`) continua
+  funcionando — é independente.
+
+- **Sessão 8 — "Teste de Controle" renomeado.** O app se chama
+  **Joystick Preferences** (`jstest-gtk`), não "Teste de Controle".
+  Renomeados: título da área, botão de instalar, botão de abrir, texto
+  de conclusão, chaves i18n (`controller_test_*` → `joystick_prefs_*`),
+  e o `textoConcluido` em `SESSOES.gaming`.
+
+- **Sessão 8 — "Abrir Joystick Preferences" via binário direto.**
+  `gtk-launch jstest-gtk` podia falhar em alguns sistemas;
+  `abrirControllerTest` usa `jstest-gtk` direto. Adicionado
+  `setsid -f jstest-gtk` à whitelist do `server.js`.
+
+- **Sessão 11 — "Abrir CoolerControl" não abria.** O `.desktop` se
+  chama `org.coolercontrol.CoolerControl.desktop`, não
+  `coolercontrol.desktop`. `gtk-launch coolercontrol` falhava com "no
+  such application". Trocado por binário direto `coolercontrol`
+  (`/usr/bin/coolercontrol`). Adicionado `setsid -f coolercontrol` à
+  whitelist do `server.js`.
+
+- **Sessão 12 — GRUB sem preview das mudanças.** O botão "Aplicar
+  Configuração Recomendada" aplicava mudanças sem o usuário ver o que
+  seria alterado. Adicionado bloco "🔍 O que será aplicado" entre o
+  painel atual e os botões, com diff (`valor atual → valor novo`) de
+  cada parâmetro: `GRUB_TIMEOUT`, `GRUB_TIMEOUT_STYLE`, `GRUB_GFXMODE`,
+  `GRUB_DISABLE_OS_PROBER`, `GRUB_DEFAULT`, `GRUB_DISABLE_SUBMENU`,
+  `GRUB_TERMINAL_OUTPUT`, `GRUB_CMDLINE_LINUX`, `GRUB_DISABLE_RECOVERY`.
+  O preview é escondido após "Aplicar" com sucesso.
+
+- **Sessão 13 — "Verificar Versão do Fedora" com auto-load.** O painel
+  era preenchido automaticamente no boot (via `verificarVersaoFedora(true)`).
+  Agora só aparece após o clique no botão, por consistência com o resto
+  da sessão (que só mostra dados após ação explícita).
 
 ### ⚠️ Nota de atualização
 
-- **`server.js`** ganhou o endpoint `POST /shutdown` e o regex do
-  `PADROES_UPDATE_WHITELIST` foi expandido para aceitar
-  `setsid -f bash -c '... --uninstall -y'`. Reabra o FAP depois de
-  atualizar.
-- **`install.sh`** ganhou a função `desinstalar()` reescrita (defensiva)
-  e a flag `-y`/`--yes`. Aplica em `~/Downloads/fap/install.sh` **e**
-  `~/.local/share/fedora-advantage-panel/install.sh` para manter
-  sincronia.
-- **`sobre-fap.html`** mudou o comando do botão de desinstalação para
-  `setsid -f bash -c '... --uninstall -y'`.
+- **`server.js`** ganhou 2 entradas em `COMANDOS_SEM_AUTENTICACAO`
+  (`setsid -f coolercontrol`, `setsid -f jstest-gtk`) e aceita
+  `?refresh=1` no endpoint `/system-state` (invalida o cache do server).
+  Reabra o FAP depois de atualizar.
+- **`locales/en.json`** e **`locales/es.json`** ganharam 12 chaves novas
+  cada (`amd_sem_gpu_*`, `intel_sem_gpu_*`, `remover_fedora_flatpak_ja_removido`,
+  `tooltip_ja_removido_fedora_flatpak`, `grub_preview_*`) e 5 chaves
+  renomeadas (`controller_test_*` → `joystick_prefs_*`). A chave
+  `lightworks_aviso` foi removida.
 - **`.progresso.json`** não muda de formato. `fap-container` não precisa
   ser recompilado.
-- **Nenhum efeito em**: waydroid, gaming, virtualização, diagnóstico,
-  estado-fedora, sobre-fap (fora do comando de desinstalação).
 
 ### 🧪 Não testado nesta release
 
@@ -104,15 +135,11 @@ fechamento do FAP após desinstalação.
 
 ---
 
-## v1.2.2-10232026
+## v1.2.3-10242026
 
-A Suíte ArtCraft deixa de instalar os 13 apps individualmente e passa a
-instalar apenas o **launcher oficial**. Cinco novos aplicativos entram na
-sessão 6, um novo bloco **"🔧 Utilitários"** é criado, e três rodadas de
-testes pós-implementação corrigiram bugs funcionais (5 apps novos +
-ArtCraft Launcher + Firefox), de consistência i18n (botões com status
-diferente em PT/EN/ES) e de UX (feedback do "Verificar Versão", tooltip
-indevido em botões "Abrir X", setroubleshoot sem botão de abrir).
+Disponível nas [releases do GitHub](https://github.com/vitaotub/Fedora-Advantage-Panel/releases/tag/v1.2.3-10242026).
+
+## v1.2.2-10232026
 
 Disponível nas [releases do GitHub](https://github.com/vitaotub/Fedora-Advantage-Panel/releases/tag/v1.2.2-10232026).
 

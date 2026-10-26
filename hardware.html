@@ -21,7 +21,7 @@
 <!-- ============================================================
 AMD
 ============================================================ -->
-<details class="acordeao">
+<details class="acordeao" id="sec-amd">
 <summary data-i18n="sessoes.hardware.amd_titulo">🟥 Hardware AMD</summary>
 <div class="acordeao-conteudo">
 
@@ -288,7 +288,7 @@ data-i18n="sessoes.hardware.btn_modeset_off">
 <!-- ============================================================
 INTEL
 ============================================================ -->
-<details class="acordeao">
+<details class="acordeao" id="sec-intel">
 <summary data-i18n="sessoes.hardware.intel_titulo">🟦 Hardware Intel</summary>
 <div class="acordeao-conteudo">
 
@@ -605,7 +605,10 @@ function _detectarSerieNvidia(modelo) {
     return { pkg: 'akmod-nvidia', serie: '595+ (Turing ou mais recente)' };
 }
 
-async function _detectarGpuNvidia() {
+// Helper genérico: detecta GPUs de qualquer vendor. Usado pelas
+// 3 seções (AMD, Intel, NVIDIA). Evita duplicar a lógica de
+// /hardware-scan em cada função.
+async function _detectarGpuPorVendor(vendorIds) {
     try {
         var r = await fetch(API_URL + '/hardware-scan', { cache: 'no-store' });
         if (!r.ok) return { detected: false, rpmfusion: false };
@@ -613,28 +616,39 @@ async function _detectarGpuNvidia() {
 
         var rpmfusionOk = !!(data.repos && data.repos.rpmfusion_nonfree);
         var gpus = (data.devices || []).filter(function(d) {
-            return d.device_id && d.device_id.indexOf('10de:') === 0;
+            if (d.category !== 'gpu') return false;
+            if (!d.device_id) return false;
+            for (var i = 0; i < vendorIds.length; i++) {
+                if (d.device_id.indexOf(vendorIds[i] + ':') === 0) return true;
+            }
+            return false;
         });
 
-        if (gpus.length === 0) {
-            return { detected: false, rpmfusion: rpmfusionOk };
-        }
-
-        var gpu = gpus[0];
-        var modelo = (gpu.name || 'GPU NVIDIA').trim();
-        var info = _detectarSerieNvidia(modelo);
-
         return {
-            detected: true,
-            rpmfusion: rpmfusionOk,
-            modelo: modelo,
-            pkg: info.pkg,
-            serie: info.serie
+            detected: gpus.length > 0,
+            gpus: gpus,
+            rpmfusion: rpmfusionOk
         };
     } catch (e) {
-        console.warn('[NVIDIA] Erro ao detectar GPU:', e.message);
         return { detected: false, rpmfusion: false, error: e.message };
     }
+}
+
+async function _detectarGpuNvidia() {
+    var info = await _detectarGpuPorVendor(['10de']);
+    if (!info.detected) {
+        return { detected: false, rpmfusion: info.rpmfusion };
+    }
+    var gpu = info.gpus[0];
+    var modelo = (gpu.name || 'GPU NVIDIA').trim();
+    var serie = _detectarSerieNvidia(modelo);
+    return {
+        detected: true,
+        rpmfusion: info.rpmfusion,
+        modelo: modelo,
+        pkg: serie.pkg,
+        serie: serie.serie
+    };
 }
 
 function _renderizarPanelNvidia(info) {
@@ -734,6 +748,128 @@ async function _atualizarSecaoNvidia() {
     var info = await _detectarGpuNvidia();
     _renderizarPanelNvidia(info);
     _aplicarEstadoNvidia(info);
+}
+
+// ============================================================
+// DETECÇÃO DE AMD/INTEL (mesmo padrão da NVIDIA)
+// ============================================================
+//
+// O usuário pediu que as seções AMD e Intel tivessem o mesmo
+// comportamento da NVIDIA: se o hardware não está presente, a
+// seção fica cinza, desabilitada, com aviso. Sem isso, o botão
+// "Instalar Intel Media Driver" aparecia habilitado em APU AMD.
+//
+// Cada função:
+//   1. Consulta /hardware-scan filtrando pelo vendor.
+//   2. Se detectado: remove o aviso, reabilita os botões.
+//   3. Se não detectado: mostra aviso, desabilita todos os botões
+//      da seção (exceto os que já foram executados, que ficam cinza).
+
+async function _atualizarSecaoAmd() {
+    var sec = document.getElementById('sec-amd');
+    if (!sec) return;
+
+    var info = await _detectarGpuPorVendor(['1002', '1022']);  // AMD GPU + AMD APU
+
+    var painel = sec.querySelector('.hardware-detection-panel');
+    if (!painel) {
+        painel = document.createElement('div');
+        painel.className = 'hardware-detection-panel bloco-info';
+        var conteudo = sec.querySelector('.acordeao-conteudo');
+        if (conteudo) conteudo.insertBefore(painel, conteudo.firstChild);
+    }
+
+    var botoes = sec.querySelectorAll('.btn-executar, .btn-reverter');
+
+    if (info.detected) {
+        painel.style.display = 'none';
+        painel.innerHTML = '';
+        botoes.forEach(function(b) {
+            if (b.getAttribute('data-hw-disabled') === '1') {
+                b.removeAttribute('data-hw-disabled');
+                b.disabled = false;
+                b.style.opacity = '1';
+                b.style.cursor = 'pointer';
+                b.title = '';
+            }
+        });
+    } else {
+        painel.style.display = 'block';
+        painel.className = 'hardware-detection-panel aviso-caixa';
+        painel.innerHTML = '<strong>' +
+            _t('sessoes.hardware.amd_sem_gpu_titulo', '⚠️ Nenhuma GPU/APU AMD detectada') +
+            '</strong><p style="margin-top: 0.4rem;">' +
+            _t('sessoes.hardware.amd_sem_gpu_desc', 'Este sistema não possui GPU ou APU AMD. Os pacotes desta seção não fazem sentido aqui.') +
+            '</p>';
+
+        var tooltip = _t('sessoes.hardware.amd_sem_gpu_curto',
+            'Nenhuma GPU/APU AMD detectada neste sistema');
+        botoes.forEach(function(b) {
+            if (b.getAttribute('data-estado') === 'instalado-abrir' ||
+                b.getAttribute('data-estado') === 'instalado-sem-abrir') {
+                // Botão já instalado — não mexe (usuário pode reverter)
+                return;
+            }
+            b.setAttribute('data-hw-disabled', '1');
+            b.disabled = true;
+            b.style.opacity = '0.5';
+            b.style.cursor = 'not-allowed';
+            b.title = tooltip;
+        });
+    }
+}
+
+async function _atualizarSecaoIntel() {
+    var sec = document.getElementById('sec-intel');
+    if (!sec) return;
+
+    var info = await _detectarGpuPorVendor(['8086']);  // Intel GPU
+
+    var painel = sec.querySelector('.hardware-detection-panel');
+    if (!painel) {
+        painel = document.createElement('div');
+        painel.className = 'hardware-detection-panel bloco-info';
+        var conteudo = sec.querySelector('.acordeao-conteudo');
+        if (conteudo) conteudo.insertBefore(painel, conteudo.firstChild);
+    }
+
+    var botoes = sec.querySelectorAll('.btn-executar, .btn-reverter');
+
+    if (info.detected) {
+        painel.style.display = 'none';
+        painel.innerHTML = '';
+        botoes.forEach(function(b) {
+            if (b.getAttribute('data-hw-disabled') === '1') {
+                b.removeAttribute('data-hw-disabled');
+                b.disabled = false;
+                b.style.opacity = '1';
+                b.style.cursor = 'pointer';
+                b.title = '';
+            }
+        });
+    } else {
+        painel.style.display = 'block';
+        painel.className = 'hardware-detection-panel aviso-caixa';
+        painel.innerHTML = '<strong>' +
+            _t('sessoes.hardware.intel_sem_gpu_titulo', '⚠️ Nenhuma GPU Intel detectada') +
+            '</strong><p style="margin-top: 0.4rem;">' +
+            _t('sessoes.hardware.intel_sem_gpu_desc', 'Este sistema não possui iGPU Intel. O Intel Media Driver não faz sentido aqui.') +
+            '</p>';
+
+        var tooltip = _t('sessoes.hardware.intel_sem_gpu_curto',
+            'Nenhuma GPU Intel detectada neste sistema');
+        botoes.forEach(function(b) {
+            if (b.getAttribute('data-estado') === 'instalado-abrir' ||
+                b.getAttribute('data-estado') === 'instalado-sem-abrir') {
+                return;
+            }
+            b.setAttribute('data-hw-disabled', '1');
+            b.disabled = true;
+            b.style.opacity = '0.5';
+            b.style.cursor = 'not-allowed';
+            b.title = tooltip;
+        });
+    }
 }
 
 // ------------------------------------------------------------
@@ -891,10 +1027,12 @@ async function restaurarEstadoSessao() {
         }
     );
 
-    // NVIDIA — seção com detecção de hardware própria. O painel
-    // de detecção e a lógica de abrir/desabilitar botões continuam
-    // iguais, apenas o visual do botão de instalar agora usa o
-    // estado unificado. `_atualizarSecaoNvidia` cuida disso.
+    // As 3 seções (AMD, Intel, NVIDIA) verificam o hardware antes
+    // de habilitar os botões. Se o vendor não está presente, a
+    // seção mostra aviso e desabilita os botões — mesmo
+    // comportamento da NVIDIA (que já tinha antes).
+    await _atualizarSecaoAmd();
+    await _atualizarSecaoIntel();
     await _atualizarSecaoNvidia();
 }
 
