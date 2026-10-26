@@ -139,7 +139,9 @@
             "btn_remover_fedora_flatpak": "🚫 Remove Fedora Flatpak repository",
             "texto_concluido_remover_fedora_flatpak": "✅ Fedora Flatpak repository removed",
             "remover_fedora_flatpak_confirm1": "⚠️ You are about to remove the Fedora Flatpak repository.\n\nThis will:\n• Remove Flatpak apps installed from the Fedora repository\n• DELETE the data of those apps (settings, profiles, bookmarks, saves) — irreversible\n• Remove the fedora and fedora-testing repositories\n• Clean up orphaned runtimes\n\nClose all running Flatpak apps before continuing.\n\nContinue?",
-            "remover_fedora_flatpak_confirm2": "🔄 Final confirmation!\n\nThe data of the Fedora repository Flatpak apps will be PERMANENTLY lost.\n\nAre you absolutely sure?"
+            "remover_fedora_flatpak_confirm2": "🔄 Final confirmation!\n\nThe data of the Fedora repository Flatpak apps will be PERMANENTLY lost.\n\nAre you absolutely sure?",
+            "remover_fedora_flatpak_ja_removido": "✅ Already removed (before FAP)",
+            "tooltip_ja_removido_fedora_flatpak": "The Fedora Flatpak repository had already been removed before FAP."
         },
 
         "codecs": {
@@ -229,7 +231,13 @@
             "btn_intel_media_instalar": "🎬 Install Intel Media Driver",
             "texto_concluido_intel_media": "🎬 Intel Media Driver installed",
             "nvidia_sem_gpu_curto": "No NVIDIA GPU detected on this system",
-            "nvidia_detectando": "⏳ Detecting hardware..."
+            "nvidia_detectando": "⏳ Detecting hardware...",
+            "amd_sem_gpu_titulo": "⚠️ No AMD GPU/APU detected",
+            "amd_sem_gpu_desc": "This system has no AMD GPU or APU. The packages in this section do not apply.",
+            "amd_sem_gpu_curto": "No AMD GPU/APU detected on this system",
+            "intel_sem_gpu_titulo": "⚠️ No Intel GPU detected",
+            "intel_sem_gpu_desc": "This system has no Intel iGPU. The Intel Media Driver does not apply.",
+            "intel_sem_gpu_curto": "No Intel GPU detected on this system"
         },
 
         "dispositivos-perifericos": {
@@ -431,7 +439,6 @@
             "texto_concluido_discord": "✅ Discord installed",
             "btn_telegram": "✈️ Telegram",
             "texto_concluido_telegram": "✅ Telegram installed",
-            "lightworks_aviso": "⚠️ <strong>Note:</strong> Lightworks is not installed via Flatpak. The button downloads the RPM package directly from the official LWKS website. Updates are not automatic — to update, run this button again.",
             "btn_kdenlive": "🎬 Kdenlive",
             "texto_concluido_kdenlive": "✅ Kdenlive installed",
             "btn_shotcut": "✂️ Shotcut",
@@ -649,11 +656,11 @@
             "gamemode_presets_desc": "Creates ready-to-use config files for MangoHud (FPS overlay) and GameMode (CPU/GPU priority). You get a clean, readable overlay without configuring anything manually.",
             "gamemode_presets_info": "ℹ️ Files are created at <code>~/.config/MangoHud/MangoHud.conf</code> and <code>~/.config/gamemode.ini</code>. If you already have custom files, they'll be overwritten — back them up beforehand if needed.",
             "btn_gamemode_presets": "⚙️ Apply Presets",
-            "controller_test_titulo": "Controller Test",
-            "controller_test_desc": "Installs a graphical tool to test buttons, analog stick dead zones, trigger response and controller rumble. Useful for diagnosing controllers with drift or buttons that don't respond.",
-            "btn_controller_test": "📦 Install Controller Test",
-            "btn_abrir_controller_test": "🚀 Open Controller Test",
-            "texto_concluido_controller_test": "✅ Tool installed",
+            "joystick_prefs_titulo": "Joystick Preferences",
+            "joystick_prefs_desc": "Installs <strong>Joystick Preferences</strong> (jstest-gtk), a graphical tool to test buttons, analog stick dead zones, trigger response and controller rumble. Useful for diagnosing controllers with drift or buttons that don't respond.",
+            "btn_joystick_prefs": "📦 Install Joystick Preferences",
+            "btn_abrir_joystick_prefs": "🚀 Open Joystick Preferences",
+            "texto_concluido_joystick_prefs": "✅ Joystick Preferences installed",
             "emuladores_titulo": "🕹️ Emulators",
             "emuladores_desc": "Emulators for classic and modern consoles on Fedora. All available via Flatpak.",
             "emuladores_aviso_geral": "⚠️ <strong>Important notice:</strong> some emulators require <strong>BIOS, firmware or system files</strong> dumped from the original console to work. FAP <strong>does not provide</strong> these files for legal reasons. Consult each emulator's official documentation for how to obtain them from your own console.",
@@ -1021,6 +1028,10 @@
             "grub_msg_falha_aplicar": "❌ Failed to apply GRUB configuration.",
             "grub_msg_timeout_restaurar": "❌ Timeout restoring the configuration.",
             "grub_msg_falha_restaurar": "❌ Failed to restore GRUB configuration.",
+            "grub_preview_titulo": "🔍 What will be applied when you click \"Apply Recommended\"",
+            "grub_preview_ausente": "missing",
+            "grub_preview_sem_mudancas": "The current configuration already matches the recommended one. Nothing will be changed.",
+            "grub_preview_rodape": "{n} parameter(s) will be changed. Automatic backup at /etc/default/grub.fap-backup.",
             "texto_concluido_grub_aplicar": "✅ Configuration applied",
             "texto_concluido_grub_restaurar": "✅ Default restored"
         },

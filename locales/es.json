@@ -139,7 +139,9 @@
             "btn_remover_fedora_flatpak": "🚫 Eliminar repositorio Flatpak de Fedora",
             "texto_concluido_remover_fedora_flatpak": "✅ Repositorio Fedora Flatpak eliminado",
             "remover_fedora_flatpak_confirm1": "⚠️ Estás a punto de eliminar el repositorio Flatpak de Fedora.\n\nEsto hará:\n• Eliminar las apps Flatpak instaladas desde el repositorio Fedora\n• BORRAR los datos de esas apps (configuraciones, perfiles, marcadores, partidas) — irreversible\n• Eliminar los repositorios fedora y fedora-testing\n• Limpiar runtimes huérfanos\n\nCierra todas las apps Flatpak en ejecución antes de continuar.\n\n¿Continuar?",
-            "remover_fedora_flatpak_confirm2": "🔄 ¡Última confirmación!\n\nLos datos de las apps Flatpak del repositorio Fedora se perderán PERMANENTEMENTE.\n\n¿Estás absolutamente seguro?"
+            "remover_fedora_flatpak_confirm2": "🔄 ¡Última confirmación!\n\nLos datos de las apps Flatpak del repositorio Fedora se perderán PERMANENTEMENTE.\n\n¿Estás absolutamente seguro?",
+            "remover_fedora_flatpak_ja_removido": "✅ Ya eliminado (antes de FAP)",
+            "tooltip_ja_removido_fedora_flatpak": "El repositorio Fedora Flatpak ya había sido eliminado antes de FAP."
         },
 
         "codecs": {
@@ -229,7 +231,13 @@
             "btn_intel_media_instalar": "🎬 Instalar Intel Media Driver",
             "texto_concluido_intel_media": "🎬 Intel Media Driver instalado",
             "nvidia_sem_gpu_curto": "No se detectó ninguna GPU NVIDIA en este sistema",
-            "nvidia_detectando": "⏳ Detectando hardware..."
+            "nvidia_detectando": "⏳ Detectando hardware...",
+            "amd_sem_gpu_titulo": "⚠️ No se detectó ninguna GPU/APU AMD",
+            "amd_sem_gpu_desc": "Este sistema no tiene GPU ni APU AMD. Los paquetes de esta sección no aplican.",
+            "amd_sem_gpu_curto": "No se detectó ninguna GPU/APU AMD en este sistema",
+            "intel_sem_gpu_titulo": "⚠️ No se detectó ninguna GPU Intel",
+            "intel_sem_gpu_desc": "Este sistema no tiene iGPU Intel. El Intel Media Driver no aplica.",
+            "intel_sem_gpu_curto": "No se detectó ninguna GPU Intel en este sistema"
         },
 
         "dispositivos-perifericos": {
@@ -431,7 +439,6 @@
             "texto_concluido_discord": "✅ Discord instalado",
             "btn_telegram": "✈️ Telegram",
             "texto_concluido_telegram": "✅ Telegram instalado",
-            "lightworks_aviso": "⚠️ <strong>Atención:</strong> Lightworks no se instala vía Flatpak. El botón descarga el paquete RPM directamente desde el sitio oficial de LWKS. La actualización no es automática — para actualizar, vuelva a ejecutar este botón.",
             "btn_kdenlive": "🎬 Kdenlive",
             "texto_concluido_kdenlive": "✅ Kdenlive instalado",
             "btn_shotcut": "✂️ Shotcut",
@@ -649,11 +656,11 @@
             "gamemode_presets_desc": "Crea archivos de configuración listos para MangoHud (superposición de FPS) y GameMode (prioridad de CPU/GPU). Obtienes una superposición limpia y legible sin configurar nada manualmente.",
             "gamemode_presets_info": "ℹ️ Los archivos se crean en <code>~/.config/MangoHud/MangoHud.conf</code> y <code>~/.config/gamemode.ini</code>. Si ya tienes archivos personalizados, serán sobrescritos — haz copia de seguridad antes si es el caso.",
             "btn_gamemode_presets": "⚙️ Aplicar Presets",
-            "controller_test_titulo": "Prueba de Mando",
-            "controller_test_desc": "Instala una herramienta gráfica para probar botones, dead zones de los analógicos, respuesta de los gatillos y vibración del mando. Útil para diagnosticar mandos con drift o botones que no responden.",
-            "btn_controller_test": "📦 Instalar Prueba de Mando",
-            "btn_abrir_controller_test": "🚀 Abrir Prueba de Mando",
-            "texto_concluido_controller_test": "✅ Herramienta instalada",
+            "joystick_prefs_titulo": "Preferencias de Joysticks",
+            "joystick_prefs_desc": "Instala <strong>Joystick Preferences</strong> (jstest-gtk), una herramienta gráfica para probar botones, dead zones de los analógicos, respuesta de los gatillos y vibración del mando. Útil para diagnosticar mandos con drift o botones que no responden.",
+            "btn_joystick_prefs": "📦 Instalar Preferencias de Joysticks",
+            "btn_abrir_joystick_prefs": "🚀 Abrir Preferencias de Joysticks",
+            "texto_concluido_joystick_prefs": "✅ Preferencias de Joysticks instaladas",
             "emuladores_titulo": "🕹️ Emuladores",
             "emuladores_desc": "Emuladores de consolas clásicas y modernas para Fedora. Todos disponibles vía Flatpak.",
             "emuladores_aviso_geral": "⚠️ <strong>Aviso importante:</strong> algunos emuladores requieren <strong>BIOS, firmware o archivos del sistema</strong> volcados de la consola original para funcionar. FAP <strong>no proporciona</strong> esos archivos por cuestiones legales. Consulta la documentación oficial de cada emulador para saber cómo obtenerlos de tu propia consola.",
@@ -1021,6 +1028,10 @@
             "grub_msg_falha_aplicar": "❌ Error al aplicar la configuración de GRUB.",
             "grub_msg_timeout_restaurar": "❌ Se agotó el tiempo restaurando la configuración.",
             "grub_msg_falha_restaurar": "❌ Error al restaurar la configuración de GRUB.",
+            "grub_preview_titulo": "🔍 Lo que se aplicará al hacer clic en \"Aplicar Recomendada\"",
+            "grub_preview_ausente": "ausente",
+            "grub_preview_sem_mudancas": "La configuración actual ya coincide con la recomendada. No se cambiará nada.",
+            "grub_preview_rodape": "{n} parámetro(s) serán modificados. Copia de seguridad automática en /etc/default/grub.fap-backup.",
             "texto_concluido_grub_aplicar": "✅ Configuración aplicada",
             "texto_concluido_grub_restaurar": "✅ Predeterminado restaurado"
         },
