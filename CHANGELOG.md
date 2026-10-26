@@ -112,12 +112,54 @@ manutenção e otimizações.
   Agora só aparece após o clique no botão, por consistência com o resto
   da sessão (que só mostra dados após ação explícita).
 
+- **Sistema de atualização — cache "sem atualização" longo demais.**
+  O `verificarAtualizacoes` usava um único TTL de 12 horas para todos
+  os casos. Quando o cache dizia "não há atualização", o FAP não
+  consultava o GitHub novamente por 12h — então uma versão publicada
+  logo após o último check ficava invisível até o TTL expirar.
+  Correção: TTLs separados. **"Há atualização"** continua com 12h
+  (uma vez detectado, o estado já é verdadeiro; e o
+  `mostrarBadgeSeHouverAtualizacao` faz uma confirmação fresca antes
+  de renderizar o badge). **"Sem atualização"** caiu para **15
+  minutos**. Adicionado também `?_=<timestamp>` + `cache: 'no-store'`
+  na chamada do fetch, para vencer o `Cache-Control: max-age=60` que
+  o GitHub API envia por padrão — sem isso, uma release recém-publicada
+  podia ficar invisível por até 1 minuto mesmo com o TTL curto.
+
+### ⚠️ IMPORTANTE — reinstalar o FAP
+
+**A v1.2.4 foi publicada originalmente com um bug no sistema de
+notificação de atualizações.** O cache de "não há atualização" tinha
+TTL de 12 horas, o que impedia o badge de aparecer na `1.2.5` e
+seguintes para quem já tinha instalado a `1.2.4`. O fix descrito acima
+foi aplicado e a release foi republicada na mesma `1.2.4` — mas só
+vale para novas instalações.
+
+- **Se você instalou a `1.2.4` nos primeiros minutos após o publish
+  original:** reinstale o FAP para pegar o `script.js` corrigido.
+  ```
+  bash <(curl -s https://raw.githubusercontent.com/vitaotub/Fedora-Advantage-Panel/main/install.sh)
+  ```
+  A reinstalação preserva `.progresso.json`, tema e idioma.
+
+- **Se você instalou a `1.2.4` depois da republicação (o asset atual
+  no GitHub):** nada a fazer. Sua cópia já tem o fix.
+
+- **Efeito prático sem reinstalar:** quem ficou com o `script.js`
+  antigo só vai ver o badge de "atualização disponível" para `1.2.5+`
+  quando o cache de 12h expirar. Reinstalar é o caminho mais rápido
+  e confiável.
+
 ### ⚠️ Nota de atualização
 
 - **`server.js`** ganhou 2 entradas em `COMANDOS_SEM_AUTENTICACAO`
   (`setsid -f coolercontrol`, `setsid -f jstest-gtk`) e aceita
   `?refresh=1` no endpoint `/system-state` (invalida o cache do server).
   Reabra o FAP depois de atualizar.
+- **`script.js`** — correção do TTL do cache de atualização (descrita
+  acima) + repasse de `timeoutMs` na sobrescrita de
+  `executarComandoGenerico` (o parâmetro estava sendo engolido em
+  chamadas como a do `executarCoprEnable`).
 - **`locales/en.json`** e **`locales/es.json`** ganharam 12 chaves novas
   cada (`amd_sem_gpu_*`, `intel_sem_gpu_*`, `remover_fedora_flatpak_ja_removido`,
   `tooltip_ja_removido_fedora_flatpak`, `grub_preview_*`) e 5 chaves
