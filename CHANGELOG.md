@@ -128,15 +128,11 @@ manutenção e otimizações.
 
 ### ⚠️ IMPORTANTE — reinstalar o FAP
 
-**A v1.2.4 foi publicada originalmente com um bug no sistema de
-notificação de atualizações.** O cache de "não há atualização" tinha
-TTL de 12 horas, o que impedia o badge de aparecer na `1.2.5` e
-seguintes para quem já tinha instalado a `1.2.4`. O fix descrito acima
-foi aplicado e a release foi republicada na mesma `1.2.4` — mas só
-vale para novas instalações.
+**A v1.2.4 corrige um bug no sistema de notificação de atualizações.**
+O cache de "não há atualização" tinha TTL de 12 horas, o que impedia o
+badge de atualizações aparecer.
 
-- **Se você instalou a `1.2.4` nos primeiros minutos após o publish
-  original:** reinstale o FAP para pegar o `script.js` corrigido.
+- reinstale o FAP para que esta correção seja aplicada.
   ```
   bash <(curl -s https://raw.githubusercontent.com/vitaotub/Fedora-Advantage-Panel/main/install.sh)
   ```
