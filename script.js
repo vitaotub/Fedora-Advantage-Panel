@@ -77,27 +77,54 @@ async function carregarVersaoServidor() {
 var GITHUB_REPO = 'vitaotub/Fedora-Advantage-Panel';
 var ULTIMA_VERIFICACAO_KEY = 'fap_ultima_verificacao';
 var VERSAO_REMOTA_KEY = 'fap_versao_remota';
-var TTL_VERIFICACAO_MS = 12 * 60 * 60 * 1000;
+
+// TTLs separados por caso:
+//
+//   • "Há atualização" — 12h. Uma vez detectada, a informação não
+//     muda (a versão nova já está publicada). Cache longo é seguro
+//     porque `mostrarBadgeSeHouverAtualizacao` faz uma confirmação
+//     fresca antes de exibir o badge.
+//
+//   • "Sem atualização" — 15 min. Uma versão nova pode ser
+//     publicada logo após o último check. Com o TTL de 12h antigo,
+//     o usuário ficava até 12h sem ver o badge de uma versão
+//     publicada nesse intervalo — bug reportado na v1.2.4.
+var TTL_COM_ATUALIZACAO_MS = 12 * 60 * 60 * 1000;
+var TTL_SEM_ATUALIZACAO_MS = 15 * 60 * 1000;
 
 async function verificarAtualizacoes() {
     var agora = Date.now();
     var ultima = 0;
+    var cache = null;
     try {
         ultima = parseInt(localStorage.getItem(ULTIMA_VERIFICACAO_KEY) || '0', 10) || 0;
+        cache = localStorage.getItem(VERSAO_REMOTA_KEY);
     } catch (e) {
         ultima = 0;
+        cache = null;
     }
 
-    if (agora - ultima < TTL_VERIFICACAO_MS) {
-        try {
-            var cache = localStorage.getItem(VERSAO_REMOTA_KEY);
-            if (cache) return cache;
-        } catch (e) { /* ignore */ }
-        return null;
+    // Cache só é usado dentro do TTL apropriado ao caso. Se o cache
+    // existe mas está expirado para o caso atual (ex.: 16 min de um
+    // cache "sem atualização"), caímos no fetch fresco abaixo.
+    if (cache) {
+        var versaoLocal = FAP_VERSION || '?';
+        var temNovidade = temAtualizacao(versaoLocal, cache);
+        var ttl = temNovidade ? TTL_COM_ATUALIZACAO_MS : TTL_SEM_ATUALIZACAO_MS;
+        if (agora - ultima < ttl) {
+            return cache;
+        }
     }
 
     try {
-        var resp = await fetch('https://api.github.com/repos/' + GITHUB_REPO + '/releases/latest');
+        // `?_=` + `cache: 'no-store'` evitam que o WebKitGTK sirva
+        // uma resposta HTTP cacheada (a API do GitHub envia
+        // `Cache-Control: max-age=60` por padrão). Sem isso, uma
+        // release recém-publicada podia ficar invisível por até 1
+        // minuto no cache HTTP.
+        var url = 'https://api.github.com/repos/' + GITHUB_REPO +
+        '/releases/latest?_=' + agora;
+        var resp = await fetch(url, { cache: 'no-store' });
         if (!resp.ok) {
             console.warn('[Atualização] GitHub retornou HTTP', resp.status);
             return null;
