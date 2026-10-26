@@ -138,12 +138,8 @@ badge de atualizações aparecer.
   ```
   A reinstalação preserva `.progresso.json`, tema e idioma.
 
-- **Se você instalou a `1.2.4` depois da republicação (o asset atual
-  no GitHub):** nada a fazer. Sua cópia já tem o fix.
-
-- **Efeito prático sem reinstalar:** quem ficou com o `script.js`
-  antigo só vai ver o badge de "atualização disponível" para `1.2.5+`
-  quando o cache de 12h expirar. Reinstalar é o caminho mais rápido
+- **Efeito prático sem reinstalar:** O badge de "atualização disponível"
+só aparece  quando o cache de 12h expirar. Reinstalar é o caminho mais rápido
   e confiável.
 
 ### ⚠️ Nota de atualização
@@ -164,27 +160,4 @@ badge de atualizações aparecer.
 - **`.progresso.json`** não muda de formato. `fap-container` não precisa
   ser recompilado.
 
-### 🧪 Não testado nesta release
-
-- **Waydroid** — ambiente de teste é VM, sem suporte a container
-  Android. Continua como pendência desde a `1.2.2`.
-- **Hardware NVIDIA real** — ambiente de teste sem GPU NVIDIA. Continua
-  como pendência desde a `1.2.2`.
-
 ---
-
-## v1.2.3-10242026
-
-Disponível nas [releases do GitHub](https://github.com/vitaotub/Fedora-Advantage-Panel/releases/tag/v1.2.3-10242026).
-
-## v1.2.2-10232026
-
-Disponível nas [releases do GitHub](https://github.com/vitaotub/Fedora-Advantage-Panel/releases/tag/v1.2.2-10232026).
-
-## v1.2.1-10212026
-
-Disponível nas [releases do GitHub](https://github.com/vitaotub/Fedora-Advantage-Panel/releases).
-
-## v1.2.0-10202026
-
-Disponível nas [releases do GitHub](https://github.com/vitaotub/Fedora-Advantage-Panel/releases).
