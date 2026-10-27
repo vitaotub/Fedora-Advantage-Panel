@@ -51,13 +51,19 @@
         "notif_tarefa_concluida_corpo": "La tarea ha finalizado. Consulta el registro para más detalles.",
         "status_pacote": "Paquete {atual} de {total}",
         "badge_atualizar": "Actualizar",
-        "badge_atualizando": "🔄 Actualizando FAP... Sigue el progreso en Acerca de FAP.",
+        "badge_atualizando": "🔄 Actualizando FAP...",
         "badge_ja_atualizando": "⏳ Actualización ya en curso...",
         "navegacao_bloqueada": "Espera a que terminen los comandos de esta sesión antes de cambiar de sesión.",
         "ja_estava_ativo": "✅ Ya estaba activo",
         "tooltip_preexistente_app": "Esta app ya estaba instalada antes de FAP. La papelera la elimina del sistema, pero FAP no fue responsable de la instalación.",
         "tooltip_preexistente_recurso": "Este recurso ya estaba activo antes de FAP. FAP no fue responsable de la configuración, pero lo está tratando como activo normalmente.",
-        "confirm_preexistente_prefixo": "⚠️ ¡ATENCIÓN!\n\nEsta app ya estaba instalada antes de FAP. Eliminarla del sistema puede borrar configuraciones y datos que creaste (perfiles, favoritos, partidas).\n\n"
+        "confirm_preexistente_prefixo": "⚠️ ¡ATENCIÓN!\n\nEsta app ya estaba instalada antes de FAP. Eliminarla del sistema puede borrar configuraciones y datos que creaste (perfiles, favoritos, partidas).\n\n",
+        "abrir_separador": "Abrir {nome}",
+        "abrir_abrindo": "⏳ Abriendo {nome}...",
+        "abrir_aberto": "🚀 ¡{nome} abierto!",
+        "abrir_falhou": "⚠️ No se pudo abrir {nome}. Ver /tmp/fap-open-{id}.log",
+        "abrir_timeout": "⏳ {nome} aún abriendo (ver /tmp/fap-open-{id}.log)",
+        "erro_sse": "❌ Error al conectar SSE: {msg}"
     },
 
     "index": {
@@ -422,6 +428,9 @@
             "log_instalador_iniciado": "🚀 ¡Instalador de Affinity iniciado!",
             "log_instalador_local": "📋 Registro: /tmp/fap-affinity/installer.log",
             "log_preparando": "⏳ Preparando...",
+            "log_consultando_github": "🔍 Consultando la última release de GitHub...",
+            "log_url_nao_resolvida": "❌ No se pudo resolver la URL del RPM de {nome} más reciente.",
+            "log_url_nao_resolvida_rclone": "❌ No se pudo resolver la URL del RPM de Rclone Manager.",
             "texto_concluido_affinity": "✅ Affinity preparado",
             "btn_opera": "🌐 Opera",
             "texto_concluido_opera": "✅ Opera instalado",
@@ -781,7 +790,8 @@
             "zona_perigo_titulo": "🗑️ Eliminar Waydroid Completamente",
             "nada_remover": "✅ Nada que eliminar",
             "ja_feito_preexistente": "✅ Ya estaba hecho (antes de FAP)",
-            "tooltip_preexistente_waydroid": "Este paso ya fue cumplido en el sistema antes de FAP. FAP no fue la causa — para deshacer, usa la terminal."
+            "tooltip_preexistente_waydroid": "Este paso ya fue cumplido en el sistema antes de FAP. FAP no fue la causa — para deshacer, usa la terminal.",
+            "uninstall_ok": "✅ Waydroid y TODOS los datos asociados han sido eliminados."
         },
 
         "virtualizacao": {
@@ -1023,6 +1033,7 @@
             "grub_msg_aplicando": "⏳ Aplicando configuración...",
             "grub_msg_restaurando": "⏳ Restaurando configuración...",
             "grub_msg_aplicado": "✅ <strong>¡Configuración aplicada!</strong><br>GRUB_TIMEOUT=10 (10 segundos)<br>GRUB_HIDDEN_TIMEOUT eliminado (GRUB siempre aparece)",
+            "grub_msg_aplicado_res": "✅ <strong>¡Configuración aplicada!</strong><br>Menú de GRUB siempre visible, 10s, resolución {res}.",
             "grub_msg_restaurado": "✅ <strong>¡Configuración restaurada!</strong><br>GRUB_TIMEOUT=5 (5 segundos)<br>GRUB_HIDDEN_TIMEOUT=0 (GRUB oculto)",
             "grub_msg_timeout_aplicar": "❌ Se agotó el tiempo aplicando la configuración.",
             "grub_msg_falha_aplicar": "❌ Error al aplicar la configuración de GRUB.",
@@ -1204,7 +1215,18 @@
             "desinstalar_log_iniciando": "🗑️ Desinstalando FAP...",
             "desinstalar_log_sucesso": "✅ ¡FAP desinstalado con éxito!",
             "desinstalar_msg_final": "✅ Fedora Advantage Panel fue desinstalado completamente de su ordenador.\n\nPuede cerrar esta ventana ahora.",
+            "desinstalar_log_iniciado": "🚀 Desinstalación iniciada en segundo plano. FAP se cerrará automáticamente cuando install.sh termine.",
+            "desinstalar_msg_em_andamento": "🗑️ ¡Desinstalación iniciada!\n\nFAP se eliminará en segundo plano. Esto puede tardar algunos segundos.\n\nEl contenedor de FAP se cerrará automáticamente. Si no se cierra solo en 1 minuto, ciérralo manualmente.\n\nPara seguir el proceso: tail -f /tmp/fap-install-*.log",
             "texto_concluido_fap_desinstalar": "✅ FAP desinstalado",
+
+            "resetar_progresso_titulo": "🔄 Restablecer progreso de FAP",
+            "resetar_progresso_desc": "Borra el historial de botones ejecutados en FAP. Todos los botones vuelven a su estado inicial. Útil para recomenzar la configuración desde cero sin desinstalar FAP.",
+            "resetar_progresso_aviso": "⚠️ ¡ATENCIÓN: esta acción es irreversible! El historial de progreso se perderá, pero los paquetes instalados por FAP NO se eliminarán.",
+            "resetar_progresso_btn": "🔄 Restablecer progreso",
+            "resetar_progresso_confirm1": "⚠️ ¿Restablecer TODO el progreso de FAP?\n\nEsto borra el historial de ejecución. Todos los botones vuelven a su estado inicial.\n\nLos paquetes instalados por FAP NO se eliminarán — solo se limpia el estado de la UI.\n\n¿Continuar?",
+            "resetar_progresso_confirm2": "🔄 ¡Confirmación final!\n\nEl historial de progreso se perderá PERMANENTEMENTE. La configuración del sistema permanece intacta.\n\n¿Estás seguro?",
+            "resetar_progresso_log": "🔄 Borrando historial de progreso...",
+            "resetar_progresso_sucesso": "Progreso restablecido con éxito. Recarga la página (Ctrl+R) para actualizar los botones.",
 
             "changelog_titulo": "📝 Changelog del FAP",
             "changelog_desc": "Historial de cambios de Fedora Advantage Panel. Cargado automáticamente desde el repositorio oficial en GitHub.",
@@ -1257,8 +1279,8 @@
         },
         "download": {
             "nome": "Descarga",
-            "tooltip": "Instalado vía RPM descargado de una URL (sitio oficial o GitHub). No se actualiza solo — haz clic en \"Instalar\" nuevamente para descargar la versión nueva.",
-            "atualizar": "Haz clic en \"Instalar\" nuevamente para descargar la versión más reciente.",
+            "tooltip": "Instalado vía RPM descargado de una URL (sitio oficial o GitHub). No se actualiza solo — elimínalo con la papelera y haz clic en \"Instalar\" de nuevo para obtener la versión más reciente.",
+            "atualizar": "Elimínalo con la papelera y haz clic en \"Instalar\" de nuevo.",
             "remover": "Usa el ícono de papelera al lado del botón."
         },
         "comunidade": {

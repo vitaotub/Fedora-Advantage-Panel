@@ -51,13 +51,19 @@
         "notif_tarefa_concluida_corpo": "The task has finished. Check the log for details.",
         "status_pacote": "Package {atual} of {total}",
         "badge_atualizar": "Update",
-        "badge_atualizando": "🔄 Updating FAP... Follow progress in About FAP.",
+        "badge_atualizando": "🔄 Updating FAP...",
         "badge_ja_atualizando": "⏳ Update already in progress...",
         "navegacao_bloqueada": "Wait for this session's commands to finish before switching sessions.",
         "ja_estava_ativo": "✅ Already active",
         "tooltip_preexistente_app": "This app was already installed before FAP. The trash icon removes it from the system, but FAP was not responsible for the installation.",
         "tooltip_preexistente_recurso": "This resource was already active before FAP. FAP was not responsible for the configuration, but is treating it as active normally.",
-        "confirm_preexistente_prefixo": "⚠️ WARNING!\n\nThis app was already installed before FAP. Removing it from the system may delete settings and data you created (profiles, favorites, saves).\n\n"
+        "confirm_preexistente_prefixo": "⚠️ WARNING!\n\nThis app was already installed before FAP. Removing it from the system may delete settings and data you created (profiles, favorites, saves).\n\n",
+        "abrir_separador": "Open {nome}",
+        "abrir_abrindo": "⏳ Opening {nome}...",
+        "abrir_aberto": "🚀 {nome} opened!",
+        "abrir_falhou": "⚠️ Could not open {nome}. See /tmp/fap-open-{id}.log",
+        "abrir_timeout": "⏳ {nome} still opening (see /tmp/fap-open-{id}.log)",
+        "erro_sse": "❌ Error connecting SSE: {msg}"
     },
 
     "index": {
@@ -422,6 +428,9 @@
             "log_instalador_iniciado": "🚀 Affinity installer started!",
             "log_instalador_local": "📋 Log: /tmp/fap-affinity/installer.log",
             "log_preparando": "⏳ Preparing...",
+            "log_consultando_github": "🔍 Checking the latest GitHub release...",
+            "log_url_nao_resolvida": "❌ Could not resolve the URL of the latest {nome} RPM.",
+            "log_url_nao_resolvida_rclone": "❌ Could not resolve the Rclone Manager RPM URL.",
             "texto_concluido_affinity": "✅ Affinity prepared",
             "btn_opera": "🌐 Opera",
             "texto_concluido_opera": "✅ Opera installed",
@@ -781,7 +790,8 @@
             "zona_perigo_titulo": "🗑️ Remove Waydroid Completely",
             "nada_remover": "✅ Nothing to remove",
             "ja_feito_preexistente": "✅ Already done (before FAP)",
-            "tooltip_preexistente_waydroid": "This step was already done on the system before FAP. FAP was not the cause — to undo, use the terminal."
+            "tooltip_preexistente_waydroid": "This step was already done on the system before FAP. FAP was not the cause — to undo, use the terminal.",
+            "uninstall_ok": "✅ Waydroid and ALL associated data have been removed."
         },
 
         "virtualizacao": {
@@ -1023,6 +1033,7 @@
             "grub_msg_aplicando": "⏳ Applying configuration...",
             "grub_msg_restaurando": "⏳ Restoring configuration...",
             "grub_msg_aplicado": "✅ <strong>Configuration applied!</strong><br>GRUB_TIMEOUT=10 (10 seconds)<br>GRUB_HIDDEN_TIMEOUT removed (GRUB always shows)",
+            "grub_msg_aplicado_res": "✅ <strong>Configuration applied!</strong><br>GRUB menu always visible, 10s, resolution {res}.",
             "grub_msg_restaurado": "✅ <strong>Configuration restored!</strong><br>GRUB_TIMEOUT=5 (5 seconds)<br>GRUB_HIDDEN_TIMEOUT=0 (GRUB hidden)",
             "grub_msg_timeout_aplicar": "❌ Timeout applying the configuration.",
             "grub_msg_falha_aplicar": "❌ Failed to apply GRUB configuration.",
@@ -1204,7 +1215,18 @@
             "desinstalar_log_iniciando": "🗑️ Uninstalling FAP...",
             "desinstalar_log_sucesso": "✅ FAP uninstalled successfully!",
             "desinstalar_msg_final": "✅ Fedora Advantage Panel was completely uninstalled from your computer.\n\nYou can close this window now.",
+            "desinstalar_log_iniciado": "🚀 Uninstall started in the background. FAP will close automatically when install.sh finishes.",
+            "desinstalar_msg_em_andamento": "🗑️ Uninstall started!\n\nFAP will be removed in the background. This may take a few seconds.\n\nThe FAP container will close automatically. If it doesn't close on its own within 1 minute, close it manually.\n\nTo follow along: tail -f /tmp/fap-install-*.log",
             "texto_concluido_fap_desinstalar": "✅ FAP uninstalled",
+
+            "resetar_progresso_titulo": "🔄 Reset FAP progress",
+            "resetar_progresso_desc": "Deletes the history of buttons executed in FAP. All buttons go back to their initial state. Useful to restart the setup from scratch without uninstalling FAP.",
+            "resetar_progresso_aviso": "⚠️ WARNING: this is irreversible! Progress history will be lost, but packages installed by FAP will NOT be removed.",
+            "resetar_progresso_btn": "🔄 Reset progress",
+            "resetar_progresso_confirm1": "⚠️ Reset ALL FAP progress?\n\nThis deletes the execution history. All buttons go back to their initial state.\n\nPackages installed by FAP will NOT be removed — only the UI state is cleaned.\n\nContinue?",
+            "resetar_progresso_confirm2": "🔄 Final confirmation!\n\nProgress history will be PERMANENTLY lost. System configuration remains intact.\n\nAre you sure?",
+            "resetar_progresso_log": "🔄 Clearing progress history...",
+            "resetar_progresso_sucesso": "Progress reset successfully. Reload the page (Ctrl+R) to refresh the buttons.",
 
             "changelog_titulo": "📝 FAP Changelog",
             "changelog_desc": "History of changes to Fedora Advantage Panel. Loaded automatically from the official repository on GitHub.",
@@ -1257,8 +1279,8 @@
         },
         "download": {
             "nome": "Download",
-            "tooltip": "Installed via an RPM downloaded from a URL (official site or GitHub). Doesn't update itself — click \"Install\" again to download the new version.",
-            "atualizar": "Click \"Install\" again to download the latest version.",
+            "tooltip": "Installed via an RPM downloaded from a URL (official site or GitHub). Doesn't update itself — remove via the trash icon and click \"Install\" again to get the latest version.",
+            "atualizar": "Remove via the trash icon and click \"Install\" again.",
             "remover": "Use the trash icon next to the button."
         },
         "comunidade": {
