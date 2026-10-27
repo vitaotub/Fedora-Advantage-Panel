@@ -364,6 +364,28 @@ disabled>
 </div>
 </details>
 
+<!-- ============================================================
+ACORDEÃO 7: UPGRADE DO FEDORA (44 → 45)
+============================================================
+Visível sempre. O conteúdo interno muda conforme o status
+retornado por /fedora-upgrade-status. Enquanto as condições
+não estiverem satisfeitas, os botões ficam ocultos ou
+desabilitados — nunca executa nada destrutivo sem os
+pré-requisitos cumpridos.
+-->
+<details class="acordeao">
+<summary data-i18n="sessoes.ajustes-manutencao.upgrade_titulo">⬆️ Upgrade do Fedora</summary>
+<div class="acordeao-conteudo">
+
+<div id="upgrade-fedora-conteudo">
+<div style="color: var(--text-muted); font-size: 0.9rem;">
+<span data-i18n="sessoes.ajustes-manutencao.upgrade_carregando">⏳ Verificando disponibilidade do upgrade...</span>
+</div>
+</div>
+
+</div>
+</details>
+
 <!-- Log único da sessão -->
 <div class="terminal-log sessao-compartilhado" id="log-sessao-ajustes-manutencao"></div>
 </div>
@@ -1870,6 +1892,461 @@ async function restaurarEstadoSessao() {
     }
 }
 
+// ============================================================
+// UPGRADE DO FEDORA (44 → 45)
+// ============================================================
+//
+// Consulta /fedora-upgrade-status. O accordion "Upgrade do Fedora"
+// renderiza diferentes estados conforme o retorno:
+//
+//   'waiting_ga'        → Fedora 45 ainda não lançado oficialmente
+//   'waiting_rpmfusion' → Fedora 45 GA, mas RPM Fusion 45 ainda não
+//   'outdated_current'  → Fedora 44 desatualizado (atualizar primeiro)
+//   'no_disk_space'     → Espaço em /var insuficiente
+//   'ready'             → Todos os checks passaram, botão disponível
+//   'downloaded'        → Download feito, botões de reboot/cancelar
+//   'no_upgrade_needed' → Já está no 45 (ou versão mais nova)
+//   'unsupported'       → Fedora < 44 (salto não suportado)
+//   'atomic'            → Sistema imutável, não se aplica
+//   'unknown'           → Não foi possível determinar
+
+var _upgradeStatusCache = null;
+
+function _tUpgrade(chave, fallback) {
+    return _t('sessoes.ajustes-manutencao.' + chave, fallback);
+}
+
+function _tVarsUpgrade(chave, fallback, vars) {
+    return _tVars('sessoes.ajustes-manutencao.' + chave, fallback, vars);
+}
+
+async function _carregarUpgradeStatus() {
+    try {
+        var r = await fetch(API_URL + '/fedora-upgrade-status', { cache: 'no-store' });
+        if (!r.ok) return null;
+        var data = await r.json();
+        _upgradeStatusCache = data;
+        return data;
+    } catch (e) {
+        console.warn('[upgrade-fedora] Falha ao consultar /fedora-upgrade-status:', e.message);
+        return null;
+    }
+}
+
+function _renderizarAreaUpgrade(data) {
+    var container = document.getElementById('upgrade-fedora-conteudo');
+    if (!container) return;
+
+    if (!data || data.error) {
+        container.innerHTML = '<div class="aviso-caixa">❌ ' +
+            _tUpgrade('upgrade_erro_consulta',
+                'Não foi possível verificar a disponibilidade do upgrade. Tente novamente em alguns minutos.') +
+            '</div>';
+        return;
+    }
+
+    var html;
+    switch (data.status) {
+        case 'no_upgrade_needed':
+            html = _renderUpgradeJaAtual(data);
+            break;
+        case 'atomic':
+            html = _renderUpgradeAtomic(data);
+            break;
+        case 'unsupported':
+            html = _renderUpgradeUnsupported(data);
+            break;
+        case 'waiting_ga':
+            html = _renderUpgradeAguardando(data, 'ga');
+            break;
+        case 'waiting_rpmfusion':
+            html = _renderUpgradeAguardando(data, 'rpmfusion');
+            break;
+        case 'outdated_current':
+            html = _renderUpgradeOutdated(data);
+            break;
+        case 'no_disk_space':
+            html = _renderUpgradeSemEspaco(data);
+            break;
+        case 'downloaded':
+            html = _renderUpgradeBaixado(data);
+            break;
+        case 'ready':
+        default:
+            html = _renderUpgradePronto(data);
+            break;
+    }
+
+    container.innerHTML = html;
+
+    if (data.status === 'ready') {
+        _plugarListenersUpgradePronto();
+    }
+}
+
+function _renderUpgradeJaAtual(data) {
+    return (
+        '<div class="aviso-sucesso">✅ <strong>' +
+        _tVarsUpgrade('upgrade_ja_no_alvo',
+            'Você está no Fedora {atual}.',
+            { atual: data.current_version }) +
+        '</strong><br>' +
+        _tUpgrade('upgrade_ja_no_alvo_desc',
+            'Não há upgrade disponível. Para manter o FAP atualizado, use a sessão "Sobre o FAP".') +
+        '</div>'
+    );
+}
+
+function _renderUpgradeAtomic(data) {
+    return (
+        '<div class="aviso-caixa">ℹ️ <strong>' +
+        _tUpgrade('upgrade_atomic_titulo', 'Fedora Atomic detectado.') +
+        '</strong><br>' +
+        _tUpgrade('upgrade_atomic_desc',
+            'Variantes imutáveis (Silverblue, Kinoite, Bazzite, Bluefin) usam rpm-ostree rebase — método diferente do dnf-plugin-system-upgrade. Esta seção não se aplica.') +
+        '</div>'
+    );
+}
+
+function _renderUpgradeUnsupported(data) {
+    var anterior = (parseInt(data.target_version, 10) || 45) - 1;
+    return (
+        '<div class="aviso-caixa">ℹ️ <strong>' +
+        _tUpgrade('upgrade_unsupported_titulo', 'Versão não suportada para salto direto.') +
+        '</strong><br>' +
+        _tVarsUpgrade('upgrade_unsupported_desc',
+            'Você está no Fedora {atual}. O FAP só oferece upgrade direto de {anterior} para {alvo}. Para atualizar sua versão atual, use o método oficial do dnf-plugin-system-upgrade.',
+            { atual: data.current_version, anterior: anterior, alvo: data.target_version }) +
+        '</div>'
+    );
+}
+
+function _renderUpgradeAguardando(data, motivo) {
+    var fedoraOk = data.checks.fedora_ga.ok && data.checks.fedora_channel.ok;
+    var rpmfusionOk = data.checks.rpmfusion_channel.ok;
+
+    var html = '<p>' + _tVarsUpgrade('upgrade_aguardando_intro',
+        'Esta seção permite atualizar o Fedora da versão {atual} para {alvo} quando todas as condições abaixo forem cumpridas. Enquanto isso, os botões de upgrade permanecem ocultos.',
+        { atual: data.current_version, alvo: data.target_version }) + '</p>';
+
+    html += '<strong style="display: block; margin: 1rem 0 0.5rem;">' +
+        _tUpgrade('upgrade_checagens_titulo', '🔍 Checagens automáticas:') +
+        '</strong>';
+
+    html += '<ul class="lista-info">';
+
+    html += '<li><span class="label">' + (fedoraOk ? '✅' : '⏳') + ' ' +
+        _tVarsUpgrade('upgrade_checagem_fedora_ok',
+            'Fedora {alvo} lançado oficialmente (GA)',
+            { alvo: data.target_version }) + '</span>';
+    if (fedoraOk && data.checks.fedora_ga.release_date) {
+        html += '<span class="valor">' + _escapeHTML(data.checks.fedora_ga.release_date) + '</span>';
+    } else {
+        html += '<span class="valor" style="color: var(--warning-soft);">' +
+            _tUpgrade('upgrade_aguardando', 'Aguardando') + '</span>';
+    }
+    html += '</li>';
+
+    html += '<li><span class="label">' + (rpmfusionOk ? '✅' : '⏳') + ' ' +
+        _tVarsUpgrade('upgrade_checagem_rpmfusion',
+            'RPM Fusion {alvo} publicado',
+            { alvo: data.target_version }) + '</span>';
+    if (rpmfusionOk) {
+        html += '<span class="valor">' + _tUpgrade('upgrade_ok', 'OK') + '</span>';
+    } else {
+        html += '<span class="valor" style="color: var(--warning-soft);">' +
+            _tUpgrade('upgrade_aguardando', 'Aguardando') + '</span>';
+    }
+    html += '</li>';
+
+    html += '<li><span class="label">✅ ' +
+        _tVarsUpgrade('upgrade_checagem_versao',
+            'Você está no Fedora {atual}',
+            { atual: data.current_version }) + '</span></li>';
+
+    html += '</ul>';
+
+    if (motivo === 'ga') {
+        html += '<div class="info-extra" style="margin-top: 1rem;">ℹ️ ' +
+            _tVarsUpgrade('upgrade_aguardando_ga_msg',
+                'Você não precisa fazer nada agora. Quando o Fedora {alvo} e o RPM Fusion {alvo} forem liberados, esta área mostrará o botão de upgrade automaticamente. Basta abrir o FAP.',
+                { alvo: data.target_version }) + '</div>';
+    } else {
+        html += '<div class="aviso-caixa" style="margin-top: 1rem;">⚠️ ' +
+            _tVarsUpgrade('upgrade_aguardando_rpmfusion_msg',
+                'O Fedora {alvo} já está disponível, mas o RPM Fusion {alvo} ainda não foi publicado. O RPM Fusion fornece codecs, drivers NVIDIA e outros pacotes essenciais. O upgrade permanecerá bloqueado até que o RPM Fusion {alvo} esteja pronto — normalmente leva de 2 a 7 dias após o lançamento do Fedora.',
+                { alvo: data.target_version }) + '</div>';
+    }
+
+    return html;
+}
+
+function _renderUpgradeOutdated(data) {
+    var upd = data.checks.is_current_up_to_date;
+
+    var html = '<div class="aviso-caixa" style="border-color: var(--warning-border); color: var(--warning-soft);">' +
+        '<strong>⚠️ ' +
+        _tVarsUpgrade('upgrade_outdated_titulo',
+            'Atualize o Fedora {atual} primeiro',
+            { atual: data.current_version }) +
+        '</strong><br>' +
+        _tUpgrade('upgrade_outdated_intro',
+            'O upgrade entre versões exige que o Fedora atual esteja completamente atualizado. Identificamos:') +
+        '<ul style="margin: 0.5rem 0 0 1.25rem; padding: 0;">';
+
+    if (upd.tem_updates) {
+        html += '<li>' +
+            _tVarsUpgrade('upgrade_outdated_updates',
+                'Atualizações pendentes no Fedora {atual}',
+                { atual: data.current_version }) +
+            '</li>';
+    }
+    if (upd.precisa_reboot) {
+        html += '<li>' + _tUpgrade('upgrade_outdated_reboot', 'Reboot pendente') + '</li>';
+    }
+
+    html += '</ul></div>';
+
+    html += '<div class="info-extra" style="margin-top: 1rem;">ℹ️ ' +
+        _tUpgrade('upgrade_outdated_acao',
+            'Abra a sessão "Primeiros Passos" e clique em "Atualizar Fedora" antes de voltar aqui.') +
+        '</div>';
+
+    return html;
+}
+
+function _renderUpgradeSemEspaco(data) {
+    return (
+        '<div class="aviso-caixa" style="border-color: var(--danger); color: var(--danger);">' +
+        '❌ <strong>' +
+        _tUpgrade('upgrade_sem_espaco_titulo', 'Espaço em disco insuficiente') +
+        '</strong><br>' +
+        _tVarsUpgrade('upgrade_sem_espaco_desc',
+            'O download do Fedora {alvo} precisa de pelo menos {min} GB livres em /var. Você tem apenas {livre} GB livres. Libere espaço e tente novamente.',
+            {
+                alvo: data.target_version,
+                min: data.checks.disk_space.min_gb,
+                livre: data.checks.disk_space.livre_gb.toFixed(1)
+            }) +
+        '</div>'
+    );
+}
+
+function _renderUpgradePronto(data) {
+    var html = '';
+
+    html += '<div class="aviso-sucesso">✅ <strong>' +
+        _tUpgrade('upgrade_pronto_titulo',
+            'Todas as checagens passaram. Você pode atualizar com segurança.') +
+        '</strong></div>';
+
+    // Checagens
+    html += '<div class="bloco-info" style="margin-top: 1rem;">';
+    html += '<strong style="display: block; margin-bottom: 0.5rem;">' +
+        _tUpgrade('upgrade_checagens_titulo', '🔍 Checagens automáticas:') +
+        '</strong>';
+    html += '<ul class="lista-info">';
+    html += '<li><span class="label">✅ ' +
+        _tVarsUpgrade('upgrade_checagem_versao',
+            'Você está no Fedora {atual}',
+            { atual: data.current_version }) + '</span></li>';
+    html += '<li><span class="label">✅ ' +
+        _tUpgrade('upgrade_checagem_atualizado', 'Sistema completamente atualizado') + '</span></li>';
+    html += '<li><span class="label">✅ ' +
+        _tUpgrade('upgrade_checagem_sem_reboot', 'Sem reboot pendente') + '</span></li>';
+    html += '<li><span class="label">✅ ' +
+        _tVarsUpgrade('upgrade_checagem_espaco',
+            '{livre} GB livres em /var (mínimo: {min} GB)',
+            { livre: data.checks.disk_space.livre_gb.toFixed(1), min: data.checks.disk_space.min_gb }) + '</span></li>';
+    html += '<li><span class="label">✅ ' +
+        _tVarsUpgrade('upgrade_checagem_fedora_ok',
+            'Fedora {alvo} GA ({data})',
+            { alvo: data.target_version, data: data.checks.fedora_ga.release_date || 'OK' }) + '</span></li>';
+    html += '<li><span class="label">✅ ' +
+        _tVarsUpgrade('upgrade_checagem_rpmfusion',
+            'RPM Fusion {alvo} publicado',
+            { alvo: data.target_version }) + '</span></li>';
+    html += '</ul></div>';
+
+    // Warnings de terceiros
+    html += '<div class="aviso-caixa" style="margin-top: 1rem;">';
+    html += '<strong>' +
+        _tUpgrade('upgrade_terceiros_titulo', '⚠️ Avisos sobre componentes de terceiros:') +
+        '</strong>';
+    if (data.warnings && data.warnings.length > 0) {
+        html += '<ul style="margin: 0.5rem 0 0 1.25rem; padding: 0;">';
+        data.warnings.forEach(function(w) {
+            var chave = 'upgrade_warn_' + w.tipo;
+            var texto = _tVarsUpgrade(chave, '', { n: w.n });
+            if (texto) html += '<li>' + _escapeHTML(texto) + '</li>';
+        });
+        html += '</ul>';
+    } else {
+        html += '<p style="margin-top: 0.5rem;">' +
+            _tUpgrade('upgrade_sem_terceiros',
+                '✅ Nenhum componente de terceiros que exija atenção especial foi detectado.') +
+            '</p>';
+    }
+    html += '</div>';
+
+    // Termos
+    html += '<div class="aviso-caixa" style="margin-top: 1rem;">';
+    html += '<strong>' +
+        _tUpgrade('upgrade_termos_titulo', '⚠️ Termos e responsabilidade') +
+        '</strong>';
+    html += '<p style="margin-top: 0.5rem;">' +
+        _tVarsUpgrade('upgrade_termos_desc',
+            'O botão abaixo faz o DOWNLOAD dos pacotes da versão {alvo} para o seu computador. Pode levar de 30 min a 2 horas dependendo da conexão.',
+            { alvo: data.target_version }) + '</p>';
+    html += '<p style="margin-top: 0.5rem;"><strong>' +
+        _tUpgrade('upgrade_recomendacoes_titulo', 'Recomendamos prosseguir apenas se:') +
+        '</strong></p>';
+    html += '<ul style="margin: 0.25rem 0 0 1.25rem; padding: 0;">';
+    html += '<li>' + _tUpgrade('upgrade_rec_backup', 'Você tem backup dos seus dados') + '</li>';
+    html += '<li>' +
+        _tVarsUpgrade('upgrade_rec_suporte',
+            'Todos os apps e drivers que você usa já têm suporte ao Fedora {alvo}',
+            { alvo: data.target_version }) + '</li>';
+    html += '<li>' +
+        _tUpgrade('upgrade_rec_estabilidade',
+            'Você pode manter o computador ligado e sem interrupções durante o download') + '</li>';
+    html += '<li>' +
+        _tUpgrade('upgrade_rec_nao_fechar',
+            'Você NÃO fechará o FAP durante o download') + '</li>';
+    html += '</ul>';
+    html += '<p style="margin-top: 0.75rem;">' +
+        _tUpgrade('upgrade_nao_responsabilidade',
+            'O FAP disponibiliza este botão como uma forma de facilitar o processo, mas NÃO se responsabiliza se algo der errado — incluindo desligamento acidental do computador, queda de energia, ou falhas em pacotes de terceiros (drivers, COPRs, Terra). Em caso de falha, a recuperação pode exigir terminal avançado e/ou chaves de recuperação.') +
+        '</p>';
+    html += '</div>';
+
+    // Checkbox + botão
+    html += '<div style="margin-top: 1.5rem; padding: 1rem; border: 1px solid var(--border); border-radius: 8px;">';
+    html += '<label style="display: flex; align-items: flex-start; gap: 0.5rem; cursor: pointer; font-size: 0.9rem;">';
+    html += '<input type="checkbox" id="upgrade-confirmar-riscos" style="margin-top: 0.2rem;">';
+    html += '<span>' +
+        _tUpgrade('upgrade_checkbox', 'Li os avisos acima e entendo os riscos.') +
+        '</span></label>';
+    html += '<div class="botoes-flex" style="margin-top: 1rem;">';
+    html += '<button class="btn-executar" id="btn-upgrade-baixar" disabled onclick="executarUpgradeDownload()" style="opacity: 0.5; cursor: not-allowed;">';
+    html += '📥 ' +
+        _tVarsUpgrade('upgrade_btn_baixar',
+            'Baixar pacotes do Fedora {alvo}',
+            { alvo: data.target_version }) +
+        '</button></div></div>';
+
+    // Progress container
+    html += '<div class="progress-container" id="progress-upgrade-f45-download">' +
+        '<div class="progress-bar"><div class="progress-fill" id="progress-fill-upgrade-f45-download"></div></div>' +
+        '<div class="progress-text"><span class="status" id="progress-status-upgrade-f45-download">⏳ Iniciando...</span>' +
+        '<span class="percentage" id="progress-percent-upgrade-f45-download">0%</span></div></div>';
+
+    return html;
+}
+
+function _plugarListenersUpgradePronto() {
+    var checkbox = document.getElementById('upgrade-confirmar-riscos');
+    var btn = document.getElementById('btn-upgrade-baixar');
+    if (!checkbox || !btn) return;
+
+    checkbox.addEventListener('change', function() {
+        btn.disabled = !this.checked;
+        btn.style.opacity = this.checked ? '1' : '0.5';
+        btn.style.cursor = this.checked ? 'pointer' : 'not-allowed';
+    });
+}
+
+function _renderUpgradeBaixado(data) {
+    var html = '';
+
+    html += '<div class="aviso-sucesso">✅ <strong>' +
+        _tUpgrade('upgrade_baixado_titulo', 'Download concluído!') +
+        '</strong><br>' +
+        _tVarsUpgrade('upgrade_baixado_desc',
+            'Os pacotes do Fedora {alvo} foram baixados com sucesso. Agora você decide quando reiniciar. O upgrade real acontece no próximo boot, antes de qualquer login. Tempo estimado: 20 a 40 minutos.',
+            { alvo: data.target_version }) +
+        '</div>';
+
+    html += '<div class="aviso-caixa" style="margin-top: 1rem; border-color: var(--danger); color: var(--danger);">' +
+        '⚠️ <strong>' +
+        _tUpgrade('upgrade_baixado_aviso_titulo',
+            'NÃO desligue o computador durante o processo de upgrade.') +
+        '</strong><br>' +
+        _tUpgrade('upgrade_baixado_aviso_desc',
+            'Se precisar cancelar o upgrade, use o botão "Cancelar upgrade" abaixo. Ele apaga o download feito e retorna ao estado inicial.') +
+        '</div>';
+
+    html += '<div class="botoes-flex" style="margin-top: 1.5rem;">';
+    html += '<button class="btn-executar" onclick="executarUpgradeReboot()">' +
+        '🔄 ' + _tUpgrade('upgrade_btn_reboot', 'Reiniciar agora e atualizar') +
+        '</button>';
+    html += '<button class="btn-executar vermelho" onclick="executarUpgradeCancelar()">' +
+        '🗑️ ' + _tUpgrade('upgrade_btn_cancelar', 'Cancelar upgrade') +
+        '</button></div>';
+
+    html += '<div class="progress-container" id="progress-upgrade-f45-reboot">' +
+        '<div class="progress-bar"><div class="progress-fill" id="progress-fill-upgrade-f45-reboot"></div></div>' +
+        '<div class="progress-text"><span class="status" id="progress-status-upgrade-f45-reboot">⏳ Iniciando...</span>' +
+        '<span class="percentage" id="progress-percent-upgrade-f45-reboot">0%</span></div></div>';
+
+    html += '<div class="progress-container" id="progress-upgrade-f45-cancelar">' +
+        '<div class="progress-bar"><div class="progress-fill" id="progress-fill-upgrade-f45-cancelar"></div></div>' +
+        '<div class="progress-text"><span class="status" id="progress-status-upgrade-f45-cancelar">⏳ Iniciando...</span>' +
+        '<span class="percentage" id="progress-percent-upgrade-f45-cancelar">0%</span></div></div>';
+
+    return html;
+}
+
+async function executarUpgradeDownload() {
+    var idComando = 'upgrade-f45-download';
+    var alvo = _upgradeStatusCache ? _upgradeStatusCache.target_version : '45';
+    var comando =
+        'sudo dnf install -y dnf-plugin-system-upgrade && ' +
+        'sudo dnf upgrade --refresh -y && ' +
+        'sudo dnf system-upgrade download --releasever=' + alvo + ' -y';
+
+    await executarComandoGenerico(idComando, comando,
+        _tVarsUpgrade('upgrade_log_baixando',
+            '📥 Baixando pacotes do Fedora {alvo}',
+            { alvo: alvo }),
+        async function() {
+            var novoStatus = await _carregarUpgradeStatus();
+            _renderizarAreaUpgrade(novoStatus);
+        },
+        false, 7200000);
+}
+
+async function executarUpgradeReboot() {
+    if (!confirm(_tUpgrade('upgrade_reboot_confirmar',
+        '⚠️ Reiniciar agora e aplicar o upgrade?\n\n' +
+        'O computador será reiniciado IMEDIATAMENTE e o processo de upgrade do Fedora começará antes de qualquer login. Pode levar de 20 a 40 minutos.\n\n' +
+        'NÃO desligue o computador durante o processo.\n\n' +
+        'Continuar?'))) return;
+
+    var idComando = 'upgrade-f45-reboot';
+    var comando = 'sudo dnf system-upgrade reboot';
+
+    await executarComandoGenerico(idComando, comando,
+        _tUpgrade('upgrade_log_reiniciando', '🔄 Reiniciando para aplicar upgrade'));
+}
+
+async function executarUpgradeCancelar() {
+    if (!confirm(_tUpgrade('upgrade_cancelar_confirmar',
+        '⚠️ Cancelar o upgrade agendado?\n\n' +
+        'Os pacotes baixados serão apagados do disco. Você poderá baixá-los novamente quando quiser.\n\n' +
+        'Continuar?'))) return;
+
+    var idComando = 'upgrade-f45-cancelar';
+    var comando = 'sudo dnf system-upgrade clean';
+
+    await executarComandoGenerico(idComando, comando,
+        _tUpgrade('upgrade_log_cancelando', '🗑️ Cancelando upgrade agendado'),
+        async function() {
+            var novoStatus = await _carregarUpgradeStatus();
+            _renderizarAreaUpgrade(novoStatus);
+        });
+}
+
 // ------------------------------------------------------------
 // INICIALIZAÇÃO
 // ------------------------------------------------------------
@@ -1883,6 +2360,14 @@ async function restaurarEstadoSessao() {
 
     restaurarEstadoSessao();
     setTimeout(initCustomSelects, 200);
+
+    // Área de upgrade: consulta o endpoint em background, sem
+    // bloquear o resto da sessão. O conteúdo do accordion é
+    // preenchido depois (não é bloqueante).
+    setTimeout(async function() {
+        var data = await _carregarUpgradeStatus();
+        _renderizarAreaUpgrade(data);
+    }, 500);
 
     console.log('📦 Componente ajustes-manutencao carregado!');
 })();

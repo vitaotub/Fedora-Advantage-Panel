@@ -13,151 +13,104 @@ que exibe a seção da versão atual dentro do FAP, na sessão **Sobre o FAP**.
 
 ---
 
-## v1.2.4-10262026
+## v1.3.0-10272026
 
-Rodada de testes em instalação limpa do Fedora 44 revelou uma série de
-inconsistências entre sessões. Correções de detecção de hardware, estado
-inicial de botões, comportamento de tooltips, e feedback visual em
-operações de repositório. Nenhuma feature nova — apenas consistência,
-manutenção e otimizações.
+Primeira feature nova desde a `1.2.0`. A sessão **Ajustes e Manutenção**
+ganha uma área dedicada ao upgrade do Fedora 44 → 45, com detecção
+automática de disponibilidade e três pontos de escape para o usuário.
 
-### 🐛 Corrigido
+### ✨ Novo — Área "Upgrade do Fedora" (Sessão 12)
 
-- **Sessão 1 — botão "Remover repositório Fedora Flatpak" não detectava
-  estado real.** Iniciava habilitado mesmo quando o remote `fedora` /
-  `fedora-testing` já havia sido removido manualmente. Agora consulta
-  `SystemState.remoteFlatpakAtivo`: se o remote não existe, mostra
-  "✅ Já removido (antes do FAP)" em cinza, desabilitado.
+Accordion visível sempre na sessão 12, logo abaixo de "Manutenção do
+Fedora". O conteúdo interno muda conforme o status retornado pelo novo
+endpoint `GET /fedora-upgrade-status`, e cobre 9 estados possíveis:
 
-- **Sessão 3 — seções AMD e Intel sem detecção de hardware.** O botão
-  "Instalar Intel Media Driver" aparecia habilitado em APU AMD. As
-  seções AMD e Intel agora têm a mesma verificação da NVIDIA: se o
-  hardware do vendor não está presente (`lspci` + `hardware_map.json`),
-  a seção fica cinza, desabilitada, com aviso "Nenhuma GPU X detectada
-  neste sistema". AMD detecta `1002` (GPU) e `1022` (APU); Intel detecta
-  `8086` (iGPU).
+- **`waiting_ga`** — Fedora 45 ainda não lançado oficialmente. Mostra
+  as checagens em andamento (GA + RPM Fusion) e uma mensagem
+  informando que não há nada a fazer.
+- **`waiting_rpmfusion`** — Fedora 45 GA confirmado, mas RPM Fusion 45
+  ainda não publicado. Explica por que o botão permanece bloqueado.
+- **`outdated_current`** — Fedora 44 desatualizado (packages ou reboot
+  pendentes). Instrui a abrir a sessão 1 e rodar "Atualizar Fedora".
+- **`no_disk_space`** — Menos de 8 GB livres em `/var`. Detalha o
+  espaço detectado.
+- **`ready`** — Todos os checks passaram. Exibe 6 checagens verdes,
+  lista de avisos sobre componentes de terceiros detectados (NVIDIA,
+  Broadcom, Terra, COPRs, Razer, xpadneo, Realtek), bloco completo de
+  **termos e responsabilidade**, e checkbox obrigatório ("Li os avisos
+  e entendo os riscos") antes de habilitar o botão.
+- **`downloaded`** — Pacotes já baixados. Mostra **dois botões**:
+  "Reiniciar agora e atualizar" + "Cancelar upgrade". O reboot é
+  decisão do usuário, nunca automático.
+- **`no_upgrade_needed`** — Já está no 45 (ou mais novo). Mensagem
+  verde, área continua visível.
+- **`unsupported`** — Fedora < 44. Salto direto não é permitido.
+- **`atomic`** — Fedora Atomic/Silverblue. Explica que o método é
+  diferente (`rpm-ostree rebase`).
 
-- **Sessão 4 — OpenRazer falhava com `kernel-headers-${VERSION}`.** O
-  comando `sudo dnf install -y kernel-devel-${CURRENT_KERNEL} kernel-headers-${CURRENT_KERNEL}`
-  falhava com "Nenhuma correspondência para o argumento:
-  kernel-headers-7.x.x". `kernel-headers` é pacote genérico (sem
-  versão) no Fedora. Corrigido para `kernel-headers` sem sufixo.
+### 🔧 Novo — Endpoint `GET /fedora-upgrade-status`
 
-- **Sessão 4 — botão "Ativar repositório" da OpenRazer travava em 30%.**
-  O comando era rápido (`dnf config-manager addrepo`), mas o SSE podia
-  perder o `end` se a conexão não estivesse estabelecida quando o
-  comando terminava. Adicionado fallback em `aguardarConclusaoEEntao`:
-  se o timeout disparar, consulta `/progress` e completa o progresso
-  manualmente se o id estiver marcado. Timeout do `executarCoprEnable`
-  reduzido para 60s.
+Consulta fontes oficiais para decidir se é seguro expor o botão de
+upgrade:
 
-- **Sessão 4 — Broadcom duplicado.** O driver aparecia em "Detecção
-  automática" (via `hardware_map.json`) e em "Drivers da comunidade
-  (COPR)" (bloco HTML dedicado). Removido o bloco dedicado; Broadcom
-  fica apenas na detecção automática (aparece só quando o hardware é
-  detectado).
+- **Fedora 45 GA** — parse do `releases.json` oficial
+  (`https://fedoraproject.org/releases.json`), verificando
+  `version == 45`, `release_date` no passado e `eol` futuro/ausente.
+- **Canal `updates/45/`** — HEAD em
+  `mirrors.kernel.org/fedora/updates/45/Everything/x86_64/repodata/repomd.xml`.
+- **RPM Fusion 45** — HEAD em
+  `mirrors.rpmfusion.org/free/fedora/updates/45/Everything/x86_64/repodata/repomd.xml`.
+- **Sistema atual atualizado** — `dnf check-update` (exit 0) +
+  `dnf needs-restarting -r` (exit 0).
+- **Espaço em `/var`** — `df -BG`, mínimo 8 GB.
+- **Download pendente** — `/var/lib/dnf/system-upgrade/` tem conteúdo.
+- **Componentes de terceiros** — NVIDIA, Broadcom, Terra, Razer,
+  xpadneo, Realtek, contagem de COPRs.
 
-- **Sessão 5 — OBS Studio e EasyEffects não detectados.** Ambos estavam
-  instalados via Flatpak, mas `SystemState.flatpakInstalado` retornava
-  `false` porque o `/system-state` do server era consultado antes do
-  `flatpak list` terminar (cache de 60s). Adicionado retry em
-  `SystemState.carregar`: se `flatpaks_installed` vier vazio com
-  `flatpak:flathub` ativo, refetch com `?refresh=1` (que invalida o
-  cache do server via `systemStateService.invalidarCache()`).
+Cache de 6h em memória. Todos os comandos são read-only.
 
-- **Sessão 6 — aviso redundante do Lightworks.** O `<div class="aviso-caixa">`
-  sobre Lightworks não atualizar sozinho era redundante com o badge de
-  origem "Download" no botão. Removido o aviso (HTML + chave
-  `lightworks_aviso` dos locales).
+### 🔒 Segurança
 
-- **Tooltip de origem duplicado em todo o FAP.** Botões com badge
-  colorido mostravam dois tooltips diferentes: "Instalado via DNF..."
-  (no badge) e "Fedora — Instalado via DNF..." (no botão). O
-  `_renderizarBadgeOrigem` aplicava tooltip no botão inteiro, e o
-  `aplicarEstadoInstalavel` limpava-o a cada render, causando
-  inconsistência. Correção: tooltip de origem **só no badge**.
-  `_renderizarBadgeOrigem` não toca mais em `btn.title`. O tooltip de
-  pré-existente (setado por `aplicarEstadoInstalavel`) continua
-  funcionando — é independente.
-
-- **Sessão 8 — "Teste de Controle" renomeado.** O app se chama
-  **Joystick Preferences** (`jstest-gtk`), não "Teste de Controle".
-  Renomeados: título da área, botão de instalar, botão de abrir, texto
-  de conclusão, chaves i18n (`controller_test_*` → `joystick_prefs_*`),
-  e o `textoConcluido` em `SESSOES.gaming`.
-
-- **Sessão 8 — "Abrir Joystick Preferences" via binário direto.**
-  `gtk-launch jstest-gtk` podia falhar em alguns sistemas;
-  `abrirControllerTest` usa `jstest-gtk` direto. Adicionado
-  `setsid -f jstest-gtk` à whitelist do `server.js`.
-
-- **Sessão 11 — "Abrir CoolerControl" não abria.** O `.desktop` se
-  chama `org.coolercontrol.CoolerControl.desktop`, não
-  `coolercontrol.desktop`. `gtk-launch coolercontrol` falhava com "no
-  such application". Trocado por binário direto `coolercontrol`
-  (`/usr/bin/coolercontrol`). Adicionado `setsid -f coolercontrol` à
-  whitelist do `server.js`.
-
-- **Sessão 12 — GRUB sem preview das mudanças.** O botão "Aplicar
-  Configuração Recomendada" aplicava mudanças sem o usuário ver o que
-  seria alterado. Adicionado bloco "🔍 O que será aplicado" entre o
-  painel atual e os botões, com diff (`valor atual → valor novo`) de
-  cada parâmetro: `GRUB_TIMEOUT`, `GRUB_TIMEOUT_STYLE`, `GRUB_GFXMODE`,
-  `GRUB_DISABLE_OS_PROBER`, `GRUB_DEFAULT`, `GRUB_DISABLE_SUBMENU`,
-  `GRUB_TERMINAL_OUTPUT`, `GRUB_CMDLINE_LINUX`, `GRUB_DISABLE_RECOVERY`.
-  O preview é escondido após "Aplicar" com sucesso.
-
-- **Sessão 13 — "Verificar Versão do Fedora" com auto-load.** O painel
-  era preenchido automaticamente no boot (via `verificarVersaoFedora(true)`).
-  Agora só aparece após o clique no botão, por consistência com o resto
-  da sessão (que só mostra dados após ação explícita).
-
-- **Sistema de atualização — cache "sem atualização" longo demais.**
-  O `verificarAtualizacoes` usava um único TTL de 12 horas para todos
-  os casos. Quando o cache dizia "não há atualização", o FAP não
-  consultava o GitHub novamente por 12h — então uma versão publicada
-  logo após o último check ficava invisível até o TTL expirar.
-  Correção: TTLs separados. **"Há atualização"** continua com 12h
-  (uma vez detectado, o estado já é verdadeiro; e o
-  `mostrarBadgeSeHouverAtualizacao` faz uma confirmação fresca antes
-  de renderizar o badge). **"Sem atualização"** caiu para **15
-  minutos**. Adicionado também `?_=<timestamp>` + `cache: 'no-store'`
-  na chamada do fetch, para vencer o `Cache-Control: max-age=60` que
-  o GitHub API envia por padrão — sem isso, uma release recém-publicada
-  podia ficar invisível por até 1 minuto mesmo com o TTL curto.
-
-### ⚠️ IMPORTANTE — reinstalar o FAP
-
-**A v1.2.4 corrige um bug no sistema de notificação de atualizações.**
-O cache de "não há atualização" tinha TTL de 12 horas, o que impedia o
-badge de atualizações aparecer.
-
-- reinstale o FAP para que esta correção seja aplicada.
-  ```
-  bash <(curl -s https://raw.githubusercontent.com/vitaotub/Fedora-Advantage-Panel/main/install.sh)
-  ```
-  A reinstalação preserva `.progresso.json`, tema e idioma.
-
-- **Efeito prático sem reinstalar:** O badge de "atualização disponível"
-só aparece  quando o cache de 12h expirar. Reinstalar é o caminho mais rápido
-  e confiável.
+- **Nenhuma operação destrutiva ocorre sem ação explícita.** A área
+  só executa após: (a) todos os checks passarem; (b) usuário marcar
+  o checkbox de confirmação; (c) usuário clicar no botão de download.
+- **Reboot nunca é automático.** Após o download, o usuário escolhe
+  entre reiniciar ou cancelar. O `dnf system-upgrade reboot` só roda
+  após segunda confirmação explícita.
+- **Cancelamento possível em 3 pontos:** antes do download (área
+  não expõe botão), após o download (botão "Cancelar upgrade"), e
+  após o reboot via `dnf system-upgrade clean` manual.
+- **Salto único de versão.** Nunca 43 → 45. Sempre 44 → 45.
+- **Fedora Atomic não é afetado.** Detectado e bloqueado com
+  explicação.
 
 ### ⚠️ Nota de atualização
 
-- **`server.js`** ganhou 2 entradas em `COMANDOS_SEM_AUTENTICACAO`
-  (`setsid -f coolercontrol`, `setsid -f jstest-gtk`) e aceita
-  `?refresh=1` no endpoint `/system-state` (invalida o cache do server).
-  Reabra o FAP depois de atualizar.
-- **`script.js`** — correção do TTL do cache de atualização (descrita
-  acima) + repasse de `timeoutMs` na sobrescrita de
-  `executarComandoGenerico` (o parâmetro estava sendo engolido em
-  chamadas como a do `executarCoprEnable`).
-- **`locales/en.json`** e **`locales/es.json`** ganharam 12 chaves novas
-  cada (`amd_sem_gpu_*`, `intel_sem_gpu_*`, `remover_fedora_flatpak_ja_removido`,
-  `tooltip_ja_removido_fedora_flatpak`, `grub_preview_*`) e 5 chaves
-  renomeadas (`controller_test_*` → `joystick_prefs_*`). A chave
-  `lightworks_aviso` foi removida.
-- **`.progresso.json`** não muda de formato. `fap-container` não precisa
-  ser recompilado.
+- **`server.js`** ganhou o endpoint `/fedora-upgrade-status` e helpers
+  (`_calcularUpgradeStatus`, `_verificarGaFedora`, etc.). Reabra o FAP
+  depois de atualizar.
+- **`ajustes-manutencao.html`** ganhou o accordion novo + as funções
+  `_carregarUpgradeStatus`/`_renderizarAreaUpgrade`/`executarUpgrade*`.
+  Nada existente foi modificado.
+- **`locales/en.json`** e **`locales/es.json`** — 50 chaves novas
+  sob `sessoes.ajustes-manutencao.upgrade_*`, incluindo as 7 warnings
+  (`upgrade_warn_nvidia`, `upgrade_warn_broadcom`, `upgrade_warn_terra`,
+  `upgrade_warn_razer`, `upgrade_warn_xpadneo`, `upgrade_warn_realtek`,
+  `upgrade_warn_coprs`).
+- **`.progresso.json`** não muda de formato. `fap-container` não
+  precisa ser recompilado.
+
+### 🧪 Não testado nesta release
+
+- **Fedora 45 real** — o endpoint não pôde ser validado com o 45
+  efetivamente publicado. A lógica de detecção (`releases.json` +
+  HEAD `repomd.xml`) foi testada com o 44 GA, que retorna corretamente
+  `waiting_ga` (releases.json aponta para versão 44, target é 45).
+- **Download de 45 real** — o `dnf system-upgrade download --releasever=45`
+  não pôde ser testado com a versão real. O fluxo de estado
+  (`ready` → `downloaded` → `reboot`/`cancelar`) foi validado com
+  mocks do endpoint.
+- **Waydroid** — pendência desde a `1.2.2`.
+- **Hardware NVIDIA real** — pendência desde a `1.2.2`.
 
 ---

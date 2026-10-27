@@ -630,6 +630,292 @@ function _lerChangelogVersao(versao) {
 }
 
 // ============================================================
+// UPGRADE DO FEDORA — detecção de disponibilidade
+// ============================================================
+//
+// Consulta fontes oficiais para decidir se é seguro expor o botão
+// de upgrade na sessão 12 (Ajustes e Manutenção).
+//
+// Condições OBRIGATÓRIAS (bloqueantes) para 'ready':
+//   1. Fedora 45 GA confirmado em releases.json oficial
+//   2. Canal updates/45/ servindo (HEAD em repomd.xml)
+//   3. RPM Fusion 45 publicado (HEAD em repomd.xml do RPM Fusion)
+//   4. Sistema atual (44) completamente atualizado (dnf check-update
+//      retorna 0 E dnf needs-restarting retorna 0)
+//   5. Pelo menos 8 GB livres em /var
+//
+// Condições INFORMATIVAS (warnings): NVIDIA, Broadcom, Terra,
+// COPRs, Razer, xpadneo, Realtek — não bloqueiam, só avisam.
+//
+// Cache de 6h. O estado não muda rápido o suficiente para
+// justificar consultas mais frequentes — e o releases.json oficial
+// agradece.
+
+var _upgradeStatusCache = { dados: null, ts: 0 };
+var UPGRADE_CACHE_TTL_MS = 6 * 60 * 60 * 1000;
+var UPGRADE_TARGET_VERSION = '45';
+var UPGRADE_MIN_DISK_GB = 8;
+
+async function _verificarGaFedora(versao) {
+    try {
+        var resp = await fetch('https://fedoraproject.org/releases.json',
+                               { cache: 'no-store', signal: AbortSignal.timeout(10000) });
+        if (!resp.ok) return { ok: false, motivo: 'HTTP ' + resp.status };
+        var data = await resp.json();
+        if (!Array.isArray(data)) return { ok: false, motivo: 'formato inesperado' };
+
+        var release = data.find(function(r) {
+            return String(r.version) === String(versao);
+        });
+        if (!release) return { ok: false, motivo: 'versão ' + versao + ' ainda não anunciada' };
+
+        var agora = new Date();
+        if (release.release_date) {
+            var rd = new Date(release.release_date);
+            if (rd > agora) {
+                return { ok: false, motivo: 'release_date futura', release_date: release.release_date };
+            }
+        }
+        if (release.eol && new Date(release.eol) < agora) {
+            return { ok: false, motivo: 'versão em EOL' };
+        }
+        return { ok: true, release_date: release.release_date || null };
+    } catch (e) {
+        return { ok: false, motivo: e.message };
+    }
+}
+
+async function _verificarCanalFedora(versao) {
+    try {
+        var url = 'https://mirrors.kernel.org/fedora/updates/' + versao +
+        '/Everything/x86_64/repodata/repomd.xml';
+        var resp = await fetch(url, { method: 'HEAD', signal: AbortSignal.timeout(10000) });
+        return { ok: resp.ok, status: resp.status };
+    } catch (e) {
+        return { ok: false, motivo: e.message };
+    }
+}
+
+async function _verificarCanalRpmFusion(versao) {
+    try {
+        var url = 'https://mirrors.rpmfusion.org/free/fedora/updates/' + versao +
+        '/Everything/x86_64/repodata/repomd.xml';
+        var resp = await fetch(url, { method: 'HEAD', signal: AbortSignal.timeout(10000) });
+        return { ok: resp.ok, status: resp.status };
+    } catch (e) {
+        return { ok: false, motivo: e.message };
+    }
+}
+
+async function _detectarVersaoAtualFedora() {
+    var out = await _execReadOnly('cat /etc/fedora-release 2>/dev/null', 3000);
+    var match = out.match(/(\d+)/);
+    return match ? match[1] : null;
+}
+
+async function _detectarAtomic() {
+    var out = await _execReadOnly(
+        '[ -f /run/ostree-booted ] && echo "atomic" || ' +
+        '(command -v rpm-ostree > /dev/null 2>&1 && echo "atomic" || echo "tradicional")',
+                                  3000
+    );
+    return out.trim() === 'atomic';
+}
+
+async function _verificarAtualizacoesPendentes() {
+    var check = await _execReadOnly(
+        'dnf check-update --quiet > /dev/null 2>&1; echo "exit=$?"',
+        20000
+    );
+    var m = check.match(/exit=(\d+)/);
+    var codigo = m ? parseInt(m[1], 10) : -1;
+    var temUpdates = codigo === 100;
+    var checagemOk = (codigo === 0 || codigo === 100);
+
+    var restart = await _execReadOnly(
+        'dnf needs-restarting -r > /dev/null 2>&1; echo "exit=$?"',
+        10000
+    );
+    var mr = restart.match(/exit=(\d+)/);
+    var codigoR = mr ? parseInt(mr[1], 10) : -1;
+    var precisaReboot = (codigoR === 1);
+
+    return {
+        tem_updates: temUpdates,
+        precisa_reboot: precisaReboot,
+        checagem_ok: checagemOk
+    };
+}
+
+async function _verificarEspacoDisco() {
+    var out = await _execReadOnly(
+        "df -BG /var 2>/dev/null | tail -1 | awk '{print $4}' | tr -d 'G'",
+        3000
+    );
+    var livre = parseFloat(out) || 0;
+    return { livre_gb: livre, suficiente: livre >= UPGRADE_MIN_DISK_GB };
+}
+
+async function _verificarDownloadConcluido() {
+    // O system-upgrade do DNF mantém o estado em /var/lib/dnf/system-upgrade/.
+    // Se a pasta existe e tem conteúdo, o download foi feito.
+    var out = await _execReadOnly(
+        '[ -d /var/lib/dnf/system-upgrade ] && ' +
+        '[ -n "$(ls -A /var/lib/dnf/system-upgrade 2>/dev/null)" ] && ' +
+        'echo "yes" || echo "no"',
+        3000
+    );
+    return out.trim() === 'yes';
+}
+
+async function _detectarComponentesTerceiros() {
+    var script = [
+        'rpm -q akmod-nvidia 2>/dev/null | grep -q "^akmod-nvidia" && echo "nvidia=1" || echo "nvidia=0"',
+        'rpm -q akmod-wl 2>/dev/null | grep -q "^akmod-wl" && echo "broadcom=1" || echo "broadcom=0"',
+        '[ -f /etc/yum.repos.d/hardware:razer.repo ] && echo "razer=1" || echo "razer=0"',
+        'rpm -q xpadneo 2>/dev/null | grep -q "^xpadneo" && echo "xpadneo=1" || echo "xpadneo=0"',
+        'ls /etc/yum.repos.d/terra*.repo > /dev/null 2>&1 && echo "terra=1" || echo "terra=0"',
+        'rpm -q akmod-r8168 2>/dev/null | grep -q "^akmod-r8168" && echo "realtek=1" || echo "realtek=0"',
+        'COUNT=$(ls /etc/yum.repos.d/*copr*.repo 2>/dev/null | wc -l); echo "coprs_count=$COUNT"'
+    ].join('; ');
+
+    var out = await _execReadOnly(script, 10000);
+    var raw = _parseChaveValor(out);
+
+    return {
+        nvidia_driver: raw.nvidia === '1',
+        broadcom_wifi: raw.broadcom === '1',
+        razer_repo: raw.razer === '1',
+        xpadneo: raw.xpadneo === '1',
+        terra_repo: raw.terra === '1',
+        realtek_ethernet: raw.realtek === '1',
+        coprs_count: parseInt(raw.coprs_count, 10) || 0
+    };
+}
+
+async function _calcularUpgradeStatus() {
+    var agora = Date.now();
+    if (_upgradeStatusCache.dados && (agora - _upgradeStatusCache.ts) < UPGRADE_CACHE_TTL_MS) {
+        return _upgradeStatusCache.dados;
+    }
+
+    var versaoAtual = await _detectarVersaoAtualFedora();
+    var isAtomic = await _detectarAtomic();
+    var target = UPGRADE_TARGET_VERSION;
+
+    var resultado = {
+        current_version: versaoAtual,
+        target_version: target,
+        is_atomic: isAtomic,
+        status: 'unknown',
+        checks: {
+            fedora_ga: { ok: false, release_date: null },
+            fedora_channel: { ok: false },
+            rpmfusion_channel: { ok: false },
+            is_current_up_to_date: { ok: false, tem_updates: false, precisa_reboot: false, checagem_ok: false },
+            disk_space: { ok: false, livre_gb: 0 },
+            download_state: { downloaded: false }
+        },
+        components: {},
+        warnings: []
+    };
+
+    if (!versaoAtual) {
+        resultado.status = 'unknown';
+        _upgradeStatusCache = { dados: resultado, ts: agora };
+        return resultado;
+    }
+
+    if (isAtomic) {
+        resultado.status = 'atomic';
+        _upgradeStatusCache = { dados: resultado, ts: agora };
+        return resultado;
+    }
+
+    var vAtualNum = parseInt(versaoAtual, 10) || 0;
+    var vAlvoNum = parseInt(target, 10) || 0;
+
+    if (vAtualNum === vAlvoNum || vAtualNum > vAlvoNum) {
+        resultado.status = 'no_upgrade_needed';
+        _upgradeStatusCache = { dados: resultado, ts: agora };
+        return resultado;
+    }
+
+    if (vAtualNum < vAlvoNum - 1) {
+        resultado.status = 'unsupported';
+        _upgradeStatusCache = { dados: resultado, ts: agora };
+        return resultado;
+    }
+
+    // Versão atual é 44, alvo é 45. Roda as checagens em paralelo.
+    var resultados = await Promise.all([
+        _verificarGaFedora(target),
+                                       _verificarCanalFedora(target),
+                                       _verificarCanalRpmFusion(target),
+                                       _verificarAtualizacoesPendentes(),
+                                       _verificarEspacoDisco(),
+                                       _verificarDownloadConcluido(),
+                                       _detectarComponentesTerceiros()
+    ]);
+
+    var fedoraGa = resultados[0];
+    var fedoraChannel = resultados[1];
+    var rpmfusionChannel = resultados[2];
+    var updates = resultados[3];
+    var disk = resultados[4];
+    var download = resultados[5];
+    var components = resultados[6];
+
+    resultado.checks.fedora_ga = fedoraGa;
+    resultado.checks.fedora_channel = fedoraChannel;
+    resultado.checks.rpmfusion_channel = rpmfusionChannel;
+    resultado.checks.is_current_up_to_date = {
+        ok: updates.checagem_ok && !updates.tem_updates && !updates.precisa_reboot,
+        tem_updates: updates.tem_updates,
+        precisa_reboot: updates.precisa_reboot,
+        checagem_ok: updates.checagem_ok
+    };
+    resultado.checks.disk_space = {
+        ok: disk.suficiente,
+        livre_gb: disk.livre_gb,
+        min_gb: UPGRADE_MIN_DISK_GB
+    };
+    resultado.checks.download_state = { downloaded: download };
+    resultado.components = components;
+
+    // Warnings informativos — o client traduz pelo tipo.
+    if (components.nvidia_driver)  resultado.warnings.push({ tipo: 'nvidia' });
+    if (components.broadcom_wifi)  resultado.warnings.push({ tipo: 'broadcom' });
+    if (components.terra_repo)     resultado.warnings.push({ tipo: 'terra' });
+    if (components.razer_repo)     resultado.warnings.push({ tipo: 'razer' });
+    if (components.xpadneo)        resultado.warnings.push({ tipo: 'xpadneo' });
+    if (components.realtek_ethernet) resultado.warnings.push({ tipo: 'realtek' });
+    if (components.coprs_count > 0) resultado.warnings.push({ tipo: 'coprs', n: components.coprs_count });
+
+    var fedoraOk = fedoraGa.ok && fedoraChannel.ok;
+    var rpmfusionOk = rpmfusionChannel.ok;
+    var sistemaOk = resultado.checks.is_current_up_to_date.ok;
+    var espacoOk = disk.suficiente;
+
+    if (download) {
+        resultado.status = 'downloaded';
+    } else if (!fedoraOk) {
+        resultado.status = 'waiting_ga';
+    } else if (!rpmfusionOk) {
+        resultado.status = 'waiting_rpmfusion';
+    } else if (!sistemaOk) {
+        resultado.status = 'outdated_current';
+    } else if (!espacoOk) {
+        resultado.status = 'no_disk_space';
+    } else {
+        resultado.status = 'ready';
+    }
+
+    _upgradeStatusCache = { dados: resultado, ts: agora };
+    return resultado;
+}
+
+// ============================================================
 // PROGRESSO
 // ============================================================
 
@@ -2324,6 +2610,30 @@ const server = http.createServer((req, res) => {
             'Cache-Control': 'no-cache, no-store, must-revalidate'
         });
         res.end(JSON.stringify(resultado));
+        return;
+    }
+
+    // ----------------------------------------------------------
+    // /fedora-upgrade-status — disponibilidade de upgrade (44 → 45)
+    // ----------------------------------------------------------
+    //
+    // Retorna o status consolidado do upgrade. Cache de 6h. Nada
+    // aqui altera o sistema — são só consultas.
+    if (req.method === 'GET' && url === '/fedora-upgrade-status') {
+        _calcularUpgradeStatus().then(function(dados) {
+            res.writeHead(200, {
+                'Content-Type': 'application/json',
+                'Cache-Control': 'no-cache, no-store, must-revalidate'
+            });
+            res.end(JSON.stringify(dados));
+        }).catch(function(e) {
+            console.error('[fedora-upgrade-status] Erro:', e.message);
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({
+                status: 'unknown',
+                error: e.message
+            }));
+        });
         return;
     }
 
