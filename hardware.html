@@ -576,32 +576,43 @@ function _escapeHTMLNvidia(s) {
 }
 
 function _detectarSerieNvidia(modelo) {
-    // Mesma heurística do comando shell, mas em JS. As faixas:
-    //   - 390xx → Fermi (GeForce 400/500)
-    //   - 470xx → Kepler (GeForce 600/700, exceto GTX 745/750/750 Ti)
-    //   - 580xx → Maxwell/Pascal (GTX 745, GTX 750/750 Ti, GTX 9xx, GTX 10xx)
-    //   - akmod-nvidia → Turing+ (GTX 16xx, RTX 20xx+)
+    // Fallback heurístico. A fonte primária é `nvidia-detect`
+    // (RPM Fusion) — só caímos aqui se o binário não existir.
     //
-    // A GTX 745 é um caso especial bem conhecido: o nome sugere a
-    // família 700 (Kepler), mas o chip é GM107 (Maxwell, mesma
-    // geração da GTX 750). Por isso ela é testada explicitamente
-    // ANTES do range 6xx/7xx — do contrário, cairia em 470xx e o
-    // sistema daria tela preta após o reboot.
+    // As faixas cobrem GeForce + Quadro + Tesla + Titan, que
+    // compartilham arquitetura mas têm prefixos diferentes:
+    //   - Fermi:      GeForce 4xx/5xx,       Quadro 4xxx/5xxx,     Tesla 20xx
+    //   - Kepler:     GeForce 6xx/7xx,       Quadro K*,            Tesla K*
+    //   - Maxwell:    GeForce 9xx,           Quadro K*/M*,         Tesla M*
+    //   - Pascal:     GeForce 10xx,          Quadro P*,            Tesla P*
+    //   - Turing+:    GeForce 16xx/RTX 20+,  Quadro RTX/T*,        Tesla T*/V*/A*
     //
-    // O `\b` no fim evita que o regex case pedaços de números maiores
-    // (ex.: "650" dentro de "1650").
-    if (/\bgeforce\s+(gtx?\s*)?[45]\d{2}\b/i.test(modelo)) {
+    // GTX 745/750/750 Ti: exceção Kepler→Maxwell. Testada antes
+    // do range 6xx/7xx, senão cairia em 470xx (tela preta).
+    //
+    // Modelos MX (MX150, MX250 etc.) são Pascal/Volta — caem no
+    // branch 580xx.
+    if (/\bgeforce\s+(gtx?\s*)?[45]\d{2}\b/i.test(modelo) ||
+        /\bquadro\s+[45]\d{3}\b/i.test(modelo) ||
+        /\btesla\s+(20|m?4)\d{2}\b/i.test(modelo)) {
         return { pkg: 'akmod-nvidia-390xx', serie: '390xx (Fermi)' };
     }
-    if (/\bgtx\s*(745|75[0-9])\b/i.test(modelo)) {
-        return { pkg: 'akmod-nvidia-580xx', serie: '580xx (Maxwell)' };
-    }
-    if (/\bgeforce\s+(gtx?\s*)?[67]\d{2}\b/i.test(modelo)) {
-        return { pkg: 'akmod-nvidia-470xx', serie: '470xx (Kepler)' };
-    }
-    if (/\bgeforce\s+(gtx?\s*)?(9|10)\d{2}\b/i.test(modelo)) {
+    if (/\bgtx\s*(745|75[0-9])\b/i.test(modelo) ||
+        /\bmx\s*\d{3}\b/i.test(modelo)) {
         return { pkg: 'akmod-nvidia-580xx', serie: '580xx (Maxwell/Pascal)' };
     }
+    if (/\bgeforce\s+(gtx?\s*)?[67]\d{2}\b/i.test(modelo) ||
+        /\bquadro\s+k[\s\d]/i.test(modelo) ||
+        /\btesla\s+k[\s\d]/i.test(modelo)) {
+        return { pkg: 'akmod-nvidia-470xx', serie: '470xx (Kepler)' };
+    }
+    if (/\bgeforce\s+(gtx?\s*)?(9|10)\d{2}\b/i.test(modelo) ||
+        /\bquadro\s+[mp][\s\d]/i.test(modelo) ||
+        /\btesla\s+[mp][\s\d]/i.test(modelo)) {
+        return { pkg: 'akmod-nvidia-580xx', serie: '580xx (Maxwell/Pascal)' };
+    }
+    // Turing+: RTX 20xx/30xx/40xx/50xx, GTX 16xx, Quadro RTX/T,
+    // Tesla T/V/A, Titan V/RTX. Default cobre o resto.
     return { pkg: 'akmod-nvidia', serie: '595+ (Turing ou mais recente)' };
 }
 
@@ -899,6 +910,12 @@ async function executarNvidiaDriver() {
     // a GTX 745 é testada ANTES do range 6xx/7xx, porque o chip é
     // Maxwell (GM107), não Kepler. Sem isso, o comando instalaria
     // akmod-nvidia-470xx numa GTX 745 e o sistema daria tela preta.
+    // Estratégia em 2 camadas:
+    //   1. `nvidia-detect` (RPM Fusion) é a fonte canônica. Se o
+    //      binário existir, ele decide o pacote — cobre Quadro,
+    //      Tesla, MX, e futuras famílias que o regex não conhece.
+    //   2. Fallback: regex shell (espelho fiel de _detectarSerieNvidia
+    //      em JS, com Quadro/Tesla/MX incluídos).
     var comando =
         'GPU_MODEL=$(lspci 2>/dev/null | grep -iE "nvidia.*(vga|3d|display)" | head -1); ' +
         'if [ -z "$GPU_MODEL" ]; then ' +
@@ -906,11 +923,21 @@ async function executarNvidiaDriver() {
         '  exit 1; ' +
         'fi; ' +
         'echo "🔍 GPU NVIDIA detectada: $GPU_MODEL"; ' +
-        'if echo "$GPU_MODEL" | grep -qiE "geforce (gtx? )?[45][0-9]{2}"; then GPU_PKG="akmod-nvidia-390xx"; SERIE="390xx (Fermi)"; ' +
-        'elif echo "$GPU_MODEL" | grep -qiE "gtx (745|75[0-9])"; then GPU_PKG="akmod-nvidia-580xx"; SERIE="580xx (Maxwell)"; ' +
-        'elif echo "$GPU_MODEL" | grep -qiE "geforce (gtx? )?[67][0-9]{2}"; then GPU_PKG="akmod-nvidia-470xx"; SERIE="470xx (Kepler)"; ' +
-        'elif echo "$GPU_MODEL" | grep -qiE "geforce (gtx? )?(9|10)[0-9]{2}"; then GPU_PKG="akmod-nvidia-580xx"; SERIE="580xx (Maxwell/Pascal)"; ' +
-        'else GPU_PKG="akmod-nvidia"; SERIE="595+ (Turing ou mais recente)"; fi; ' +
+        'GPU_PKG=""; SERIE=""; ' +
+        'if command -v nvidia-detect > /dev/null 2>&1; then ' +
+        '  echo "🔎 Consultando nvidia-detect (fonte primária)..."; ' +
+        '  DETECT_OUT=$(nvidia-detect 2>/dev/null || true); ' +
+        '  GPU_PKG=$(echo "$DETECT_OUT" | grep -oE "akmod-nvidia[-a-z0-9]*" | head -1); ' +
+        '  if [ -n "$GPU_PKG" ]; then SERIE="via nvidia-detect ($GPU_PKG)"; fi; ' +
+        'fi; ' +
+        'if [ -z "$GPU_PKG" ]; then ' +
+        '  echo "⚠️ nvidia-detect indisponível ou inconclusivo — usando heurística."; ' +
+        '  if echo "$GPU_MODEL" | grep -qiE "geforce (gtx? )?[45][0-9]{2}|quadro [45][0-9]{3}|tesla (20|m?4)[0-9]{2}"; then GPU_PKG="akmod-nvidia-390xx"; SERIE="390xx (Fermi)"; ' +
+        '  elif echo "$GPU_MODEL" | grep -qiE "gtx (745|75[0-9])|mx[0-9]{3}"; then GPU_PKG="akmod-nvidia-580xx"; SERIE="580xx (Maxwell/Pascal)"; ' +
+        '  elif echo "$GPU_MODEL" | grep -qiE "geforce (gtx? )?[67][0-9]{2}|quadro k[0-9 ]|tesla k[0-9 ]"; then GPU_PKG="akmod-nvidia-470xx"; SERIE="470xx (Kepler)"; ' +
+        '  elif echo "$GPU_MODEL" | grep -qiE "geforce (gtx? )?(9|10)[0-9]{2}|quadro [mp][0-9 ]|tesla [mp][0-9 ]"; then GPU_PKG="akmod-nvidia-580xx"; SERIE="580xx (Maxwell/Pascal)"; ' +
+        '  else GPU_PKG="akmod-nvidia"; SERIE="595+ (Turing ou mais recente)"; fi; ' +
+        'fi; ' +
         'echo "📦 Série de driver selecionada: $SERIE"; ' +
         'if [ "$GPU_PKG" = "akmod-nvidia" ]; then ' +
         '  sudo dnf install -y "$GPU_PKG" xorg-x11-drv-nvidia-cuda xorg-x11-drv-nvidia-cuda-libs; ' +

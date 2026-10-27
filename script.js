@@ -1,4 +1,3 @@
-var comando, idRemocao;
 /**
  * Fedora Advantage Panel (FAP) - Script Compartilhado
  *
@@ -227,10 +226,20 @@ async function _dispararAtualizacaoFAP() {
 
     _atualizacaoEmAndamento = true;
 
+    // Desabilita o botão da sessão 14 durante o update. Permanece
+    // desabilitado após sucesso (usuário precisa fechar/reabrir);
+    // reabilita só em caso de erro.
+    var btnSobre = document.getElementById('btn-atualizar-fap');
+    var btnSobreTextoOriginal = btnSobre ? btnSobre.textContent : '';
+    if (btnSobre) {
+        btnSobre.disabled = true;
+        btnSobre.style.opacity = '0.5';
+        btnSobre.style.cursor = 'not-allowed';
+    }
+
     mostrarToast(
-        _t('comum.badge_atualizando',
-           '🔄 Atualizando FAP... Acompanhe o progresso em Sobre o FAP.'),
-           'success', 8000
+        _t('comum.badge_atualizando', '🔄 Atualizando FAP...'),
+                 'success', 8000
     );
 
     var es = null;
@@ -250,11 +259,16 @@ async function _dispararAtualizacaoFAP() {
                    '✅ Atualização concluída! Feche e reabra o FAP.').split('\n')[0],
                          'success', 10000
             );
+            // Botão permanece desabilitado: só faz sentido depois de
+            // fechar e reabrir o FAP com a nova versão.
         } else if (sucesso === false) {
-            mostrarToast(
-                _t('comum.status_falha', '❌ Falha na execução'),
-                         'error', 8000
-            );
+            mostrarToast(_t('comum.status_falha', '❌ Falha na execução'), 'error', 8000);
+            if (btnSobre) {
+                btnSobre.disabled = false;
+                btnSobre.style.opacity = '1';
+                btnSobre.style.cursor = 'pointer';
+                btnSobre.textContent = btnSobreTextoOriginal;
+            }
         }
     }
 
@@ -273,7 +287,7 @@ async function _dispararAtualizacaoFAP() {
                 _tVars('comum.erro_http', '❌ Erro HTTP: {status}', { status: r.status }),
                          'error', 6000
             );
-            _finalizar(null);
+            _finalizar(false);
             return;
         }
 
@@ -282,15 +296,20 @@ async function _dispararAtualizacaoFAP() {
             try {
                 var dados = JSON.parse(event.data);
                 if (dados.tipo === 'end') {
-                    _finalizar(dados.sucesso !== false);
+                    // Check estrito: `sucesso` deve ser explicitamente
+                    // `true`. `undefined` = bug do backend, trata
+                    // como falha.
+                    _finalizar(dados.sucesso === true);
                 }
             } catch (e) { /* ignora payload não-JSON */ }
         };
         es.onerror = function() {
-            _finalizar(null);
+            _finalizar(false);
         };
 
-        setTimeout(function() { _finalizar(null); }, 5 * 60 * 1000);
+        // Timeout defensivo: se o `end` não chegar em 10min, algo
+        // travou. Trata como falha e reabilita o botão.
+        setTimeout(function() { _finalizar(false); }, 10 * 60 * 1000);
 
     } catch (err) {
         mostrarToast(
@@ -298,6 +317,12 @@ async function _dispararAtualizacaoFAP() {
                      'error', 6000
         );
         _atualizacaoEmAndamento = false;
+        if (btnSobre) {
+            btnSobre.disabled = false;
+            btnSobre.style.opacity = '1';
+            btnSobre.style.cursor = 'pointer';
+            btnSobre.textContent = btnSobreTextoOriginal;
+        }
     }
 }
 
@@ -551,6 +576,14 @@ function appJaInstaladoNoSistema(idComando) {
                     return true;
                 }
             }
+            return false;
+        }
+        // Fallback: sem `pacotes` declarados, não há como detectar
+        // pré-existência com segurança. Retorna `false` (comporta-
+        // mento antigo) e emite warn — o registro precisa de
+        // `pacotes` para essa checagem funcionar.
+        if (typeof console !== 'undefined' && console.warn) {
+            console.warn('[appJaInstalado] desfazerTudo sem `pacotes`:', idComando);
         }
         return false;
     }
@@ -569,6 +602,51 @@ function appJaInstaladoNoSistema(idComando) {
     }
 
     return false;
+}
+
+// ============================================================
+// DETECÇÃO DE INSTALAÇÃO REAL (ignora `ignorarPreExistente`)
+// ============================================================
+//
+// `appJaInstaladoNoSistema` respeita `ignorarPreExistente` (para
+// o botão começar em "Instalar" mesmo com o pacote presente).
+// `_estaRealmenteInstalado` responde à pergunta DIFERENTE:
+// "o pacote está de fato no sistema agora?" — usado pelo
+// auto-reset (item #12/#13) para detectar remoções externas.
+//
+// Retorna `true` como fallback CONSERVADOR quando SystemState
+// ainda não carregou — assim, na primeira renderização (antes
+// do `await SystemState.carregar()`), nada é resetado por engano.
+function _estaRealmenteInstalado(idComando) {
+    var info = APPS_REMOVIVEIS[idComando];
+    if (!info) return false;
+
+    var bruto = SystemState.bruto();
+    if (!bruto || !Array.isArray(bruto.packages_installed) ||
+        !Array.isArray(bruto.flatpaks_installed)) {
+        // Sem dados reais: assume instalado (não reseta por engano).
+        return true;
+        }
+
+        if (info.modo === 'desfazerTudo') {
+            if (Array.isArray(info.pacotes)) {
+                for (var i = 0; i < info.pacotes.length; i++) {
+                    if (SystemState.pacoteInstalado(info.pacotes[i])) return true;
+                }
+            }
+            return false;
+        }
+        if (info.tipo === 'flatpak' && info.appId) {
+            return SystemState.flatpakInstalado(info.appId);
+        }
+        if (info.tipo === 'dnf' && Array.isArray(info.pacotes)) {
+            for (var j = 0; j < info.pacotes.length; j++) {
+                if (SystemState.pacoteInstalado(info.pacotes[j])) return true;
+            }
+            return false;
+        }
+        // Tipo desconhecido ou sem pacotes: assume instalado.
+        return true;
 }
 
 // ============================================================
@@ -685,7 +763,11 @@ function _atualizarProgressoGlobal() {
     var el = document.getElementById('progresso-global');
     if (!el) return;
     var na = _sessoesNA();
-    var sessoesAtivas = SESSOES_PRINCIPAIS.filter(function(id) { return na.indexOf(id) === -1; });
+    var sessoesAtivas = SESSOES_PRINCIPAIS.filter(function(id) {
+        if (na.indexOf(id) !== -1) return false;
+        var s = SESSOES.find(function(x) { return x.id === id; });
+        return !(s && s.informativa);
+    });
     var total = sessoesAtivas.length;
 
     if (_contadorSessoesConcluidas < 0) {
@@ -1206,20 +1288,24 @@ var SESSOES = [
 },
 {
     id: 'sobre-fap',
-    nome: 'Sobre o FAP',
-    nomeKey: 'sessoes.sobre-fap.nome',
-    comandos: {
-        'atualizar-fap': {
-            sempreClicavel: true,
-            textoConcluido: '✅ FAP atualizado',
-            textoConcluidoKey: 'sessoes.sobre-fap.texto_concluido_fap_atualizar'
-        },
-        'desinstalar-fap': {
-            textoConcluido: '✅ FAP desinstalado',
-            textoConcluidoKey: 'sessoes.sobre-fap.texto_concluido_fap_desinstalar'
+        nome: 'Sobre o FAP',
+        nomeKey: 'sessoes.sobre-fap.nome',
+        // Sessão informativa: aparece na sidebar, mas NÃO conta no
+        // progresso global. Sem isso, mostrava `0/1` para sempre (o
+        // único passo é "desinstalar", que ninguém faz enquanto usa).
+        informativa: true,
+        comandos: {
+            'atualizar-fap': {
+                sempreClicavel: true,
+                textoConcluido: '✅ FAP atualizado',
+                textoConcluidoKey: 'sessoes.sobre-fap.texto_concluido_fap_atualizar'
+            },
+            'desinstalar-fap': {
+                textoConcluido: '✅ FAP desinstalado',
+                textoConcluidoKey: 'sessoes.sobre-fap.texto_concluido_fap_desinstalar'
+            }
         }
     }
-}
 ];
 
 var SESSOES_PRINCIPAIS = SESSOES.map(function(s) { return s.id; });
@@ -1270,6 +1356,59 @@ var _mapaComandoParaSessao = (function() {
 
 function _sessaoDoComando(idComando) {
     return _mapaComandoParaSessao[idComando] || null;
+}
+
+// ============================================================
+// FILTRO DE COMANDOS POR HARDWARE PRESENTE (item #16)
+// ============================================================
+//
+// Comandos de driver são naturalmente hardware-dependentes: uma
+// máquina Intel-only nunca vai "instalar driver NVIDIA". Sem esse
+// filtro, a sessão 3 mostrava `1/5` para sempre. Aqui mapeamos
+// os IDs cuja instalação depende de um vendor PCI específico. Se
+// o vendor NÃO está em `SystemState.bruto().hardware_vendors`,
+// o comando é excluído de `getStatusSessao` e `_contagemSessao`.
+//
+// Fallback conservador: se `hardware_vendors` está vazio ou
+// indisponível (SystemState não carregou), INCLUI o comando —
+// comportamento idêntico ao anterior.
+var _MAPA_HARDWARE_DEPENDENTE = {
+    'vulkan-amd':               ['1002', '1022'],
+    'vaapi-amd':                ['1002', '1022'],
+    'vaapi-swap':               ['1002', '1022'],
+    'amdgpu-overclock':         ['1002', '1022'],
+    'amdgpu-overclock-remove':  ['1002', '1022'],
+    'corectrl-install':         ['1002', '1022'],
+    'lact-install':             ['1002', '1022'],
+    'nvidia-driver-install':    ['10de'],
+    'nvidia-driver-remove':     ['10de'],
+    'nvidia-modeset-on':        ['10de'],
+    'nvidia-modeset-off':       ['10de'],
+    'intel-media-install':      ['8086']
+};
+
+function _comandoRelevante(idComando) {
+    var vendors = _MAPA_HARDWARE_DEPENDENTE[idComando];
+    if (!vendors) return true;  // não hardware-dependente
+
+    var bruto = SystemState.bruto();
+    if (!bruto || !Array.isArray(bruto.hardware_vendors)) {
+        return true;  // sem dados: inclui (fallback conservador)
+    }
+    if (bruto.hardware_vendors.length === 0) {
+        return true;  // lspci vazio: inclui
+    }
+    for (var i = 0; i < vendors.length; i++) {
+        if (bruto.hardware_vendors.indexOf(vendors[i]) !== -1) {
+            return true;
+        }
+    }
+    return false;
+}
+
+function _comandosRelevantes(idSessao) {
+    var todos = SESSAO_COMANDOS[idSessao] || [];
+    return todos.filter(_comandoRelevante);
 }
 
 function _sessaoAtualId() {
@@ -1662,7 +1801,13 @@ var SESSAO_COMANDOS = SESSOES.reduce(function(mapa, sessao) {
 }, {});
 
 function getStatusSessao(sessaoId) {
-    const comandos = SESSAO_COMANDOS[sessaoId] || [];
+    // Sessões informativas nunca "concluem" (não entram na conta).
+    var sessaoObj = SESSOES.find(function(s) { return s.id === sessaoId; });
+    if (sessaoObj && sessaoObj.informativa) {
+        return 'pendente';
+    }
+    // Aplica o filtro de hardware dependente (item #16).
+    const comandos = _comandosRelevantes(sessaoId);
     if (comandos.length > 0 && comandos.every(id => isExecutado(id))) {
         return 'executado';
     }
@@ -1679,27 +1824,9 @@ async function marcarComoExecutado(idComando) {
     }
 }
 
-async function marcarComoPulado(idComando) {
-    const progress = await getProgress();
-    if (!progress.pulados.includes(idComando)) {
-        progress.pulados.push(idComando);
-        await saveProgress(progress);
-        _invalidarContadorSessoes();
-        _atualizarProgressoGlobal();
-    }
-}
-
 async function desmarcarComoExecutado(idComando) {
     const progress = await getProgress();
     progress.executados = progress.executados.filter(id => id !== idComando);
-    await saveProgress(progress);
-    _invalidarContadorSessoes();
-    _atualizarProgressoGlobal();
-}
-
-async function desmarcarComoPulado(idComando) {
-    const progress = await getProgress();
-    progress.pulados = progress.pulados.filter(id => id !== idComando);
     await saveProgress(progress);
     _invalidarContadorSessoes();
     _atualizarProgressoGlobal();
@@ -1999,15 +2126,7 @@ function aplicarEstadoToggle(idInstall, idRevert, esconderRevertSeNaoFeito, preE
 
     if (preExistente === undefined) {
         try {
-            // Mesmo raciocínio do appJaInstaladoNoSistema: se o
-            // comando pediu para ignorar pré-existência, o toggle
-            // começa em "não feito" mesmo que o sistema tenha.
-            var infoCmd = APPS_REMOVIVEIS[idInstall];
-            if (infoCmd && infoCmd.ignorarPreExistente === true) {
-                preExistente = false;
-            } else {
-                preExistente = appJaInstaladoNoSistema(idInstall);
-            }
+            preExistente = appJaInstaladoNoSistema(idInstall);
         } catch (e) {
             preExistente = false;
         }
@@ -2018,6 +2137,15 @@ function aplicarEstadoToggle(idInstall, idRevert, esconderRevertSeNaoFeito, preE
             preExistente = false;
         }
     }
+
+    // Aplica `ignorarPreExistente` em ambos os caminhos (undefined
+    // resolvido acima, ou booleano vindo do caller). Antes, a flag
+    // só era honrada quando `preExistente === undefined`.
+    var infoCmdIgnorar = APPS_REMOVIVEIS[idInstall];
+    if (preExistente === true && infoCmdIgnorar &&
+        infoCmdIgnorar.ignorarPreExistente === true) {
+        preExistente = false;
+        }
 
     // `_textoOriginalTraduzido` resolve para `_t(data-i18n, fallback)`
     // — mesma escolha feita por `restaurarBotaoAposExecucao` (que já
@@ -2033,7 +2161,36 @@ function aplicarEstadoToggle(idInstall, idRevert, esconderRevertSeNaoFeito, preE
 
     installBtn.title = '';
 
-    if (efetivamenteFeito) {
+    // #20 — Toggles respeitam `permitirRemocaoPreExistente: false`.
+    // Item já estava ativo antes do FAP e o registro pede bloqueio:
+    // o "revert" fica desabilitado com o motivoBloqueio. Toggles
+    // SEM essa flag (ex.: realtime-setup, dual-boot-time) mantêm
+    // o comportamento atual (revert livre).
+    var infoCmdBloq = APPS_REMOVIVEIS[idInstall];
+    if (preExistente && !installFeito && infoCmdBloq &&
+        infoCmdBloq.permitirRemocaoPreExistente === false) {
+        installBtn.textContent = _t('comum.ja_estava_ativo', '✅ Já estava ativo');
+    installBtn.title = _traduzirMotivoBloqueio(idInstall, infoCmdBloq);
+    installBtn.style.backgroundColor = '#4b5563';
+    installBtn.style.cursor = 'not-allowed';
+    installBtn.disabled = true;
+    installBtn.style.opacity = '0.7';
+
+    revertBtn.textContent = _textoOriginalTraduzido(revertBtn) || revertBtn.textContent;
+    revertBtn.style.backgroundColor = '';
+    revertBtn.style.cursor = 'not-allowed';
+    revertBtn.disabled = true;
+    revertBtn.style.opacity = '0.5';
+    revertBtn.title = _traduzirMotivoBloqueio(idInstall, infoCmdBloq);
+    if (esconderRevertSeNaoFeito) {
+        revertBtn.style.display = 'none';
+    } else {
+        revertBtn.style.display = '';
+    }
+    return;
+        }
+
+        if (efetivamenteFeito) {
         if (preExistente && !installFeito) {
             installBtn.title = _t('comum.tooltip_preexistente_recurso',
                                   'Este recurso já estava ativo antes do FAP. O FAP não foi o responsável pela configuração, mas está tratando como ativo normalmente.');
@@ -2069,17 +2226,6 @@ function aplicarEstadoToggle(idInstall, idRevert, esconderRevertSeNaoFeito, preE
             revertBtn.style.display = '';
         }
     }
-}
-
-function _marcarBotaoConcluido(idComando) {
-    var btn = document.getElementById('btn-' + idComando);
-    if (!btn) return;
-    _corOriginalDoBotao(btn);
-    btn.textContent = getTextoAposExecucao(idComando);
-    btn.style.backgroundColor = '#4b5563';
-    btn.style.cursor = 'default';
-    btn.disabled = true;
-    btn.style.opacity = '1';
 }
 
 function restaurarBotaoAposExecucao(idComando, sucesso) {
@@ -2298,7 +2444,7 @@ function conectarSSE(idComando, logBox) {
         console.error('[SSE] Erro ao criar conexão:', e);
         const errorLine = document.createElement('div');
         errorLine.className = 'log-line error';
-        errorLine.textContent = '❌ Erro ao conectar SSE: ' + e.message;
+        errorLine.textContent = _tVars('comum.erro_sse', '❌ Erro ao conectar SSE: {msg}', { msg: e.message });
         logBox.appendChild(errorLine);
         logBox.scrollTop = logBox.scrollHeight;
     }
@@ -2659,24 +2805,73 @@ function abrirFerramentaExterna(comando, idLog, nomeExibicao) {
         cmdFinal += ' > ' + logFile + ' 2>&1 < /dev/null';
     }
 
+    var logBox = _getLogBox(idLog);
+    var linhaStatus = null;
+    if (logBox) {
+        logBox.style.display = 'block';
+        _separadorLog(logBox, '🚀 ' + _tVars('comum.abrir_separador', 'Abrir {nome}', { nome: nomeExibicao }));
+        linhaStatus = document.createElement('div');
+        linhaStatus.className = 'log-line info';
+        linhaStatus.textContent = _tVars('comum.abrir_abrindo', '⏳ Abrindo {nome}...', { nome: nomeExibicao });
+        logBox.appendChild(linhaStatus);
+        logBox.scrollTop = logBox.scrollHeight;
+    }
+
+    // Id ÚNICO por clique: evita rate limit (1.5s por idComando) e
+    // permite múltiplas aberturas em rápida sucessão. O prefixo
+    // `open-` casa com o filtro em `salvarProgresso` (server.js),
+    // que NÃO grava esses ids no .progresso.json.
+    var idOpen = 'open-' + (idLog || 'app') + '-' + Date.now() + '-' + Math.floor(Math.random() * 10000);
+
+    var es = null;
+    var finalizado = false;
+
+    function _finalizar(status) {
+        if (finalizado) return;
+        finalizado = true;
+        if (es) { try { es.close(); } catch (e) {} es = null; }
+        if (!linhaStatus) return;
+        if (status === 'ok') {
+            linhaStatus.className = 'log-line success';
+            linhaStatus.textContent = _tVars('comum.abrir_aberto', '🚀 {nome} aberto!', { nome: nomeExibicao });
+        } else if (status === 'err') {
+            linhaStatus.className = 'log-line error';
+            linhaStatus.textContent = _tVars('comum.abrir_falhou',
+                                             '⚠️ Não foi possível abrir {nome}. Veja /tmp/fap-open-{id}.log',
+                                             { nome: nomeExibicao, id: idLog || 'app' });
+        } else {
+            // timeout (3s sem `end`)
+            linhaStatus.className = 'log-line info';
+            linhaStatus.textContent = _tVars('comum.abrir_timeout',
+                                             '⏳ {nome} ainda abrindo (veja /tmp/fap-open-{id}.log)',
+                                             { nome: nomeExibicao, id: idLog || 'app' });
+        }
+    }
+
+    try {
+        es = new EventSource(API_URL + '/stream?id=' + encodeURIComponent(idOpen));
+        es.onmessage = function(event) {
+            try {
+                var dados = JSON.parse(event.data);
+                if (dados.tipo === 'end') {
+                    _finalizar(dados.sucesso === true ? 'ok' : 'err');
+                }
+            } catch (e) { /* ignora */ }
+        };
+        es.onerror = function() { _finalizar('timeout'); };
+        setTimeout(function() { _finalizar('timeout'); }, 3000);
+    } catch (e) {
+        setTimeout(function() { _finalizar('timeout'); }, 3000);
+    }
+
     fetch(API_URL + '/executar', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ comando: cmdFinal, idComando: idLog + '-open' })
+        body: JSON.stringify({ comando: cmdFinal, idComando: idOpen })
     }).catch(function(e) {
         console.warn('[abrir] Falha ao enviar comando de abertura:', e.message);
+        _finalizar('err');
     });
-
-    var logBox = _getLogBox(idLog);
-    if (logBox) {
-        logBox.style.display = 'block';
-        _separadorLog(logBox, '🚀 Abrir ' + nomeExibicao);
-        var infoLine = document.createElement('div');
-        infoLine.className = 'log-line success';
-        infoLine.textContent = '🚀 ' + nomeExibicao + ' aberto!';
-        logBox.appendChild(infoLine);
-        logBox.scrollTop = logBox.scrollHeight;
-    }
 }
 
 // ============================================================
@@ -2780,6 +2975,19 @@ function aplicarEstadoInstalavel(idInstall, idAbrir, idRemover, preExistente) {
     var btnAbrir = idAbrir ? document.getElementById('btn-' + idAbrir) : null;
     var instalado = isExecutado(idInstall);
     var idRem = idRemover || _idRemocaoDe(idInstall);
+
+    // Auto-reset (item #12/#13): se o FAP marcou como instalado,
+    // mas o pacote não está mais no sistema (removido por fora),
+    // limpa o estado. Fire-and-forget: não bloqueia renderização.
+    // SEMPRE_CLICAVEIS não entra aqui (nunca é marcado como
+    // instalado, então `isExecutado` já retorna false).
+    if (instalado && !_estaRealmenteInstalado(idInstall)) {
+        console.log('[estado] auto-reset:', idInstall, '(removido por fora)');
+        desmarcarComoExecutado(idInstall).catch(function(e) {
+            console.warn('[estado] erro no auto-reset de', idInstall, ':', e);
+        });
+        instalado = false;
+    }
 
     if (preExistente === undefined) {
         try {
@@ -2944,16 +3152,16 @@ async function _executarRemocaoApp(idComando) {
     var info = APPS_REMOVIVEIS[idComando];
     if (!info) return;
 
-    // Garante que o estado do sistema está carregado ANTES de
-    // decidir "instalado vs não instalado". O cache cliente pode
-    // estar vazio (`_dados = null`) por: (a) `SystemState.carregar()`
-    // ainda em andamento (boot, reload), (b) `invalidar()` recente
-    // (remoção anterior, refresh), (c) fetch falhou. Em qualquer
-    // desses casos, `appJaInstaladoNoSistema` retorna `false` e a
-    // remoção seria bloqueada indevidamente — mesmo com o botão
-    // exibindo "Abrir X".
+    // Garante que o estado do sistema está FRESCO antes de decidir
+    // "instalado vs não instalado". Invalidar primeiro é crítico:
+    // se o cache de 60s já tem os dados, `carregar()` retorna o
+    // cache e uma remoção externa recente (fora do FAP) faria o
+    // FAP tentar remover algo que já não existe.
     if (typeof SystemState !== 'undefined') {
-        try { await SystemState.carregar(); } catch (e) { /* ignore */ }
+        try {
+            SystemState.invalidar();
+            await SystemState.carregar();
+        } catch (e) { /* ignore */ }
     }
 
     var marcadoPeloFap = isExecutado(idComando);
@@ -3509,9 +3717,9 @@ function _textoOrigem(origem) {
             'download': {
                 nome: _t('origem.download.nome', 'Download'),
                 tooltip: _t('origem.download.tooltip',
-                            'Instalado via RPM baixado de URL (site oficial ou GitHub). Não atualiza sozinho — clique em "Instalar" novamente para baixar a versão nova.'),
+                            'Instalado via RPM baixado de URL (site oficial ou GitHub). Não atualiza sozinho — remova pela lixeira e clique em "Instalar" de novo para pegar a versão nova.'),
                             atualizar: _t('origem.download.atualizar',
-                                          'Clique em "Instalar" novamente para baixar a versão mais recente.'),
+                                          'Remova pelo ícone de lixeira e clique em "Instalar" de novo.'),
                                           remover: _t('origem.download.remover',
                                                       'Use a lixeira ao lado do botão.')
             },
@@ -3839,7 +4047,19 @@ function _desmarcarSessaoNA(id) {
 }
 
 function _contagemSessao(id) {
-    var comandos = SESSAO_COMANDOS[id] || [];
+    // Sessões informativas (ex.: sobre-fap) não contam progresso.
+    var sessaoObj = SESSOES.find(function(s) { return s.id === id; });
+    if (sessaoObj && sessaoObj.informativa) {
+        return {
+            feitos: 0,
+            pulados: 0,
+            total: 0,
+            na: _sessaoNA(id),
+            informativa: true
+        };
+    }
+    // Aplica filtro de hardware dependente (#16).
+    var comandos = _comandosRelevantes(id);
     var feitos = 0, pulados = 0;
     for (var i = 0; i < comandos.length; i++) {
         if (isExecutado(comandos[i])) feitos++;
@@ -3849,7 +4069,8 @@ function _contagemSessao(id) {
         feitos: feitos,
         pulados: pulados,
         total: comandos.length,
-        na: _sessaoNA(id)
+        na: _sessaoNA(id),
+        informativa: false
     };
 }
 
@@ -4251,11 +4472,12 @@ function _aplicarFiltroSessao(termo) {
         _limparFiltroSessao();
         return;
     }
-    var blocos = container.querySelectorAll('.bloco-comando');
-    var visiveis = 0;
-    blocos.forEach(function(bloco) {
-        var haystack = (bloco.innerText || bloco.textContent || '') + ' ';
-        bloco.querySelectorAll('[data-comando]').forEach(function(b) {
+
+    // helper de match: retorna true se o elemento casa com o termo,
+    // considerando texto + data-comando + metadados do APPS_REMOVIVEIS.
+    function _casaElemento(el) {
+        var haystack = (el.innerText || el.textContent || '') + ' ';
+        el.querySelectorAll('[data-comando]').forEach(function(b) {
             var id = b.getAttribute('data-comando');
             haystack += (id || '') + ' ';
             var info = APPS_REMOVIVEIS[id];
@@ -4265,11 +4487,41 @@ function _aplicarFiltroSessao(termo) {
                 if (Array.isArray(info.pacotes)) haystack += info.pacotes.join(' ') + ' ';
             }
         });
-        var norm = _normalizarBusca(haystack);
-        var casa = norm.indexOf(t) !== -1;
+        return _normalizarBusca(haystack).indexOf(t) !== -1;
+    }
+
+    var visiveis = 0;
+
+    // 1. Blocos de comando (sessões codecs, hardware, ajustes, etc.)
+    container.querySelectorAll('.bloco-comando').forEach(function(bloco) {
+        var casa = _casaElemento(bloco);
         bloco.style.display = casa ? '' : 'none';
         if (casa) visiveis++;
     });
+
+        // 2. Launcher items (sessões aplicativos, gaming). Cada item é
+        //    um "app" individual; casa ou não independente do bloco.
+        //    Depois de decidir cada item, esconde o <details> pai se
+        //    TODOS os filhos ficaram ocultos.
+        var porDetails = new Map();
+        container.querySelectorAll('.launcher-item').forEach(function(item) {
+            var casa = _casaElemento(item);
+            item.style.display = casa ? '' : 'none';
+            if (casa) visiveis++;
+
+            var det = item.closest('details');
+            if (det) {
+                if (!porDetails.has(det)) porDetails.set(det, { total: 0, visiveis: 0 });
+                var info = porDetails.get(det);
+                info.total++;
+                if (casa) info.visiveis++;
+            }
+        });
+
+        porDetails.forEach(function(info, det) {
+            det.style.display = (info.visiveis === 0) ? 'none' : '';
+        });
+
         _mostrarBannerFiltro(termo, visiveis);
 }
 
@@ -4277,6 +4529,8 @@ function _limparFiltroSessao() {
     var container = document.getElementById('sessao-container');
     if (!container) return;
     container.querySelectorAll('.bloco-comando').forEach(function(b) { b.style.display = ''; });
+    container.querySelectorAll('.launcher-item').forEach(function(i) { i.style.display = ''; });
+    container.querySelectorAll('details').forEach(function(d) { d.style.display = ''; });
     _esconderBannerFiltro();
     _filtroAtual = '';
 }

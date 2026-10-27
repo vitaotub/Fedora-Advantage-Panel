@@ -470,37 +470,41 @@ resultadoEl.innerHTML = html;
 async function verificarAtomic() {
 var idComando = 'atomic-check';
 var resultadoEl = document.getElementById('diag-atomic-resultado');
-
-var comando =
-'IS_ATOMIC=false; ' +
-'if [ -f /run/ostree-booted ]; then IS_ATOMIC=true; fi; ' +
-'if command -v rpm-ostree > /dev/null 2>&1; then IS_ATOMIC=true; fi; ' +
-'if [ "$IS_ATOMIC" = true ]; then ' +
-'  echo "DETECCAO: SISTEMA ATOMIC DETECTADO"; ' +
-'  echo "Variante: $(cat /etc/os-release 2>/dev/null | grep ^PRETTY_NAME | cut -d= -f2 | tr -d \\")"; ' +
-'  echo "Comando de gerenciamento: rpm-ostree"; ' +
-'else ' +
-'  echo "DETECCAO: SISTEMA TRADICIONAL"; ' +
-'  echo "Variante: $(cat /etc/os-release 2>/dev/null | grep ^PRETTY_NAME | cut -d= -f2 | tr -d \\")"; ' +
-'  echo "Comando de gerenciamento: dnf"; ' +
-'fi';
-
-var sucesso = await _executarLeitura(idComando, comando, _t('sessoes.estado-fedora.btn_verificar_atomic', '🧊 Verificar se é Fedora Atomic'));
-
-setTimeout(function() {
 var logBox = _getLogBox(idComando);
-var isAtomic = false;
-var variante = '—';
 
 if (logBox) {
-var linhas = logBox.querySelectorAll('.log-line.output');
-linhas.forEach(function(l) {
-var txt = l.textContent || '';
-if (txt.indexOf('SISTEMA ATOMIC DETECTADO') !== -1) isAtomic = true;
-if (txt.indexOf('Variante:') !== -1) {
-variante = txt.replace(/.*Variante:\s*/, '').trim();
+logBox.style.display = 'block';
+_separadorLog(logBox, _t('sessoes.estado-fedora.btn_verificar_atomic', '🧊 Verificar se é Fedora Atomic'));
+var header = document.createElement('div');
+header.className = 'log-line info';
+header.textContent = '🔍 Consultando /hardware-detect-atomic...';
+logBox.appendChild(header);
+logBox.scrollTop = logBox.scrollHeight;
 }
-});
+
+var isAtomic = false;
+var variante = '—';
+var gerenciador = 'dnf';
+
+try {
+var r = await fetch(API_URL + '/hardware-detect-atomic', { cache: 'no-store' });
+if (r.ok) {
+var data = await r.json();
+isAtomic = !!data.is_atomic;
+variante = data.variante || '—';
+gerenciador = data.gerenciador || (isAtomic ? 'rpm-ostree' : 'dnf');
+}
+} catch (e) {
+console.warn('[atomic-check] Erro:', e.message);
+}
+
+if (logBox) {
+var linha = document.createElement('div');
+linha.className = 'log-line success';
+linha.textContent = '✅ Detecção: ' + (isAtomic ? 'Atomic' : 'Tradicional') +
+' (' + gerenciador + ')';
+logBox.appendChild(linha);
+logBox.scrollTop = logBox.scrollHeight;
 }
 
 if (resultadoEl) {
@@ -524,11 +528,10 @@ _t('sessoes.estado-fedora.atomic_ok', '✅ <strong>Sistema tradicional detectado
 '<ul class="lista-info">' +
 '<li><span class="label">' + _t('sessoes.estado-fedora.label_tipo', 'Tipo') + '</span><span class="valor">' + _t('sessoes.estado-fedora.atomic_tradicional', 'Tradicional') + '</span></li>' +
 '<li><span class="label">' + _t('sessoes.estado-fedora.label_variante', 'Variante') + '</span><span class="valor">' + _escapeHTML(variante) + '</span></li>' +
-'<li><span class="label">' + _t('sessoes.estado-fedora.label_gerenciador', 'Gerenciador') + '</span><span class="valor">dnf</span></li>' +
+'<li><span class="label">' + _t('sessoes.estado-fedora.label_gerenciador', 'Gerenciador') + '</span><span class="valor">' + _escapeHTML(gerenciador) + '</span></li>' +
 '</ul>';
 }
 }
-}, 1500);
 }
 
 // ============================================================

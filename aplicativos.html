@@ -32,7 +32,6 @@ marcação ainda; o filtro só é útil quando a UI existir).
 <button type="button" class="fap-filtro-chip" data-filtro-grupo="estado" data-filtro-valor="nao_feitos" data-i18n="filtros.estado.nao_feitos">Não feitos</button>
 <button type="button" class="fap-filtro-chip" data-filtro-grupo="estado" data-filtro-valor="feitos" data-i18n="filtros.estado.feitos">Feitos</button>
 <button type="button" class="fap-filtro-chip" data-filtro-grupo="estado" data-filtro-valor="preexistentes" data-i18n="filtros.estado.preexistentes">Pré-existentes</button>
-<button type="button" class="fap-filtro-chip" data-filtro-grupo="estado" data-filtro-valor="pulados" data-i18n="filtros.estado.pulados">Pulados</button>
 </div>
 
 <div class="fap-filtros-grupo">
@@ -740,12 +739,13 @@ var APPS_DNF = {
 // REGISTRY DE APPS RPM VIA URL DIRETA DE RELEASE
 // ============================================================
 
+// `#2` — URLs resolvidas no frontend (fetch WebKit/usuário),
+// NÃO dentro do pkexec. Mesma justificativa do ArtCraft: `curl`
+// dentro do contexto do pkexec pode falhar por CA/PATH/rate-limit.
 var APPS_URL_RPM = {
     'instalar-rustdesk': {
-        resolveUrl:
-            'curl -s https://api.github.com/repos/rustdesk/rustdesk/releases/latest ' +
-            '| grep -oP \'"browser_download_url":\\s*"\\K[^"]*\\.x86_64\\.rpm\' ' +
-            '| head -1',
+        apiUrl: 'https://api.github.com/repos/rustdesk/rustdesk/releases/latest',
+        assetRegex: /x86_64\.rpm$/i,
         pacote: 'rustdesk',
         binAbrir: 'rustdesk',
         fallback: '🖥️ RustDesk'
@@ -1114,18 +1114,71 @@ async function instalarUrlRpm(idComando) {
         return;
     }
 
+    var logBox = _getLogBox(idComando);
+    var rpmUrl = null;
+
+    if (info.apiUrl && info.assetRegex) {
+        if (logBox) {
+            logBox.style.display = 'block';
+            var linha = document.createElement('div');
+            linha.className = 'log-line info';
+            linha.textContent = _t('sessoes.aplicativos.log_consultando_github',
+                '🔍 Consultando a release mais recente do GitHub...');
+            logBox.appendChild(linha);
+            logBox.scrollTop = logBox.scrollHeight;
+        }
+        try {
+            var r = await fetch(info.apiUrl, { cache: 'no-store' });
+            if (r.ok) {
+                var data = await r.json();
+                var assets = Array.isArray(data.assets) ? data.assets : [];
+                for (var i = 0; i < assets.length; i++) {
+                    if (info.assetRegex.test(assets[i].name)) {
+                        rpmUrl = assets[i].browser_download_url;
+                        break;
+                    }
+                }
+            } else {
+                console.warn('[aplicativos] API GitHub retornou HTTP', r.status);
+            }
+        } catch (e) {
+            console.warn('[aplicativos] Falha ao consultar API:', e.message);
+        }
+
+        if (!rpmUrl) {
+            if (logBox) {
+                var err = document.createElement('div');
+                err.className = 'log-line error';
+                err.textContent = _tVars('sessoes.aplicativos.log_url_nao_resolvida',
+                    '❌ Não foi possível resolver a URL do RPM mais recente de {nome}.',
+                    { nome: (info.fallback || idComando).replace(/^[^\s]+\s*/, '') });
+                logBox.appendChild(err);
+                var hint = document.createElement('div');
+                hint.className = 'log-line info';
+                hint.textContent = '   Verifique manualmente: ' +
+                    info.apiUrl.replace('/repos/', '/').replace('/releases/latest', '/releases/latest');
+                logBox.appendChild(hint);
+                logBox.scrollTop = logBox.scrollHeight;
+            }
+            return;
+        }
+
+        if (logBox) {
+            var okLinha = document.createElement('div');
+            okLinha.className = 'log-line success';
+            okLinha.textContent = '📦 URL resolvida: ' + rpmUrl;
+            logBox.appendChild(okLinha);
+            logBox.scrollTop = logBox.scrollHeight;
+        }
+    }
+
     var comando;
-    if (info.resolveUrl) {
-        comando =
-            'URL=$(' + info.resolveUrl + ') && ' +
-            '[ -n "$URL" ] || { ' +
-            '  echo "❌ Nenhum RPM .x86_64 encontrado na release mais recente."; ' +
-            '  echo "   Tente novamente em alguns minutos ou verifique manualmente."; ' +
-            '  exit 1; ' +
-            '} && ' +
-            'echo "📦 Baixando: $URL" && ' +
-            'sudo dnf install -y --setopt=localpkg_gpgcheck=0 "$URL"';
+    if (rpmUrl) {
+        // `dnf install <URL>` usa libcurl interno (não o binário
+        // `curl`), que tem certificados e PATH próprios.
+        comando = 'sudo dnf install -y --setopt=localpkg_gpgcheck=0 "' + rpmUrl + '"';
     } else {
+        // Fallback: url fixa (usado por pacotes sem apiUrl)
         comando = 'sudo dnf install -y --setopt=localpkg_gpgcheck=0 ' + info.url;
     }
 
@@ -1162,20 +1215,66 @@ function abrirLightworks() {
 // ============================================================
 
 async function instalarRcloneManager() {
-    var comando =
-        'RPM_URL=$(curl -s https://api.github.com/repos/Zarestia-Dev/rclone-manager/releases/latest ' +
-        '| grep -oP \'"browser_download_url":\\s*"\\K[^"]*x86_64\\.rpm\' ' +
-        '| head -1) && ' +
-        'if [ -z "$RPM_URL" ]; then ' +
-        'echo "❌ Nenhum RPM .x86_64 encontrado na release mais recente do rclone-manager"; ' +
-        'echo "Verifique manualmente: https://github.com/Zarestia-Dev/rclone-manager/releases/latest"; ' +
-        'exit 1; ' +
-        'fi && ' +
-        'echo "URL do RPM: $RPM_URL" && ' +
-        'sudo dnf install -y --setopt=localpkg_gpgcheck=0 "$RPM_URL"';
+    var idComando = 'instalar-rclone-manager';
+    var logBox = _getLogBox(idComando);
+    var rpmUrl = null;
 
+    if (logBox) {
+        logBox.style.display = 'block';
+        var linha = document.createElement('div');
+        linha.className = 'log-line info';
+        linha.textContent = _t('sessoes.aplicativos.log_consultando_github',
+            '🔍 Consultando a release mais recente do GitHub...');
+        logBox.appendChild(linha);
+        logBox.scrollTop = logBox.scrollHeight;
+    }
+
+    try {
+        var r = await fetch(
+            'https://api.github.com/repos/Zarestia-Dev/rclone-manager/releases/latest',
+            { cache: 'no-store' }
+        );
+        if (r.ok) {
+            var data = await r.json();
+            var assets = Array.isArray(data.assets) ? data.assets : [];
+            for (var i = 0; i < assets.length; i++) {
+                if (/x86_64\.rpm$/i.test(assets[i].name)) {
+                    rpmUrl = assets[i].browser_download_url;
+                    break;
+                }
+            }
+        }
+    } catch (e) {
+        console.warn('[aplicativos] Falha ao consultar API Rclone Manager:', e.message);
+    }
+
+    if (!rpmUrl) {
+        if (logBox) {
+            var err = document.createElement('div');
+            err.className = 'log-line error';
+            err.textContent = _t('sessoes.aplicativos.log_url_nao_resolvida_rclone',
+                '❌ Não foi possível resolver a URL do RPM do Rclone Manager.');
+            logBox.appendChild(err);
+            var hint = document.createElement('div');
+            hint.className = 'log-line info';
+            hint.textContent = '   Verifique manualmente: https://github.com/Zarestia-Dev/rclone-manager/releases/latest';
+            logBox.appendChild(hint);
+            logBox.scrollTop = logBox.scrollHeight;
+        }
+        return;
+    }
+
+    if (logBox) {
+        var okLinha = document.createElement('div');
+        okLinha.className = 'log-line success';
+        okLinha.textContent = '📦 URL resolvida: ' + rpmUrl;
+        logBox.appendChild(okLinha);
+        logBox.scrollTop = logBox.scrollHeight;
+    }
+
+    var comando = 'sudo dnf install -y --setopt=localpkg_gpgcheck=0 "' + rpmUrl + '"';
     var nomeAcao = _t('sessoes.aplicativos.btn_rclone_manager', '🎛️ Instalar Rclone Manager');
-    await executarComandoGenerico('instalar-rclone-manager', comando, nomeAcao, function() {
+    await executarComandoGenerico(idComando, comando, nomeAcao, function() {
         atualizarBotaoAbrirRclone();
         aplicarEstadoToggle('instalar-rclone-manager', 'desfazer-rclone-manager');
     });
@@ -1200,7 +1299,11 @@ function atualizarBotaoAbrirRclone() {
 // ============================================================
 
 function abrirGitHubAffinity() {
-    window.location.href = 'https://github.com/ryzendew/Linux-Affinity-Installer';
+    // `window.open` abre em nova aba. No container WebKitGTK, o
+    // `decide_policy` intercepta e redireciona pro `xdg-open`. No
+    // browser fallback, abre nova aba (FAP permanece aberto).
+    window.open('https://github.com/ryzendew/Linux-Affinity-Installer',
+                '_blank', 'noopener,noreferrer');
 }
 
 async function abrirInstaladorAffinity() {
@@ -1423,62 +1526,6 @@ function abrirKrdc() {
 }
 
 // ============================================================
-// AJUSTE DE FERRAMENTAS POR DESKTOP
-// ============================================================
-
-async function _ajustarFerramentasPorDesktop() {
-    var desktop = 'UNKNOWN';
-    try {
-        desktop = await detectarDesktopReal();
-    } catch (e) {
-        console.warn('[aplicativos] Não foi possível detectar desktop:', e);
-    }
-
-    if (desktop === 'GNOME') {
-        await _esconderSePacoteInstalado('gnome-connections',
-                                          'instalar-gnome-connections',
-                                          'btn-abrir-gnome-connections');
-    } else if (desktop === 'KDE') {
-        await _esconderSePacoteInstalado('krdc',
-                                          'instalar-krdc',
-                                          'btn-abrir-krdc');
-    }
-}
-
-async function _esconderSePacoteInstalado(pkg, idComando, idBotaoAbrir) {
-    var instalado = false;
-    try {
-        var r = await fetch(API_URL + '/check-package?pkg=' + encodeURIComponent(pkg),
-                            { cache: 'no-store' });
-        if (r.ok) {
-            var data = await r.json();
-            instalado = !!data.installed;
-        }
-    } catch (e) {
-        console.warn('[aplicativos] Falha ao checar pacote ' + pkg + ':', e.message);
-        return;
-    }
-
-    if (!instalado) return;
-
-    var btnInstalar = document.getElementById('btn-' + idComando);
-    var btnAbrir = document.getElementById(idBotaoAbrir);
-
-    if (btnInstalar) {
-        var wrapper = btnInstalar.closest('.btn-flatpak-wrapper');
-        if (wrapper) {
-            wrapper.style.display = 'none';
-        } else {
-            btnInstalar.style.display = 'none';
-        }
-    }
-
-    if (btnAbrir) {
-        btnAbrir.style.display = '';
-    }
-}
-
-// ============================================================
 // RESTAURAR ESTADO DA SESSÃO
 // ============================================================
 
@@ -1535,10 +1582,8 @@ async function restaurarEstadoSessao() {
     atualizarBotaoAbrirRclone();
     aplicarEstadoToggle('instalar-rclone-manager', 'desfazer-rclone-manager');
 
-    // `_ajustarFerramentasPorDesktop()` foi removida daqui na v1.1.2
-    // (escondia o `.btn-flatpak-wrapper` inteiro, o que sumia a lixeira).
-    // O caso pré-existente agora é tratado pela Opção B do
-    // `aplicarEstadoInstalavel`.
+    // O caso pré-existente é tratado pela Opção B do
+    // `aplicarEstadoInstalavel` (script.js).
 }
 
 (function() {

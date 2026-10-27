@@ -379,18 +379,30 @@ var WAYDROID_EXTRAS_IDS = [
 // HELPERS: status do container
 // ============================================================
 
+// Cache do último status VÁLIDO por 30s. Se a rede oscilar,
+// retornar o cache em vez de `{ installed: false }` — sem isso,
+// o botão "Instalar Waydroid" voltava a aparecer após uma queda
+// momentânea, mesmo com o pacote instalado (item #45).
+var _waydroidStatusCache = { dados: null, ts: 0 };
+var _WAYDROID_STATUS_TTL_MS = 30 * 1000;
+
 async function _verificarContainerWaydroid() {
-try {
-var r = await fetch(API_URL + '/waydroid-status');
-if (!r.ok) {
-console.warn('[Waydroid] /waydroid-status retornou HTTP ' + r.status);
-return { installed: false, initialized: false, running: false, raw: '' };
-}
-return await r.json();
-} catch (e) {
-console.warn('[Waydroid] Erro ao consultar /waydroid-status:', e.message);
-return { installed: false, initialized: false, running: false, raw: '' };
-}
+    try {
+        var r = await fetch(API_URL + '/waydroid-status');
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        var data = await r.json();
+        _waydroidStatusCache = { dados: data, ts: Date.now() };
+        return data;
+    } catch (e) {
+        console.warn('[Waydroid] Erro ao consultar /waydroid-status:', e.message);
+        // Fallback: cache recente (< 30s) ou estado "installed: true"
+        // conservador (não faz o botão "Instalar" ressurgir por rede).
+        if (_waydroidStatusCache.dados &&
+            (Date.now() - _waydroidStatusCache.ts) < _WAYDROID_STATUS_TTL_MS) {
+            return _waydroidStatusCache.dados;
+        }
+        return { installed: true, initialized: true, running: false, raw: '' };
+    }
 }
 
 function _bloquearBotaoExtra(id) {
@@ -585,6 +597,7 @@ async function executarWaydroidUninstall() {
         'pkill -f "waydroid session" 2>/dev/null || true; ' +
         'dnf remove -y waydroid 2>/dev/null || true; ' +
         'dnf remove -y waydroid-script 2>/dev/null || true; ' +
+        'dnf remove -y waydroid-helper 2>/dev/null || true; ' +
         'if [ -d $HOME/.local/share/fap-waydroid ]; then ' +
         '  chattr -R -i $HOME/.local/share/fap-waydroid 2>/dev/null || true; ' +
         '  rm -rf $HOME/.local/share/fap-waydroid; ' +
@@ -597,7 +610,8 @@ async function executarWaydroidUninstall() {
         'rm -rf /etc/waydroid 2>/dev/null; ' +
         'echo ""; ' +
         'echo "════════════════════════════════════════════════════════════"; ' +
-        'echo "✅ Waydroid e TODOS os dados associados foram removidos."; ' +
+        'echo "' + _t('sessoes.waydroid.uninstall_ok',
+            '✅ Waydroid e TODOS os dados associados foram removidos.') + '"; ' +
         'echo "════════════════════════════════════════════════════════════"; ';
 
     await executarComandoGenerico(idComando, comando,

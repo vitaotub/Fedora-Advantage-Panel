@@ -372,13 +372,15 @@ abrir_container() {
     if [ -f "$DIR/fap-container" ]; then
         log_info "📦 Abrindo no container nativo (WebKitGTK)..."
         "$DIR/fap-container" --url "$url" --icon "$icone" --name "Fedora Advantage Panel" $extra_args
-        return 0
+        local rc=$?
+        return $rc
     fi
 
     if command -v fap-container &> /dev/null; then
         log_info "📦 Abrindo no container nativo (WebKitGTK)..."
         fap-container --url "$url" --icon "$icone" --name "Fedora Advantage Panel" $extra_args
-        return 0
+        local rc=$?
+        return $rc
     fi
 
     return 1

@@ -83,6 +83,18 @@ MANUTENÇÃO DO FAP
 </div>
 </div>
 
+<!-- Resetar progresso -->
+<div class="bloco-comando" style="border-left: 4px solid #f59e0b;">
+<div class="comando-info">
+<h3 data-i18n="sessoes.sobre-fap.resetar_progresso_titulo">🔄 Resetar progresso do FAP</h3>
+<p data-i18n="sessoes.sobre-fap.resetar_progresso_desc">Apaga o histórico de botões executados no FAP. Todos os botões voltam ao estado inicial. Útil para recomeçar a configuração do zero sem desinstalar o FAP.</p>
+<div class="aviso-caixa" data-i18n="sessoes.sobre-fap.resetar_progresso_aviso">⚠️ ATENÇÃO: essa ação é irreversível! O histórico de progresso será perdido, mas os pacotes instalados pelo FAP NÃO serão removidos.</div>
+<div style="margin-top: 1rem;">
+<button class="btn-executar vermelho" onclick="resetarProgressoFAP()" data-comando="resetar-progresso-fap" data-logbox="log-sessao-sobre-fap" id="btn-resetar-progresso-fap" data-i18n="sessoes.sobre-fap.resetar_progresso_btn">🔄 Resetar progresso</button>
+</div>
+</div>
+</div>
+
 <!-- Desinstalar FAP -->
 <div class="bloco-comando" style="border-left: 4px solid #ef4444;">
 <div class="comando-info">
@@ -276,6 +288,69 @@ async function desinstalarFAP() {
 }
 
 // ------------------------------------------------------------
+// RESETAR PROGRESSO
+// ------------------------------------------------------------
+
+async function resetarProgressoFAP() {
+    if (!confirm(_t('sessoes.sobre-fap.resetar_progresso_confirm1',
+        '⚠️ Resetar TODO o progresso do FAP?\n\n' +
+        'Isso apaga o histórico de botões executados. Todos os botões voltam ao estado inicial.\n\n' +
+        'Os pacotes instalados pelo FAP NÃO serão removidos — apenas o "estado" da UI é limpo.\n\n' +
+        'Continuar?'))) return;
+
+    if (!confirm(_t('sessoes.sobre-fap.resetar_progresso_confirm2',
+        '🔄 Última confirmação!\n\n' +
+        'O histórico de progresso será PERDIDO permanentemente. A configuração do sistema permanece intacta.\n\n' +
+        'Tem certeza?'))) return;
+
+    var logBox = _getLogBox('resetar-progresso-fap');
+    if (logBox) {
+        logBox.style.display = 'block';
+        _separadorLog(logBox, _t('sessoes.sobre-fap.resetar_progresso_titulo', '🔄 Resetar progresso do FAP'));
+        var linha = document.createElement('div');
+        linha.className = 'log-line info';
+        linha.textContent = _t('sessoes.sobre-fap.resetar_progresso_log', '🔄 Apagando histórico de progresso...');
+        logBox.appendChild(linha);
+        logBox.scrollTop = logBox.scrollHeight;
+    }
+
+    try {
+        var r = await fetch(API_URL + '/progress', { method: 'DELETE' });
+        if (r.ok) {
+            // Limpa cache local e invalida contadores.
+            progressCache = { executados: [], pulados: [] };
+            progressLoaded = true;
+            _invalidarContadorSessoes();
+            _atualizarProgressoGlobal();
+
+            if (logBox) {
+                var sucesso = document.createElement('div');
+                sucesso.className = 'log-line success';
+                sucesso.textContent = '✅ ' + _t('sessoes.sobre-fap.resetar_progresso_sucesso',
+                    'Progresso resetado com sucesso. Recarregue a página (Ctrl+R) para atualizar os botões.');
+                logBox.appendChild(sucesso);
+                logBox.scrollTop = logBox.scrollHeight;
+            }
+
+            if (typeof mostrarToast === 'function') {
+                mostrarToast(_t('sessoes.sobre-fap.resetar_progresso_sucesso',
+                    'Progresso resetado com sucesso.'), 'success', 5000);
+            }
+        } else {
+            throw new Error('HTTP ' + r.status);
+        }
+    } catch (e) {
+        if (logBox) {
+            var erro = document.createElement('div');
+            erro.className = 'log-line error';
+            erro.textContent = '❌ ' + _tVars('comum.erro_conexao', 'Erro de conexão: {msg}', { msg: e.message });
+            logBox.appendChild(erro);
+            logBox.scrollTop = logBox.scrollHeight;
+        }
+    }
+}
+
+// ------------------------------------------------------------
 // CHANGELOG DINÂMICO
 // ------------------------------------------------------------
 
@@ -328,12 +403,11 @@ async function carregarChangelog() {
 // ------------------------------------------------------------
 
 function abrirChangelogCompleto() {
-    // Mesmo princípio do `abrirGitHubAffinity`: o container
-    // intercepta via `decide-policy` e joga pro navegador externo.
-    // Não usar `xdg-open` diretamente aqui evita o problema de
-    // duplicar lógica que já existe no container.
     var url = 'https://github.com/vitaotub/Fedora-Advantage-Panel/releases';
-    window.location.href = url;
+    // `window.open` em nova aba: no container WebKitGTK, o
+    // `decide_policy` intercepta e redireciona pro `xdg-open`;
+    // no browser fallback, abre nova aba (FAP permanece).
+    window.open(url, '_blank', 'noopener,noreferrer');
 
     var logBox = _getLogBox('changelog-completo');
     if (logBox) {

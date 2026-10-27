@@ -124,6 +124,57 @@ check-basico:
 		if (!re.test(c)) { console.error('  ERRO: seção ## v' + v + ' não encontrada no CHANGELOG.md'); process.exit(1); } \
 		console.log('  OK: seção v' + v + ' encontrada no CHANGELOG.md'); \
 	"
+	@echo "==> Checando se todo instalar-* tem origem mapeada (#36)..."
+	@node -e " \
+		const fs = require('fs'); \
+		const path = require('path'); \
+		const scriptJs = fs.readFileSync('script.js', 'utf8'); \
+		const mapaMatch = scriptJs.match(/_MAPA_ORIGEM\s*=\s*\{([\s\S]*?)\n\};/); \
+		if (!mapaMatch) { console.error('  ERRO: não achei _MAPA_ORIGEM em script.js'); process.exit(1); } \
+		const mapaSet = new Set(); \
+		mapaMatch[1].replace(/'([^']+)':\s*'[^']+'/g, (_, k) => mapaSet.add(k)); \
+		const sessoes = fs.readdirSync('.').filter(f => /^[a-z][a-z0-9-]*\.html$$/.test(f) && f !== 'template-sessao.html'); \
+		const faltando = []; \
+		for (const arq of sessoes) { \
+			const html = fs.readFileSync(arq, 'utf8'); \
+			const ids = new Set(); \
+			html.replace(/data-comando=\"(instalar-[^\"]+)\"/g, (_, id) => ids.add(id)); \
+			for (const id of ids) if (!mapaSet.has(id)) faltando.push(arq + ':' + id); \
+		} \
+		if (faltando.length) { console.error('  ERRO: IDs sem _MAPA_ORIGEM:'); faltando.forEach(x => console.error('    ' + x)); process.exit(1); } \
+		console.log('  OK: todos os instalar-* têm origem mapeada'); \
+	"
+	@echo "==> Checando se data-i18n / _t() têm chave nos locales (#43)..."
+	@node -e " \
+		const fs = require('fs'); \
+		const path = require('path'); \
+		const locales = ['en', 'es'].map(l => ({ nome: l, dados: JSON.parse(fs.readFileSync('locales/' + l + '.json', 'utf8')) })); \
+		const scriptJs = fs.readFileSync('script.js', 'utf8'); \
+		const sessoes = fs.readdirSync('.').filter(f => /^[a-z][a-z0-9-]*\.html$$/.test(f) && f !== 'template-sessao.html'); \
+		const chavesUsadas = new Set(); \
+		const isChaveValida = k => /^[a-zA-Z][a-zA-Z0-9_.-]*$$/.test(k) && !/[._]$$/.test(k); \
+		const addChave = k => { if (isChaveValida(k)) chavesUsadas.add(k); }; \
+		for (const arq of sessoes) { \
+			const html = fs.readFileSync(arq, 'utf8'); \
+			html.replace(/data-i18n(?:-html|-placeholder|-title|-aria-label)?=\"([^\"]+)\"/g, (_, k) => addChave(k)); \
+			html.replace(/_t(?:Vars)?\(\s*'([a-zA-Z0-9_.-]+)'/g, (_, k) => addChave(k)); \
+		} \
+		scriptJs.replace(/_t(?:Vars)?\(\s*'([a-zA-Z0-9_.-]+)'/g, (_, k) => addChave(k)); \
+		function buscarChave(obj, caminho) { \
+			const partes = caminho.split('.'); \
+			let atual = obj; \
+			for (const p of partes) { if (atual == null || typeof atual !== 'object') return undefined; atual = atual[p]; } \
+			return atual; \
+		} \
+		const faltando = []; \
+		for (const loc of locales) { \
+			for (const k of chavesUsadas) { \
+				if (buscarChave(loc.dados, k) === undefined) faltando.push(loc.nome + ':' + k); \
+			} \
+		} \
+		if (faltando.length) { console.error('  ERRO: chaves i18n faltando:'); faltando.slice(0, 30).forEach(x => console.error('    ' + x)); if (faltando.length > 30) console.error('    ... e mais ' + (faltando.length - 30)); process.exit(1); } \
+		console.log('  OK: ' + chavesUsadas.size + ' chaves i18n presentes em en+es'); \
+	"
 	@echo ""
 	@echo "✅ Todos os checks básicos passaram."
 

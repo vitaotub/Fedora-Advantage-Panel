@@ -62,7 +62,7 @@ bash <(curl -s https://raw.githubusercontent.com/vitaotub/Fedora-Advantage-Panel
 > **💡 Not sure how to run that command?** It's simpler than it looks:
 >
 > 1. **Copy the entire command** — select all the text above with your mouse, or click the copy icon that appears on the right side of the code block.
-> 2. **Open the terminal** — look for **"Terminal"** in your Fedora application menu (or press `Ctrl+Shift+T` on GNOME).
+> 2. **Open the terminal** — look for **"Terminal"** in your Fedora application menu. On most desktops (GNOME, KDE, XFCE, Cinnamon, MATE), the `Ctrl+Alt+T` shortcut also works.
 > 3. **Paste the command** — in the terminal, press `Ctrl+Shift+V` or right-click with the mouse and choose **"Paste"**.
 > 4. **Press `Enter`** — the installer will ask for your administrator password (the same one you use to log in to the computer). That's normal — the installer is asking permission to install system packages.
 >

@@ -494,16 +494,26 @@ function _moverLogParaDock(container) {
         document.body.classList.remove('log-dock-expandido');
     }
 
-    // Observa mudanças de classe no toggle (script.js faz toggle
-    // via classList.toggle). Mantém body.log-dock-expandido
-    // sincronizado.
+    // Observa APENAS o toggle (não o dock inteiro com subtree).
+    // Antes, qualquer mudança de classe em qualquer descendente
+    // disparava o observer. Também faz dedup: só escreve no
+    // localStorage quando o valor realmente muda.
+    var _ultimoExpandido = false;
     _observadorLogDock = new MutationObserver(function() {
         var t = dock.querySelector('.terminal-log-toggle');
         var exp = t && t.classList.contains('expandido');
+        if (exp === _ultimoExpandido) return;
+        _ultimoExpandido = exp;
         document.body.classList.toggle('log-dock-expandido', !!exp);
         try { localStorage.setItem('fap_log_expandido', exp ? '1' : '0'); } catch (e) {}
     });
-    _observadorLogDock.observe(dock, { attributes: true, subtree: true, attributeFilter: ['class'] });
+    if (toggle) {
+        _observadorLogDock.observe(toggle, { attributes: true, attributeFilter: ['class'] });
+    } else {
+        // Fallback (raro): se o toggle não foi encontrado, observa
+        // o dock inteiro. Mantém compatibilidade.
+        _observadorLogDock.observe(dock, { attributes: true, subtree: true, attributeFilter: ['class'] });
+    }
 }
 
 // ------------------------------------------------------------
@@ -582,13 +592,14 @@ function atualizarSidebar() {
         // Contagem (executados/total) e indicador de progresso
         var c = (typeof _contagemSessao === 'function')
             ? _contagemSessao(sessaoId)
-            : { feitos: 0, pulados: 0, total: 0, na: false };
+            : { feitos: 0, pulados: 0, total: 0, na: false, informativa: false };
 
         item.classList.toggle('na', !!c.na);
 
         var progEl = item.querySelector('[data-progress]');
         if (progEl) {
-            if (c.na) progEl.textContent = '⊘';
+            if (c.informativa) progEl.textContent = 'ℹ️';
+            else if (c.na) progEl.textContent = '⊘';
             else if (c.total > 0 && c.feitos >= c.total) progEl.textContent = '●';
             else if (c.feitos > 0) progEl.textContent = '◐';
             else progEl.textContent = '○';
@@ -596,8 +607,9 @@ function atualizarSidebar() {
 
         var countEl = item.querySelector('[data-count]');
         if (countEl) {
-            if (c.na) {
+            if (c.na || c.informativa) {
                 countEl.textContent = '';
+                countEl.classList.remove('pulados');
             } else {
                 var txt = c.feitos + '/' + c.total;
                 if (c.pulados > 0) txt += ' · ' + c.pulados + '⊘';
@@ -606,7 +618,7 @@ function atualizarSidebar() {
             }
         }
 
-        item.classList.toggle('concluida', c.total > 0 && c.feitos >= c.total && !c.na);
+        item.classList.toggle('concluida', !c.informativa && !c.na && c.total > 0 && c.feitos >= c.total);
 
         // Tooltip com o nome da sessão (útil no modo colapsado)
         item.setAttribute('title', nomeDaSessao(sessaoId));
@@ -870,7 +882,6 @@ function irParaSessao(index) {
     var total = SESSOES_PRINCIPAIS.length;
     if (index < 0 || index >= total) return;
 
-    var sessaoAnterior = sessaoAtual;
     sessaoAtual = index;
 
     try {
@@ -937,8 +948,13 @@ function irParaSessao(index) {
         // Limpa o input (a barra de busca fica "vazia" visualmente),
         // mas mantém _termoBuscaAtual durante o carregamento para
         // preservar o destaque da sidebar. Zeramos ao final.
+        // Guard: só limpa se o input ainda contém o termo original.
+        // Se o usuário digitou algo novo nesse intervalo, preserva
+        // (evita race: "digitei, cliquei, comecei a digitar de novo
+        // e o termo novo foi apagado").
         setTimeout(function() {
-            if (input) input.value = '';
+            if (!input || input.value !== termoAtivo) return;
+            input.value = '';
             _termoBuscaAtual = '';
             _resetSidebarBusca();
         }, 800);
@@ -978,7 +994,6 @@ function proximaSessao() {
 
 var marcarComoExecutadoOriginal = marcarComoExecutado;
 var desmarcarComoExecutadoOriginal = desmarcarComoExecutado;
-var marcarComoPuladoOriginal = marcarComoPulado;
 
 marcarComoExecutado = async function(idComando) {
     await marcarComoExecutadoOriginal(idComando);
@@ -992,11 +1007,6 @@ desmarcarComoExecutado = async function(idComando) {
     await desmarcarComoExecutadoOriginal(idComando);
     atualizarSidebar();
     _atualizarNAUI();
-};
-
-marcarComoPulado = async function(idComando) {
-    await marcarComoPuladoOriginal(idComando);
-    atualizarSidebar();
 };
 
 // ============================================================

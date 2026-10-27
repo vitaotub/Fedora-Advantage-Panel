@@ -319,10 +319,30 @@ function _precisaEnvUserContext(comando) {
 //
 // Sem esta validação, um comando como "rpm -q kernel; rm -rf ~" passaria
 // pelo startsWith("rpm -q ") e executaria o `rm` sem autenticação.
-const _CARACTERES_ENCADEAMENTO = /[\n\r;`|]|\$\(|&&|<\(|>\(|(?:^|\s)&(?:\s|$)/;
+// `>` sozinho (redirecionamento de arquivo) e `>>` (append) são
+// vetores de sobrescrita de arquivo (ex.: `rpm -q kernel > ~/.bashrc`).
+// Bloqueia-os, MAS permite `>&N` (dup de fd, ex.: `2>&1`) e `>N`
+// (redirect para fd N), que são sintaxe de redirect legítima.
+// O lookahead `(?![&\d])` evita falsos positivos nesses casos.
+const _CARACTERES_ENCADEAMENTO = /[\n\r;`|]|\$\(|&&|<\(|>\(|(?:^|\s)&(?:\s|$)|(?:^|\s)>>?(?![&\d])/;
+
+// Exceção estrita: o comando gerado por `abrirFerramentaExterna`
+// usa `> /tmp/fap-open-*.log 2>&1 < /dev/null` para desacoplar o
+// app do FAP (setsid) e capturar a saída num arquivo previsível.
+// Esse padrão é gerado pelo próprio FAP, não é entrada de usuário
+// — o idLog é sanitizado em `/^[a-zA-Z0-9_-]+$/`. Whitelist exata
+// do formato esperado para permitir o redirect sem afrouxar o
+// chain check geral.
+const _REDIRECT_ABRIR_PADRAO = /^setsid\s+-f\s+[^>\n]+\s>\s+\/tmp\/fap-open-[\w.\-]+\.log\s+2>&1\s+<\s+\/dev\/null$/;
 
 function _cmdSemAutenticacao(comando) {
     const trimmed = (comando || '').trim();
+
+    // Exceção: padrão interno de abrir app (redirect legítimo).
+    if (_REDIRECT_ABRIR_PADRAO.test(trimmed)) {
+        return true;
+    }
+
     if (_CARACTERES_ENCADEAMENTO.test(trimmed)) {
         return false;
     }
@@ -986,9 +1006,17 @@ function salvarProgresso(idComando, origem) {
     // Sem esse filtro, o arquivo engorda e o contador global de
     // sessões concluídas oscila, porque `_limparIdsOrfaos` (frontend)
     // remove esses ids no próximo boot.
-    if (!idComando || idComando.endsWith('-open') || idComando.endsWith('-remove')) {
+    // Ids transientes que NÃO devem poluir o .progresso.json:
+    //   • `open-*`      — abertura de app GUI (novo formato, único
+    //                     por clique em `abrirFerramentaExterna`).
+    //   • `*-open`      — formato legado, mantido por compat.
+    //   • `*-remove`    — remoção via lixeira ou "desfazer tudo".
+    if (!idComando ||
+        idComando.startsWith('open-') ||
+        idComando.endsWith('-open') ||
+        idComando.endsWith('-remove')) {
         return;
-    }
+        }
     try {
         const progresso = lerProgresso();
         if (!progresso.executados.includes(idComando)) {
@@ -1789,6 +1817,60 @@ function servirLocale(req, res, lang) {
 }
 
 // ============================================================
+// PREVIEW DO GRUB — computa diff servidor-side (?preview=1)
+// ============================================================
+//
+// Parseia /etc/default/grub (já lido pelo handler /grub-info) e
+// retorna a lista de mudanças que o botão "Aplicar Recomendada"
+// faria. Cada item: { chave, atual (null se ausente), novo }.
+//
+// A lista de recomendações espelha exatamente o que
+// `executarGrubAplicarRecomendado` (frontend) grava no arquivo.
+// Se a lista mudar lá, atualizar aqui.
+
+function _computarPreviewGrub(info) {
+    var atual = {};
+    (info.grubContent || '').split('\n').forEach(function(linha) {
+        var l = linha.trim();
+        if (!l || l.startsWith('#')) return;
+        var idx = l.indexOf('=');
+        if (idx === -1) return;
+        atual[l.substring(0, idx).trim()] = l.substring(idx + 1).trim();
+    });
+
+    var res = (info.detectedRes && info.detectedRes !== '0x0') ? info.detectedRes : '1024x768';
+    var osProber = info.dualBoot ? 'false' : 'true';
+
+    var recomendados = [
+        { chave: 'GRUB_TIMEOUT',            novo: '10' },
+        { chave: 'GRUB_TIMEOUT_STYLE',      novo: 'menu' },
+        { chave: 'GRUB_GFXMODE',            novo: res },
+        { chave: 'GRUB_DISABLE_OS_PROBER',  novo: osProber },
+        { chave: 'GRUB_DEFAULT',            novo: 'saved' },
+        { chave: 'GRUB_DISABLE_SUBMENU',    novo: 'true' },
+        { chave: 'GRUB_TERMINAL_OUTPUT',    novo: '"console"' },
+        { chave: 'GRUB_CMDLINE_LINUX',      novo: '"rhgb quiet"' },
+        { chave: 'GRUB_DISABLE_RECOVERY',   novo: '"true"' }
+    ];
+
+    var mudancas = [];
+    for (var i = 0; i < recomendados.length; i++) {
+        var item = recomendados[i];
+        var valorAtual = atual[item.chave];
+        var temAtual = (typeof valorAtual === 'string' && valorAtual.length > 0);
+        var igual = temAtual && valorAtual === item.novo;
+        if (igual) continue;
+        mudancas.push({
+            chave: item.chave,
+            atual: temAtual ? valorAtual : null,
+            novo: item.novo
+        });
+    }
+
+    return { mudancas: mudancas, total: mudancas.length };
+}
+
+// ============================================================
 // SERVIDOR HTTP
 // ============================================================
 
@@ -1898,10 +1980,26 @@ const server = http.createServer((req, res) => {
                     // botão — porque `marcarComoExecutado()` do cliente
                     // dispara `POST /progress` em toda transição.
                     const atual = lerProgresso();
+                    const novosExec = Array.isArray(executados) ? executados : [];
+                    const novosPul = Array.isArray(pulados) ? pulados : [];
+
+                    // Filtra `origem` para manter apenas IDs que
+                    // ainda estão em `executados`. Sem isso, remoções
+                    // via lixeira deixavam entradas órfãs em
+                    // .progresso.json (o FAP "achava" que ainda era
+                    // instalado pelo FAP, mas o pacote já tinha saído).
+                    const origemAtual = atual.origem || {};
+                    const origemFiltrada = {};
+                    Object.keys(origemAtual).forEach(function(id) {
+                        if (novosExec.indexOf(id) !== -1) {
+                            origemFiltrada[id] = origemAtual[id];
+                        }
+                    });
+
                     escreverProgresso({
-                        executados: Array.isArray(executados) ? executados : [],
-                                      pulados: Array.isArray(pulados) ? pulados : [],
-                                      origem: atual.origem || {}
+                        executados: novosExec,
+                        pulados: novosPul,
+                        origem: origemFiltrada
                     });
                 }
                 res.writeHead(200, { 'Content-Type': 'application/json' });
@@ -2263,6 +2361,12 @@ const server = http.createServer((req, res) => {
             var cfgMatch = stdout.match(/GRUB_CFG_PATH=(\S+)/);
             if (cfgMatch) info.grubCfgPath = cfgMatch[1];
 
+            // ?preview=1 — computa diff entre config atual e a
+            // recomendada, no servidor. O frontend só renderiza.
+            if (query.get('preview') === '1' && info.grubContent) {
+                info.preview = _computarPreviewGrub(info);
+            }
+
             res.writeHead(200, {
                 'Content-Type': 'application/json',
                 'Cache-Control': 'no-cache, no-store, must-revalidate'
@@ -2278,6 +2382,47 @@ const server = http.createServer((req, res) => {
                 bootMode: 'BIOS',
                 grubCfgPath: '/boot/grub2/grub.cfg',
                 error: 'Falha ao ler informações do GRUB'
+            }));
+        });
+        return;
+    }
+
+    // ----------------------------------------------------------
+    // /hardware-detect-atomic — detecta Fedora Atomic/Silverblue
+    // ----------------------------------------------------------
+    //
+    // Retorna JSON em vez de forçar o frontend a parsear stdout
+    // de um script bash. Lógica idêntica à que estava em
+    // estado-fedora.html (verificarAtomic), mas servidor-side.
+    if (req.method === 'GET' && url === '/hardware-detect-atomic') {
+        var scriptAtomic = [
+            'IS_ATOMIC=false',
+            '[ -f /run/ostree-booted ] && IS_ATOMIC=true',
+            'command -v rpm-ostree > /dev/null 2>&1 && IS_ATOMIC=true',
+            'VARIANTE=$(grep -m1 ^PRETTY_NAME /etc/os-release 2>/dev/null | cut -d= -f2 | tr -d \'"\')',
+                                 'echo "is_atomic=$IS_ATOMIC"',
+                                 'echo "variante=$VARIANTE"'
+        ].join('; ');
+
+        _execReadOnly(scriptAtomic, 3000).then(function(stdout) {
+            var raw = _parseChaveValor(stdout);
+            var isAtomic = raw.is_atomic === 'true';
+            res.writeHead(200, {
+                'Content-Type': 'application/json',
+                'Cache-Control': 'no-cache, no-store, must-revalidate'
+            });
+            res.end(JSON.stringify({
+                is_atomic: isAtomic,
+                variante: raw.variante || '',
+                gerenciador: isAtomic ? 'rpm-ostree' : 'dnf'
+            }));
+        }).catch(function() {
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({
+                is_atomic: false,
+                variante: '',
+                gerenciador: 'dnf',
+                error: 'Falha ao detectar variante'
             }));
         });
         return;
@@ -2829,6 +2974,22 @@ const server = http.createServer((req, res) => {
     // Sem isso, o node e o container ficam "zumbis" até o usuário
     // fechar a janela manualmente.
     if (req.method === 'POST' && url === '/shutdown') {
+        // CSRF guard: só aceita requests SEM Origin (curl do
+        // install.sh --uninstall, que é o único consumidor
+        // legítimo) ou COM Origin do próprio FAP. Navegador de
+        // aba maliciosa envia Origin de outro host → bloqueado.
+        // /executar não precisa disso porque exige
+        // Content-Type: application/json (não é "simple request",
+        // passa por preflight e o preflight falha no servidor).
+        var originShutdown = req.headers.origin || '';
+        var originOk = !originShutdown ||
+        /^https?:\/\/(127\.0\.0\.1|localhost)(:\d+)?$/.test(originShutdown);
+        if (!originOk) {
+            console.warn('[FAP] /shutdown bloqueado — Origin suspeita:', originShutdown);
+            res.writeHead(403, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ success: false, error: 'Origin não autorizada' }));
+            return;
+        }
         console.log('[FAP] /shutdown recebido — encerrando container e servidor');
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ success: true, message: 'Shutdown iniciado' }));

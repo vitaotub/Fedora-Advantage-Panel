@@ -382,6 +382,32 @@ async function _detectarWaydroid() {
 }
 
 // ============================================================
+// HARDWARE VENDORS (para filtrar comandos hardware-dependentes)
+// ============================================================
+//
+// Retorna a lista de IDs de vendor PCI presentes no sistema
+// (ex.: ['1002', '8086']). Usado por `_comandoRelevante` no
+// frontend (script.js) para esconder comandos de vendor ausente
+// da contagem de progresso — item #16 da auditoria v1.3.1.
+//
+// Fonte: `lspci -nn` (mesma do hardware-service.js). Roda como
+// usuário, sem sudo. Cache compartilhado com o resto do
+// /system-state (60s).
+//
+// Retorno vazio (lspci falhou, ou não existe) é FALLBACK SEGURO:
+// o frontend inclui todos os comandos quando a lista está vazia
+// — comportamento idêntico ao atual.
+async function _detectarHardwareVendors() {
+    var out = await _exec('lspci -nn 2>/dev/null');
+    var vendors = new Set();
+    out.split('\n').forEach(function(linha) {
+        var m = linha.match(/\[([0-9a-f]{4}):[0-9a-f]{4}\]/i);
+        if (m) vendors.add(m[1].toLowerCase());
+    });
+        return Array.from(vendors);
+}
+
+// ============================================================
 // PONTO DE ENTRADA
 // ============================================================
 
@@ -404,7 +430,8 @@ async function scanSystemState() {
                                        _detectarArquivosConfig(),
                                        _detectarWaydroid(),
                                        _detectarLocalRtc(),
-                                       _detectarLocaleLang()
+                                       _detectarLocaleLang(),
+                                       _detectarHardwareVendors()
     ]);
 
     var dados = {
@@ -417,7 +444,8 @@ async function scanSystemState() {
         config_files_present: resultados[6],
         waydroid: resultados[7],
         local_rtc: resultados[8],
-        locale_lang: resultados[9]
+        locale_lang: resultados[9],
+        hardware_vendors: resultados[10]
     };
 
     _cache = { dados: dados, ts: agora };

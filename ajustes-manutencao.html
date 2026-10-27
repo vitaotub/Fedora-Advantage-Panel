@@ -427,17 +427,6 @@ function _tVars(chave, fallback, vars) {
 // HELPERS DE TOGGLE
 // ------------------------------------------------------------
 
-function _marcarBotaoConcluido(idComando) {
-    var btn = document.getElementById('btn-' + idComando);
-    if (!btn) return;
-    _corOriginalDoBotao(btn);
-    btn.textContent = getTextoAposExecucao(idComando);
-    btn.style.backgroundColor = '#4b5563';
-    btn.style.cursor = 'default';
-    btn.disabled = true;
-    btn.style.opacity = '1';
-}
-
 function _resetarBotao(idComando, fallbackText) {
     var btn = document.getElementById('btn-' + idComando);
     if (!btn) return;
@@ -947,36 +936,18 @@ async function removerKernel() {
 
     var textoOriginalBotao = btnRemover.getAttribute('data-texto-original') || btnRemover.textContent;
 
-    try {
-        if (logBox) conectarSSE('check-current-kernel', logBox);
-        var linhasAntes = logBox ? logBox.querySelectorAll('.log-line.output').length : 0;
-
-        var response = await fetch(API_URL + '/executar', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ comando: 'uname -r', idComando: 'check-current-kernel' })
-        });
-
+        try {
+        // Endpoint dedicado, JSON — evita parse de log compartilhado
+        // (race com outra execução escrevendo no mesmo log).
+        var response = await fetch(API_URL + '/kernel-atual', { cache: 'no-store' });
         if (response.ok) {
-            await aguardarConclusaoReal('check-current-kernel', 5000);
-
-            if (logBox) {
-                var todasLinhas = logBox.querySelectorAll('.log-line.output');
-                var logLines = Array.from(todasLinhas).slice(linhasAntes);
-                var currentKernel = '';
-                logLines.forEach(function(line) {
-                    var text = line.textContent.trim();
-                    if (text && !text.includes('Comando aceito') && !text.includes('uname -r')) {
-                        currentKernel = text;
-                    }
-                });
-
-                if (currentKernel && kernel.includes(currentKernel)) {
-                    alert(_tVars('sessoes.ajustes-manutencao.kernel_msg_atual_nao_removivel',
-                        '❌ Não é possível remover o kernel que você está usando atualmente (' + currentKernel + ').\n\nReinicie o computador com outro kernel antes de remover este.',
-                        { kernel: currentKernel }));
-                    return;
-                }
+            var data = await response.json();
+            var currentKernel = (data && data.kernel) ? String(data.kernel).trim() : '';
+            if (currentKernel && kernel.indexOf(currentKernel) !== -1) {
+                alert(_tVars('sessoes.ajustes-manutencao.kernel_msg_atual_nao_removivel',
+                    '❌ Não é possível remover o kernel que você está usando atualmente (' + currentKernel + ').\n\nReinicie o computador com outro kernel antes de remover este.',
+                    { kernel: currentKernel }));
+                return;
             }
         }
     } catch (e) {
@@ -1111,7 +1082,9 @@ async function carregarInfoGrub() {
     if (!painel) return;
 
     try {
-        var r = await fetch(API_URL + '/grub-info', { cache: 'no-store' });
+        // `?preview=1` — o servidor computa o diff entre a config
+        // atual e a recomendada. Frontend só renderiza (item #40).
+        var r = await fetch(API_URL + '/grub-info?preview=1', { cache: 'no-store' });
         if (!r.ok) throw new Error('HTTP ' + r.status);
         _grubInfoCache = await r.json();
         _renderizarPainelGrub(_grubInfoCache);
@@ -1233,46 +1206,49 @@ function _renderizarPreviewGrub(params, info) {
     var conteudo = document.getElementById('grub-preview-conteudo');
     if (!preview || !conteudo) return;
 
-    // Mapa de valores atuais: { chave: valor }
-    var atual = {};
-    params.forEach(function(p) {
-        atual[p.chave] = p.valor;
-    });
-
-    var res = (info.detectedRes && info.detectedRes !== '0x0') ? info.detectedRes : '1024x768';
-    var osProber = info.dualBoot ? 'false' : 'true';
-
-    // Valores recomendados (espelho do que `executarGrubAplicarRecomendado`
-    // aplica no `/etc/default/grub`).
-    var recomendados = [
-        { chave: 'GRUB_TIMEOUT',            novo: '10' },
-        { chave: 'GRUB_TIMEOUT_STYLE',      novo: 'menu' },
-        { chave: 'GRUB_GFXMODE',            novo: res },
-        { chave: 'GRUB_DISABLE_OS_PROBER',  novo: osProber },
-        { chave: 'GRUB_DEFAULT',            novo: 'saved' },
-        { chave: 'GRUB_DISABLE_SUBMENU',    novo: 'true' },
-        { chave: 'GRUB_TERMINAL_OUTPUT',    novo: '"console"' },
-        { chave: 'GRUB_CMDLINE_LINUX',      novo: '"rhgb quiet"' },
-        { chave: 'GRUB_DISABLE_RECOVERY',   novo: '"true"' }
-    ];
+    // Preferência: preview computado pelo servidor (?preview=1).
+    // Fallback: computa no cliente (compatibilidade com servidores
+    // antigos / quando o servidor falhou ao parsear).
+    var recomendados = [];
+    if (info && info.preview && Array.isArray(info.preview.mudancas)) {
+        recomendados = info.preview.mudancas.map(function(m) {
+            return { chave: m.chave, atual: m.atual, novo: m.novo };
+        });
+    } else {
+        // Fallback cliente-side (idêntico ao que existia antes).
+        var atual = {};
+        params.forEach(function(p) { atual[p.chave] = p.valor; });
+        var res = (info.detectedRes && info.detectedRes !== '0x0') ? info.detectedRes : '1024x768';
+        var osProber = info.dualBoot ? 'false' : 'true';
+        var todos = [
+            { chave: 'GRUB_TIMEOUT',            novo: '10' },
+            { chave: 'GRUB_TIMEOUT_STYLE',      novo: 'menu' },
+            { chave: 'GRUB_GFXMODE',            novo: res },
+            { chave: 'GRUB_DISABLE_OS_PROBER',  novo: osProber },
+            { chave: 'GRUB_DEFAULT',            novo: 'saved' },
+            { chave: 'GRUB_DISABLE_SUBMENU',    novo: 'true' },
+            { chave: 'GRUB_TERMINAL_OUTPUT',    novo: '"console"' },
+            { chave: 'GRUB_CMDLINE_LINUX',      novo: '"rhgb quiet"' },
+            { chave: 'GRUB_DISABLE_RECOVERY',   novo: '"true"' }
+        ];
+        todos.forEach(function(item) {
+            var valorAtual = atual[item.chave];
+            var temAtual = (typeof valorAtual === 'string' && valorAtual.length > 0);
+            if (temAtual && valorAtual === item.novo) return;
+            recomendados.push({ chave: item.chave, atual: temAtual ? valorAtual : null, novo: item.novo });
+        });
+    }
 
     var html = '<ul class="lista-info">';
-    var mudancas = 0;
+    var mudancas = recomendados.length;
 
     recomendados.forEach(function(item) {
-        var valorAtual = atual[item.chave];
-        var temAtual = (typeof valorAtual === 'string' && valorAtual.length > 0);
-        var igual = temAtual && valorAtual === item.novo;
-
-        if (igual) return;  // não mostra parâmetros que já estão como recomendado
-        mudancas++;
-
         html += '<li style="flex-direction: column; align-items: flex-start; padding: 0.5rem 0;">';
         html += '<div style="display: flex; justify-content: space-between; width: 100%; gap: 1rem; align-items: baseline;">';
         html += '<code style="color: var(--accent-soft);">' + _escapeHTML(item.chave) + '</code>';
         html += '<div style="display: flex; gap: 0.5rem; align-items: center; font-size: 0.85rem;">';
-        if (temAtual) {
-            html += '<span style="color: var(--text-muted); text-decoration: line-through;">' + _escapeHTML(valorAtual) + '</span>';
+        if (item.atual) {
+            html += '<span style="color: var(--text-muted); text-decoration: line-through;">' + _escapeHTML(item.atual) + '</span>';
             html += '<span style="color: var(--text-muted);">→</span>';
         } else {
             html += '<span style="color: var(--text-muted); font-style: italic;">' +
@@ -1359,7 +1335,8 @@ async function executarGrubAplicarRecomendado() {
 
     var header = document.createElement('div');
     header.className = 'log-line info';
-    header.textContent = '⚙️ Aplicando configuração recomendada do GRUB...';
+    header.textContent = _t('sessoes.ajustes-manutencao.grub_log_aplicando',
+        '⚙️ Aplicando configuração recomendada do GRUB...');
     logBox.appendChild(header);
     logBox.scrollTop = logBox.scrollHeight;
 
@@ -1370,7 +1347,8 @@ async function executarGrubAplicarRecomendado() {
         statusDiv.style.backgroundColor = 'rgba(52, 211, 153, 0.1)';
         statusDiv.style.border = '1px solid #34d399';
         statusDiv.style.color = '#34d399';
-        statusDiv.innerHTML = '⏳ Aplicando configuração...';
+        statusDiv.innerHTML = _t('sessoes.ajustes-manutencao.grub_msg_aplicando',
+            '⏳ Aplicando configuração...');
     }
 
     _bloquearSessao(idComando);
@@ -1411,7 +1389,12 @@ async function executarGrubAplicarRecomendado() {
             grubNovo +
             'FAP_GRUB_EOF\n' +
             'sudo grub2-mkconfig -o /boot/grub2/grub.cfg && ' +
-            'sudo grub2-editenv - unset menu_auto_hide || true';
+            // Só tenta unset se a variável existir. Evita warning
+            // quando já foi removida em execução anterior (comportamento
+            // recomendado do Fedora: `grub2-editenv list` para verificar).
+            'if sudo grub2-editenv list 2>/dev/null | grep -q "^menu_auto_hide="; then ' +
+            '  sudo grub2-editenv - unset menu_auto_hide; ' +
+            'fi';
 
         var response = await fetch(API_URL + '/executar', {
             method: 'POST',
@@ -1429,8 +1412,8 @@ async function executarGrubAplicarRecomendado() {
                 statusDiv.style.border = '1px solid #ef4444';
                 statusDiv.style.color = '#ef4444';
                 statusDiv.innerHTML = sucesso === null
-                    ? '❌ Tempo esgotado aplicando a configuração.'
-                    : '❌ Falha ao aplicar a configuração do GRUB.';
+                    ? _t('sessoes.ajustes-manutencao.grub_msg_timeout_aplicar', '❌ Tempo esgotado aplicando a configuração.')
+                    : _t('sessoes.ajustes-manutencao.grub_msg_falha_aplicar', '❌ Falha ao aplicar a configuração do GRUB.');
             }
             return;
         }
@@ -1439,8 +1422,9 @@ async function executarGrubAplicarRecomendado() {
             statusDiv.style.backgroundColor = 'rgba(52, 211, 153, 0.1)';
             statusDiv.style.border = '1px solid #34d399';
             statusDiv.style.color = '#34d399';
-            statusDiv.innerHTML = '✅ <strong>Configuração aplicada!</strong><br>' +
-                'Menu do GRUB sempre visível, 10s, resolução ' + res + '.';
+            statusDiv.innerHTML = _tVars('sessoes.ajustes-manutencao.grub_msg_aplicado_res',
+                '✅ <strong>Configuração aplicada!</strong><br>Menu do GRUB sempre visível, 10s, resolução {res}.',
+                { res: res });
         }
 
         // Esconde o preview (não há mais nada a aplicar)
@@ -1526,7 +1510,8 @@ async function executarGrubRestaurarBackup() {
 
     var header = document.createElement('div');
     header.className = 'log-line info';
-    header.textContent = '↩️ Restaurando configuração original do GRUB...';
+    header.textContent = _t('sessoes.ajustes-manutencao.grub_log_restaurando',
+        '↩️ Restaurando configuração original do GRUB...');
     logBox.appendChild(header);
     logBox.scrollTop = logBox.scrollHeight;
 
@@ -1537,7 +1522,8 @@ async function executarGrubRestaurarBackup() {
         statusDiv.style.backgroundColor = 'rgba(245, 158, 11, 0.1)';
         statusDiv.style.border = '1px solid #f59e0b';
         statusDiv.style.color = '#f59e0b';
-        statusDiv.innerHTML = '⏳ Restaurando configuração...';
+        statusDiv.innerHTML = _t('sessoes.ajustes-manutencao.grub_msg_restaurando',
+            '⏳ Restaurando configuração...');
     }
 
     _bloquearSessao(idComando);
@@ -1570,8 +1556,8 @@ async function executarGrubRestaurarBackup() {
                 statusDiv.style.border = '1px solid #ef4444';
                 statusDiv.style.color = '#ef4444';
                 statusDiv.innerHTML = sucesso === null
-                    ? '❌ Tempo esgotado restaurando a configuração.'
-                    : '❌ Falha ao restaurar a configuração do GRUB.';
+                    ? _t('sessoes.ajustes-manutencao.grub_msg_timeout_restaurar', '❌ Tempo esgotado restaurando a configuração.')
+                    : _t('sessoes.ajustes-manutencao.grub_msg_falha_restaurar', '❌ Falha ao restaurar a configuração do GRUB.');
             }
             return;
         }
@@ -1580,7 +1566,8 @@ async function executarGrubRestaurarBackup() {
             statusDiv.style.backgroundColor = 'rgba(52, 211, 153, 0.1)';
             statusDiv.style.border = '1px solid #34d399';
             statusDiv.style.color = '#34d399';
-            statusDiv.innerHTML = '✅ <strong>Configuração original restaurada!</strong>';
+            statusDiv.innerHTML = _t('sessoes.ajustes-manutencao.grub_msg_restaurado',
+                '✅ <strong>Configuração original restaurada!</strong>');
         }
 
         // Aplica o estado correto nos dois botões:
@@ -1656,7 +1643,7 @@ function _aplicarEstadoBotoesGrub(aplicado) {
     }
 
     if (btnReverter) {
-        var textoOriginalReverter = btnReverter.getAttribute('data-texto-original') ||
+        var textoOriginalReverter = _textoOriginalTraduzido(btnReverter) ||
             _t('sessoes.ajustes-manutencao.btn_grub_restaurar_backup', '↩️ Reverter para Configuração Original');
 
         btnReverter.textContent = textoOriginalReverter;

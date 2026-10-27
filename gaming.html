@@ -764,9 +764,24 @@ function abrirBottles() {
 
 async function executarNTSync() {
     const idComando = 'ntsync-install';
+    // Verifica com `modprobe -n` (dry-run) se o módulo existe no
+    // kernel ANTES de instalar. Se não existir, aborta com
+    // mensagem clara — sem deixar `wine-ntsync` órfão. Se o
+    // `dnf install` passar mas o módulo não carregar, faz rollback
+    // do pacote.
     const comando =
-        'sudo dnf install -y wine-ntsync && ' +
-        'sudo modprobe ntsync && ' +
+        'if ! sudo modprobe -n ntsync 2>/dev/null; then ' +
+        '  echo "❌ O módulo ntsync não está disponível neste kernel (requer 6.14+)."; ' +
+        '  echo "   Nada foi instalado. Atualize o kernel e tente novamente."; ' +
+        '  exit 1; ' +
+        'fi; ' +
+        'sudo dnf install -y wine-ntsync || { echo "❌ Falha ao instalar wine-ntsync."; exit 1; }; ' +
+        'if ! sudo modprobe ntsync; then ' +
+        '  echo "❌ Módulo instalado mas não carregou. Fazendo rollback do pacote..."; ' +
+        '  sudo dnf remove -y wine-ntsync; ' +
+        '  echo "⚠️ wine-ntsync removido. Tente reiniciar e rodar novamente."; ' +
+        '  exit 1; ' +
+        'fi; ' +
         'echo "ntsync" | sudo tee /etc/modules-load.d/ntsync.conf > /dev/null';
     await executarComandoGenerico(idComando, comando,
         _t('sessoes.gaming.btn_ntsync', '⚡ NTSYNC'),

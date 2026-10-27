@@ -1,6 +1,6 @@
 {
   "name": "fedora-advantage-panel",
-  "version": "1.3.1-10272026",
+  "version": "1.3.2-10272026",
   "description": "Painel de automação visual para Fedora Linux - Facilite a configuração do seu sistema (Fedora Advantage Panel)",
   "main": "server.js",
   "scripts": {
