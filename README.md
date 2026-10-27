@@ -62,8 +62,8 @@ bash <(curl -s https://raw.githubusercontent.com/vitaotub/Fedora-Advantage-Panel
 > **💡 Não sabe como rodar esse comando?** É mais simples do que parece:
 >
 > 1. **Copie o comando inteiro** — selecione todo o texto acima com o mouse, ou clique no ícone de copiar que aparece no canto direito do bloco de código.
-> 2. **Abra o terminal** — procure por **"Terminal"** no menu de aplicativos do seu Fedora (ou pressione `Ctrl+Alt+T` no GNOME).
-> 3. **Cole o comando** — no terminal, pressione `Ctrl+Alt+V` ou clique com o botão direito do mouse e escolha **"Colar"**.
+> 2. **Abra o terminal** — procure por **"Terminal"** no menu de aplicativos do seu Fedora (ou pressione `Ctrl+Shift+T` no GNOME).
+> 3. **Cole o comando** — no terminal, pressione `Ctrl+Shift+V` ou clique com o botão direito do mouse e escolha **"Colar"**.
 > 4. **Pressione `Enter`** — o instalador vai pedir sua senha de administrador (a mesma que você usa para fazer login no computador). Isso é normal — é o instalador pedindo permissão para instalar os pacotes do sistema.
 >
 > Ao final, abra o FAP digitando `fap` no terminal ou procurando por **"Fedora Advantage Panel"** no menu de aplicativos.
