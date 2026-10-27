@@ -2,7 +2,7 @@
 
 **🌐 Language:** [Português (BR)](README.md) | English | [Español](README.es.md)
 
-![Version](https://img.shields.io/badge/Version-v1.2.2--10232026-orange?style=flat-square)
+![Version](https://img.shields.io/badge/Version-v1.3.1--10272026-orange?style=flat-square)
 ![Fedora](https://img.shields.io/badge/Fedora-44%20%7C%2045-294172?style=flat-square&logo=fedora)
 ![License](https://img.shields.io/badge/License-GPL--3.0-green?style=flat-square)
 ![Languages](https://img.shields.io/badge/Languages-PT--BR%20%7C%20EN%20%7C%20ES-3c67e3?style=flat-square)
@@ -59,6 +59,15 @@ Everything FAP does passes through a **fixed terminal at the bottom**, with colo
 bash <(curl -s https://raw.githubusercontent.com/vitaotub/Fedora-Advantage-Panel/main/install.sh)
 ```
 
+> **💡 Not sure how to run that command?** It's simpler than it looks:
+>
+> 1. **Copy the entire command** — select all the text above with your mouse, or click the copy icon that appears on the right side of the code block.
+> 2. **Open the terminal** — look for **"Terminal"** in your Fedora application menu (or press `Ctrl+Alt+T` on GNOME).
+> 3. **Paste the command** — in the terminal, press `Ctrl+Alt+V` or right-click with the mouse and choose **"Paste"**.
+> 4. **Press `Enter`** — the installer will ask for your administrator password (the same one you use to log in to the computer). That's normal — the installer is asking permission to install system packages.
+>
+> When it finishes, open FAP by typing `fap` in the terminal or looking for **"Fedora Advantage Panel"** in the application menu.
+
 **Commands after installing:**
 
 ```bash
@@ -85,7 +94,7 @@ Updates are applied **on top of the existing installation** — no need to unins
 | 9 | 📱 Waydroid | Android on Linux via container |
 | 10 | 🖥️ Virtualization | QEMU/KVM, VirtualBox, GNOME Boxes |
 | 11 | 📊 Diagnostics | System panel, SMART, temperatures, error journal |
-| 12 | 🛠️ Tunings and Maintenance | Performance tunings, DNF, dual-boot, GRUB, kernels |
+| 12 | 🛠️ Tunings and Maintenance | Performance tunings, DNF, dual-boot, GRUB, kernels, Fedora upgrade |
 | 13 | 🐧 Fedora Status | Version, Atomic/Silverblue, SELinux |
 | 14 | 📖 About FAP | Update/uninstall, dynamic changelog |
 

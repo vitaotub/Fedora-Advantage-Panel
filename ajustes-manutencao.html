@@ -1912,6 +1912,36 @@ async function restaurarEstadoSessao() {
 
 var _upgradeStatusCache = null;
 
+// ============================================================
+// "UPGRADE FINALIZADO" — persistência no cliente
+// ============================================================
+//
+// Quando o backend retorna `status: 'no_upgrade_needed'`, sabemos
+// que o usuário já está na versão alvo (Fedora 45) ou superior.
+// A partir daí, NENHUMA verificação é mais necessária — o backend
+// já short-circuita (`_upgradeConcluidoPermanente`) e o frontend
+// nem tenta o fetch.
+//
+// A chave em localStorage é o que garante o comportamento
+// "permanente" entre reloads do FAP e entre cargas da sessão. Se
+// o usuário fizer downgrade (raro), pode limpar via devtools ou
+// reinstalar o FAP para resetar.
+var _UPGRADE_FINALIZADO_KEY = 'fap_upgrade_finalizado';
+
+function _upgradeFinalizadoNoCliente() {
+    try {
+        return localStorage.getItem(_UPGRADE_FINALIZADO_KEY) !== null;
+    } catch (e) {
+        return false;
+    }
+}
+
+function _marcarUpgradeFinalizado() {
+    try {
+        localStorage.setItem(_UPGRADE_FINALIZADO_KEY, '1');
+    } catch (e) { /* ignore */ }
+}
+
 function _tUpgrade(chave, fallback) {
     return _t('sessoes.ajustes-manutencao.' + chave, fallback);
 }
@@ -1920,9 +1950,18 @@ function _tVarsUpgrade(chave, fallback, vars) {
     return _tVars('sessoes.ajustes-manutencao.' + chave, fallback, vars);
 }
 
-async function _carregarUpgradeStatus() {
+async function _carregarUpgradeStatus(forcar) {
+    // Se já sabemos que o usuário está no alvo, nem tenta fetch.
+    if (_upgradeFinalizadoNoCliente()) {
+        return _upgradeStatusCache || {
+            status: 'no_upgrade_needed',
+            current_version: '?',
+            target_version: '45'
+        };
+    }
     try {
-        var r = await fetch(API_URL + '/fedora-upgrade-status', { cache: 'no-store' });
+        var url = API_URL + '/fedora-upgrade-status' + (forcar ? '?refresh=1' : '');
+        var r = await fetch(url, { cache: 'no-store' });
         if (!r.ok) return null;
         var data = await r.json();
         _upgradeStatusCache = data;
@@ -1943,6 +1982,13 @@ function _renderizarAreaUpgrade(data) {
                 'Não foi possível verificar a disponibilidade do upgrade. Tente novamente em alguns minutos.') +
             '</div>';
         return;
+    }
+
+    // Marca permanentemente quando o status é "no_upgrade_needed".
+    // A partir de agora, nem o backend nem o frontend fazem mais
+    // qualquer verificação desta área.
+    if (data.status === 'no_upgrade_needed') {
+        _marcarUpgradeFinalizado();
     }
 
     var html;
@@ -2305,12 +2351,17 @@ async function executarUpgradeDownload() {
         'sudo dnf upgrade --refresh -y && ' +
         'sudo dnf system-upgrade download --releasever=' + alvo + ' -y';
 
-    await executarComandoGenerico(idComando, comando,
+        await executarComandoGenerico(idComando, comando,
         _tVarsUpgrade('upgrade_log_baixando',
             '📥 Baixando pacotes do Fedora {alvo}',
             { alvo: alvo }),
         async function() {
-            var novoStatus = await _carregarUpgradeStatus();
+            // `?refresh=1` é obrigatório aqui: o estado muda de
+            // `ready` para `downloaded`, e o cache do servidor
+            // (TTL 1h) ainda estaria no estado antigo. Sem o
+            // refresh, o usuário veria o botão "Baixar" de novo
+            // em vez de "Reiniciar agora".
+            var novoStatus = await _carregarUpgradeStatus(true);
             _renderizarAreaUpgrade(novoStatus);
         },
         false, 7200000);
@@ -2342,7 +2393,10 @@ async function executarUpgradeCancelar() {
     await executarComandoGenerico(idComando, comando,
         _tUpgrade('upgrade_log_cancelando', '🗑️ Cancelando upgrade agendado'),
         async function() {
-            var novoStatus = await _carregarUpgradeStatus();
+            // `?refresh=1` idem download: o estado muda de
+            // `downloaded` para `ready`, e o cache do servidor
+            // estaria no estado antigo.
+            var novoStatus = await _carregarUpgradeStatus(true);
             _renderizarAreaUpgrade(novoStatus);
         });
 }
@@ -2362,9 +2416,25 @@ async function executarUpgradeCancelar() {
     setTimeout(initCustomSelects, 200);
 
     // Área de upgrade: consulta o endpoint em background, sem
-    // bloquear o resto da sessão. O conteúdo do accordion é
-    // preenchido depois (não é bloqueante).
+    // bloquear o resto da sessão.
     setTimeout(async function() {
+        // Se o upgrade já foi finalizado (usuário está no Fedora
+        // 45+), mostra mensagem estática — SEM fetch e SEM
+        // subprocesso. Isso é o que o usuário pediu: "todas as
+        // coisas que acontecem nesta área simplesmente são
+        // interrompidas permanentemente".
+        if (_upgradeFinalizadoNoCliente()) {
+            var container = document.getElementById('upgrade-fedora-conteudo');
+            if (container) {
+                container.innerHTML =
+                    '<div class="aviso-sucesso">✅ <strong>' +
+                    'Você já está no Fedora 45 (ou superior).</strong><br>' +
+                    'A área de upgrade não é mais aplicável e não realiza mais verificações.' +
+                    '</div>';
+            }
+            return;
+        }
+
         var data = await _carregarUpgradeStatus();
         _renderizarAreaUpgrade(data);
     }, 500);

@@ -2,7 +2,7 @@
 
 **🌐 Idioma:** [Português (BR)](README.md) | [English](README.en.md) | Español
 
-![Versión](https://img.shields.io/badge/Versi%C3%B3n-v1.2.2--10232026-orange?style=flat-square)
+![Versión](https://img.shields.io/badge/Versi%C3%B3n-v1.3.1--10272026-orange?style=flat-square)
 ![Fedora](https://img.shields.io/badge/Fedora-44%20%7C%2045-294172?style=flat-square&logo=fedora)
 ![Licencia](https://img.shields.io/badge/Licencia-GPL--3.0-green?style=flat-square)
 ![Idiomas](https://img.shields.io/badge/Idiomas-PT--BR%20%7C%20EN%20%7C%20ES-3c67e3?style=flat-square)
@@ -59,6 +59,15 @@ Todo lo que FAP hace pasa por un **terminal fijo en la parte inferior**, con col
 bash <(curl -s https://raw.githubusercontent.com/vitaotub/Fedora-Advantage-Panel/main/install.sh)
 ```
 
+> **💡 ¿No sabes cómo ejecutar ese comando?** Es más simple de lo que parece:
+>
+> 1. **Copia el comando completo** — selecciona todo el texto de arriba con el mouse, o haz clic en el ícono de copiar que aparece en el lado derecho del bloque de código.
+> 2. **Abre la terminal** — busca **"Terminal"** en el menú de aplicaciones de tu Fedora (o presiona `Ctrl+Alt+T` en GNOME).
+> 3. **Pega el comando** — en la terminal, presiona `Ctrl+Alt+V` o haz clic con el botón derecho del mouse y elige **"Pegar"**.
+> 4. **Presiona `Enter`** — el instalador pedirá tu contraseña de administrador (la misma que usas para iniciar sesión en la computadora). Eso es normal — el instalador está pidiendo permiso para instalar los paquetes del sistema.
+>
+> Al terminar, abre FAP escribiendo `fap` en la terminal o buscando **"Fedora Advantage Panel"** en el menú de aplicaciones.
+
 **Comandos tras instalar:**
 
 ```bash
@@ -85,7 +94,7 @@ Las actualizaciones se aplican **sobre la instalación existente** — no es nec
 | 9 | 📱 Waydroid | Android en Linux vía contenedor |
 | 10 | 🖥️ Virtualización | QEMU/KVM, VirtualBox, GNOME Boxes |
 | 11 | 📊 Diagnóstico | Panel del sistema, SMART, temperaturas, journal |
-| 12 | 🛠️ Ajustes y Mantenimiento | Ajustes, DNF, dual-boot, GRUB, kernels |
+| 12 | 🛠️ Ajustes y Mantenimiento | Ajustes, DNF, dual-boot, GRUB, kernels, actualización de Fedora |
 | 13 | 🐧 Estado de Fedora | Versión, Atomic/Silverblue, SELinux |
 | 14 | 📖 Acerca de FAP | Actualizar/desinstalar, changelog |
 

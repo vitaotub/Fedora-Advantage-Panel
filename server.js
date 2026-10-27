@@ -652,9 +652,18 @@ function _lerChangelogVersao(versao) {
 // agradece.
 
 var _upgradeStatusCache = { dados: null, ts: 0 };
-var UPGRADE_CACHE_TTL_MS = 6 * 60 * 60 * 1000;
+var UPGRADE_CACHE_TTL_MS = 1 * 60 * 60 * 1000;
 var UPGRADE_TARGET_VERSION = '45';
 var UPGRADE_MIN_DISK_GB = 8;
+
+// Flag permanente: usuário já está na versão alvo (45+) ou superior.
+// Uma vez setada, `_calcularUpgradeStatus()` retorna o cache sem
+// executar subprocessos (cat /etc/fedora-release, dnf check-update)
+// nem consultar endpoints externos (releases.json, repomd.xml).
+// Reflete um fato do sistema (versão), que não muda sem reinstalação.
+// Resetada apenas quando o server.js é reiniciado — a primeira
+// consulta pós-restart re-detecta e re-seta.
+var _upgradeConcluidoPermanente = false;
 
 async function _verificarGaFedora(versao) {
     try {
@@ -794,6 +803,12 @@ async function _detectarComponentesTerceiros() {
 }
 
 async function _calcularUpgradeStatus() {
+    // Curto-circuito permanente: usuário já está no alvo (45+).
+    // NÃO spawna subprocesso algum, NÃO consulta rede.
+    if (_upgradeConcluidoPermanente && _upgradeStatusCache.dados) {
+        return _upgradeStatusCache.dados;
+    }
+
     var agora = Date.now();
     if (_upgradeStatusCache.dados && (agora - _upgradeStatusCache.ts) < UPGRADE_CACHE_TTL_MS) {
         return _upgradeStatusCache.dados;
@@ -837,6 +852,10 @@ async function _calcularUpgradeStatus() {
 
     if (vAtualNum === vAlvoNum || vAtualNum > vAlvoNum) {
         resultado.status = 'no_upgrade_needed';
+        // Marca permanentemente: a partir daqui, esta área não
+        // faz mais nada. Nenhuma chamada subsequente (mesmo com
+        // ?refresh=1) executa subprocesso ou consulta rede.
+        _upgradeConcluidoPermanente = true;
         _upgradeStatusCache = { dados: resultado, ts: agora };
         return resultado;
     }
@@ -2620,6 +2639,17 @@ const server = http.createServer((req, res) => {
     // Retorna o status consolidado do upgrade. Cache de 6h. Nada
     // aqui altera o sistema — são só consultas.
     if (req.method === 'GET' && url === '/fedora-upgrade-status') {
+        // `?refresh=1` invalida o cache do servidor e força nova
+        // consulta às fontes oficiais. Mesmo padrão já usado em
+        // `/system-state`.
+        //
+        // NÃO invalida quando `_upgradeConcluidoPermanente` está
+        // ativo: o sistema já está no alvo, e a resposta
+        // `no_upgrade_needed` é imutável; refresh seria só
+        // desperdício de request local.
+        if (query.get('refresh') === '1' && !_upgradeConcluidoPermanente) {
+            _upgradeStatusCache = { dados: null, ts: 0 };
+        }
         _calcularUpgradeStatus().then(function(dados) {
             res.writeHead(200, {
                 'Content-Type': 'application/json',
