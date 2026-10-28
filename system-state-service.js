@@ -324,7 +324,8 @@ async function _detectarArquivosConfig() {
         '/etc/sysctl.d/99-fap-vm-max-map-count.conf',
         '/etc/sysctl.d/99-fap-vm-swappiness.conf',
         '/etc/sysctl.d/99-fap-tcp-bbr.conf',
-        home + '/.config/pipewire/pipewire.conf.d/99-fap-quantum.conf'
+        home + '/.config/pipewire/pipewire.conf.d/99-fap-quantum.conf',
+        home + '/.config/environment.d/99-fap-nvidia-vaapi.conf'
     ];
 
     // `test -f a -o -f b` não escala bem; rodamos em paralelo.

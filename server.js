@@ -107,6 +107,9 @@ const COMANDOS_SEM_AUTENTICACAO = [
 'lact',
 'waydroid status',
 'waydroid show-full-ui',
+'vainfo',
+'vdpauinfo',
+'env LIBVA_DRIVER_NAME=nvidia vainfo',
 
 // --- setsid -f: abertura de GUI em sessão própria ---
 // App aberto via `gtk-launch` (cobre a maioria).
@@ -203,16 +206,22 @@ const COMANDOS_SEM_AUTENTICACAO = [
 // idComandos: casamos o comando contra um regex ESTRITO. Um
 // cliente malicioso não pode reusar o id `atualizar-fap` para
 // rodar `rm -rf ~`.
-const IDS_SEM_AUTENTICACAO = new Set(['atualizar-fap', 'desinstalar-fap']);
+const IDS_SEM_AUTENTICACAO = new Set([
+    'atualizar-fap',
+    'desinstalar-fap',
+    'nvidia-vaapi-env',
+    'nvidia-vaapi-env-remove'
+]);
 
 const PADROES_UPDATE_WHITELIST = [
     /^bash <\(curl -s https:\/\/raw\.githubusercontent\.com\/vitaotub\/Fedora-Advantage-Panel\/main\/install\.sh\) --update$/,
-    // Comando original (com `echo "s" |`) — mantido para compatibilidade
     /^echo "s" \| bash <\(curl -s https:\/\/raw\.githubusercontent\.com\/vitaotub\/Fedora-Advantage-Panel\/main\/install\.sh\) --uninstall$/,
-    // Formato antigo com setsid (mantido por segurança)
     /^setsid -f bash -c 'echo "s" \| bash <\(curl -s https:\/\/raw\.githubusercontent\.com\/vitaotub\/Fedora-Advantage-Panel\/main\/install\.sh\) --uninstall'$/,
-    // Novo: `setsid -f bash -c '... --uninstall -y'` (sem echo, com -y)
-    /^setsid -f bash -c 'bash <\(curl -s https:\/\/raw\.githubusercontent\.com\/vitaotub\/Fedora-Advantage-Panel\/main\/install\.sh\) --uninstall -y'$/
+    /^setsid -f bash -c 'bash <\(curl -s https:\/\/raw\.githubusercontent\.com\/vitaotub\/Fedora-Advantage-Panel\/main\/install\.sh\) --uninstall -y'$/,
+    // nvidia-vaapi-env: escreve arquivo de env do usuário (sem sudo)
+    /^mkdir -p ~\/\.config\/environment\.d && tee ~\/\.config\/environment\.d\/99-fap-nvidia-vaapi\.conf <<'FAPEOF'[\s\S]*FAPEOF$/,
+// nvidia-vaapi-env-remove: remove arquivo de env do usuário (sem sudo)
+/^rm -f ~\/\.config\/environment\.d\/99-fap-nvidia-vaapi\.conf$/
 ];
 
 function _idSemAuthValido(idComando, comando) {

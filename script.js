@@ -855,10 +855,7 @@ var SESSOES = [
             textoConcluido: '✅ VA-API instalado',
             textoConcluidoKey: 'sessoes.hardware.texto_concluido_vaapi'
         },
-        'vaapi-swap': {
-            textoConcluido: '✅ VA-API instalado',
-            textoConcluidoKey: 'sessoes.hardware.texto_concluido_vaapi'
-        },
+        'vaapi-check-amd': { sempreClicavel: true },
         'corectrl-install': {
             textoConcluido: '✅ CoreCtrl instalado',
             textoConcluidoKey: 'sessoes.hardware.texto_concluido_corectrl'
@@ -882,10 +879,36 @@ var SESSOES = [
         'nvidia-driver-remove': { sempreClicavel: true },
         'nvidia-modeset-on': { sempreClicavel: true },
         'nvidia-modeset-off': { sempreClicavel: true },
+        'nvidia-vaapi-install': {
+            textoConcluido: '✅ Tradutor VA-API instalado',
+            textoConcluidoKey: 'sessoes.hardware.texto_concluido_nvidia_vaapi'
+        },
+        'nvidia-vaapi-utils': {
+            textoConcluido: '✅ Utilitários instalados',
+            textoConcluidoKey: 'sessoes.hardware.texto_concluido_nvidia_vaapi_utils'
+        },
+        'nvidia-vaapi-env': {
+            textoConcluido: '✅ Variáveis configuradas',
+            textoConcluidoKey: 'sessoes.hardware.texto_concluido_nvidia_vaapi_env'
+        },
+        'nvidia-vaapi-env-remove': {
+            textoConcluido: '✅ Variáveis removidas',
+            textoConcluidoKey: 'sessoes.hardware.texto_concluido_nvidia_vaapi_env_remove'
+        },
+        'nvidia-vaapi-check': { sempreClicavel: true },
         'intel-media-install': {
             textoConcluido: '🎬 Intel Media Driver instalado',
             textoConcluidoKey: 'sessoes.hardware.texto_concluido_intel_media'
-        }
+        },
+        'libva-intel-install': {
+            textoConcluido: '🎬 Driver legado instalado',
+            textoConcluidoKey: 'sessoes.hardware.texto_concluido_intel_legacy'
+        },
+        'intel-vaapi-utils': {
+            textoConcluido: '✅ Utilitários instalados',
+            textoConcluidoKey: 'sessoes.hardware.texto_concluido_intel_utils'
+        },
+        'vaapi-check-intel': { sempreClicavel: true }
     }
 },
 {
@@ -902,12 +925,6 @@ var SESSOES = [
             textoConcluido: '✅ Firmwares revertidos',
             textoConcluidoKey: 'sessoes.dispositivos-perifericos.texto_concluido_firmware_vendor_remove'
         },
-        'driver-nvidia-install': { sempreClicavel: true, textoConcluido: '✅ Driver NVIDIA instalado' },
-        'driver-nvidia-remove': { sempreClicavel: true },
-        'driver-amd-vaapi-install': { sempreClicavel: true, textoConcluido: '✅ VA-API AMD instalado' },
-        'driver-amd-vaapi-remove': { sempreClicavel: true },
-        'driver-intel-media-install': { sempreClicavel: true, textoConcluido: '✅ Driver Intel Media instalado' },
-        'driver-intel-media-remove': { sempreClicavel: true },
         'driver-realtek-r8168-install': { sempreClicavel: true, textoConcluido: '✅ Driver Realtek r8168 instalado' },
         'driver-realtek-r8168-remove': { sempreClicavel: true },
         'copr-openrazer-enable': {
@@ -1375,7 +1392,6 @@ function _sessaoDoComando(idComando) {
 var _MAPA_HARDWARE_DEPENDENTE = {
     'vulkan-amd':               ['1002', '1022'],
     'vaapi-amd':                ['1002', '1022'],
-    'vaapi-swap':               ['1002', '1022'],
     'amdgpu-overclock':         ['1002', '1022'],
     'amdgpu-overclock-remove':  ['1002', '1022'],
     'corectrl-install':         ['1002', '1022'],
@@ -1384,7 +1400,13 @@ var _MAPA_HARDWARE_DEPENDENTE = {
     'nvidia-driver-remove':     ['10de'],
     'nvidia-modeset-on':        ['10de'],
     'nvidia-modeset-off':       ['10de'],
-    'intel-media-install':      ['8086']
+    'nvidia-vaapi-install':     ['10de'],
+    'nvidia-vaapi-utils':       ['10de'],
+    'nvidia-vaapi-env':         ['10de'],
+    'nvidia-vaapi-env-remove':  ['10de'],
+    'intel-media-install':      ['8086'],
+    'libva-intel-install':      ['8086'],
+    'intel-vaapi-utils':        ['8086']
 };
 
 function _comandoRelevante(idComando) {
@@ -2899,9 +2921,10 @@ var _MAPA_MOTIVO_BLOQUEIO = {
     'fontes-ms-all':            'mitigacao.fontes_ms_all',
     'vulkan-amd':               'mitigacao.vulkan_amd',
     'vaapi-amd':                'mitigacao.vaapi_amd',
-    'vaapi-swap':               'mitigacao.vaapi_swap',
     'nvidia-driver-install':    'mitigacao.nvidia_driver_install',
+    'nvidia-vaapi-install':     'mitigacao.nvidia_vaapi',
     'intel-media-install':      'mitigacao.intel_media_install',
+    'libva-intel-install':      'mitigacao.libva_intel',
     'cups-install':             'mitigacao.cups_install',
     'samba-install':            'mitigacao.samba_install',
     'qemu-kvm-install':         'mitigacao.qemu_kvm_install',
@@ -3535,17 +3558,17 @@ var _MAPA_ORIGEM = {
     // ---- Sessão 3 ----
     'vulkan-amd': 'fedora',
     'vaapi-amd': 'rpmfusion',
-    'vaapi-swap': 'rpmfusion',
     'corectrl-install': 'fedora',
     'lact-install': 'comunidade',
     'nvidia-driver-install': 'rpmfusion',
+    'nvidia-vaapi-install': 'rpmfusion',
+    'nvidia-vaapi-utils': 'fedora',
     'intel-media-install': 'fedora',
+    'libva-intel-install': 'fedora',
+    'intel-vaapi-utils': 'fedora',
 
     // ---- Sessão 4 ----
     'firmware-vendor-install': 'fedora',
-    'driver-nvidia-install': 'rpmfusion',
-    'driver-amd-vaapi-install': 'rpmfusion',
-    'driver-intel-media-install': 'fedora',
     'driver-realtek-r8168-install': 'rpmfusion',
     'driver-broadcom-wl-install': 'rpmfusion',
     'driver-openrazer-install': 'comunidade',

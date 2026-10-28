@@ -2,7 +2,7 @@
 
 **🌐 Language:** [Português (BR)](README.md) | English | [Español](README.es.md)
 
-![Version](https://img.shields.io/badge/Version-v1.3.1--10272026-orange?style=flat-square)
+![Version](https://img.shields.io/badge/Version-v1.4.0--10282026-orange?style=flat-square)
 ![Fedora](https://img.shields.io/badge/Fedora-44%20%7C%2045-294172?style=flat-square&logo=fedora)
 ![License](https://img.shields.io/badge/License-GPL--3.0-green?style=flat-square)
 ![Languages](https://img.shields.io/badge/Languages-PT--BR%20%7C%20EN%20%7C%20ES-3c67e3?style=flat-square)
@@ -47,6 +47,7 @@ Everything FAP does passes through a **fixed terminal at the bottom**, with colo
 
 ## 🎯 Who it's for
 
+- **Those migrating from Windows 10 or 11 to Fedora** who want a smooth, practical transition without touching the terminal.
 - **Those starting with Fedora** who want it ready for daily use.
 - **Those coming from Ubuntu/Mint** who want the same fluid initial setup.
 - **Linux gamers** who want Steam, Heroic, Lutris, Proton, MangoHud and similar.
@@ -85,8 +86,8 @@ Updates are applied **on top of the existing installation** — no need to unins
 |---|---|---|
 | 1 | 🚀 First Steps | System update, RPM Fusion, Flathub, Terra Repository |
 | 2 | 🔤 Codecs | Complete codecs, commercial DVD, Microsoft fonts |
-| 3 | 🖥️ Hardware | AMD/NVIDIA/Intel drivers, CoreCtrl, LACT, GPU overclocking |
-| 4 | 🔌 Devices | Automatic hardware detection, COPR drivers, controllers, firmware |
+| 3 | 🖥️ Hardware | AMD/NVIDIA/Intel drivers, CoreCtrl, LACT, GPU overclocking, VA-API acceleration |
+| 4 | 🔌 Devices | Automatic detection, COPR network drivers, controllers, firmware |
 | 5 | 🎬 Media Production | OBS Studio, virtual camera, EasyEffects |
 | 6 | 📦 Apps | Flatpaks, 20+ `dnf` apps, **ArtCraft Launcher**, remote access, **utilities** |
 | 7 | 🏠 Home and Office | CUPS, Samba, LocalSend, KeePassXC |
@@ -110,6 +111,14 @@ Updates are applied **on top of the existing installation** — no need to unins
 - **📡 Remote Access Tools** — RustDesk, Remmina, GNOME Connections, KRDC.
 - **🔧 Utilities** — **Gear Lever** (AppImage manager).
 
+### 🖥️ Session 3 — Hardware
+
+- **AMD** — Vulkan/Mesa/RADV, VA-API/VDPAU (RPM Fusion freeworld drivers), `vainfo` check, CoreCtrl, LACT, overclocking.
+- **Intel** — modern driver (`intel-media-driver`) for Broadwell+ / Arc, legacy driver (`libva-intel-driver`) for 7th-gen or older, verification utilities, `vainfo` check.
+- **NVIDIA** — proprietary driver with automatic generation detection, revert to nouveau, modesetting (Wayland), VA-API translator (`nvidia-vaapi-driver`), env vars for browser acceleration, `vainfo`/`vdpauinfo` check.
+
+**Reboot/logout warnings** are displayed automatically when a driver or setting requires it.
+
 ## 🛡️ Safety and transparency
 
 - **Never installs anything without you seeing it.** Every command is visible in the real-time log.
@@ -121,7 +130,7 @@ Updates are applied **on top of the existing installation** — no need to unins
 - **Native WebKitGTK container.** Own interface, no dependency on Firefox/Chromium. `fap-compat` for older GPUs.
 - **`install.sh` refuses to run as root.** Installs into `~/.local/share`.
 
-## 🎨 Interface Features (v1.2)
+## 🎨 Interface Features
 
 - **High-contrast black/gray theme** in dark; light theme keeps the Fedora blues.
 - **Collapsible lateral sidebar** with monochrome SVG icons and **per-session neon effect** in collapsed mode.

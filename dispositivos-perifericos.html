@@ -249,17 +249,6 @@ function _tVars(chave, fallback, vars) {
 // não) vem do endpoint /hardware-scan via rpm -q.
 
 var DRIVER_COMMANDS = {
-    'driver-nvidia-install': 'sudo dnf install -y akmod-nvidia',
-    'driver-nvidia-remove': 'sudo dnf remove -y akmod-nvidia xorg-x11-drv-nvidia* nvidia-settings',
-    // Receita atual do RPM Fusion para o Fedora 44: o
-    // `mesa-va-drivers-freeworld` instala em /usr/lib64/dri-freeworld/,
-    // diretório separado do `mesa-va-drivers` do Fedora — sem conflito
-    // de arquivos. `dnf install` puro é a receita correta; `swap`
-    // (receita antiga) dispara erro de `mesa-filesystem`.
-    'driver-amd-vaapi-install': 'sudo dnf install -y mesa-va-drivers-freeworld',
-    'driver-amd-vaapi-remove': 'sudo dnf remove -y mesa-va-drivers-freeworld',
-    'driver-intel-media-install': 'sudo dnf install -y intel-media-driver',
-    'driver-intel-media-remove': 'sudo dnf remove -y intel-media-driver',
     'driver-realtek-r8168-install': 'sudo dnf install -y akmod-r8168',
     'driver-realtek-r8168-remove': 'sudo dnf remove -y akmod-r8168',
     'driver-broadcom-wl-install': 'sudo dnf install -y akmod-wl',
@@ -361,7 +350,7 @@ function _renderHardwareCards(data, container, avisoContainer) {
             avisoContainer.innerHTML =
                 '<div class="aviso-caixa">' +
                 '⚠️ <strong>' + _t('sessoes.dispositivos-perifericos.aviso_rpmfusion_titulo', 'RPM Fusion não está ativo') + '</strong><br>' +
-                _t('sessoes.dispositivos-perifericos.aviso_rpmfusion_corpo', 'Alguns drivers (NVIDIA, Broadcom, Realtek Ethernet) exigem o RPM Fusion. Ative-o na sessão Primeiros Passos antes de instalar estes drivers.') +
+                _t('sessoes.dispositivos-perifericos.aviso_rpmfusion_corpo', 'Alguns drivers (Broadcom, Realtek Ethernet) exigem o RPM Fusion. Ative-o na sessão Primeiros Passos antes de instalar estes drivers.') +
                 '</div>';
         } else {
             avisoContainer.style.display = 'none';
@@ -369,29 +358,25 @@ function _renderHardwareCards(data, container, avisoContainer) {
         }
     }
 
-    // Banner: Secure Boot
-    if (data.secure_boot === 'enabled') {
-        var temNvidia = data.devices.some(function (d) { return d.device_id && d.device_id.indexOf('10de:') === 0; });
-        if (temNvidia) {
-            container.innerHTML +=
-                '<div class="aviso-caixa">' +
-                '⚠️ <strong>' + _t('sessoes.dispositivos-perifericos.aviso_secureboot_titulo', 'Secure Boot está ativo') + '</strong><br>' +
-                _t('sessoes.dispositivos-perifericos.aviso_secureboot_corpo', 'Para usar o driver NVIDIA, você precisa registrar a chave MOK durante a instalação ou desativar o Secure Boot. Sem isso, o driver não carrega e a máquina pode iniciar em resolução mínima.') +
-                '</div>';
-        }
-    }
+    // Banner: Secure Boot (só para GPUs NVIDIA — que agora estão na sessão Hardware)
+    // Mantido vazio aqui: o aviso de Secure Boot da NVIDIA agora aparece na sessão Hardware.
+
+    // Filtra GPUs — drivers de GPU agora vivem na sessão Hardware.
+    var devicesSemGpu = (data.devices || []).filter(function (d) {
+        return d.category !== 'gpu';
+    });
 
     // Nenhum dispositivo com sugestão
-    if (data.devices.length === 0) {
+    if (devicesSemGpu.length === 0) {
         container.innerHTML +=
             '<div class="bloco-info">✅ ' +
-            _t('sessoes.dispositivos-perifericos.sem_dispositivos', 'Nenhum dispositivo com sugestão de driver adicional foi detectado. Seu hardware funciona com os drivers padrão do Fedora.') +
+            _t('sessoes.dispositivos-perifericos.sem_dispositivos', 'Nenhum dispositivo de rede ou periférico com sugestão de driver adicional foi detectado. Seu hardware funciona com os drivers padrão do Fedora. Para GPUs (AMD, Intel, NVIDIA), use a sessão <strong>Hardware</strong>.') +
             '</div>';
         return;
     }
 
     // Cards
-    data.devices.forEach(function (device) {
+    devicesSemGpu.forEach(function (device) {
         container.appendChild(_buildCard(device));
     });
 }
@@ -505,11 +490,8 @@ function _buildProgressHtml(idComando) {
 }
 
 function _idInstallForDevice(device) {
+    // Apenas rede. GPUs agora vivem na sessão Hardware.
     var map = {
-        '10de': 'driver-nvidia-install',
-        '1002': 'driver-amd-vaapi-install',
-        '1022': 'driver-amd-vaapi-install',
-        '8086': 'driver-intel-media-install',
         '14e4': 'driver-broadcom-wl-install',
         '10ec': 'driver-realtek-r8168-install'
     };
@@ -934,41 +916,15 @@ function aplicarEstadoItemCompleto(idRepoAtivar, idInstall, idRemove, repoJaAtiv
 // ============================================================
 
 async function restaurarEstadoSessao() {
-    // Carrega o estado real do sistema (uma vez, cache em
-    // SystemState). Só então os botões sabem distinguir "instalado
-    // pelo FAP" de "já estava ativo antes".
     await SystemState.carregar();
 
-    // --- Suplementos seguros: toggles via aplicarEstadoToggle ---
-    // O 3º argumento (`esconderRevertSeNaoFeito = true`) faz o botão
-    // de reverter ficar OCULTO até o install ser marcado. Padrão
-    // adotado só nesta sessão.
     aplicarEstadoToggle('firmware-vendor-install', 'firmware-vendor-remove', true);
-
-    // --- Controles: toggles via aplicarEstadoToggle ---
-    // `input-group-add` é um grupo (não pacote): usa
-    // `SystemState.membroDoGrupo`. Se já estiver no grupo antes do
-    // FAP, o botão fica cinza "✅ Já estava ativo" e o reverter some.
-    aplicarEstadoToggle(
-        'input-group-add',
-        'input-group-remove',
-        true,
-        SystemState.membroDoGrupo('input')
-    );
-
-    // --- Steam Devices: toggle install/revert ---
-    // É um pacote — `appJaInstaladoNoSistema` cobre via G.2
-    // (registro `steam-devices-install` tem `pacotes`). Passa
-    // `undefined` no 4º argumento para acionar a detecção automática.
+    aplicarEstadoToggle('input-group-add', 'input-group-remove', true, SystemState.membroDoGrupo('input'));
     aplicarEstadoToggle('steam-devices-install', 'steam-devices-remove', true);
 
-    // --- Itens com repo + pacote (Razer, Xbox, Broadcom) ---
-    //
-    // `repoJaAtivoNoSistema` é true quando o repo já estava
-    // configurado antes do FAP (Opção C).
     var openrazerRepoAtivo = SystemState.repoFabricanteAtivo('razer');
     var xpadneoRepoAtivo   = SystemState.repoAtivo('copr:atim/xpadneo');
-    var broadcomSemRepo    = false; // Broadcom usa RPM Fusion da Sessão 1
+    var broadcomSemRepo    = false;
 
     aplicarEstadoItemCompleto(
         'copr-openrazer-enable', 'driver-openrazer-install', 'driver-openrazer-remove',

@@ -2,7 +2,7 @@
 
 **🌐 Idioma:** [Português (BR)](README.md) | [English](README.en.md) | Español
 
-![Versión](https://img.shields.io/badge/Versi%C3%B3n-v1.3.1--10272026-orange?style=flat-square)
+![Versión](https://img.shields.io/badge/Versi%C3%B3n-v1.4.0--10282026-orange?style=flat-square)
 ![Fedora](https://img.shields.io/badge/Fedora-44%20%7C%2045-294172?style=flat-square&logo=fedora)
 ![Licencia](https://img.shields.io/badge/Licencia-GPL--3.0-green?style=flat-square)
 ![Idiomas](https://img.shields.io/badge/Idiomas-PT--BR%20%7C%20EN%20%7C%20ES-3c67e3?style=flat-square)
@@ -47,6 +47,7 @@ Todo lo que FAP hace pasa por un **terminal fijo en la parte inferior**, con col
 
 ## 🎯 Para quién es
 
+- **Quien está migrando de Windows 10 u 11 a Fedora** y quiere una transición fácil, práctica y sin tocar la terminal.
 - **Quien está empezando con Fedora** y quiere dejarlo listo para uso diario.
 - **Quien viene de Ubuntu/Mint** y quiere la misma fluidez de configuración inicial.
 - **Quien juega en Linux** y quiere Steam, Heroic, Lutris, Proton, MangoHud y similares.
@@ -85,8 +86,8 @@ Las actualizaciones se aplican **sobre la instalación existente** — no es nec
 |---|---|---|
 | 1 | 🚀 Primeros Pasos | Actualización, RPM Fusion, Flathub, Terra Repository |
 | 2 | 🔤 Códecs | Códecs completos, DVD comercial, fuentes Microsoft |
-| 3 | 🖥️ Hardware | Controladores AMD/NVIDIA/Intel, CoreCtrl, LACT, overclock |
-| 4 | 🔌 Dispositivos | Detección automática, controladores COPR, mandos, firmware |
+| 3 | 🖥️ Hardware | Controladores AMD/NVIDIA/Intel, CoreCtrl, LACT, overclock, aceleración VA-API |
+| 4 | 🔌 Dispositivos | Detección automática, controladores COPR de red, mandos, firmware |
 | 5 | 🎬 Producción Multimedia | OBS Studio, cámara virtual, EasyEffects |
 | 6 | 📦 Aplicaciones | Flatpaks, 20+ apps `dnf`, **ArtCraft Launcher**, acceso remoto, **utilidades** |
 | 7 | 🏠 Hogar y Oficina | CUPS, Samba, LocalSend, KeePassXC |
@@ -110,6 +111,14 @@ Las actualizaciones se aplican **sobre la instalación existente** — no es nec
 - **📡 Herramientas de Acceso Remoto** — RustDesk, Remmina, GNOME Connections, KRDC.
 - **🔧 Utilidades** — **Gear Lever** (gestor de AppImages).
 
+### 🖥️ Sesión 3 — Hardware
+
+- **AMD** — Vulkan/Mesa/RADV, VA-API/VDPAU (drivers freeworld del RPM Fusion), verificación con `vainfo`, CoreCtrl, LACT, overclock.
+- **Intel** — driver moderno (`intel-media-driver`) para Broadwell+ / Arc, driver legado (`libva-intel-driver`) para 7ª generación o anterior, utilidades de verificación, verificación con `vainfo`.
+- **NVIDIA** — driver propietario con detección automática de generación, revert a nouveau, modesetting (Wayland), traductor VA-API (`nvidia-vaapi-driver`), variables de entorno para aceleración en el navegador, verificación con `vainfo`/`vdpauinfo`.
+
+**Avisos de reinicio/logout** se muestran automáticamente cuando un driver o configuración lo requiere.
+
 ## 🛡️ Seguridad y transparencia
 
 - **Nunca instala nada sin que lo veas.** Todo comando es visible en el registro en tiempo real.
@@ -121,7 +130,7 @@ Las actualizaciones se aplican **sobre la instalación existente** — no es nec
 - **Contenedor WebKitGTK nativo.** Interfaz propia, sin dependencia de Firefox/Chromium. `fap-compat` para GPUs antiguas.
 - **`install.sh` se niega a ejecutarse como root.** Instala en `~/.local/share`.
 
-## 🎨 Características de la Interfaz (v1.2)
+## 🎨 Características de la Interfaz
 
 - **Tema negro/gris de alto contraste** en dark; el claro mantiene los azules Fedora.
 - **Barra lateral colapsable** con íconos SVG monocromáticos y **efecto neón por sesión** en modo colapsado.

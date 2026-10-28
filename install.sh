@@ -1031,7 +1031,25 @@ _remover "$HOME/.cache/fap-container" "Cache WebKitGTK"
 _remover "$HOME/.local/share/fap-container" "Dados WebKitGTK"
 _remover "$HOME/.config/fap-container" "Configurações FAP"
 
-# ─── 6. Logs temporários ────────────────────────────────────
+# ─── 6. Arquivos de configuração criados pelo FAP ───────────
+#
+# Arquivos que o FAP grava em ~/.config/ durante o uso normal.
+# Todos têm prefixo `99-fap-` (identificável e seguro) ou são
+# específicos de um app cujo arquivo foi sobrescrito pelo FAP
+# (MangoHud, GameMode). `_remover` já tenta como usuário primeiro
+# e cai para sudo se necessário. Arquivos inexistentes são no-op
+# (não contam como falha).
+#
+# Diretórios como ~/.config/environment.d/ e
+# ~/.config/pipewire/pipewire.conf.d/ não são removidos mesmo
+# que fiquem vazios — são padrão do sistema e outros apps podem
+# usá-los.
+_remover "$HOME/.config/environment.d/99-fap-nvidia-vaapi.conf" "Variáveis VA-API NVIDIA"
+_remover "$HOME/.config/pipewire/pipewire.conf.d/99-fap-quantum.conf" "Configuração PipeWire (baixa latência)"
+_remover "$HOME/.config/MangoHud/MangoHud.conf" "Preset MangoHud"
+_remover "$HOME/.config/gamemode.ini" "Preset GameMode"
+
+# ─── 7. Logs temporários ────────────────────────────────────
 #
 # Logs em /tmp pertencem ao usuário (instalação) ou ao root
 # (pkexec). `find -delete` funciona sem sudo quando o dono é o
@@ -1052,7 +1070,7 @@ fi
 
 print_success "Logs temporários processados"
 
-# ─── 7. Limpeza de PATH nos rc files ────────────────────────
+# ─── 8. Limpeza de PATH nos rc files ────────────────────────
 remover_linha_path() {
 local arquivo="$1"
 local linha_a_remover='export PATH="$HOME/.local/bin:$PATH"'
@@ -1083,7 +1101,7 @@ remover_linha_path "$HOME/.bashrc"
 remover_linha_path "$HOME/.zshrc"
 remover_linha_path "$HOME/.profile"
 
-# ─── 8. Reindexação do menu ─────────────────────────────────
+# ─── 9. Reindexação do menu ─────────────────────────────────
 update-desktop-database ~/.local/share/applications/ 2>/dev/null || true
 kbuildsycoca6 --noincremental 2>/dev/null || kbuildsycoca5 --noincremental 2>/dev/null || true
 

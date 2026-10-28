@@ -18,6 +18,10 @@
 <span data-i18n-html="sessoes.hardware.descricao">Configurações específicas do seu hardware. Escolha abaixo o tipo de GPU (AMD, NVIDIA ou Intel) para ver os drivers e ferramentas correspondentes. Para controles, webcams, Wi-Fi e outros periféricos, use a sessão <strong>Dispositivos e Periféricos</strong>.</span>
 </div>
 
+<div id="hw-painel-ffmpeg" class="aviso-caixa" style="margin-bottom: 1rem;">
+<span style="color: var(--text-muted);">⏳ Verificando pré-requisitos...</span>
+</div>
+
 <!-- ============================================================
 AMD
 ============================================================ -->
@@ -49,26 +53,18 @@ data-i18n="sessoes.hardware.btn_vulkan">
 <div class="bloco-comando">
 <div class="comando-info">
 <h3 data-i18n="sessoes.hardware.vaapi_titulo">VA-API e VDPAU (Aceleração de Vídeo)</h3>
-<p data-i18n="sessoes.hardware.vaapi_desc">Drivers de aceleração de vídeo por hardware para reprodução fluida e encoding. O RPM Fusion (Sessão 1) é pré-requisito para a versão freeworld.</p>
-<div class="aviso-caixa" data-i18n="sessoes.hardware.vaapi_aviso">
-💡 Os dois botões instalam drivers VA-API. O primeiro usa o driver padrão do Fedora; o segundo aplica mesa-va-drivers-freeworld, uma alternativa para GPUs AMD que não funcionam com o padrão. Se você não tem certeza, use o primeiro.
+<p data-i18n="sessoes.hardware.vaapi_desc">Instala os drivers de aceleração de vídeo por hardware (VA-API e VDPAU) do RPM Fusion, que substituem os drivers padrão do Fedora para GPUs AMD. Necessário para reprodução fluida de vídeo em HD/4K e para encoding via GPU. O RPM Fusion (Sessão 1) é pré-requisito.</p>
+<div class="info-extra" data-i18n-html="sessoes.hardware.vaapi_info">
+ℹ️ <strong>O que é instalado:</strong> <code>mesa-va-drivers-freeworld</code> (VA-API), <code>mesa-vdpau-drivers-freeworld</code> (VDPAU), <code>ffmpeg-libs</code>, <code>libva</code> e <code>libva-utils</code>. O Fedora mantém o suporte de aceleração bloqueado por licenciamento no Mesa padrão.
 </div>
-<div class="botoes-flex">
+<div class="grupo-botoes">
 <button class="btn-executar"
 onclick="executarVaapi()"
 data-comando="vaapi-amd"
 data-logbox="log-sessao-hardware"
 id="btn-vaapi-amd"
-data-i18n="sessoes.hardware.btn_vaapi_padrao">
-🚀 Instalação Padrão
-</button>
-<button class="btn-executar"
-onclick="executarVaapiSwap()"
-data-comando="vaapi-swap"
-data-logbox="log-sessao-hardware"
-id="btn-vaapi-swap"
-data-i18n="sessoes.hardware.btn_vaapi_alt">
-🔄 Alternativa
+data-i18n="sessoes.hardware.btn_vaapi">
+🚀 Instalar VA-API e VDPAU
 </button>
 </div>
 </div>
@@ -76,9 +72,26 @@ data-i18n="sessoes.hardware.btn_vaapi_alt">
 <div class="progress-bar"><div class="progress-fill" id="progress-fill-vaapi-amd"></div></div>
 <div class="progress-text"><span class="status" id="progress-status-vaapi-amd">⏳ Iniciando...</span><span class="percentage" id="progress-percent-vaapi-amd">0%</span></div>
 </div>
-<div class="progress-container" id="progress-vaapi-swap">
-<div class="progress-bar"><div class="progress-fill" id="progress-fill-vaapi-swap"></div></div>
-<div class="progress-text"><span class="status" id="progress-status-vaapi-swap">⏳ Iniciando...</span><span class="percentage" id="progress-percent-vaapi-swap">0%</span></div>
+</div>
+
+<div class="bloco-comando">
+<div class="comando-info">
+<h3 data-i18n="sessoes.hardware.vaapi_check_amd_titulo">Verificar Aceleração de Vídeo (AMD)</h3>
+<p data-i18n="sessoes.hardware.vaapi_check_amd_desc">Executa <code>vainfo</code> e mostra, no log abaixo, os perfis de aceleração suportados pela GPU. Se a saída contiver <code>VAProfileH264</code>, <code>VAProfileVP9</code> ou <code>VAProfileAV1</code> com a tag <code>VAEntrypointVLD</code>, a aceleração está ativa. Nenhuma alteração é feita no sistema.</p>
+<div class="grupo-botoes">
+<button class="btn-executar"
+onclick="executarVaapiCheckAmd()"
+data-comando="vaapi-check-amd"
+data-logbox="log-sessao-hardware"
+id="btn-vaapi-check-amd"
+data-i18n="sessoes.hardware.btn_vaapi_check_amd">
+🔍 Verificar Aceleração
+</button>
+</div>
+</div>
+<div class="progress-container" id="progress-vaapi-check-amd">
+<div class="progress-bar"><div class="progress-fill" id="progress-fill-vaapi-check-amd"></div></div>
+<div class="progress-text"><span class="status" id="progress-status-vaapi-check-amd">⏳ Iniciando...</span><span class="percentage" id="progress-percent-vaapi-check-amd">0%</span></div>
 </div>
 </div>
 
@@ -188,12 +201,17 @@ data-i18n="sessoes.hardware.btn_overclock_off">
 <!-- ============================================================
 NVIDIA
 ============================================================ -->
-<details class="acordeao">
+<details class="acordeao" id="sec-nvidia">
 <summary data-i18n="sessoes.hardware.nvidia_titulo">🟩 Hardware NVIDIA</summary>
 <div class="acordeao-conteudo">
 
 <div class="aviso-caixa" data-i18n="sessoes.hardware.nvidia_aviso">
-⚠️ Sem o nvidia-drm.modeset=1, o Wayland fica instável com placas Nvidia. O RPM Fusion (Sessão 1) é pré-requisito para os drivers proprietários. Após instalar qualquer coisa aqui, reinicie o computador.
+⚠️ O driver proprietário da NVIDIA exige que o parâmetro <code>nvidia-drm.modeset=1</code> esteja ativo para o Wayland funcionar corretamente. O RPM Fusion (Sessão 1) é pré-requisito. Após instalar o driver, o computador precisa ser reiniciado.
+</div>
+
+<div class="aviso-caixa" id="nvidia-aviso-legado" style="display: none; border-color: #ef4444; color: #ef4444;">
+<strong>⚠️ Driver proprietário indisponível para sua GPU</strong><br>
+A série detectada para sua GPU (<span id="nvidia-serie-legado">—</span>) exige o servidor gráfico <strong>Xorg</strong>, mas o Fedora 44+ não oferece mais Xorg de forma oficial — apenas Wayland. Por isso o FAP <strong>não instala</strong> drivers das séries 470xx ou 390xx. Continue usando o driver <code>nouveau</code> (código aberto, já incluído no Fedora).
 </div>
 
 <div class="bloco-comando">
@@ -203,10 +221,9 @@ NVIDIA
 Detecta a geração da sua GPU NVIDIA e instala automaticamente a série de driver correta — <code>akmod-nvidia</code> para Turing e mais recentes, <code>akmod-nvidia-580xx</code> para Maxwell/Pascal, <code>akmod-nvidia-470xx</code> para Kepler e <code>akmod-nvidia-390xx</code> para Fermi. Inclui os suplementos CUDA + bibliotecas NVENC/NVDEC para OBS, Kdenlive e encoding por hardware.
 </p>
 <div class="info-extra" data-i18n-html="sessoes.hardware.nvidia_driver_info">
-ℹ️ <strong>Sobre a detecção:</strong> o FAP lê o modelo da GPU via <code>lspci</code> e escolhe o pacote correto. Instalar a série errada (por exemplo, <code>akmod-nvidia</code> numa GTX 750 Ti) resulta em tela preta após o reboot — esta detecção evita esse problema. Se nenhuma GPU NVIDIA for encontrada, o comando aborta com uma mensagem clara e nada é instalado.
+ℹ️ <strong>Sobre a detecção:</strong> o FAP lê o modelo da GPU via <code>lspci</code> (com <code>nvidia-detect</code> como fonte primária quando disponível) e escolhe o pacote correto. Instalar a série errada resulta em tela preta após o reboot — esta detecção evita esse problema. Se nenhuma GPU NVIDIA for encontrada, o comando aborta com uma mensagem clara e nada é instalado.
 </div>
 
-<!-- Painel de detecção — preenchido por JS via /hardware-scan -->
 <div id="nvidia-detection-panel" class="bloco-info">
 <span style="color: var(--text-muted);" data-i18n="sessoes.hardware.nvidia_detectando">⏳ Detectando hardware...</span>
 </div>
@@ -218,7 +235,7 @@ data-comando="nvidia-driver-install"
 data-logbox="log-sessao-hardware"
 id="btn-nvidia-driver-install"
 data-i18n="sessoes.hardware.btn_nvidia_driver">
-📦 Instalar Driver Nvidia
+📦 Instalar Driver NVIDIA
 </button>
 <button class="btn-executar vermelho"
 onclick="executarNvidiaDriverRemove()"
@@ -251,8 +268,8 @@ data-i18n="sessoes.hardware.btn_abrir_nvidia_settings">
 
 <div class="bloco-comando">
 <div class="comando-info">
-<h3 data-i18n="sessoes.hardware.nvidia_modeset_titulo">Nvidia Modesetting (Wayland)</h3>
-<p data-i18n="sessoes.hardware.nvidia_modeset_desc">Ativa o parâmetro nvidia-drm.modeset=1 no kernel, necessário para Wayland funcionar corretamente com placas Nvidia.</p>
+<h3 data-i18n="sessoes.hardware.nvidia_modeset_titulo">NVIDIA Modesetting (Wayland)</h3>
+<p data-i18n="sessoes.hardware.nvidia_modeset_desc">Ativa o parâmetro nvidia-drm.modeset=1 no kernel, necessário para o Wayland funcionar corretamente com placas NVIDIA.</p>
 <div class="botoes-flex">
 <button class="btn-executar"
 onclick="executarNvidiaModeset()"
@@ -282,6 +299,116 @@ data-i18n="sessoes.hardware.btn_modeset_off">
 </div>
 </div>
 
+<div class="bloco-comando">
+<div class="comando-info">
+<h3 data-i18n="sessoes.hardware.nvidia_vaapi_titulo">Aceleração de Vídeo por Hardware (VA-API via NVIDIA)</h3>
+<p data-i18n-html="sessoes.hardware.nvidia_vaapi_desc">
+O driver proprietário da NVIDIA não expõe VA-API nativamente — ele usa a API concorrente VDPAU. O pacote <code>nvidia-vaapi-driver</code> é uma camada de tradução: recebe as chamadas VA-API dos aplicativos (Firefox, Chrome, VLC, etc.) e as converte para o chip NVDEC da NVIDIA. Sem ele, a aceleração de vídeo no navegador não funciona.
+</p>
+<div class="info-extra" data-i18n-html="sessoes.hardware.nvidia_vaapi_info">
+ℹ️ <strong>O que é instalado:</strong> <code>nvidia-vaapi-driver</code> (o tradutor), <code>libva-utils</code> (contém o <code>vainfo</code>), <code>vdpauinfo</code> (verificador VDPAU) e <code>gstreamer1-vaapi</code> (integração com GStreamer).
+</div>
+<div class="grupo-botoes">
+<button class="btn-executar"
+onclick="executarNvidiaVaapiInstall()"
+data-comando="nvidia-vaapi-install"
+data-logbox="log-sessao-hardware"
+id="btn-nvidia-vaapi-install"
+data-i18n="sessoes.hardware.btn_nvidia_vaapi">
+📦 Instalar Tradutor VA-API
+</button>
+</div>
+</div>
+<div class="progress-container" id="progress-nvidia-vaapi-install">
+<div class="progress-bar"><div class="progress-fill" id="progress-fill-nvidia-vaapi-install"></div></div>
+<div class="progress-text"><span class="status" id="progress-status-nvidia-vaapi-install">⏳ Iniciando...</span><span class="percentage" id="progress-percent-nvidia-vaapi-install">0%</span></div>
+</div>
+</div>
+
+<div class="bloco-comando">
+<div class="comando-info">
+<h3 data-i18n="sessoes.hardware.nvidia_vaapi_utils_titulo">Utilitários de Verificação (libva-utils + vdpauinfo + gstreamer1-vaapi)</h3>
+<p data-i18n-html="sessoes.hardware.nvidia_vaapi_utils_desc">
+Instala as ferramentas de diagnóstico <code>libva-utils</code> (contém o <code>vainfo</code>), <code>vdpauinfo</code> (equivalente ao <code>vainfo</code>, mas para VDPAU) e <code>gstreamer1-vaapi</code> (integração com GStreamer). Sem esses pacotes, você não consegue verificar se a aceleração está funcionando.
+</p>
+<div class="grupo-botoes">
+<button class="btn-executar"
+onclick="executarNvidiaVaapiUtils()"
+data-comando="nvidia-vaapi-utils"
+data-logbox="log-sessao-hardware"
+id="btn-nvidia-vaapi-utils"
+data-i18n="sessoes.hardware.btn_nvidia_vaapi_utils">
+📦 Instalar Utilitários
+</button>
+</div>
+</div>
+<div class="progress-container" id="progress-nvidia-vaapi-utils">
+<div class="progress-bar"><div class="progress-fill" id="progress-fill-nvidia-vaapi-utils"></div></div>
+<div class="progress-text"><span class="status" id="progress-status-nvidia-vaapi-utils">⏳ Iniciando...</span><span class="percentage" id="progress-percent-nvidia-vaapi-utils">0%</span></div>
+</div>
+</div>
+
+<div class="bloco-comando">
+<div class="comando-info">
+<h3 data-i18n="sessoes.hardware.nvidia_vaapi_env_titulo">Configurar Variáveis de Ambiente (VA-API)</h3>
+<p data-i18n-html="sessoes.hardware.nvidia_vaapi_env_desc">
+Cria o arquivo <code>~/.config/environment.d/99-fap-nvidia-vaapi.conf</code> com as variáveis necessárias para o <code>nvidia-vaapi-driver</code> funcionar: <code>NVD_BACKEND=direct</code>, <code>LIBVA_DRIVER_NAME=nvidia</code> e <code>MOZ_DISABLE_RDD_SANDBOX=1</code>. O arquivo é do <strong>seu usuário</strong> (não do sistema) — pode ser removido a qualquer momento clicando em "Reverter".
+</p>
+<div class="info-extra" data-i18n-html="sessoes.hardware.nvidia_vaapi_env_info">
+ℹ️ <strong>Sobre a reversão:</strong> o botão "Reverter" apaga apenas o arquivo <code>99-fap-nvidia-vaapi.conf</code>. Seus outros arquivos em <code>~/.config/environment.d/</code> não são tocados. O efeito só é aplicado após logout/login.
+</div>
+<div class="botoes-flex">
+<button class="btn-executar"
+onclick="executarNvidiaVaapiEnv()"
+data-comando="nvidia-vaapi-env"
+data-logbox="log-sessao-hardware"
+id="btn-nvidia-vaapi-env"
+data-i18n="sessoes.hardware.btn_nvidia_vaapi_env">
+⚙️ Configurar Variáveis
+</button>
+<button class="btn-executar vermelho"
+onclick="executarNvidiaVaapiEnvRemove()"
+data-comando="nvidia-vaapi-env-remove"
+data-logbox="log-sessao-hardware"
+id="btn-nvidia-vaapi-env-remove"
+data-i18n="sessoes.hardware.btn_nvidia_vaapi_env_remove">
+↩️ Reverter
+</button>
+</div>
+</div>
+<div class="progress-container" id="progress-nvidia-vaapi-env">
+<div class="progress-bar"><div class="progress-fill" id="progress-fill-nvidia-vaapi-env"></div></div>
+<div class="progress-text"><span class="status" id="progress-status-nvidia-vaapi-env">⏳ Iniciando...</span><span class="percentage" id="progress-percent-nvidia-vaapi-env">0%</span></div>
+</div>
+<div class="progress-container" id="progress-nvidia-vaapi-env-remove">
+<div class="progress-bar"><div class="progress-fill" id="progress-fill-nvidia-vaapi-env-remove"></div></div>
+<div class="progress-text"><span class="status" id="progress-status-nvidia-vaapi-env-remove">⏳ Iniciando...</span><span class="percentage" id="progress-percent-nvidia-vaapi-env-remove">0%</span></div>
+</div>
+</div>
+
+<div class="bloco-comando">
+<div class="comando-info">
+<h3 data-i18n="sessoes.hardware.nvidia_vaapi_check_titulo">Verificar Aceleração de Vídeo (NVIDIA)</h3>
+<p data-i18n-html="sessoes.hardware.nvidia_vaapi_check_desc">
+Executa <code>vainfo</code> com as variáveis corretas (<code>LIBVA_DRIVER_NAME=nvidia</code>) e mostra, no log abaixo, os perfis de aceleração suportados. Se a saída contiver <code>VAProfileH264</code>, <code>VAProfileVP9</code> ou <code>VAProfileAV1</code> com a tag <code>VAEntrypointVLD</code>, a aceleração está ativa. Para verificar VDPAU, rode <code>vdpauinfo</code> no terminal.
+</p>
+<div class="grupo-botoes">
+<button class="btn-executar"
+onclick="executarNvidiaVaapiCheck()"
+data-comando="nvidia-vaapi-check"
+data-logbox="log-sessao-hardware"
+id="btn-nvidia-vaapi-check"
+data-i18n="sessoes.hardware.btn_nvidia_vaapi_check">
+🔍 Verificar Aceleração
+</button>
+</div>
+</div>
+<div class="progress-container" id="progress-nvidia-vaapi-check">
+<div class="progress-bar"><div class="progress-fill" id="progress-fill-nvidia-vaapi-check"></div></div>
+<div class="progress-text"><span class="status" id="progress-status-nvidia-vaapi-check">⏳ Iniciando...</span><span class="percentage" id="progress-percent-nvidia-vaapi-check">0%</span></div>
+</div>
+</div>
+
 </div>
 </details>
 
@@ -298,8 +425,10 @@ INTEL
 
 <div class="bloco-comando">
 <div class="comando-info">
-<h3 data-i18n="sessoes.hardware.intel_media_titulo">Aceleração de Vídeo Intel (VA-API)</h3>
-<p data-i18n="sessoes.hardware.intel_media_desc">O pacote <code>intel-media-driver</code> habilita aceleração de vídeo por hardware em iGPUs Intel Skylake (6ª geração) ou mais recentes. Isso reduz o uso de CPU ao assistir vídeos em 4K, ao usar o navegador e ao editar vídeo. Chips mais antigos (Haswell ou anteriores) usam o driver i965, que já vem no Fedora.</p>
+<h3 data-i18n="sessoes.hardware.intel_media_titulo">Driver Moderno: Aceleração de Vídeo Intel (Broadwell / 5ª gen Core+ / Arc)</h3>
+<p data-i18n-html="sessoes.hardware.intel_media_desc">
+O pacote <code>intel-media-driver</code> habilita aceleração de vídeo por hardware em iGPUs Intel <strong>Broadwell (5ª gen) ou mais recentes</strong> — incluindo Coffee Lake, Ice Lake, Tiger Lake, Alder Lake, Raptor Lake, Meteor Lake e as placas dedicadas Intel Arc. Reduz o uso de CPU ao assistir vídeos em 4K, ao usar o navegador e ao editar vídeo.
+</p>
 <div class="grupo-botoes">
 <button class="btn-executar"
 onclick="executarIntelMedia()"
@@ -317,6 +446,78 @@ data-i18n="sessoes.hardware.btn_intel_media_instalar">
 </div>
 </div>
 
+<div class="bloco-comando">
+<div class="comando-info">
+<h3 data-i18n="sessoes.hardware.intel_legacy_titulo">Driver Legado: Aceleração de Vídeo Intel (7ª gen Core ou anterior)</h3>
+<p data-i18n-html="sessoes.hardware.intel_legacy_desc">
+O pacote <code>libva-intel-driver</code> é o driver legado para iGPUs Intel <strong>Haswell (4ª gen), Ivy Bridge (3ª gen), Sandy Bridge (2ª gen) ou anteriores</strong> — gerações que o <code>intel-media-driver</code> não cobre. Use este botão <strong>apenas</strong> se a sua CPU for dessa geração; caso contrário, use o driver moderno acima.
+</p>
+<div class="info-extra" data-i18n-html="sessoes.hardware.intel_legacy_info">
+ℹ️ <strong>Como saber sua geração:</strong> rode <code>lscpu | grep "Model name"</code> no terminal. Core i3/i5/i7 de 4ª geração = "Haswell". 3ª = "Ivy Bridge". 2ª = "Sandy Bridge". Se for 5ª geração (Broadwell) ou mais nova, use o driver moderno acima.
+</div>
+<div class="grupo-botoes">
+<button class="btn-executar"
+onclick="executarLibvaIntel()"
+data-comando="libva-intel-install"
+data-logbox="log-sessao-hardware"
+id="btn-libva-intel-install"
+data-i18n="sessoes.hardware.btn_intel_legacy">
+🎬 Instalar Driver Legado (libva-intel)
+</button>
+</div>
+</div>
+<div class="progress-container" id="progress-libva-intel-install">
+<div class="progress-bar"><div class="progress-fill" id="progress-fill-libva-intel-install"></div></div>
+<div class="progress-text"><span class="status" id="progress-status-libva-intel-install">⏳ Iniciando...</span><span class="percentage" id="progress-percent-libva-intel-install">0%</span></div>
+</div>
+</div>
+
+<div class="bloco-comando">
+<div class="comando-info">
+<h3 data-i18n="sessoes.hardware.intel_utils_titulo">Utilitários de Verificação (libva-utils + gstreamer1-vaapi)</h3>
+<p data-i18n-html="sessoes.hardware.intel_utils_desc">
+Instala as ferramentas de diagnóstico <code>libva-utils</code> (que contém o <code>vainfo</code>) e o plugin <code>gstreamer1-vaapi</code> (que permite ao GStreamer usar a aceleração). Sem esses pacotes, o navegador e os players de vídeo não reconhecem a aceleração mesmo com o driver instalado.
+</p>
+<div class="grupo-botoes">
+<button class="btn-executar"
+onclick="executarIntelVaapiUtils()"
+data-comando="intel-vaapi-utils"
+data-logbox="log-sessao-hardware"
+id="btn-intel-vaapi-utils"
+data-i18n="sessoes.hardware.btn_intel_utils">
+📦 Instalar Utilitários
+</button>
+</div>
+</div>
+<div class="progress-container" id="progress-intel-vaapi-utils">
+<div class="progress-bar"><div class="progress-fill" id="progress-fill-intel-vaapi-utils"></div></div>
+<div class="progress-text"><span class="status" id="progress-status-intel-vaapi-utils">⏳ Iniciando...</span><span class="percentage" id="progress-percent-intel-vaapi-utils">0%</span></div>
+</div>
+</div>
+
+<div class="bloco-comando">
+<div class="comando-info">
+<h3 data-i18n="sessoes.hardware.vaapi_check_intel_titulo">Verificar Aceleração de Vídeo (Intel)</h3>
+<p data-i18n-html="sessoes.hardware.vaapi_check_intel_desc">
+Executa <code>vainfo</code> e mostra, no log abaixo, os perfis de aceleração suportados pela sua iGPU. Se a saída contiver <code>VAProfileH264</code>, <code>VAProfileVP9</code> ou <code>VAProfileAV1</code> com a tag <code>VAEntrypointVLD</code>, a aceleração está ativa. Nenhuma alteração é feita no sistema.
+</p>
+<div class="grupo-botoes">
+<button class="btn-executar"
+onclick="executarVaapiCheckIntel()"
+data-comando="vaapi-check-intel"
+data-logbox="log-sessao-hardware"
+id="btn-vaapi-check-intel"
+data-i18n="sessoes.hardware.btn_vaapi_check_intel">
+🔍 Verificar Aceleração
+</button>
+</div>
+</div>
+<div class="progress-container" id="progress-vaapi-check-intel">
+<div class="progress-bar"><div class="progress-fill" id="progress-fill-vaapi-check-intel"></div></div>
+<div class="progress-text"><span class="status" id="progress-status-vaapi-check-intel">⏳ Iniciando...</span><span class="percentage" id="progress-percent-vaapi-check-intel">0%</span></div>
+</div>
+</div>
+
 </div>
 </details>
 
@@ -327,27 +528,45 @@ data-i18n="sessoes.hardware.btn_intel_media_instalar">
 // ============================================================
 // SESSÃO 3: HARDWARE
 // ============================================================
-//
-// NOTA: este arquivo NÃO define mais helpers locais de toggle.
-// Os pares install/revert desta sessão agora usam o padrão
-// unificado "instalado-sem-abrir" (botão cinza + lixeira SVG) via
-// `aplicarEstadoInstalavel` do script.js.
+
+function _t(chave, fallback) {
+    return (typeof tOr === 'function') ? tOr(chave, fallback) : fallback;
+}
+function _tVars(chave, fallback, vars) {
+    return (typeof tOr === 'function') ? tOr(chave, fallback, vars) : fallback;
+}
+
+// ------------------------------------------------------------
+// Avisos de reinicialização / logout
+// ------------------------------------------------------------
+
+function _avisarReboot(nomeItem) {
+    mostrarToast(
+        _tVars('sessoes.hardware.reboot_necessario',
+            '🔄 Reinicie o computador para aplicar as mudanças de {nome}.',
+            { nome: nomeItem }),
+        'info', 12000
+    );
+}
+
+function _avisarLogout(nomeItem) {
+    mostrarToast(
+        _tVars('sessoes.hardware.logout_necessario',
+            '🔐 Faça logout/login para aplicar as mudanças de {nome}.',
+            { nome: nomeItem }),
+        'info', 12000
+    );
+}
 
 // ============================================================
-// REGISTRO DE APPS REMOVÍVEIS (ícone de lixeira unificado)
+// REGISTRO DE APPS REMOVÍVEIS
 // ============================================================
 
 registrarAppRemovivel('vulkan-amd', {
     tipo: 'dnf',
     pacotes: ['mesa-vulkan-drivers', 'mesa-vulkan-drivers.i686', 'vulkan-tools', 'vulkan-loader', 'mesa-dri-drivers', 'mesa-dri-drivers.i686'],
     nome: 'Vulkan e Mesa 3D',
-    // Mesa/Vulkan vêm em qualquer Fedora com GUI. O usuário pediu
-    // que o botão mostre "Instalar" até o FAP instalar (e não
-    // porque o sistema já tinha).
     ignorarPreExistente: true,
-    // MITIGAÇÃO (v1.1.2): pré-existente NÃO pode ser removido.
-    // Remove Mesa 3D + Vulkan — jogos e apps 3D param de
-    // funcionar até reinstalar.
     permitirRemocaoPreExistente: false,
     motivoBloqueio: 'Vulkan/Mesa já estava instalado antes do FAP. ' +
                     'Removê-lo desabilita jogos e aplicações 3D. ' +
@@ -358,35 +577,15 @@ registrarAppRemovivel('vulkan-amd', {
 
 registrarAppRemovivel('vaapi-amd', {
     tipo: 'dnf',
-    pacotes: ['ffmpeg-libs', 'libva', 'libva-utils', 'mesa-va-drivers-freeworld', 'mesa-va-drivers-freeworld.i686'],
+    pacotes: ['ffmpeg-libs', 'libva', 'libva-utils', 'mesa-va-drivers-freeworld', 'mesa-vdpau-drivers-freeworld'],
     nome: 'VA-API AMD',
-    // libva/ffmpeg-libs são pré-instalados no Fedora. Flag força
-    // "Instalar" até o FAP instalar. Observação: o botão também
-    // sofre com conflito de mesa-dri-drivers no Fedora 44 — ver
-    // correção de `executarVaapi` (abaixo).
     ignorarPreExistente: true,
-    // MITIGAÇÃO (v1.1.2): pré-existente NÃO pode ser removido.
-    // Remove aceleração de vídeo por hardware — CPU sobe muito
-    // ao reproduzir vídeo em HD/4K.
     permitirRemocaoPreExistente: false,
-    motivoBloqueio: 'A aceleração VA-API já estava ativa antes do FAP. ' +
+    motivoBloqueio: 'A aceleração VA-API/VDPAU já estava ativa antes do FAP. ' +
                     'Removê-la aumenta muito o uso de CPU em reprodução ' +
                     'de vídeo HD/4K. Para reverter manualmente:\n\n' +
                     '  sudo dnf remove mesa-va-drivers-freeworld \\\n' +
                     '    mesa-vdpau-drivers-freeworld ffmpeg-libs libva'
-});
-
-registrarAppRemovivel('vaapi-swap', {
-    tipo: 'dnf',
-    pacotes: ['mesa-va-drivers-freeworld', 'mesa-vdpau-drivers-freeworld'],
-    nome: 'VA-API AMD (Alternativa)',
-    // MITIGAÇÃO (v1.1.2): pré-existente NÃO pode ser removido.
-    // Idem `vaapi-amd` — remove aceleração por hardware.
-    permitirRemocaoPreExistente: false,
-    motivoBloqueio: 'A aceleração VA-API (via freeworld) já estava ativa ' +
-                    'antes do FAP. Para reverter manualmente:\n\n' +
-                    '  sudo dnf swap mesa-va-drivers-freeworld mesa-va-drivers\n' +
-                    '  sudo dnf swap mesa-vdpau-drivers-freeworld mesa-vdpau-drivers'
 });
 
 registrarAppRemovivel('corectrl-install', {
@@ -405,11 +604,6 @@ registrarAppRemovivel('nvidia-driver-install', {
     tipo: 'dnf',
     pacotes: ['akmod-nvidia', 'akmod-nvidia-580xx', 'akmod-nvidia-470xx', 'akmod-nvidia-390xx', 'xorg-x11-drv-nvidia-cuda', 'xorg-x11-drv-nvidia-cuda-libs', 'nvidia-settings'],
     nome: 'Driver NVIDIA',
-    // MITIGAÇÃO (v1.1.2): pré-existente NÃO pode ser removido.
-    // Remover o driver NVIDIA deixa o sistema SEM driver de vídeo
-    // até o próximo boot (nouveau assume, mas com performance
-    // drasticamente reduzida). Se o usuário instalou manualmente,
-    // não deve ser o FAP a desfazer.
     permitirRemocaoPreExistente: false,
     motivoBloqueio: 'O driver NVIDIA já estava instalado antes do FAP. ' +
                     'Removê-lo via FAP deixa a GPU sem driver até reiniciar ' +
@@ -425,9 +619,6 @@ registrarAppRemovivel('intel-media-install', {
     tipo: 'dnf',
     pacotes: ['intel-media-driver'],
     nome: 'Intel Media Driver',
-    // MITIGAÇÃO (v1.1.2): pré-existente NÃO pode ser removido.
-    // Remove aceleração VA-API em Intel — vídeo 4K passa a
-    // consumir CPU.
     permitirRemocaoPreExistente: false,
     motivoBloqueio: 'O Intel Media Driver já estava instalado antes do FAP. ' +
                     'Removê-lo aumenta o uso de CPU em reprodução de vídeo. ' +
@@ -435,9 +626,39 @@ registrarAppRemovivel('intel-media-install', {
                     '  sudo dnf remove intel-media-driver'
 });
 
-function _t(chave, fallback) {
-    return (typeof tOr === 'function') ? tOr(chave, fallback) : fallback;
-}
+registrarAppRemovivel('libva-intel-install', {
+    tipo: 'dnf',
+    pacotes: ['libva-intel-driver'],
+    nome: 'Driver Legado Intel (libva-intel)',
+    permitirRemocaoPreExistente: false,
+    motivoBloqueio: 'O driver legado Intel já estava instalado antes do FAP. ' +
+                    'Para remover manualmente:\n\n' +
+                    '  sudo dnf remove libva-intel-driver'
+});
+
+registrarAppRemovivel('intel-vaapi-utils', {
+    tipo: 'dnf',
+    pacotes: ['libva-utils', 'gstreamer1-vaapi'],
+    nome: 'Utilitários VA-API Intel',
+    ignorarPreExistente: true
+});
+
+registrarAppRemovivel('nvidia-vaapi-install', {
+    tipo: 'dnf',
+    pacotes: ['nvidia-vaapi-driver'],
+    nome: 'Tradutor VA-API NVIDIA',
+    permitirRemocaoPreExistente: false,
+    motivoBloqueio: 'O nvidia-vaapi-driver já estava instalado antes do FAP. ' +
+                    'Para remover manualmente:\n\n' +
+                    '  sudo dnf remove nvidia-vaapi-driver'
+});
+
+registrarAppRemovivel('nvidia-vaapi-utils', {
+    tipo: 'dnf',
+    pacotes: ['libva-utils', 'vdpauinfo', 'gstreamer1-vaapi'],
+    nome: 'Utilitários VA-API NVIDIA',
+    ignorarPreExistente: true
+});
 
 // ------------------------------------------------------------
 // AMD — Vulkan / VA-API
@@ -448,43 +669,27 @@ async function executarVulkan() {
     var comando = 'sudo dnf install -y mesa-vulkan-drivers mesa-vulkan-drivers.i686 vulkan-tools vulkan-loader mesa-dri-drivers mesa-dri-drivers.i686';
     await executarComandoGenerico(idComando, comando,
         _t('sessoes.hardware.btn_vulkan', '🚀 Instalar Vulkan e Mesa 3D'),
-        // Vulkan é uma biblioteca sem GUI — não há botão "Abrir X"
-        // com id `abrir-vulkan-amd`. Antes passávamos esse id mesmo
-        // assim (o botão não existia, `aplicarEstadoInstalavel`
-        // caía no Estado 3 por acaso). Agora é `null` explícito.
         function() { aplicarEstadoInstalavel('vulkan-amd', null); });
 }
 
 async function executarVaapi() {
     var idComando = 'vaapi-amd';
-    // Receita oficial do RPM Fusion para o Fedora 44: o pacote
-    // `mesa-va-drivers-freeworld` agora instala em
-    // /usr/lib64/dri-freeworld/ — diretório separado, sem conflito
-    // de arquivos com o `mesa-va-drivers` do Fedora. Por isso o
-    // `dnf install` puro funciona, e o `dnf swap` (receita antiga)
-    // é desnecessário e dispara erro de `mesa-filesystem`.
-    //
-    // Sem `.i686`: o multilib está sendo eliminado no Fedora 44, e
-    // o `.i686` pode não ter dependências compatíveis. A instalação
-    // x86_64 cobre aceleração do dia a dia (Firefox, VLC, MPV).
-    // Quem precisa de 32-bit (Steam) instala o `.i686` manualmente.
     var comando =
-        'sudo dnf install -y ffmpeg-libs libva libva-utils mesa-va-drivers-freeworld';
+        'sudo dnf install -y ffmpeg-libs libva libva-utils ' +
+        'mesa-va-drivers-freeworld mesa-vdpau-drivers-freeworld';
     await executarComandoGenerico(idComando, comando,
-        _t('sessoes.hardware.btn_vaapi_padrao', '🚀 Instalação Padrão'),
+        _t('sessoes.hardware.btn_vaapi', '🚀 Instalar VA-API e VDPAU'),
         function() { aplicarEstadoInstalavel('vaapi-amd', null); });
 }
 
-async function executarVaapiSwap() {
-    var idComando = 'vaapi-swap';
-    var comando = 'sudo dnf swap mesa-va-drivers mesa-va-drivers-freeworld -y && sudo dnf swap mesa-vdpau-drivers mesa-vdpau-drivers-freeworld -y';
-    await executarComandoGenerico(idComando, comando,
-        _t('sessoes.hardware.btn_vaapi_alt', '🔄 Alternativa'),
-        function() { aplicarEstadoInstalavel('vaapi-swap', null); });
+async function executarVaapiCheckAmd() {
+    var idComando = 'vaapi-check-amd';
+    await executarComandoGenerico(idComando, 'vainfo',
+        _t('sessoes.hardware.btn_vaapi_check_amd', '🔍 Verificar Aceleração'));
 }
 
 // ------------------------------------------------------------
-// AMD — CoreCtrl / LACT
+// AMD — CoreCtrl / LACT / Overclock
 // ------------------------------------------------------------
 
 async function executarCoreCtrl() {
@@ -499,16 +704,6 @@ function abrirCoreCtrl() {
     abrirFerramentaExterna('corectrl', 'corectrl-install', 'CoreCtrl');
 }
 
-function atualizarBotaoAbrirCoreCtrl() {
-    var btn = document.getElementById('btn-abrir-corectrl');
-    if (!btn) return;
-    if (isExecutado('corectrl-install')) {
-        btn.style.display = '';
-    } else {
-        btn.style.display = 'none';
-    }
-}
-
 async function executarLACT() {
     var idComando = 'lact-install';
     var comando = 'sudo dnf copr enable ilyaz/LACT -y && sudo dnf install -y lact && sudo systemctl enable --now lactd';
@@ -521,20 +716,6 @@ function abrirLACT() {
     abrirFerramentaExterna('lact', 'lact-install', 'LACT');
 }
 
-function atualizarBotaoAbrirLACT() {
-    var btn = document.getElementById('btn-abrir-lact');
-    if (!btn) return;
-    if (isExecutado('lact-install')) {
-        btn.style.display = '';
-    } else {
-        btn.style.display = 'none';
-    }
-}
-
-// ------------------------------------------------------------
-// AMD — Overclock (toggle)
-// ------------------------------------------------------------
-
 async function executarOverclockAMD() {
     var idComando = 'amdgpu-overclock';
     var comando = 'sudo grubby --update-kernel=ALL --args="amdgpu.ppfeaturemask=0xffffffff"';
@@ -542,6 +723,7 @@ async function executarOverclockAMD() {
         _t('sessoes.hardware.btn_overclock_on', '⚙️ Ativar Overclock'),
         function() {
             aplicarEstadoToggle('amdgpu-overclock', 'amdgpu-overclock-remove');
+            _avisarReboot(_t('sessoes.hardware.overclock_titulo', 'Overclock (AMD)'));
         });
 }
 
@@ -553,19 +735,49 @@ async function executarOverclockRemoveAMD() {
         function() {
             desmarcarComoExecutado('amdgpu-overclock').then(function() {
                 aplicarEstadoToggle('amdgpu-overclock', 'amdgpu-overclock-remove');
-            }).catch(function(e) {
-                console.warn('[toggle] Erro ao limpar estado do install:', e);
+            }).catch(function() {
                 aplicarEstadoToggle('amdgpu-overclock', 'amdgpu-overclock-remove');
             });
+            _avisarReboot(_t('sessoes.hardware.overclock_titulo', 'Overclock (AMD)'));
         });
 }
 
 // ------------------------------------------------------------
-// NVIDIA
+// Intel
 // ------------------------------------------------------------
 
+async function executarIntelMedia() {
+    var idComando = 'intel-media-install';
+    var comando = 'sudo dnf install -y intel-media-driver';
+    await executarComandoGenerico(idComando, comando,
+        _t('sessoes.hardware.btn_intel_media_instalar', '🎬 Instalar Intel Media Driver'),
+        function() { aplicarEstadoInstalavel('intel-media-install', null); });
+}
+
+async function executarLibvaIntel() {
+    var idComando = 'libva-intel-install';
+    var comando = 'sudo dnf install -y libva-intel-driver';
+    await executarComandoGenerico(idComando, comando,
+        _t('sessoes.hardware.btn_intel_legacy', '🎬 Instalar Driver Legado (libva-intel)'),
+        function() { aplicarEstadoInstalavel('libva-intel-install', null); });
+}
+
+async function executarIntelVaapiUtils() {
+    var idComando = 'intel-vaapi-utils';
+    var comando = 'sudo dnf install -y libva-utils gstreamer1-vaapi';
+    await executarComandoGenerico(idComando, comando,
+        _t('sessoes.hardware.btn_intel_utils', '📦 Instalar Utilitários'),
+        function() { aplicarEstadoInstalavel('intel-vaapi-utils', null); });
+}
+
+async function executarVaapiCheckIntel() {
+    var idComando = 'vaapi-check-intel';
+    await executarComandoGenerico(idComando, 'vainfo',
+        _t('sessoes.hardware.btn_vaapi_check_intel', '🔍 Verificar Aceleração'));
+}
+
 // ------------------------------------------------------------
-// NVIDIA — detecção de GPU e escolha da série de driver
+// NVIDIA — detecção
 // ------------------------------------------------------------
 
 function _escapeHTMLNvidia(s) {
@@ -576,22 +788,6 @@ function _escapeHTMLNvidia(s) {
 }
 
 function _detectarSerieNvidia(modelo) {
-    // Fallback heurístico. A fonte primária é `nvidia-detect`
-    // (RPM Fusion) — só caímos aqui se o binário não existir.
-    //
-    // As faixas cobrem GeForce + Quadro + Tesla + Titan, que
-    // compartilham arquitetura mas têm prefixos diferentes:
-    //   - Fermi:      GeForce 4xx/5xx,       Quadro 4xxx/5xxx,     Tesla 20xx
-    //   - Kepler:     GeForce 6xx/7xx,       Quadro K*,            Tesla K*
-    //   - Maxwell:    GeForce 9xx,           Quadro K*/M*,         Tesla M*
-    //   - Pascal:     GeForce 10xx,          Quadro P*,            Tesla P*
-    //   - Turing+:    GeForce 16xx/RTX 20+,  Quadro RTX/T*,        Tesla T*/V*/A*
-    //
-    // GTX 745/750/750 Ti: exceção Kepler→Maxwell. Testada antes
-    // do range 6xx/7xx, senão cairia em 470xx (tela preta).
-    //
-    // Modelos MX (MX150, MX250 etc.) são Pascal/Volta — caem no
-    // branch 580xx.
     if (/\bgeforce\s+(gtx?\s*)?[45]\d{2}\b/i.test(modelo) ||
         /\bquadro\s+[45]\d{3}\b/i.test(modelo) ||
         /\btesla\s+(20|m?4)\d{2}\b/i.test(modelo)) {
@@ -611,14 +807,9 @@ function _detectarSerieNvidia(modelo) {
         /\btesla\s+[mp][\s\d]/i.test(modelo)) {
         return { pkg: 'akmod-nvidia-580xx', serie: '580xx (Maxwell/Pascal)' };
     }
-    // Turing+: RTX 20xx/30xx/40xx/50xx, GTX 16xx, Quadro RTX/T,
-    // Tesla T/V/A, Titan V/RTX. Default cobre o resto.
     return { pkg: 'akmod-nvidia', serie: '595+ (Turing ou mais recente)' };
 }
 
-// Helper genérico: detecta GPUs de qualquer vendor. Usado pelas
-// 3 seções (AMD, Intel, NVIDIA). Evita duplicar a lógica de
-// /hardware-scan em cada função.
 async function _detectarGpuPorVendor(vendorIds) {
     try {
         var r = await fetch(API_URL + '/hardware-scan', { cache: 'no-store' });
@@ -678,7 +869,7 @@ function _renderizarPanelNvidia(info) {
             '<strong>' + _t('sessoes.hardware.nvidia_panel_sem_gpu_titulo',
                 '⚠️ Nenhuma GPU NVIDIA detectada') + '</strong>' +
             '<p style="margin-top: 0.4rem;">' + _t('sessoes.hardware.nvidia_panel_sem_gpu_desc',
-                'Este sistema não possui uma GPU física NVIDIA, então o driver proprietário não faz sentido aqui. O botão <strong>Instalar Driver Nvidia</strong> fica desabilitado.') + '</p>' +
+                'Este sistema não possui uma GPU física NVIDIA, então o driver proprietário não faz sentido aqui. O botão <strong>Instalar Driver NVIDIA</strong> fica desabilitado.') + '</p>' +
             msgInstalado;
         return;
     }
@@ -705,15 +896,37 @@ function _renderizarPanelNvidia(info) {
         rpmfusionAviso;
 }
 
+function _mostrarAvisoX11Nvidia(info) {
+    var painel = document.getElementById('nvidia-aviso-legado');
+    var serieEl = document.getElementById('nvidia-serie-legado');
+    if (!painel) return;
+
+    var serie = info.serie || '';
+    var isLegado = /470xx|390xx/.test(serie);
+
+    if (isLegado && info.detected) {
+        painel.style.display = 'block';
+        if (serieEl) serieEl.textContent = serie;
+
+        var btn = document.getElementById('btn-nvidia-driver-install');
+        if (btn) {
+            btn.disabled = true;
+            btn.style.opacity = '0.5';
+            btn.style.cursor = 'not-allowed';
+            btn.title = _t('sessoes.hardware.nvidia_serie_legado_desabilitado',
+                'Série ' + serie + ' requer Xorg, que o Fedora não suporta mais oficialmente.');
+        }
+    } else {
+        painel.style.display = 'none';
+    }
+}
+
 function _aplicarEstadoNvidia(info) {
-    // Toggle padrão install/revert
     aplicarEstadoToggle('nvidia-driver-install', 'nvidia-driver-remove');
 
     var installBtn = document.getElementById('btn-nvidia-driver-install');
     var installFeito = isExecutado('nvidia-driver-install');
 
-    // Instalar desabilitado se não há GPU NVIDIA E o driver não foi
-    // instalado ainda (senão, o usuário precisa poder remover).
     if (installBtn && !info.detected && !installFeito) {
         installBtn.disabled = true;
         installBtn.style.cursor = 'not-allowed';
@@ -724,17 +937,11 @@ function _aplicarEstadoNvidia(info) {
         installBtn.title = '';
     }
 
-    // Botão "Abrir nvidia-settings": aparece apenas quando há GPU
-    // NVIDIA detectada E o driver está instalado.
     var openBtn = document.getElementById('btn-abrir-nvidia-settings');
     if (openBtn) {
         openBtn.style.display = (installFeito && info.detected) ? '' : 'none';
     }
 
-    // Modesetting (nvidia-drm.modeset=1): só faz sentido em sistemas
-    // com GPU NVIDIA. Em máquinas AMD/Intel, o parâmetro é inútil e
-    // só poluiria a linha de comando do kernel. Desabilita os dois
-    // botões quando não há GPU — mesma lógica do botão de instalar.
     var modesetOn = document.getElementById('btn-nvidia-modeset-on');
     var modesetOff = document.getElementById('btn-nvidia-modeset-off');
 
@@ -759,28 +966,18 @@ async function _atualizarSecaoNvidia() {
     var info = await _detectarGpuNvidia();
     _renderizarPanelNvidia(info);
     _aplicarEstadoNvidia(info);
+    _mostrarAvisoX11Nvidia(info);
 }
 
 // ============================================================
-// DETECÇÃO DE AMD/INTEL (mesmo padrão da NVIDIA)
+// DETECÇÃO DE AMD/INTEL
 // ============================================================
-//
-// O usuário pediu que as seções AMD e Intel tivessem o mesmo
-// comportamento da NVIDIA: se o hardware não está presente, a
-// seção fica cinza, desabilitada, com aviso. Sem isso, o botão
-// "Instalar Intel Media Driver" aparecia habilitado em APU AMD.
-//
-// Cada função:
-//   1. Consulta /hardware-scan filtrando pelo vendor.
-//   2. Se detectado: remove o aviso, reabilita os botões.
-//   3. Se não detectado: mostra aviso, desabilita todos os botões
-//      da seção (exceto os que já foram executados, que ficam cinza).
 
 async function _atualizarSecaoAmd() {
     var sec = document.getElementById('sec-amd');
     if (!sec) return;
 
-    var info = await _detectarGpuPorVendor(['1002', '1022']);  // AMD GPU + AMD APU
+    var info = await _detectarGpuPorVendor(['1002', '1022']);
 
     var painel = sec.querySelector('.hardware-detection-panel');
     if (!painel) {
@@ -818,7 +1015,6 @@ async function _atualizarSecaoAmd() {
         botoes.forEach(function(b) {
             if (b.getAttribute('data-estado') === 'instalado-abrir' ||
                 b.getAttribute('data-estado') === 'instalado-sem-abrir') {
-                // Botão já instalado — não mexe (usuário pode reverter)
                 return;
             }
             b.setAttribute('data-hw-disabled', '1');
@@ -834,7 +1030,7 @@ async function _atualizarSecaoIntel() {
     var sec = document.getElementById('sec-intel');
     if (!sec) return;
 
-    var info = await _detectarGpuPorVendor(['8086']);  // Intel GPU
+    var info = await _detectarGpuPorVendor(['8086']);
 
     var painel = sec.querySelector('.hardware-detection-panel');
     if (!painel) {
@@ -864,7 +1060,7 @@ async function _atualizarSecaoIntel() {
         painel.innerHTML = '<strong>' +
             _t('sessoes.hardware.intel_sem_gpu_titulo', '⚠️ Nenhuma GPU Intel detectada') +
             '</strong><p style="margin-top: 0.4rem;">' +
-            _t('sessoes.hardware.intel_sem_gpu_desc', 'Este sistema não possui iGPU Intel. O Intel Media Driver não faz sentido aqui.') +
+            _t('sessoes.hardware.intel_sem_gpu_desc', 'Este sistema não possui iGPU Intel. Os drivers Intel não fazem sentido aqui.') +
             '</p>';
 
         var tooltip = _t('sessoes.hardware.intel_sem_gpu_curto',
@@ -884,15 +1080,12 @@ async function _atualizarSecaoIntel() {
 }
 
 // ------------------------------------------------------------
-// NVIDIA — instalar / remover / abrir
+// NVIDIA — instalar / remover / abrir / verificar
 // ------------------------------------------------------------
 
 async function executarNvidiaDriver() {
     var idComando = 'nvidia-driver-install';
 
-    // Detecção em JS apenas para validar antes de executar. O
-    // comando shell detecta novamente por conta própria — a
-    // detecção em JS é a UX, o shell é a fonte da verdade.
     var info = await _detectarGpuNvidia();
     if (!info.detected) {
         alert(_t('sessoes.hardware.nvidia_sem_gpu',
@@ -906,16 +1099,6 @@ async function executarNvidiaDriver() {
         return;
     }
 
-    // Heurística em shell espelha fielmente `_detectarSerieNvidia`:
-    // a GTX 745 é testada ANTES do range 6xx/7xx, porque o chip é
-    // Maxwell (GM107), não Kepler. Sem isso, o comando instalaria
-    // akmod-nvidia-470xx numa GTX 745 e o sistema daria tela preta.
-    // Estratégia em 2 camadas:
-    //   1. `nvidia-detect` (RPM Fusion) é a fonte canônica. Se o
-    //      binário existir, ele decide o pacote — cobre Quadro,
-    //      Tesla, MX, e futuras famílias que o regex não conhece.
-    //   2. Fallback: regex shell (espelho fiel de _detectarSerieNvidia
-    //      em JS, com Quadro/Tesla/MX incluídos).
     var comando =
         'GPU_MODEL=$(lspci 2>/dev/null | grep -iE "nvidia.*(vga|3d|display)" | head -1); ' +
         'if [ -z "$GPU_MODEL" ]; then ' +
@@ -946,9 +1129,10 @@ async function executarNvidiaDriver() {
         'fi';
 
     await executarComandoGenerico(idComando, comando,
-        _t('sessoes.hardware.btn_nvidia_driver', '📦 Instalar Driver Nvidia'),
+        _t('sessoes.hardware.btn_nvidia_driver', '📦 Instalar Driver NVIDIA'),
         async function() {
             await _atualizarSecaoNvidia();
+            _avisarReboot(_t('sessoes.hardware.nvidia_driver_titulo', 'Driver NVIDIA'));
         });
 }
 
@@ -975,10 +1159,10 @@ async function executarNvidiaDriverRemove() {
         function() {
             desmarcarComoExecutado('nvidia-driver-install').then(function() {
                 _atualizarSecaoNvidia();
-            }).catch(function(e) {
-                console.warn('[toggle] Erro ao limpar estado do install:', e);
+            }).catch(function() {
                 _atualizarSecaoNvidia();
             });
+            _avisarReboot(_t('sessoes.hardware.nvidia_driver_titulo', 'Driver NVIDIA'));
         });
 }
 
@@ -989,51 +1173,131 @@ function abrirNvidiaSettings() {
 async function executarNvidiaModeset() {
     var idComando = 'nvidia-modeset-on';
     var comando = 'sudo grubby --update-kernel=ALL --args="nvidia-drm.modeset=1"';
-    await executarComandoGenerico(idComando, comando, _t('sessoes.hardware.btn_modeset_on', '⚙️ Ativar modesetting'));
+    await executarComandoGenerico(idComando, comando,
+        _t('sessoes.hardware.btn_modeset_on', '⚙️ Ativar modesetting'),
+        function() {
+            _avisarReboot(_t('sessoes.hardware.nvidia_modeset_titulo', 'Modesetting (NVIDIA)'));
+        });
 }
 
 async function executarNvidiaModesetRemove() {
     var idComando = 'nvidia-modeset-off';
     var comando = 'sudo grubby --update-kernel=ALL --remove-args="nvidia-drm.modeset=1"';
-    await executarComandoGenerico(idComando, comando, _t('sessoes.hardware.btn_modeset_off', '↩️ Desativar modesetting'));
-}
-
-// ------------------------------------------------------------
-// Intel
-// ------------------------------------------------------------
-
-async function executarIntelMedia() {
-    var idComando = 'intel-media-install';
-    var comando = 'sudo dnf install -y intel-media-driver';
     await executarComandoGenerico(idComando, comando,
-        _t('sessoes.hardware.btn_intel_media_instalar', '🎬 Instalar Intel Media Driver'),
-        function() { aplicarEstadoInstalavel('intel-media-install', null); });
+        _t('sessoes.hardware.btn_modeset_off', '↩️ Desativar modesetting'),
+        function() {
+            _avisarReboot(_t('sessoes.hardware.nvidia_modeset_titulo', 'Modesetting (NVIDIA)'));
+        });
+}
+
+async function executarNvidiaVaapiInstall() {
+    var idComando = 'nvidia-vaapi-install';
+    var comando = 'sudo dnf install -y nvidia-vaapi-driver';
+    await executarComandoGenerico(idComando, comando,
+        _t('sessoes.hardware.btn_nvidia_vaapi', '📦 Instalar Tradutor VA-API'),
+        function() { aplicarEstadoInstalavel('nvidia-vaapi-install', null); });
+}
+
+async function executarNvidiaVaapiUtils() {
+    var idComando = 'nvidia-vaapi-utils';
+    var comando = 'sudo dnf install -y libva-utils vdpauinfo gstreamer1-vaapi';
+    await executarComandoGenerico(idComando, comando,
+        _t('sessoes.hardware.btn_nvidia_vaapi_utils', '📦 Instalar Utilitários'),
+        function() { aplicarEstadoInstalavel('nvidia-vaapi-utils', null); });
+}
+
+async function executarNvidiaVaapiEnv() {
+    var idComando = 'nvidia-vaapi-env';
+    var comando = "mkdir -p ~/.config/environment.d && tee ~/.config/environment.d/99-fap-nvidia-vaapi.conf <<'FAPEOF'\n" +
+                  "NVD_BACKEND=direct\n" +
+                  "LIBVA_DRIVER_NAME=nvidia\n" +
+                  "MOZ_DISABLE_RDD_SANDBOX=1\n" +
+                  "FAPEOF";
+    await executarComandoGenerico(idComando, comando,
+        _t('sessoes.hardware.btn_nvidia_vaapi_env', '⚙️ Configurar Variáveis'),
+        function() {
+            aplicarEstadoToggle('nvidia-vaapi-env', 'nvidia-vaapi-env-remove', true, true);
+            _avisarLogout(_t('sessoes.hardware.nvidia_vaapi_env_titulo', 'Variáveis VA-API NVIDIA'));
+        });
+}
+
+async function executarNvidiaVaapiEnvRemove() {
+    var idComando = 'nvidia-vaapi-env-remove';
+    var comando = 'rm -f ~/.config/environment.d/99-fap-nvidia-vaapi.conf';
+    await executarComandoGenerico(idComando, comando,
+        _t('sessoes.hardware.btn_nvidia_vaapi_env_remove', '↩️ Reverter'),
+        function() {
+            desmarcarComoExecutado('nvidia-vaapi-env').then(function() {
+                aplicarEstadoToggle('nvidia-vaapi-env', 'nvidia-vaapi-env-remove', true, false);
+            }).catch(function() {
+                aplicarEstadoToggle('nvidia-vaapi-env', 'nvidia-vaapi-env-remove', true, false);
+            });
+            _avisarLogout(_t('sessoes.hardware.nvidia_vaapi_env_titulo', 'Variáveis VA-API NVIDIA'));
+        });
+}
+
+async function executarNvidiaVaapiCheck() {
+    var idComando = 'nvidia-vaapi-check';
+    var comando = 'env LIBVA_DRIVER_NAME=nvidia vainfo';
+    await executarComandoGenerico(idComando, comando,
+        _t('sessoes.hardware.btn_nvidia_vaapi_check', '🔍 Verificar Aceleração'));
 }
 
 // ------------------------------------------------------------
-// Restauração de estado ao carregar a sessão
+// Painel de pré-requisitos (ffmpeg)
+// ------------------------------------------------------------
+
+function _atualizarPainelFfmpeg() {
+    var el = document.getElementById('hw-painel-ffmpeg');
+    if (!el) return;
+
+    var temFfmpeg = false;
+    try {
+        temFfmpeg = SystemState.pacoteInstalado('ffmpeg');
+    } catch (e) { /* ignore */ }
+
+    if (temFfmpeg) {
+        el.className = 'aviso-sucesso';
+        el.innerHTML = _t('sessoes.hardware.prereq_ffmpeg_ok',
+            '✅ O ffmpeg completo (RPM Fusion) já está instalado. A aceleração de vídeo funcionará corretamente.');
+    } else {
+        el.className = 'aviso-caixa';
+        el.innerHTML = _t('sessoes.hardware.prereq_ffmpeg_falta',
+            '⚠️ A sessão <strong>Codecs</strong> ainda não foi executada (ou o <code>ffmpeg</code> completo não está instalado). Sem ele, a aceleração de vídeo pode não funcionar em todos os apps. Abra a sessão <strong>Codecs e Compatibilidade</strong> e clique em "Instalar Codecs".');
+
+        var link = document.createElement('a');
+        link.href = '?session=codecs';
+        link.style.display = 'inline-block';
+        link.style.marginTop = '0.5rem';
+        link.textContent = '→ ' + _t('sessoes.hardware.prereq_ffmpeg_link', 'Ir para sessão Codecs');
+        link.style.color = 'var(--accent-soft)';
+        link.style.fontWeight = 'bold';
+        el.appendChild(link);
+    }
+}
+
+// ------------------------------------------------------------
+// Restauração de estado
 // ------------------------------------------------------------
 
 async function restaurarEstadoSessao() {
-    // Aplica o estado unificado (instalado-sem-abrir) em todos os
-    // botões que instalam pacotes dnf.
-    // vulkan-amd: pacote sem GUI (bibliotecas) — null no idAbrir.
-    aplicarEstadoInstalavel('vulkan-amd',      null);
-    aplicarEstadoInstalavel('vaapi-amd',       null);
-    aplicarEstadoInstalavel('vaapi-swap',      null);
+    // AMD
+    aplicarEstadoInstalavel('vulkan-amd', null);
+    aplicarEstadoInstalavel('vaapi-amd', null);
     aplicarEstadoInstalavel('corectrl-install', 'abrir-corectrl');
-    aplicarEstadoInstalavel('lact-install',    'abrir-lact');
-    aplicarEstadoInstalavel('nvidia-driver-install', 'abrir-nvidia-settings');
-    aplicarEstadoInstalavel('intel-media-install', null);
+    aplicarEstadoInstalavel('lact-install', 'abrir-lact');
 
-    // Overclock — par install/revert. Mantém `aplicarEstadoToggle`
-    // porque não é uma instalação de pacote, é um ajuste de kernel
-    // (não faz sentido ter lixeira).
-    //
-    // O 4º argumento é uma FUNÇÃO que consulta o estado real do
-    // kernel param `amdgpu.ppfeaturemask`. Se já estiver ativo
-    // (pré-existente), o botão "Ativar Overclock" vira cinza com
-    // aviso; o "Desativar" fica oculto.
+    // Intel
+    aplicarEstadoInstalavel('intel-media-install', null);
+    aplicarEstadoInstalavel('libva-intel-install', null);
+    aplicarEstadoInstalavel('intel-vaapi-utils', null);
+
+    // NVIDIA
+    aplicarEstadoInstalavel('nvidia-driver-install', 'abrir-nvidia-settings');
+    aplicarEstadoInstalavel('nvidia-vaapi-install', null);
+    aplicarEstadoInstalavel('nvidia-vaapi-utils', null);
+
+    // Toggles
     aplicarEstadoToggle(
         'amdgpu-overclock',
         'amdgpu-overclock-remove',
@@ -1043,8 +1307,6 @@ async function restaurarEstadoSessao() {
         }
     );
 
-    // NVIDIA modeset — mesmo raciocínio. O param
-    // `nvidia-drm.modeset` pode estar ativo por fora.
     aplicarEstadoToggle(
         'nvidia-modeset-on',
         'nvidia-modeset-off',
@@ -1054,18 +1316,29 @@ async function restaurarEstadoSessao() {
         }
     );
 
-    // As 3 seções (AMD, Intel, NVIDIA) verificam o hardware antes
-    // de habilitar os botões. Se o vendor não está presente, a
-    // seção mostra aviso e desabilita os botões — mesmo
-    // comportamento da NVIDIA (que já tinha antes).
+    aplicarEstadoToggle(
+        'nvidia-vaapi-env',
+        'nvidia-vaapi-env-remove',
+        true,
+        function() {
+            var arquivos = SystemState.bruto().config_files_present || [];
+            for (var i = 0; i < arquivos.length; i++) {
+                if (arquivos[i].indexOf('99-fap-nvidia-vaapi.conf') !== -1) {
+                    return true;
+                }
+            }
+            return false;
+        }
+    );
+
+    // Detecção por vendor
     await _atualizarSecaoAmd();
     await _atualizarSecaoIntel();
     await _atualizarSecaoNvidia();
-}
 
-// ------------------------------------------------------------
-// Inicialização
-// ------------------------------------------------------------
+    // Painel ffmpeg
+    _atualizarPainelFfmpeg();
+}
 
 (function() {
     document.querySelectorAll('.btn-executar').forEach(function(btn) {
