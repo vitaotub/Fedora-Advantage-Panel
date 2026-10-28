@@ -186,7 +186,7 @@
             "vaapi_titulo": "VA-API (Aceleración de Vídeo)",
             "vaapi_desc": "Instala los controladores de aceleración de vídeo por hardware (VA-API) del RPM Fusion, que reemplazan los controladores predeterminados de Fedora para GPUs AMD. Necesario para reproducción fluida de vídeo en HD/4K y para encoding vía GPU. RPM Fusion (Sesión 1) es requisito previo.",
             "vaapi_info": "ℹ️ <strong>Qué se instala:</strong> <code>mesa-va-drivers-freeworld</code> (VA-API), <code>ffmpeg-libs</code>, <code>libva</code> y <code>libva-utils</code>. Fedora mantiene el soporte de aceleración bloqueado por licenciamiento en el Mesa predeterminado. <strong>Nota:</strong> VDPAU se eliminó a partir de Fedora 44; ya no existe el paquete <code>mesa-vdpau-drivers-freeworld</code>.",
-            "btn_vaapi": "🚀 Instalar VA-API y VDPAU",
+            "btn_vaapi": "🚀 Instalar VA-API",
             "vaapi_check_amd_titulo": "Verificar Aceleración de Vídeo (AMD)",
             "vaapi_check_amd_desc": "Ejecuta <code>vainfo</code> y muestra, en el registro de abajo, los perfiles de aceleración soportados por tu GPU. Si la salida contiene <code>VAProfileH264</code>, <code>VAProfileVP9</code> o <code>VAProfileAV1</code> con la etiqueta <code>VAEntrypointVLD</code>, la aceleración está activa. No se hace ningún cambio en el sistema.",
             "btn_vaapi_check_amd": "🔍 Verificar Aceleración",
