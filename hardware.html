@@ -577,15 +577,23 @@ registrarAppRemovivel('vulkan-amd', {
 
 registrarAppRemovivel('vaapi-amd', {
     tipo: 'dnf',
-    pacotes: ['ffmpeg-libs', 'libva', 'libva-utils', 'mesa-va-drivers-freeworld'],
+    pacotes: ['mesa-va-drivers-freeworld'],
     nome: 'VA-API AMD',
     ignorarPreExistente: true,
     permitirRemocaoPreExistente: false,
+    // NÃO incluir `ffmpeg-libs`, `libva` ou `libva-utils` na remoção.
+    // Eles são dependências do Plasma Desktop (via `kpipewire`) e de
+    // outros pacotes do sistema. Removê-los quebra o `plasma-desktop`.
+    // O `mesa-va-drivers-freeworld` é o único pacote que o FAP
+    // instala explicitamente. O `dnf` remove as dependências órfãs
+    // automaticamente se forem seguras; se ainda forem necessárias,
+    // permanecem no sistema e nada quebra.
     motivoBloqueio: 'A aceleração VA-API já estava ativa antes do FAP. ' +
                     'Removê-la aumenta muito o uso de CPU em reprodução ' +
                     'de vídeo HD/4K. Para reverter manualmente:\n\n' +
-                    '  sudo dnf remove mesa-va-drivers-freeworld \\\n' +
-                    '    ffmpeg-libs libva'
+                    '  sudo dnf remove mesa-va-drivers-freeworld\n\n' +
+                    'NÃO remova `ffmpeg-libs` nem `libva` — são dependências ' +
+                    'do Plasma Desktop (kpipewire) e de outros pacotes do sistema.'
 });
 
 registrarAppRemovivel('corectrl-install', {
@@ -674,9 +682,13 @@ async function executarVulkan() {
 
 async function executarVaapi() {
     var idComando = 'vaapi-amd';
-    var comando =
-        'sudo dnf install -y ffmpeg-libs libva libva-utils ' +
-        'mesa-va-drivers-freeworld';
+    // A documentação do RPM Fusion recomenda apenas o pacote
+    // `mesa-va-drivers-freeworld` — as dependências (`libva`,
+    // `ffmpeg-libs`) são puxadas automaticamente pelo `dnf` quando
+    // necessário. Listá-las explicitamente é redundante e foi o que
+    // causou o bug de remoção (tentativa de remover `ffmpeg-libs`,
+    // que é dependência do `kpipewire`/`plasma-desktop`).
+    var comando = 'sudo dnf install -y mesa-va-drivers-freeworld';
     await executarComandoGenerico(idComando, comando,
         _t('sessoes.hardware.btn_vaapi', '🚀 Instalar VA-API'),
         function() { aplicarEstadoInstalavel('vaapi-amd', null); });
