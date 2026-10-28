@@ -514,6 +514,85 @@ function _parseChaveValor(texto) {
 }
 
 // ============================================================
+// PARSER DO VAINFO (endpoint /vaapi-check)
+// ============================================================
+//
+// `vainfo` imprime, para cada combinação suportada:
+//
+//   VAProfileH264Main               : VAEntrypointVLD
+//   VAProfileH264Main               : VAEntrypointEncSlice
+//   VAProfileVP9Profile0            : VAEntrypointVLD
+//
+// O parser agrupa entrypoints por perfil e calcula dois booleanos:
+//   • has_decoding — algum perfil tem VAEntrypointVLD
+//   • has_encoding — algum perfil tem VAEntrypointEncSlice/EncSliceLP
+//
+// Esses dois são suficientes para o frontend mostrar um status
+// verde/amarelo/vermelho sem interpretar o resto.
+function _parseVainfo(stdout) {
+    if (!stdout) {
+        return { ok: false, error: 'vainfo não retornou saída', profiles: [] };
+    }
+
+    // Detecção de "não instalado" (mensagem localizada do bash)
+    if (/command not found|comando não encontrado|No such file/i.test(stdout)) {
+        return {
+            ok: false,
+            error: 'vainfo não encontrado. Instale o pacote libva-utils.',
+            profiles: []
+        };
+    }
+
+    var vaapi_version = null;
+    var driver_version = null;
+    var m;
+
+    m = stdout.match(/VA-API version:\s*([\d.]+)/i);
+    if (m) vaapi_version = m[1];
+
+    m = stdout.match(/Driver version:\s*(.+)$/m);
+    if (m) driver_version = m[1].trim();
+
+    var profiles = [];
+    var profileMap = {};
+    var linhas = stdout.split('\n');
+
+    for (var i = 0; i < linhas.length; i++) {
+        var mm = linhas[i].match(/^\s+(VAProfile\w+)\s*:\s*(VAEntrypoint\w+)/);
+        if (!mm) continue;
+        var profileName = mm[1];
+        var entrypoint = mm[2];
+        if (!profileMap[profileName]) {
+            profileMap[profileName] = { profile: profileName, entrypoints: [] };
+            profiles.push(profileMap[profileName]);
+        }
+        if (profileMap[profileName].entrypoints.indexOf(entrypoint) === -1) {
+            profileMap[profileName].entrypoints.push(entrypoint);
+        }
+    }
+
+    var has_decoding = profiles.some(function(p) {
+        return p.entrypoints.indexOf('VAEntrypointVLD') !== -1;
+    });
+    var has_encoding = profiles.some(function(p) {
+        return p.entrypoints.indexOf('VAEntrypointEncSlice') !== -1 ||
+        p.entrypoints.indexOf('VAEntrypointEncSliceLP') !== -1;
+    });
+
+    return {
+        ok: profiles.length > 0,
+        vaapi_version: vaapi_version,
+        driver_version: driver_version,
+        profiles: profiles,
+        has_decoding: has_decoding,
+        has_encoding: has_encoding,
+        error: profiles.length === 0
+        ? 'Nenhum perfil VA-API encontrado. Verifique se o driver está instalado e se a GPU é compatível.'
+        : null
+    };
+}
+
+// ============================================================
 // CHANGELOG DINÂMICO (lê CHANGELOG.md)
 // ============================================================
 //
@@ -2561,6 +2640,49 @@ const server = http.createServer((req, res) => {
             console.error('[hardware-scan] Erro:', e.message);
             res.writeHead(200, { 'Content-Type': 'application/json' });
             res.end(JSON.stringify({ devices: [], repos: {}, secure_boot: 'unknown', error: e.message }));
+        });
+        return;
+    }
+
+    // ----------------------------------------------------------
+    // /vaapi-check — verifica aceleração de vídeo (VA-API)
+    // ----------------------------------------------------------
+    //
+    // Roda `vainfo` e devolve JSON estruturado com os perfis
+    // suportados. Usado pelos botões "Verificar Aceleração" da
+    // sessão Hardware (AMD, Intel, NVIDIA). Read-only, sem auth.
+    //
+    // Para NVIDIA, seta `LIBVA_DRIVER_NAME=nvidia` — o driver
+    // proprietário expõe VDPAU nativamente, e o `nvidia-vaapi-driver`
+    // é um wrapper que o libva encontra por esse nome. AMD/Intel
+    // usam o auto-detect normal do libva.
+    if (req.method === 'GET' && url === '/vaapi-check') {
+        var vendorCheck = (query.get('vendor') || '').toLowerCase();
+        if (['amd', 'intel', 'nvidia'].indexOf(vendorCheck) === -1) {
+            res.writeHead(400, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ ok: false, error: 'vendor inválido (use amd, intel ou nvidia)' }));
+            return;
+        }
+
+        var cmdCheck = vendorCheck === 'nvidia'
+        ? 'LIBVA_DRIVER_NAME=nvidia vainfo 2>&1'
+        : 'vainfo 2>&1';
+
+        _execReadOnly(cmdCheck, 15000).then(function(stdout) {
+            var parsed = _parseVainfo(stdout);
+            parsed.vendor = vendorCheck;
+            res.writeHead(200, {
+                'Content-Type': 'application/json',
+                'Cache-Control': 'no-cache, no-store, must-revalidate'
+            });
+            res.end(JSON.stringify(parsed));
+        }).catch(function(e) {
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({
+                ok: false,
+                vendor: vendorCheck,
+                error: e.message
+            }));
         });
         return;
     }

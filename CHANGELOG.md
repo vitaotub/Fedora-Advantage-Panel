@@ -34,12 +34,26 @@ completo a aceleração de vídeo (VA-API) em AMD, Intel e NVIDIA.
 - **Aviso de reinicialização** — toast automático após instalação/remoção
   de drivers NVIDIA, ativação de modeset, configuração de env vars VA-API
   e ajustes de kernel AMD (overclock).
+- **Verificação de aceleração com painel visual** — os botões
+  "Verificar Aceleração" (AMD, Intel, NVIDIA) agora renderizam o
+  resultado num painel dentro da sessão (status ATIVA/parcial/NÃO ativa,
+  driver, versão VA-API e tabela de perfis com badges Decode/Encode),
+  em vez de despejar o output cru do `vainfo` no log. Endpoint novo
+  `GET /vaapi-check?vendor=amd|intel|nvidia` retorna JSON estruturado.
+  O log continua registrando início e resumo de cada verificação.
 
 ### 🐛 Corrigido
 
 - **Intel** — `intel-media-driver` (driver moderno) só funciona em
   Broadwell / 8ª gen Core+ / Arc. O botão agora coexiste com o driver
   legado, ambos visíveis, com descrição clara de qual usar.
+- **NVIDIA** — sem GPU NVIDIA, os 4 botões de aceleração de vídeo
+  (`nvidia-vaapi-install`, `nvidia-vaapi-utils`, `nvidia-vaapi-env`,
+  `nvidia-vaapi-check`) continuavam clicáveis. `_aplicarEstadoNvidia`
+  desabilitava apenas os botões antigos (driver, modeset), botão-a-botão.
+  Agora usa o mesmo padrão de AMD/Intel (`querySelectorAll` em toda a
+  seção), com skip para itens já instalados e para o botão de reverter
+  driver órfão.
 - **AMD** — `mesa-vdpau-drivers-freeworld` foi removido do Fedora 44
   em diante. O comando de instalação do VA-API não inclui mais esse
   pacote, que causava falha total da transação (`dnf` abortava com

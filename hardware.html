@@ -77,7 +77,7 @@ data-i18n="sessoes.hardware.btn_vaapi">
 <div class="bloco-comando">
 <div class="comando-info">
 <h3 data-i18n="sessoes.hardware.vaapi_check_amd_titulo">Verificar Aceleração de Vídeo (AMD)</h3>
-<p data-i18n="sessoes.hardware.vaapi_check_amd_desc">Executa <code>vainfo</code> e mostra, no log abaixo, os perfis de aceleração suportados pela GPU. Se a saída contiver <code>VAProfileH264</code>, <code>VAProfileVP9</code> ou <code>VAProfileAV1</code> com a tag <code>VAEntrypointVLD</code>, a aceleração está ativa. Nenhuma alteração é feita no sistema.</p>
+<p data-i18n="sessoes.hardware.vaapi_check_amd_desc">Executa <code>vainfo</code> e mostra, na sessão abaixo do botão, os perfis de aceleração suportados pela GPU. Se a saída contiver <code>VAProfileH264</code>, <code>VAProfileVP9</code> ou <code>VAProfileAV1</code> com a tag <code>VAEntrypointVLD</code>, a aceleração está ativa. Nenhuma alteração é feita no sistema.</p>
 <div class="grupo-botoes">
 <button class="btn-executar"
 onclick="executarVaapiCheckAmd()"
@@ -88,6 +88,7 @@ data-i18n="sessoes.hardware.btn_vaapi_check_amd">
 🔍 Verificar Aceleração
 </button>
 </div>
+<div id="vaapi-result-amd" class="bloco-info" style="display: none; margin-top: 1rem;"></div>
 </div>
 <div class="progress-container" id="progress-vaapi-check-amd">
 <div class="progress-bar"><div class="progress-fill" id="progress-fill-vaapi-check-amd"></div></div>
@@ -390,7 +391,7 @@ data-i18n="sessoes.hardware.btn_nvidia_vaapi_env_remove">
 <div class="comando-info">
 <h3 data-i18n="sessoes.hardware.nvidia_vaapi_check_titulo">Verificar Aceleração de Vídeo (NVIDIA)</h3>
 <p data-i18n-html="sessoes.hardware.nvidia_vaapi_check_desc">
-Executa <code>vainfo</code> com as variáveis corretas (<code>LIBVA_DRIVER_NAME=nvidia</code>) e mostra, no log abaixo, os perfis de aceleração suportados. Se a saída contiver <code>VAProfileH264</code>, <code>VAProfileVP9</code> ou <code>VAProfileAV1</code> com a tag <code>VAEntrypointVLD</code>, a aceleração está ativa. Para verificar VDPAU, rode <code>vdpauinfo</code> no terminal.
+Executa <code>vainfo</code> com as variáveis corretas (<code>LIBVA_DRIVER_NAME=nvidia</code>) e mostra, na sessão abaixo do botão, os perfis de aceleração suportados. Se a saída contiver <code>VAProfileH264</code>, <code>VAProfileVP9</code> ou <code>VAProfileAV1</code> com a tag <code>VAEntrypointVLD</code>, a aceleração está ativa. Para verificar VDPAU, rode <code>vdpauinfo</code> no terminal.
 </p>
 <div class="grupo-botoes">
 <button class="btn-executar"
@@ -402,6 +403,7 @@ data-i18n="sessoes.hardware.btn_nvidia_vaapi_check">
 🔍 Verificar Aceleração
 </button>
 </div>
+<div id="vaapi-result-nvidia" class="bloco-info" style="display: none; margin-top: 1rem;"></div>
 </div>
 <div class="progress-container" id="progress-nvidia-vaapi-check">
 <div class="progress-bar"><div class="progress-fill" id="progress-fill-nvidia-vaapi-check"></div></div>
@@ -499,7 +501,7 @@ data-i18n="sessoes.hardware.btn_intel_utils">
 <div class="comando-info">
 <h3 data-i18n="sessoes.hardware.vaapi_check_intel_titulo">Verificar Aceleração de Vídeo (Intel)</h3>
 <p data-i18n-html="sessoes.hardware.vaapi_check_intel_desc">
-Executa <code>vainfo</code> e mostra, no log abaixo, os perfis de aceleração suportados pela sua iGPU. Se a saída contiver <code>VAProfileH264</code>, <code>VAProfileVP9</code> ou <code>VAProfileAV1</code> com a tag <code>VAEntrypointVLD</code>, a aceleração está ativa. Nenhuma alteração é feita no sistema.
+Executa <code>vainfo</code> e mostra, na sessão abaixo do botão, os perfis de aceleração suportados pela sua iGPU. Se a saída contiver <code>VAProfileH264</code>, <code>VAProfileVP9</code> ou <code>VAProfileAV1</code> com a tag <code>VAEntrypointVLD</code>, a aceleração está ativa. Nenhuma alteração é feita no sistema.
 </p>
 <div class="grupo-botoes">
 <button class="btn-executar"
@@ -511,6 +513,7 @@ data-i18n="sessoes.hardware.btn_vaapi_check_intel">
 🔍 Verificar Aceleração
 </button>
 </div>
+<div id="vaapi-result-intel" class="bloco-info" style="display: none; margin-top: 1rem;"></div>
 </div>
 <div class="progress-container" id="progress-vaapi-check-intel">
 <div class="progress-bar"><div class="progress-fill" id="progress-fill-vaapi-check-intel"></div></div>
@@ -694,10 +697,161 @@ async function executarVaapi() {
         function() { aplicarEstadoInstalavel('vaapi-amd', null); });
 }
 
+// ============================================================
+// VERIFICAÇÃO DE ACELERAÇÃO VA-API (AMD, Intel, NVIDIA)
+// ============================================================
+//
+// O endpoint /vaapi-check roda `vainfo` no servidor e devolve
+// JSON estruturado (perfis, driver, versão VA-API). Aqui só
+// renderizamos o resultado num painel e escrevemos 2 linhas no
+// log (início + resumo), mantendo o padrão dos outros painéis
+// da sessão (ffmpeg, detecção NVIDIA).
+var _MAPA_NOME_KEY_VAAPI_CHECK = {
+    'amd':    'btn_vaapi_check_amd',
+    'intel':  'btn_vaapi_check_intel',
+    'nvidia': 'btn_nvidia_vaapi_check'
+};
+
+async function _executarVaapiCheck(vendor, idComando) {
+    var container = document.getElementById('vaapi-result-' + vendor);
+    var logBox = _getLogBox(idComando);
+    var nomeAcao = _t('sessoes.hardware.' + _MAPA_NOME_KEY_VAAPI_CHECK[vendor],
+                      '🔍 Verificar Aceleração');
+
+    if (logBox) {
+        logBox.style.display = 'block';
+        _separadorLog(logBox, nomeAcao);
+        var linha = document.createElement('div');
+        linha.className = 'log-line info';
+        linha.textContent = '🔍 ' + nomeAcao + ' (' + vendor.toUpperCase() + ')...';
+        logBox.appendChild(linha);
+        logBox.scrollTop = logBox.scrollHeight;
+    }
+
+    if (container) {
+        container.style.display = 'block';
+        container.className = 'bloco-info';
+        container.innerHTML = '<span style="color: var(--text-muted);">⏳ ' +
+            _t('sessoes.hardware.vaapi_result_verificando',
+               'Verificando aceleração de vídeo...') +
+            '</span>';
+    }
+
+    try {
+        var r = await fetch(API_URL + '/vaapi-check?vendor=' + vendor, { cache: 'no-store' });
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        var data = await r.json();
+
+        _renderizarResultadoVaapi(container, data);
+
+        if (logBox) {
+            var resumo = document.createElement('div');
+            if (data && data.ok && data.has_decoding) {
+                resumo.className = 'log-line success';
+                resumo.textContent = '✅ ' + data.profiles.length +
+                    ' perfil(is) — decodificação por hardware ativa.';
+            } else if (data && data.ok) {
+                resumo.className = 'log-line warning';
+                resumo.textContent = '⚠️ ' + data.profiles.length +
+                    ' perfil(is), mas sem decodificação por hardware.';
+            } else {
+                resumo.className = 'log-line error';
+                resumo.textContent = '❌ ' + ((data && data.error) || 'Verificação falhou.');
+            }
+            logBox.appendChild(resumo);
+            logBox.scrollTop = logBox.scrollHeight;
+        }
+    } catch (e) {
+        if (container) {
+            container.className = 'aviso-caixa';
+            container.style.borderColor = '#ef4444';
+            container.innerHTML = '❌ ' +
+                _tVars('comum.erro_conexao', 'Erro de conexão: {msg}', { msg: e.message });
+        }
+        if (logBox) {
+            var err = document.createElement('div');
+            err.className = 'log-line error';
+            err.textContent = '❌ ' + e.message;
+            logBox.appendChild(err);
+            logBox.scrollTop = logBox.scrollHeight;
+        }
+    }
+}
+
+function _renderizarResultadoVaapi(container, data) {
+    if (!container) return;
+
+    if (!data || !data.ok) {
+        container.className = 'aviso-caixa';
+        container.style.borderColor = '#ef4444';
+        container.innerHTML = '❌ <strong>' +
+            _t('sessoes.hardware.vaapi_result_falhou',
+               'Aceleração de vídeo NÃO está ativa') +
+            '</strong><br>' +
+            _escapeHTML((data && data.error) || 'Verificação falhou.');
+        return;
+    }
+
+    if (data.has_decoding) {
+        container.className = 'aviso-sucesso';
+    } else {
+        container.className = 'aviso-caixa';
+    }
+
+    var statusTxt = data.has_decoding
+        ? _t('sessoes.hardware.vaapi_result_ok',
+             '✅ Aceleração de vídeo ATIVA (decodificação por hardware)')
+        : _t('sessoes.hardware.vaapi_result_parcial',
+             '⚠️ Driver carregado, mas SEM decodificação por hardware');
+
+    var html = '<strong>' + statusTxt + '</strong>';
+
+    if (data.driver_version || data.vaapi_version) {
+        html += '<div style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-muted);">';
+        if (data.driver_version) {
+            html += _t('sessoes.hardware.vaapi_result_driver', 'Driver') +
+                ': <code>' + _escapeHTML(data.driver_version) + '</code>';
+        }
+        if (data.vaapi_version) {
+            html += ' · ' + _t('sessoes.hardware.vaapi_result_vaapi', 'VA-API') +
+                ': ' + _escapeHTML(data.vaapi_version);
+        }
+        html += '</div>';
+    }
+
+    if (data.profiles.length > 0) {
+        html += '<ul class="lista-info" style="margin-top: 0.75rem;">';
+        data.profiles.forEach(function(p) {
+            var badges = p.entrypoints.map(function(ep) {
+                var isDec = (ep === 'VAEntrypointVLD');
+                var isEnc = (ep === 'VAEntrypointEncSlice' || ep === 'VAEntrypointEncSliceLP');
+                var color, bg, label;
+                if (isDec) {
+                    color = '#34d399'; bg = 'rgba(52, 211, 153, 0.15)';
+                    label = _t('sessoes.hardware.vaapi_result_decode', '🎬 Decode');
+                } else if (isEnc) {
+                    color = '#60a5fa'; bg = 'rgba(96, 165, 250, 0.15)';
+                    label = _t('sessoes.hardware.vaapi_result_encode', '📹 Encode');
+                } else {
+                    color = '#a3a3a3'; bg = 'rgba(163, 163, 163, 0.15)';
+                    label = ep.replace(/^VAEntrypoint/, '');
+                }
+                return '<span style="display: inline-block; padding: 0.1rem 0.4rem; border-radius: 4px; ' +
+                    'background: ' + bg + '; color: ' + color + '; font-size: 0.72rem; ' +
+                    'margin-right: 0.25rem; font-weight: 600;">' + label + '</span>';
+            }).join('');
+            html += '<li><span class="label"><code style="font-size: 0.82rem;">' +
+                _escapeHTML(p.profile) + '</code></span>' +
+                '<span class="valor">' + badges + '</span></li>';
+        });
+        html += '</ul>';
+    }
+
+    container.innerHTML = html;
+}
+
 async function executarVaapiCheckAmd() {
-    var idComando = 'vaapi-check-amd';
-    await executarComandoGenerico(idComando, 'vainfo',
-        _t('sessoes.hardware.btn_vaapi_check_amd', '🔍 Verificar Aceleração'));
+    await _executarVaapiCheck('amd', 'vaapi-check-amd');
 }
 
 // ------------------------------------------------------------
@@ -783,9 +937,7 @@ async function executarIntelVaapiUtils() {
 }
 
 async function executarVaapiCheckIntel() {
-    var idComando = 'vaapi-check-intel';
-    await executarComandoGenerico(idComando, 'vainfo',
-        _t('sessoes.hardware.btn_vaapi_check_intel', '🔍 Verificar Aceleração'));
+    await _executarVaapiCheck('intel', 'vaapi-check-intel');
 }
 
 // ------------------------------------------------------------
@@ -936,41 +1088,60 @@ function _mostrarAvisoX11Nvidia(info) {
 function _aplicarEstadoNvidia(info) {
     aplicarEstadoToggle('nvidia-driver-install', 'nvidia-driver-remove');
 
-    var installBtn = document.getElementById('btn-nvidia-driver-install');
+    var sec = document.getElementById('sec-nvidia');
+    if (!sec) return;
+
     var installFeito = isExecutado('nvidia-driver-install');
 
-    if (installBtn && !info.detected && !installFeito) {
-        installBtn.disabled = true;
-        installBtn.style.cursor = 'not-allowed';
-        installBtn.style.opacity = '0.5';
-        installBtn.title = _t('sessoes.hardware.nvidia_sem_gpu_curto',
-                              'Nenhuma GPU NVIDIA detectada neste sistema');
-    } else if (installBtn) {
-        installBtn.title = '';
-    }
-
+    // Botão "Abrir nvidia-settings": só visível se GPU detectada E driver instalado.
     var openBtn = document.getElementById('btn-abrir-nvidia-settings');
     if (openBtn) {
         openBtn.style.display = (installFeito && info.detected) ? '' : 'none';
     }
 
-    var modesetOn = document.getElementById('btn-nvidia-modeset-on');
-    var modesetOff = document.getElementById('btn-nvidia-modeset-off');
+    // Sem GPU NVIDIA: desabilita TODOS os botões da seção, EXCETO:
+    //   - os que já estão em estado "instalado-*" (usuário pode reverter
+    //     o que já foi instalado antes de tirar a GPU)
+    //   - o botão de reverter o driver, se ele está órfão no sistema
+    //     (evita deixar o driver instalado sem forma de removê-lo)
+    //
+    // Antes, esta função desabilitava botão-a-botão e esquecia os 4
+    // botões de VA-API NVIDIA (install, utils, env, check), deixando-os
+    // clicáveis sem GPU. Agora usa o mesmo padrão de AMD/Intel:
+    // `querySelectorAll` cobre a seção inteira.
+    if (!info.detected) {
+        var botoes = sec.querySelectorAll('.btn-executar, .btn-reverter');
+        var tooltip = _t('sessoes.hardware.nvidia_sem_gpu_curto',
+                         'Nenhuma GPU NVIDIA detectada neste sistema');
 
-    [modesetOn, modesetOff].forEach(function(btn) {
-        if (!btn) return;
-        if (!info.detected) {
-            btn.disabled = true;
-            btn.style.cursor = 'not-allowed';
-            btn.style.opacity = '0.5';
-            btn.title = _t('sessoes.hardware.nvidia_sem_gpu_curto',
-                          'Nenhuma GPU NVIDIA detectada neste sistema');
-        } else {
-            btn.disabled = false;
-            btn.style.cursor = 'pointer';
-            btn.style.opacity = '1';
-            btn.title = '';
-        }
+        botoes.forEach(function(b) {
+            if (b.getAttribute('data-estado') === 'instalado-abrir' ||
+                b.getAttribute('data-estado') === 'instalado-sem-abrir') {
+                return;  // já instalado — usuário pode reverter
+            }
+            if (b.id === 'btn-nvidia-driver-remove' && installFeito) {
+                return;  // driver órfão — precisa poder remover
+            }
+            b.setAttribute('data-hw-disabled', '1');
+            b.disabled = true;
+            b.style.cursor = 'not-allowed';
+            b.style.opacity = '0.5';
+            b.title = tooltip;
+        });
+        return;
+    }
+
+    // GPU NVIDIA presente: reabilita os botões que foram desabilitados
+    // pela ausência de GPU. NÃO toca no `nvidia-driver-install` (ele
+    // é gerenciado por `aplicarEstadoToggle`, que respeita
+    // `permitirRemocaoPreExistente`, `ignorarPreExistente`, etc.).
+    var botoesHabilitar = sec.querySelectorAll('[data-hw-disabled="1"]');
+    botoesHabilitar.forEach(function(b) {
+        b.removeAttribute('data-hw-disabled');
+        b.disabled = false;
+        b.style.cursor = 'pointer';
+        b.style.opacity = '1';
+        b.title = '';
     });
 }
 
@@ -1249,10 +1420,7 @@ async function executarNvidiaVaapiEnvRemove() {
 }
 
 async function executarNvidiaVaapiCheck() {
-    var idComando = 'nvidia-vaapi-check';
-    var comando = 'env LIBVA_DRIVER_NAME=nvidia vainfo';
-    await executarComandoGenerico(idComando, comando,
-        _t('sessoes.hardware.btn_nvidia_vaapi_check', '🔍 Verificar Aceleração'));
+    await _executarVaapiCheck('nvidia', 'nvidia-vaapi-check');
 }
 
 // ------------------------------------------------------------
