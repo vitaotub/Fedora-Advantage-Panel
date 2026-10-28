@@ -52,10 +52,10 @@ data-i18n="sessoes.hardware.btn_vulkan">
 
 <div class="bloco-comando">
 <div class="comando-info">
-<h3 data-i18n="sessoes.hardware.vaapi_titulo">VA-API e VDPAU (Aceleração de Vídeo)</h3>
-<p data-i18n="sessoes.hardware.vaapi_desc">Instala os drivers de aceleração de vídeo por hardware (VA-API e VDPAU) do RPM Fusion, que substituem os drivers padrão do Fedora para GPUs AMD. Necessário para reprodução fluida de vídeo em HD/4K e para encoding via GPU. O RPM Fusion (Sessão 1) é pré-requisito.</p>
+<h3 data-i18n="sessoes.hardware.vaapi_titulo">VA-API (Aceleração de Vídeo)</h3>
+<p data-i18n="sessoes.hardware.vaapi_desc">Instala os drivers de aceleração de vídeo por hardware (VA-API) do RPM Fusion, que substituem os drivers padrão do Fedora para GPUs AMD. Necessário para reprodução fluida de vídeo em HD/4K e para encoding via GPU. O RPM Fusion (Sessão 1) é pré-requisito.</p>
 <div class="info-extra" data-i18n-html="sessoes.hardware.vaapi_info">
-ℹ️ <strong>O que é instalado:</strong> <code>mesa-va-drivers-freeworld</code> (VA-API), <code>mesa-vdpau-drivers-freeworld</code> (VDPAU), <code>ffmpeg-libs</code>, <code>libva</code> e <code>libva-utils</code>. O Fedora mantém o suporte de aceleração bloqueado por licenciamento no Mesa padrão.
+ℹ️ <strong>O que é instalado:</strong> <code>mesa-va-drivers-freeworld</code> (VA-API), <code>ffmpeg-libs</code>, <code>libva</code> e <code>libva-utils</code>. O Fedora mantém o suporte de aceleração bloqueado por licenciamento no Mesa padrão. <strong>Nota:</strong> o VDPAU foi removido do Fedora 44 em diante; não há mais pacote <code>mesa-vdpau-drivers-freeworld</code>.
 </div>
 <div class="grupo-botoes">
 <button class="btn-executar"
@@ -577,15 +577,15 @@ registrarAppRemovivel('vulkan-amd', {
 
 registrarAppRemovivel('vaapi-amd', {
     tipo: 'dnf',
-    pacotes: ['ffmpeg-libs', 'libva', 'libva-utils', 'mesa-va-drivers-freeworld', 'mesa-vdpau-drivers-freeworld'],
+    pacotes: ['ffmpeg-libs', 'libva', 'libva-utils', 'mesa-va-drivers-freeworld'],
     nome: 'VA-API AMD',
     ignorarPreExistente: true,
     permitirRemocaoPreExistente: false,
-    motivoBloqueio: 'A aceleração VA-API/VDPAU já estava ativa antes do FAP. ' +
+    motivoBloqueio: 'A aceleração VA-API já estava ativa antes do FAP. ' +
                     'Removê-la aumenta muito o uso de CPU em reprodução ' +
                     'de vídeo HD/4K. Para reverter manualmente:\n\n' +
                     '  sudo dnf remove mesa-va-drivers-freeworld \\\n' +
-                    '    mesa-vdpau-drivers-freeworld ffmpeg-libs libva'
+                    '    ffmpeg-libs libva'
 });
 
 registrarAppRemovivel('corectrl-install', {
@@ -676,9 +676,9 @@ async function executarVaapi() {
     var idComando = 'vaapi-amd';
     var comando =
         'sudo dnf install -y ffmpeg-libs libva libva-utils ' +
-        'mesa-va-drivers-freeworld mesa-vdpau-drivers-freeworld';
+        'mesa-va-drivers-freeworld';
     await executarComandoGenerico(idComando, comando,
-        _t('sessoes.hardware.btn_vaapi', '🚀 Instalar VA-API e VDPAU'),
+        _t('sessoes.hardware.btn_vaapi', '🚀 Instalar VA-API'),
         function() { aplicarEstadoInstalavel('vaapi-amd', null); });
 }
 
