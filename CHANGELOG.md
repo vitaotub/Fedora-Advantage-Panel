@@ -45,6 +45,13 @@ completo a aceleração de vídeo (VA-API) em AMD, Intel e NVIDIA.
   pacote, que causava falha total da transação (`dnf` abortava com
   "Nenhuma correspondência"). O `mesa-va-drivers-freeworld` continua
   sendo o pacote correto e necessário.
+- **AMD** — a lixeira do VA-API tentava remover `ffmpeg-libs` e
+  `libva` junto com `mesa-va-drivers-freeworld`. Esses pacotes são
+  dependências do Plasma Desktop (via `kpipewire`) e de outros
+  componentes do sistema; removê-los quebrava o `plasma-desktop`.
+  O FAP agora remove **apenas** `mesa-va-drivers-freeworld` — o `dnf`
+  cuida das dependências órfãs automaticamente, e pacotes ainda
+  necessários permanecem no sistema.
 - **NVIDIA** — aviso sobre drivers 470xx/390xx agora reflete a realidade
   do Fedora: Xorg não é mais oficialmente suportado (apenas Wayland).
   Instalar 470xx/390xx deixaria o sistema sem interface gráfica em Wayland.
