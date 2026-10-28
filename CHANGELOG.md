@@ -40,6 +40,11 @@ completo a aceleração de vídeo (VA-API) em AMD, Intel e NVIDIA.
 - **Intel** — `intel-media-driver` (driver moderno) só funciona em
   Broadwell / 8ª gen Core+ / Arc. O botão agora coexiste com o driver
   legado, ambos visíveis, com descrição clara de qual usar.
+- **AMD** — `mesa-vdpau-drivers-freeworld` foi removido do Fedora 44
+  em diante. O comando de instalação do VA-API não inclui mais esse
+  pacote, que causava falha total da transação (`dnf` abortava com
+  "Nenhuma correspondência"). O `mesa-va-drivers-freeworld` continua
+  sendo o pacote correto e necessário.
 - **NVIDIA** — aviso sobre drivers 470xx/390xx agora reflete a realidade
   do Fedora: Xorg não é mais oficialmente suportado (apenas Wayland).
   Instalar 470xx/390xx deixaria o sistema sem interface gráfica em Wayland.
