@@ -113,7 +113,7 @@ Las actualizaciones se aplican **sobre la instalación existente** — no es nec
 
 ### 🖥️ Sesión 3 — Hardware
 
-- **AMD** — Vulkan/Mesa/RADV, VA-API/VDPAU (drivers freeworld del RPM Fusion), verificación con `vainfo`, CoreCtrl, LACT, overclock.
+- **AMD** — Vulkan/Mesa/RADV, VA-API (driver freeworld del RPM Fusion), verificación con `vainfo`, CoreCtrl, LACT, overclock.
 - **Intel** — driver moderno (`intel-media-driver`) para Broadwell+ / Arc, driver legado (`libva-intel-driver`) para 7ª generación o anterior, utilidades de verificación, verificación con `vainfo`.
 - **NVIDIA** — driver propietario con detección automática de generación, revert a nouveau, modesetting (Wayland), traductor VA-API (`nvidia-vaapi-driver`), variables de entorno para aceleración en el navegador, verificación con `vainfo`/`vdpauinfo`.
 
