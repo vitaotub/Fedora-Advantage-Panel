@@ -150,28 +150,15 @@ function _t(chave, fallback) {
 // `tipo` abaixo.
 
 registrarAppRemovivel('codecs-essenciais', {
-    // A remoção dos codecs precisa ser mais cuidadosa que um
-    // `dnf remove` simples:
-    //
-    //   1. O `ffmpeg` foi instalado via SWAP de `ffmpeg-free` — se
-    //      apenas o removermos, o sistema fica sem nenhum dos dois.
-    //      O correto é fazer o swap de volta.
-    //   2. O grupo multimedia traz pacotes -freeworld do RPM Fusion
-    //      que NÃO são removíveis por lista simples: eles substituem
-    //      versões do Fedora, e removê-los sem restaurar os originais
-    //      deixaria o sistema quebrado (ex.: sem `gstreamer1-plugins-bad`).
-    //
-    // Por isso usamos `comandoRemocao` customizado em vez de lista de
-    // `pacotes`. Isso dá controle total sobre a ordem e as flags.
-    //
-    // NOTA: o campo `modo: 'comandoLivre'` foi removido — ele não
-    // é lido por `_executarRemocaoApp` (que só checa `comandoRemocao`).
     tipo: 'dnf',
+    // Assinatura: `ffmpeg` (versão completa) só existe após o swap
+    // ffmpeg-free → ffmpeg. É o indicador mais confiável de que o
+    // grupo multimedia do RPM Fusion foi instalado. Sem isso,
+    // appJaInstaladoNoSistema() retorna `false` sempre e o botão
+    // fica em "Instalar" mesmo com os codecs presentes.
+    pacotes: ['ffmpeg'],
     comandoRemocao:
-        // 1. Swap de volta: ffmpeg → ffmpeg-free
         'sudo dnf swap ffmpeg ffmpeg-free --allowerasing -y; ' +
-        // 2. Remove os pacotes freeworld do grupo multimedia
-        //    (que substituem equivalentes do Fedora).
         'sudo dnf remove -y ' +
         'gstreamer1-plugins-bad-freeworld ' +
         'gstreamer1-plugins-ugly ' +
@@ -186,21 +173,11 @@ registrarAppRemovivel('codecs-essenciais', {
         'gstreamer1-plugin-openh264 ' +
         'mozilla-openh264 ' +
         '--skip-broken; ' +
-        // 3. Reinstala os plugins base do Fedora que o grupo
-        //    multimedia havia substituído — mantém a reprodução
-        //    básica funcionando.
         'sudo dnf install -y ' +
         'gstreamer1-plugins-good ' +
         'gstreamer1-plugins-bad-free ' +
         'gstreamer1-plugins-base',
-nome: 'Codecs Multimídia Essenciais',
-    // MITIGAÇÃO (v1.1.2): pré-existente NÃO pode ser removido.
-    // A remoção de codecs é o `comandoRemocao` mais destrutivo do
-    // FAP — swap de `ffmpeg` → `ffmpeg-free`, remoção dos pacotes
-    // `-freeworld` do RPM Fusion e reinstalação de plugins base.
-    // Se o usuário já tinha os codecs antes do FAP, desfazer essa
-    // configuração pode deixar o sistema sem reprodução de áudio
-    // ou vídeo até o próximo `dnf install`.
+    nome: 'Codecs Multimídia Essenciais',
     permitirRemocaoPreExistente: false,
     motivoBloqueio: 'Os codecs já estavam instalados antes do FAP. ' +
                     'Desfazer a configuração pode deixar o sistema sem ' +
@@ -233,20 +210,15 @@ registrarAppRemovivel('fontes-ms-all', {
     tipo: 'dnf',
     pacotes: ['cabextract', 'fontconfig'],
     nome: 'Fontes Microsoft',
-    // `fontconfig` vem em qualquer Fedora com GUI, então a detecção
-    // ingênua marca o botão como pré-existente mesmo numa instalação
-    // limpa. Esta flag força o botão a começar em "Instalar" — só
-    // passa para "Concluído" se o FAP instalar as fontes.
-    ignorarPreExistente: true,
+    // NÃO usar ignorarPreExistente aqui: `fontconfig` é pacote base
+    // do Fedora e sempre existe. A detecção correta é via
+    // `permitirRemocaoPreExistente: false` + motivoBloqueio — que
+    // mostra "Já estava ativo" e evita que a lixeira tente remover
+    // `fontconfig` (que arrastaria dezenas de dependências).
     confirmMsg: '⚠️ Remover as fontes Microsoft?\n\n' +
                 'Documentos em LibreOffice/OnlyOffice podem quebrar a formatação ' +
                 'até que as fontes sejam reinstaladas.\n\n' +
                 'Continuar?',
-    // MITIGAÇÃO (v1.1.2): pré-existente NÃO pode ser removido.
-    // O registro inclui `fontconfig`, que é PACOTE BASE do Fedora.
-    // `dnf remove fontconfig` arrasta dezenas de dependências
-    // (aplicativos GUI inteiros deixam de abrir). Se o usuário já
-    // tinha as fontes, remover via FAP é catastrófico.
     permitirRemocaoPreExistente: false,
     motivoBloqueio: 'As fontes Microsoft já estavam instaladas antes do FAP. ' +
                     'A remoção via FAP é BLOQUEADA porque o pacote inclui ' +
@@ -311,7 +283,8 @@ async function executarCodecs() {
         'sudo dnf install -y ffmpegthumbnailer';
 
     await executarComandoGenerico(idComando, comando,
-        _t('sessoes.codecs.btn_instalar_codecs', '📦 Instalar Codecs'));
+        _t('sessoes.codecs.btn_instalar_codecs', '📦 Instalar Codecs'),
+        function() { aplicarEstadoInstalavel(idComando, null); });
 }
 
 // ------------------------------------------------------------

@@ -145,29 +145,6 @@ style="display: none;">
 <div class="progress-container" id="progress-realtime-setup-remove"><div class="progress-bar"><div class="progress-fill" id="progress-fill-realtime-setup-remove"></div></div><div class="progress-text"><span class="status" id="progress-status-realtime-setup-remove">⏳ Iniciando...</span><span class="percentage" id="progress-percent-realtime-setup-remove">0%</span></div></div>
 </div>
 
-<!-- PipeWire low latency -->
-<div class="bloco-comando">
-<div class="comando-info">
-<h3 data-i18n="sessoes.ajustes-manutencao.pipewire_quantum_titulo">Baixa Latência no PipeWire</h3>
-<p data-i18n-html="sessoes.ajustes-manutencao.pipewire_quantum_desc">
-Reduz o <em>quantum</em> (tamanho do buffer de áudio) do PipeWire de 1024 para 256 amostras. Reduz a latência de ~21ms para ~5ms — essencial para gravação e jogos com áudio posicional.
-</p>
-<div class="info-extra" data-i18n-html="sessoes.ajustes-manutencao.pipewire_quantum_info">
-ℹ️ <strong>O que muda:</strong><br>
-• Cria <code>~/.config/pipewire/pipewire.conf.d/99-fap-quantum.conf</code>.<br>
-• Reinicia <code>pipewire</code>, <code>pipewire-pulse</code> e <code>wireplumber</code>.<br>
-• Aplica imediatamente — sem reboot.<br>
-• <strong>Trade-off:</strong> menor latência usa mais CPU. Em máquinas modestas, pode causar crackling.
-</div>
-<div class="botoes-flex">
-<button class="btn-executar" onclick="executarPipewireQuantumLow()" data-comando="pipewire-quantum-low" data-logbox="log-sessao-ajustes-manutencao" id="btn-pipewire-quantum-low" data-i18n="sessoes.ajustes-manutencao.btn_pipewire_quantum">⚙️ Ativar Baixa Latência</button>
-<button class="btn-executar vermelho" onclick="executarPipewireQuantumLowRemove()" data-comando="pipewire-quantum-low-remove" data-logbox="log-sessao-ajustes-manutencao" id="btn-pipewire-quantum-low-remove" data-i18n="sessoes.ajustes-manutencao.btn_pipewire_quantum_remove">↩️ Reverter</button>
-</div>
-</div>
-<div class="progress-container" id="progress-pipewire-quantum-low"><div class="progress-bar"><div class="progress-fill" id="progress-fill-pipewire-quantum-low"></div></div><div class="progress-text"><span class="status" id="progress-status-pipewire-quantum-low">⏳ Iniciando...</span><span class="percentage" id="progress-percent-pipewire-quantum-low">0%</span></div></div>
-<div class="progress-container" id="progress-pipewire-quantum-low-remove"><div class="progress-bar"><div class="progress-fill" id="progress-fill-pipewire-quantum-low-remove"></div></div><div class="progress-text"><span class="status" id="progress-status-pipewire-quantum-low-remove">⏳ Iniciando...</span><span class="percentage" id="progress-percent-pipewire-quantum-low-remove">0%</span></div></div>
-</div>
-
 </div>
 </details>
 
@@ -471,8 +448,14 @@ async function executarVmMaxMapCount() {
     var comando = 'echo "vm.max_map_count=2147483642" | sudo tee /etc/sysctl.d/99-fap-vm-max-map-count.conf > /dev/null && sudo sysctl --system';
     await executarComandoGenerico(idComando, comando,
         _t('sessoes.ajustes-manutencao.btn_vm_max_map_count', '⚙️ Aplicar Ajuste'),
-        function() {
-            _resetarIrmao('vm-max-map-count-remove', _t('sessoes.ajustes-manutencao.btn_vm_max_map_count_remove', '↩️ Reverter'));
+        async function() {
+            await _resetarIrmao('vm-max-map-count-remove', _t('sessoes.ajustes-manutencao.btn_vm_max_map_count_remove', '↩️ Reverter'));
+            // Aplica o estado do toggle imediatamente: install
+            // fica cinza "✅ Ajuste aplicado", revert vermelho
+            // visível. Sem isso, o botão só responde no próximo
+            // reload (o `restaurarEstadoSessao` conserta, mas
+            // com atraso perceptível).
+            aplicarEstadoToggle('vm-max-map-count', 'vm-max-map-count-remove', true);
         });
 }
 
@@ -481,8 +464,10 @@ async function executarVmMaxMapCountRemove() {
     var comando = 'sudo rm -f /etc/sysctl.d/99-fap-vm-max-map-count.conf && sudo sysctl --system';
     await executarComandoGenerico(idComando, comando,
         _t('sessoes.ajustes-manutencao.btn_vm_max_map_count_remove', '↩️ Reverter'),
-        function() {
-            _resetarIrmao('vm-max-map-count', _t('sessoes.ajustes-manutencao.btn_vm_max_map_count', '⚙️ Aplicar Ajuste'));
+        async function() {
+            await _resetarIrmao('vm-max-map-count', _t('sessoes.ajustes-manutencao.btn_vm_max_map_count', '⚙️ Aplicar Ajuste'));
+            // Install volta azul clicável, revert desaparece.
+            aplicarEstadoToggle('vm-max-map-count', 'vm-max-map-count-remove', true);
         });
 }
 
@@ -495,8 +480,14 @@ async function executarVmSwappinessCache() {
     var comando = 'printf "vm.swappiness=150\\nvm.vfs_cache_pressure=50\\n" | sudo tee /etc/sysctl.d/99-fap-vm-swappiness.conf > /dev/null && sudo sysctl --system';
     await executarComandoGenerico(idComando, comando,
         _t('sessoes.ajustes-manutencao.btn_vm_swappiness_cache', '⚙️ Aplicar Ajuste'),
-        function() {
-            _resetarIrmao('vm-swappiness-cache-remove', _t('sessoes.ajustes-manutencao.btn_vm_swappiness_cache_remove', '↩️ Reverter'));
+        async function() {
+            // `_resetarIrmao` deixa o botão revert com texto/cor
+            // originais, mas NÃO remove `display: none`. Como o
+            // revert começa oculto (por `esconderRevertSeNaoFeito =
+            // true` em `restaurarEstadoSessao`), ele precisa ser
+            // explicitamente mostrado após a instalação.
+            await _resetarIrmao('vm-swappiness-cache-remove', _t('sessoes.ajustes-manutencao.btn_vm_swappiness_cache_remove', '↩️ Reverter'));
+            aplicarEstadoToggle('vm-swappiness-cache', 'vm-swappiness-cache-remove', true);
         });
 }
 
@@ -505,8 +496,11 @@ async function executarVmSwappinessCacheRemove() {
     var comando = 'sudo rm -f /etc/sysctl.d/99-fap-vm-swappiness.conf && sudo sysctl --system';
     await executarComandoGenerico(idComando, comando,
         _t('sessoes.ajustes-manutencao.btn_vm_swappiness_cache_remove', '↩️ Reverter'),
-        function() {
-            _resetarIrmao('vm-swappiness-cache', _t('sessoes.ajustes-manutencao.btn_vm_swappiness_cache', '⚙️ Aplicar Ajuste'));
+        async function() {
+            await _resetarIrmao('vm-swappiness-cache', _t('sessoes.ajustes-manutencao.btn_vm_swappiness_cache', '⚙️ Aplicar Ajuste'));
+            // Após reverter, aplica o estado do toggle (install fica
+            // azul clicável, revert volta a ficar oculto).
+            aplicarEstadoToggle('vm-swappiness-cache', 'vm-swappiness-cache-remove', true);
         });
 }
 
@@ -519,8 +513,9 @@ async function executarTcpBbr() {
     var comando = 'printf "net.core.default_qdisc=fq\\nnet.ipv4.tcp_congestion_control=bbr\\n" | sudo tee /etc/sysctl.d/99-fap-tcp-bbr.conf > /dev/null && sudo sysctl --system';
     await executarComandoGenerico(idComando, comando,
         _t('sessoes.ajustes-manutencao.btn_tcp_bbr', '⚙️ Aplicar Ajuste'),
-        function() {
-            _resetarIrmao('tcp-bbr-remove', _t('sessoes.ajustes-manutencao.btn_tcp_bbr_remove', '↩️ Reverter'));
+        async function() {
+            await _resetarIrmao('tcp-bbr-remove', _t('sessoes.ajustes-manutencao.btn_tcp_bbr_remove', '↩️ Reverter'));
+            aplicarEstadoToggle('tcp-bbr', 'tcp-bbr-remove', true);
         });
 }
 
@@ -529,8 +524,9 @@ async function executarTcpBbrRemove() {
     var comando = 'sudo rm -f /etc/sysctl.d/99-fap-tcp-bbr.conf && sudo sysctl --system';
     await executarComandoGenerico(idComando, comando,
         _t('sessoes.ajustes-manutencao.btn_tcp_bbr_remove', '↩️ Reverter'),
-        function() {
-            _resetarIrmao('tcp-bbr', _t('sessoes.ajustes-manutencao.btn_tcp_bbr', '⚙️ Aplicar Ajuste'));
+        async function() {
+            await _resetarIrmao('tcp-bbr', _t('sessoes.ajustes-manutencao.btn_tcp_bbr', '⚙️ Aplicar Ajuste'));
+            aplicarEstadoToggle('tcp-bbr', 'tcp-bbr-remove', true);
         });
 }
 
@@ -586,37 +582,6 @@ async function executarRealtimeSetupRemove() {
                     SystemState.membroDoGrupo('realtime')
                 );
             });
-        });
-}
-
-// ------------------------------------------------------------
-// ÁUDIO: PipeWire low latency
-// ------------------------------------------------------------
-
-async function executarPipewireQuantumLow() {
-    var idComando = 'pipewire-quantum-low';
-    var comando =
-        'systemctl --user is-system-running >/dev/null 2>&1; ' +
-        'mkdir -p "$HOME/.config/pipewire/pipewire.conf.d" && ' +
-        'echo \'context.properties = {\n    default.clock.quantum = 256\n    default.clock.min-quantum = 32\n    default.clock.max-quantum = 2048\n}\' > "$HOME/.config/pipewire/pipewire.conf.d/99-fap-quantum.conf" && ' +
-        'systemctl --user restart pipewire pipewire-pulse wireplumber';
-    await executarComandoGenerico(idComando, comando,
-        _t('sessoes.ajustes-manutencao.btn_pipewire_quantum', '⚙️ Ativar Baixa Latência'),
-        function() {
-            _resetarIrmao('pipewire-quantum-low-remove', _t('sessoes.ajustes-manutencao.btn_pipewire_quantum_remove', '↩️ Reverter'));
-        });
-}
-
-async function executarPipewireQuantumLowRemove() {
-    var idComando = 'pipewire-quantum-low-remove';
-    var comando =
-        'systemctl --user is-system-running >/dev/null 2>&1; ' +
-        'rm -f "$HOME/.config/pipewire/pipewire.conf.d/99-fap-quantum.conf" && ' +
-        'systemctl --user restart pipewire pipewire-pulse wireplumber';
-    await executarComandoGenerico(idComando, comando,
-        _t('sessoes.ajustes-manutencao.btn_pipewire_quantum_remove', '↩️ Reverter'),
-        function() {
-            _resetarIrmao('pipewire-quantum-low', _t('sessoes.ajustes-manutencao.btn_pipewire_quantum', '⚙️ Ativar Baixa Latência'));
         });
 }
 
@@ -1780,20 +1745,6 @@ async function restaurarEstadoSessao() {
             _t('sessoes.ajustes-manutencao.btn_tcp_bbr_remove', '↩️ Reverter'),
             function() {
                 return SystemState.kernelParam('net.ipv4.tcp_congestion_control') === 'bbr';
-            }],
-        ['pipewire-quantum-low', 'pipewire-quantum-low-remove',
-            _t('sessoes.ajustes-manutencao.btn_pipewire_quantum', '⚙️ Ativar Baixa Latência'),
-            _t('sessoes.ajustes-manutencao.btn_pipewire_quantum_remove', '↩️ Reverter'),
-            function() {
-                // O arquivo é criado pelo FAP em ~/.config. O endpoint
-                // devolve o caminho absoluto (com HOME expandido).
-                var arquivos = SystemState.bruto().config_files_present || [];
-                for (var i = 0; i < arquivos.length; i++) {
-                    if (arquivos[i].indexOf('99-fap-quantum.conf') !== -1) {
-                        return true;
-                    }
-                }
-                return false;
             }]
     ];
 
@@ -1803,23 +1754,8 @@ async function restaurarEstadoSessao() {
         var reverterMarcado = isExecutado(t[1]);
         var detectar = t[4];
 
-        if (aplicarMarcado && !reverterMarcado) {
-            // FAP aplicou. Botão cinza concluído; revert habilitado.
-            _marcarBotaoConcluido(t[0]);
-            _resetarBotao(t[1], t[3]);
-            var btnRev1 = document.getElementById('btn-' + t[1]);
-            if (btnRev1) {
-                btnRev1.style.display = '';
-                btnRev1.disabled = false;
-                btnRev1.style.cursor = 'pointer';
-                btnRev1.style.opacity = '1';
-            }
-        } else if (reverterMarcado && !aplicarMarcado) {
-            // FAP reverteu. Revert cinza; aplicar azul clicável.
-            _marcarBotaoConcluido(t[1]);
-            _resetarBotao(t[0], t[2]);
-        } else if (aplicarMarcado && reverterMarcado) {
-            // Estado ambíguo: limpa e reseta.
+        if (aplicarMarcado && reverterMarcado) {
+            // Estado ambíguo: limpa.
             _resetarBotao(t[0], t[2]);
             _resetarBotao(t[1], t[3]);
             try {
@@ -1828,21 +1764,26 @@ async function restaurarEstadoSessao() {
             } catch (e) {
                 console.error('Erro ao limpar estado ambíguo do toggle ' + t[0] + ':', e);
             }
-                                } else {
-            // Nada feito pelo FAP. v1.1.2: origem não importa.
-            // Delega inteiramente ao `aplicarEstadoToggle`, que
-            // passa a função `detectar` adiante. Se detectar()
-            // retornar true, o toggle entra no ramo "installFeito"
-            // (aplicar cinza concluído + reverter habilitado +
-            // tooltip de origem). Se false, fica no estado inicial
-            // (aplicar azul + reverter oculto).
-            //
-            // Antes, este bloco forçava `btnReverter.style.display
-            // = 'none'` para pré-existentes — o que anulava a nova
-            // regra e escondia o revert mesmo com `detectar()`
-            // retornando true.
-            aplicarEstadoToggle(t[0], t[1], true, detectar);
         }
+
+        // `aplicarEstadoToggle` é a fonte ÚNICA de verdade do
+        // estado visual. Ele deriva o botão de `isExecutado` +
+        // `detectar()`, cobrindo todos os casos:
+        //
+        //   • FAP aplicou       → install cinza, revert vermelho
+        //   • FAP reverteu      → install azul, revert oculto
+        //   • Pré-existente     → install cinza, revert vermelho
+        //                         (com tooltip de pré-existente)
+        //   • Nada feito        → install azul, revert oculto
+        //
+        // Antes, os branches `if/else if` chamavam
+        // `_marcarBotaoConcluido` (cujo comportamento divergia do
+        // `aplicarEstadoToggle` em relação ao `display` do revert
+        // e à cor do install) — isso deixava os botões
+        // inconsistentes após reload. Bug reportado na v1.4.1 com
+        // `vm-swappiness-cache` e `tcp-bbr`: aplicados, revert
+        // visível, mas install ainda azul clicável.
+        aplicarEstadoToggle(t[0], t[1], true, detectar);
     }
 
     // --- Limpeza e kernels: sempre clicáveis ---

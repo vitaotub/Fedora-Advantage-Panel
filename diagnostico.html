@@ -247,15 +247,7 @@ id="btn-gsmartcontrol-install"
 data-i18n="sessoes.diagnostico.btn_gsmart_install">
 📦 Instalar GSmartControl
 </button>
-<button class="btn-executar verde"
-style="display: none;"
-onclick="abrirGSmartControl()"
-data-comando="abrir-gsmartcontrol"
-data-logbox="log-sessao-diagnostico"
-id="btn-abrir-gsmartcontrol"
-data-i18n="sessoes.diagnostico.btn_abrir_gsmart">
-🚀 Abrir GSmartControl
-</button>
+
 </div>
 </div>
 <div class="progress-container" id="progress-gsmartcontrol-install">
@@ -301,15 +293,6 @@ data-logbox="log-sessao-diagnostico"
 id="btn-coolercontrol-install"
 data-i18n="sessoes.diagnostico.btn_coolercontrol_install">
 📦 Instalar CoolerControl
-</button>
-<button class="btn-executar verde"
-style="display: none;"
-onclick="abrirCoolerControl()"
-data-comando="abrir-coolercontrol"
-data-logbox="log-sessao-diagnostico"
-id="btn-abrir-coolercontrol"
-data-i18n="sessoes.diagnostico.btn_abrir_coolercontrol">
-🚀 Abrir CoolerControl
 </button>
 </div>
 </div>
@@ -397,6 +380,19 @@ registrarAppRemovivel('coolercontrol-install', {
     tipo: 'dnf',
     pacotes: ['coolercontrol'],
     nome: 'CoolerControl'
+});
+
+// Rodada 2B: `Abrir X` vem do `_ABRIR_REGISTRY`.
+_registrarAbrir('gsmartcontrol-install', {
+    textoKey: 'sessoes.diagnostico.btn_abrir_gsmart',
+    textoFallback: '🚀 Abrir GSmartControl',
+    onclick: 'abrirGSmartControl()'
+});
+
+_registrarAbrir('coolercontrol-install', {
+    textoKey: 'sessoes.diagnostico.btn_abrir_coolercontrol',
+    textoFallback: '🚀 Abrir CoolerControl',
+    onclick: 'abrirCoolerControl()'
 });
 
 // ------------------------------------------------------------
@@ -799,9 +795,9 @@ async function verificarJournalErrors() {
 // RESTAURAR ESTADO DA SESSÃO
 // ============================================================
 function restaurarEstadoSessao() {
-    // Apps com GUI → Estado 2 (verde + lixeira).
-    aplicarEstadoInstalavel('gsmartcontrol-install', 'abrir-gsmartcontrol');
-    aplicarEstadoInstalavel('coolercontrol-install', 'abrir-coolercontrol');
+    // Rodada 2B: o "Abrir X" vem do registry; `idAbrir = null`.
+    aplicarEstadoInstalavel('gsmartcontrol-install', null);
+    aplicarEstadoInstalavel('coolercontrol-install', null);
 
     // Botões de ação sempre disponíveis (read-only, sem par de
     // revert — nada a alterar no estado visual).

@@ -46,9 +46,6 @@ LAUNCHERS
 🎮 Steam
 </button>
 </div>
-<button class="btn-executar verde" style="display: none;" onclick="abrirSteam()" data-comando="abrir-steam" data-logbox="log-sessao-gaming" id="btn-abrir-steam" data-i18n="sessoes.gaming.btn_abrir_steam">
-🚀 Abrir Steam
-</button>
 </div>
 <div class="launcher-item">
 <div class="btn-flatpak-wrapper">
@@ -56,9 +53,6 @@ LAUNCHERS
 ⚡ Heroic Games
 </button>
 </div>
-<button class="btn-executar verde" style="display: none;" onclick="abrirHeroic()" data-comando="abrir-heroic" data-logbox="log-sessao-gaming" id="btn-abrir-heroic" data-i18n="sessoes.gaming.btn_abrir_heroic">
-🚀 Abrir Heroic
-</button>
 </div>
 <div class="launcher-item">
 <div class="btn-flatpak-wrapper">
@@ -66,9 +60,6 @@ LAUNCHERS
 🎯 Lutris
 </button>
 </div>
-<button class="btn-executar verde" style="display: none;" onclick="abrirLutris()" data-comando="abrir-lutris" data-logbox="log-sessao-gaming" id="btn-abrir-lutris" data-i18n="sessoes.gaming.btn_abrir_lutris">
-🚀 Abrir Lutris
-</button>
 </div>
 </div>
 </div>
@@ -125,9 +116,6 @@ COMPATIBILIDADE
 🍾 Bottles
 </button>
 </div>
-<button class="btn-executar verde" style="display: none;" onclick="abrirBottles()" data-comando="abrir-bottles" data-logbox="log-sessao-gaming" id="btn-abrir-bottles" data-i18n="sessoes.gaming.btn_abrir_bottles">
-🚀 Abrir Bottles
-</button>
 </div>
 <div class="launcher-item">
 <div class="btn-flatpak-wrapper">
@@ -149,25 +137,6 @@ COMPATIBILIDADE
 </div>
 </div>
 
-<!-- Botão "Desfazer tudo" do NTSYNC -->
-<div class="bloco-comando" style="margin-top: 1rem;">
-<div class="comando-info">
-<div class="aviso-caixa" style="margin-top: 0;">
-⚠️ <strong>Remover completamente o NTSYNC?</strong> Este botão remove o pacote <code>wine-ntsync</code>, apaga o arquivo <code>/etc/modules-load.d/ntsync.conf</code> (que carrega o módulo no boot) e descarrega o módulo do kernel. Sem isso, o boot tentaria carregar um módulo configurado para um pacote que não existe mais.
-</div>
-<div class="botoes-flex">
-<button class="btn-executar destrutivo"
-onclick="desfazerNTSync()"
-data-comando="desfazer-ntsync"
-data-logbox="log-sessao-gaming"
-id="btn-desfazer-ntsync"
-disabled>
-🗑️ Remover completamente o NTSYNC
-</button>
-</div>
-</div>
-</div>
-
 <div class="progress-container" id="progress-wine-install">
 <div class="progress-bar"><div class="progress-fill" id="progress-fill-wine-install"></div></div>
 <div class="progress-text"><span class="status" id="progress-status-wine-install">⏳ Iniciando...</span><span class="percentage" id="progress-percent-wine-install">0%</span></div>
@@ -186,11 +155,6 @@ disabled>
 <div class="progress-container" id="progress-ntsync-install">
 <div class="progress-bar"><div class="progress-fill" id="progress-fill-ntsync-install"></div></div>
 <div class="progress-text"><span class="status" id="progress-status-ntsync-install">⏳ Iniciando...</span><span class="percentage" id="progress-percent-ntsync-install">0%</span></div>
-</div>
-
-<div class="progress-container" id="progress-desfazer-ntsync">
-<div class="progress-bar"><div class="progress-fill" id="progress-fill-desfazer-ntsync"></div></div>
-<div class="progress-text"><span class="status" id="progress-status-desfazer-ntsync">⏳ Iniciando...</span><span class="percentage" id="progress-percent-desfazer-ntsync">0%</span></div>
 </div>
 </div>
 
@@ -300,9 +264,6 @@ Ferramentas para quem quer tirar o máximo do Fedora em jogos: versões específ
 📦 Instalar ProtonUp-Qt
 </button>
 </div>
-<button class="btn-executar verde" style="display: none;" onclick="abrirProtonUpQt()" data-comando="abrir-protonup-qt" data-logbox="log-sessao-gaming" id="btn-abrir-protonup-qt" data-i18n="sessoes.gaming.btn_abrir_protonup">
-🚀 Abrir ProtonUp-Qt
-</button>
 </div>
 </div>
 <div class="progress-container" id="progress-protonup-qt-install">
@@ -364,9 +325,6 @@ Ferramentas para quem quer tirar o máximo do Fedora em jogos: versões específ
 📦 Instalar Preferências de Joysticks
 </button>
 </div>
-<button class="btn-executar verde" style="display: none;" onclick="abrirControllerTest()" data-comando="abrir-controller-test" data-logbox="log-sessao-gaming" id="btn-abrir-controller-test" data-i18n="sessoes.gaming.btn_abrir_joystick_prefs">
-🚀 Abrir Preferências de Joysticks
-</button>
 </div>
 </div>
 <div class="progress-container" id="progress-controller-test-install">
@@ -407,9 +365,6 @@ Emuladores de consoles clássicos e modernos para Fedora. Todos disponíveis via
 📦 Instalar RetroArch
 </button>
 </div>
-<button class="btn-executar verde" style="display: none;" onclick="abrirRetroArch()" data-comando="abrir-retroarch" data-logbox="log-sessao-gaming" id="btn-abrir-retroarch" data-i18n="sessoes.gaming.btn_abrir_retroarch">
-🚀 Abrir RetroArch
-</button>
 </div>
 </div>
 <div class="progress-container" id="progress-retroarch-install">
@@ -429,9 +384,6 @@ Emuladores de consoles clássicos e modernos para Fedora. Todos disponíveis via
 📦 Instalar Dolphin
 </button>
 </div>
-<button class="btn-executar verde" style="display: none;" onclick="abrirDolphin()" data-comando="abrir-dolphin" data-logbox="log-sessao-gaming" id="btn-abrir-dolphin" data-i18n="sessoes.gaming.btn_abrir_dolphin">
-🚀 Abrir Dolphin
-</button>
 </div>
 </div>
 <div class="progress-container" id="progress-dolphin-install">
@@ -454,9 +406,6 @@ Emuladores de consoles clássicos e modernos para Fedora. Todos disponíveis via
 📦 Instalar PCSX2
 </button>
 </div>
-<button class="btn-executar verde" style="display: none;" onclick="abrirPCSX2()" data-comando="abrir-pcsx2" data-logbox="log-sessao-gaming" id="btn-abrir-pcsx2" data-i18n="sessoes.gaming.btn_abrir_pcsx2">
-🚀 Abrir PCSX2
-</button>
 </div>
 </div>
 <div class="progress-container" id="progress-pcsx2-install">
@@ -482,9 +431,6 @@ Emuladores de consoles clássicos e modernos para Fedora. Todos disponíveis via
 📦 Instalar RPCS3
 </button>
 </div>
-<button class="btn-executar verde" style="display: none;" onclick="abrirRPCS3()" data-comando="abrir-rpcs3" data-logbox="log-sessao-gaming" id="btn-abrir-rpcs3" data-i18n="sessoes.gaming.btn_abrir_rpcs3">
-🚀 Abrir RPCS3
-</button>
 </div>
 </div>
 <div class="progress-container" id="progress-rpcs3-install">
@@ -507,9 +453,6 @@ Emuladores de consoles clássicos e modernos para Fedora. Todos disponíveis via
 📦 Instalar Duckstation
 </button>
 </div>
-<button class="btn-executar verde" style="display: none;" onclick="abrirDuckstation()" data-comando="abrir-duckstation" data-logbox="log-sessao-gaming" id="btn-abrir-duckstation" data-i18n="sessoes.gaming.btn_abrir_duckstation">
-🚀 Abrir Duckstation
-</button>
 </div>
 </div>
 <div class="progress-container" id="progress-duckstation-install">
@@ -627,14 +570,71 @@ var APPS_FLATPAK = {
 };
 
 // ============================================================
-// REGISTRY DE APPS RPM VIA REPO OFICIAL DO FABRICANTE
+// REGISTRY DE ABRIR (Rodada 2B)
 // ============================================================
 //
-// Heroic mantém repositório RPM oficial. O repo é adicionado via
-// `dnf install <url-do-repo>` e o pacote vem dele. A remoção
-// apaga o pacote E o arquivo .repo.
+// Os `<button class="btn-executar verde">` foram removidos do
+// HTML. `aplicarEstadoInstalavel` consulta este registry em vez
+// de depender do DOM.
+_registrarAbrir('steam-install', {
+    textoKey: 'sessoes.gaming.btn_abrir_steam',
+    textoFallback: '🚀 Abrir Steam',
+    onclick: 'abrirSteam()'
+});
+_registrarAbrir('heroic-install', {
+    textoKey: 'sessoes.gaming.btn_abrir_heroic',
+    textoFallback: '🚀 Abrir Heroic',
+    onclick: 'abrirHeroic()'
+});
+_registrarAbrir('lutris-install', {
+    textoKey: 'sessoes.gaming.btn_abrir_lutris',
+    textoFallback: '🚀 Abrir Lutris',
+    onclick: 'abrirLutris()'
+});
+_registrarAbrir('bottles-install', {
+    textoKey: 'sessoes.gaming.btn_abrir_bottles',
+    textoFallback: '🚀 Abrir Bottles',
+    onclick: 'abrirBottles()'
+});
+_registrarAbrir('protonup-qt-install', {
+    textoKey: 'sessoes.gaming.btn_abrir_protonup',
+    textoFallback: '🚀 Abrir ProtonUp-Qt',
+    onclick: 'abrirProtonUpQt()'
+});
+_registrarAbrir('controller-test-install', {
+    textoKey: 'sessoes.gaming.btn_abrir_joystick_prefs',
+    textoFallback: '🚀 Abrir Preferências de Joysticks',
+    onclick: 'abrirControllerTest()'
+});
+_registrarAbrir('retroarch-install', {
+    textoKey: 'sessoes.gaming.btn_abrir_retroarch',
+    textoFallback: '🚀 Abrir RetroArch',
+    onclick: 'abrirRetroArch()'
+});
+_registrarAbrir('dolphin-install', {
+    textoKey: 'sessoes.gaming.btn_abrir_dolphin',
+    textoFallback: '🚀 Abrir Dolphin',
+    onclick: 'abrirDolphin()'
+});
+_registrarAbrir('pcsx2-install', {
+    textoKey: 'sessoes.gaming.btn_abrir_pcsx2',
+    textoFallback: '🚀 Abrir PCSX2',
+    onclick: 'abrirPCSX2()'
+});
+_registrarAbrir('rpcs3-install', {
+    textoKey: 'sessoes.gaming.btn_abrir_rpcs3',
+    textoFallback: '🚀 Abrir RPCS3',
+    onclick: 'abrirRPCS3()'
+});
+_registrarAbrir('duckstation-install', {
+    textoKey: 'sessoes.gaming.btn_abrir_duckstation',
+    textoFallback: '🚀 Abrir Duckstation',
+    onclick: 'abrirDuckstation()'
+});
 
-// (APPS_RPM_REPO removido — Heroic migrou para Flatpak na v1.0.0-10152026.d)
+// ============================================================
+// REGISTRY DE APPS RPM VIA REPO OFICIAL DO FABRICANTE
+// ============================================================
 
 // ------------------------------------------------------------
 // Registro de apps removíveis (lixeira unificada)
@@ -685,12 +685,25 @@ registrarAppRemovivel('controller-test-install', {
     nome: 'Preferências de Joysticks'
 });
 
-// NTSYNC usa "desfazer tudo" porque deixa /etc/modules-load.d/ntsync.conf órfão.
+// NTSYNC — Estado 2 com lixeira full-cleanup (mesmo comportamento
+// que o antigo botão "Desfazer tudo", agora acessível pela lixeira
+// ao lado do botão de instalar).
 registrarAppRemovivel('ntsync-install', {
-    modo: 'desfazerTudo',
-    idDesfazer: 'desfazer-ntsync',
-    comandoDesfazer: 'sudo dnf remove -y wine-ntsync; sudo rm -f /etc/modules-load.d/ntsync.conf; sudo modprobe -r ntsync 2>/dev/null || true',
-    nome: 'NTSYNC'
+    tipo: 'dnf',
+    pacotes: ['wine-ntsync'],
+    nome: 'NTSYNC',
+    comandoRemocao:
+        'sudo dnf remove -y wine-ntsync; ' +
+        'sudo rm -f /etc/modules-load.d/ntsync.conf; ' +
+        'sudo modprobe -r ntsync 2>/dev/null || true',
+    confirmMsg:
+        '⚠️ Remover completamente o NTSYNC?\n\n' +
+        'Este botão remove:\n' +
+        '• O pacote wine-ntsync\n' +
+        '• O arquivo /etc/modules-load.d/ntsync.conf\n' +
+        '• O módulo ntsync do kernel (se carregado)\n\n' +
+        'Ação irreversível em relação aos pacotes.\n\n' +
+        'Continuar?'
 });
 
 // ------------------------------------------------------------
@@ -786,12 +799,10 @@ async function executarNTSync() {
     await executarComandoGenerico(idComando, comando,
         _t('sessoes.gaming.btn_ntsync', '⚡ NTSYNC'),
         function() {
-            aplicarEstadoToggle('ntsync-install', 'desfazer-ntsync');
+            // Estado 2: Instalar → cinza + lixeira ao lado.
+            // `null` porque NTSYNC não tem GUI para "Abrir".
+            aplicarEstadoInstalavel('ntsync-install', null);
         });
-}
-
-function desfazerNTSync() {
-    _executarDesfazerTudo('ntsync-install');
 }
 
 // ------------------------------------------------------------
@@ -963,16 +974,15 @@ function abrirDuckstation() {
 // ============================================================
 
 function restaurarEstadoSessao() {
-    // Apps com botão de abrir → Estado 2 (verde + lixeira).
+    // Rodada 2B: todos usam `_ABRIR_REGISTRY`; `idAbrir = null`.
     ['heroic-install', 'lutris-install', 'bottles-install', 'protonup-qt-install',
      'retroarch-install', 'dolphin-install', 'pcsx2-install', 'rpcs3-install',
      'duckstation-install'].forEach(function(id) {
-        aplicarEstadoInstalavel(id, _derivarIdAbrir(id));
+        aplicarEstadoInstalavel(id, null);
     });
 
-    // Pacotes dnf com GUI → Estado 2.
-    aplicarEstadoInstalavel('steam-install', 'abrir-steam');
-    aplicarEstadoInstalavel('controller-test-install', 'abrir-controller-test');
+    aplicarEstadoInstalavel('steam-install', null);
+    aplicarEstadoInstalavel('controller-test-install', null);
 
     // Pacotes dnf sem GUI → Estado 3 (cinza + lixeira).
     ['wine-install', 'winetricks-install',
@@ -981,8 +991,8 @@ function restaurarEstadoSessao() {
         aplicarEstadoInstalavel(id, null);
     });
 
-    // NTSYNC: par install/revert (desfazer tudo).
-    aplicarEstadoToggle('ntsync-install', 'desfazer-ntsync');
+    // NTSYNC: Estado 2 (sem GUI, então só "✅ instalado" + lixeira).
+    aplicarEstadoInstalavel('ntsync-install', null);
 
     // gamemode-presets-apply: one-shot (bloqueia após execução).
     var btnPresets = document.getElementById('btn-gamemode-presets-apply');

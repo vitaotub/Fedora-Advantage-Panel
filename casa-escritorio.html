@@ -125,15 +125,7 @@ data-i18n="sessoes.casa-escritorio.btn_localsend">
 📦 Instalar LocalSend
 </button>
 </div>
-<button class="btn-executar verde"
-style="display: none;"
-onclick="abrirLocalSend()"
-data-comando="abrir-localsend"
-data-logbox="log-sessao-casa-escritorio"
-id="btn-abrir-localsend"
-data-i18n="sessoes.casa-escritorio.btn_abrir_localsend">
-🚀 Abrir LocalSend
-</button>
+
 </div>
 </div>
 <div class="progress-container" id="progress-localsend-install">
@@ -163,15 +155,7 @@ data-i18n="sessoes.casa-escritorio.btn_warpinator">
 📦 Instalar Warpinator
 </button>
 </div>
-<button class="btn-executar verde"
-style="display: none;"
-onclick="abrirWarpinator()"
-data-comando="abrir-warpinator"
-data-logbox="log-sessao-casa-escritorio"
-id="btn-abrir-warpinator"
-data-i18n="sessoes.casa-escritorio.btn_abrir_warpinator">
-🚀 Abrir Warpinator
-</button>
+
 </div>
 </div>
 <div class="progress-container" id="progress-warpinator-install">
@@ -210,15 +194,7 @@ data-i18n="sessoes.casa-escritorio.btn_keepassxc">
 📦 Instalar KeePassXC
 </button>
 </div>
-<button class="btn-executar verde"
-style="display: none;"
-onclick="abrirKeePassXC()"
-data-comando="abrir-keepassxc"
-data-logbox="log-sessao-casa-escritorio"
-id="btn-abrir-keepassxc"
-data-i18n="sessoes.casa-escritorio.btn_abrir_keepassxc">
-🚀 Abrir KeePassXC
-</button>
+
 </div>
 </div>
 <div class="progress-container" id="progress-keepassxc-install">
@@ -266,13 +242,10 @@ registrarAppRemovivel('cups-install', {
     tipo: 'dnf',
     pacotes: ['cups', 'cups-filters', 'avahi', 'avahi-tools', 'system-config-printer', 'ghostscript'],
     nome: 'Suporte a Impressão (CUPS)',
-    // Cups/avahi/ghostscript vêm instalados no Fedora Workstation.
-    // Flag força o botão a começar em "Instalar" até o FAP rodar.
-    ignorarPreExistente: true,
-    // MITIGAÇÃO (v1.1.2): pré-existente NÃO pode ser removido.
-    // Remove CUPS + Avahi — todas as impressoras param de
-    // funcionar (local e rede), sem aviso claro. Se o usuário
-    // já tinha CUPS configurado antes do FAP, remover é destrutivo.
+    // NÃO usar ignorarPreExistente: true aqui. CUPS + Avahi já vêm
+    // no Fedora Workstation por padrão; se o usuário tem impressora
+    // configurada, remover quebra tudo. A regra correta é:
+    // pré-existente → mostra "Já estava ativo" + SEM lixeira.
     permitirRemocaoPreExistente: false,
     motivoBloqueio: 'O suporte a impressão já estava ativo antes do FAP. ' +
                     'Removê-lo desabilita TODAS as impressoras (local e rede). ' +
@@ -286,11 +259,10 @@ registrarAppRemovivel('samba-install', {
     tipo: 'dnf',
     pacotes: ['samba', 'samba-client', 'cifs-utils'],
     nome: 'Samba',
-    // Samba pode vir instalado por dependência. Mesma lógica do CUPS.
-    ignorarPreExistente: true,
-    // MITIGAÇÃO (v1.1.2): pré-existente NÃO pode ser removido.
-    // Remove Samba — compartilhamentos locais e acesso a pastas
-    // Windows na rede param de funcionar.
+    // Mesma lógica do CUPS: pré-existente → "Já estava ativo" + SEM
+    // lixeira. Antes, com `ignorarPreExistente`, a lixeira aparecia
+    // após um `dnf install` idempotente e a remoção derrubava
+    // compartilhamentos que já existiam.
     permitirRemocaoPreExistente: false,
     motivoBloqueio: 'O Samba já estava configurado antes do FAP. ' +
                     'Removê-lo desabilita compartilhamentos de arquivos ' +
@@ -317,6 +289,23 @@ registrarAppRemovivel('warpinator-install', {
     tipo: 'flatpak',
     appId: 'org.x.Warpinator',
     nome: 'Warpinator'
+});
+
+// Rodada 2B: `Abrir X` vem do `_ABRIR_REGISTRY`.
+_registrarAbrir('localsend-install', {
+    textoKey: 'sessoes.casa-escritorio.btn_abrir_localsend',
+    textoFallback: '🚀 Abrir LocalSend',
+    onclick: 'abrirLocalSend()'
+});
+_registrarAbrir('warpinator-install', {
+    textoKey: 'sessoes.casa-escritorio.btn_abrir_warpinator',
+    textoFallback: '🚀 Abrir Warpinator',
+    onclick: 'abrirWarpinator()'
+});
+_registrarAbrir('keepassxc-install', {
+    textoKey: 'sessoes.casa-escritorio.btn_abrir_keepassxc',
+    textoFallback: '🚀 Abrir KeePassXC',
+    onclick: 'abrirKeePassXC()'
 });
 
 // ------------------------------------------------------------
@@ -398,16 +387,12 @@ function abrirKeePassXC() {
 // ------------------------------------------------------------
 
 function restaurarEstadoSessao() {
-    // CUPS e Samba são pacotes sem GUI — Estado 3 (cinza + lixeira).
     aplicarEstadoInstalavel('cups-install', null);
     aplicarEstadoInstalavel('samba-install', null);
-
-    // LocalSend e Warpinator têm GUI — Estado 2 (verde + lixeira).
-    aplicarEstadoInstalavel('localsend-install', 'abrir-localsend');
-    aplicarEstadoInstalavel('warpinator-install', 'abrir-warpinator');
-
-    // KeePassXC tem GUI — Estado 2.
-    aplicarEstadoInstalavel('keepassxc-install', 'abrir-keepassxc');
+    // Rodada 2B: o "Abrir X" vem do registry; `idAbrir = null`.
+    aplicarEstadoInstalavel('localsend-install', null);
+    aplicarEstadoInstalavel('warpinator-install', null);
+    aplicarEstadoInstalavel('keepassxc-install', null);
 }
 
 (function() {

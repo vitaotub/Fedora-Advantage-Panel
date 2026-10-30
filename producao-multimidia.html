@@ -50,15 +50,7 @@ data-i18n="sessoes.producao-multimidia.btn_instalar_obs">
 📹 Instalar OBS Studio
 </button>
 </div>
-<button class="btn-executar verde"
-style="display: none;"
-onclick="abrirOBSStudio()"
-data-comando="abrir-obs-studio"
-data-logbox="log-sessao-producao-multimidia"
-id="btn-abrir-obs-studio"
-data-i18n="sessoes.producao-multimidia.btn_abrir_obs">
-🚀 Abrir OBS Studio
-</button>
+
 </div>
 <div class="progress-container" id="progress-instalar-obs-studio">
 <div class="progress-bar"><div class="progress-fill" id="progress-fill-instalar-obs-studio"></div></div>
@@ -106,15 +98,7 @@ data-i18n="sessoes.producao-multimidia.btn_instalar_easyeffects">
 Instalar EasyEffects (Flatpak)
 </button>
 </div>
-<button class="btn-executar verde"
-style="display: none;"
-onclick="abrirEasyEffects()"
-data-comando="abrir-easyeffects"
-data-logbox="log-sessao-producao-multimidia"
-id="btn-abrir-easyeffects"
-data-i18n="sessoes.producao-multimidia.btn_abrir_easyeffects">
-🚀 Abrir EasyEffects
-</button>
+
 </div>
 </div>
 
@@ -153,10 +137,34 @@ var APPS_FLATPAK = {
 // kernel). Não é um software com botão de "Abrir" — apenas
 // install/revert com lixeira.
 
+registrarAppRemovivel('instalar-obs-studio', {
+    tipo: 'flatpak',
+    appId: 'com.obsproject.Studio',
+    nome: 'OBS Studio'
+});
+
+registrarAppRemovivel('instalar-easyeffects', {
+    tipo: 'flatpak',
+    appId: 'com.github.wwmm.easyeffects',
+    nome: 'EasyEffects'
+});
+
 registrarAppRemovivel('obs-cam', {
     tipo: 'dnf',
     pacotes: ['akmod-v4l2loopback', 'v4l2loopback', 'v4l-utils'],
     nome: 'Câmera Virtual do OBS'
+});
+
+// Rodada 2B: `Abrir X` vem do `_ABRIR_REGISTRY`.
+_registrarAbrir('instalar-obs-studio', {
+    textoKey: 'sessoes.producao-multimidia.btn_abrir_obs',
+    textoFallback: '🚀 Abrir OBS Studio',
+    onclick: 'abrirOBSStudio()'
+});
+_registrarAbrir('instalar-easyeffects', {
+    textoKey: 'sessoes.producao-multimidia.btn_abrir_easyeffects',
+    textoFallback: '🚀 Abrir EasyEffects',
+    onclick: 'abrirEasyEffects()'
 });
 
 // ============================================================
@@ -236,8 +244,9 @@ function abrirEasyEffects() {
 // ============================================================
 
 function restaurarEstadoSessao() {
-    aplicarEstadoInstalavel('instalar-obs-studio', 'abrir-obs-studio');
-    aplicarEstadoInstalavel('instalar-easyeffects', 'abrir-easyeffects');
+    // Rodada 2B: o "Abrir X" vem do registry; `idAbrir = null`.
+    aplicarEstadoInstalavel('instalar-obs-studio', null);
+    aplicarEstadoInstalavel('instalar-easyeffects', null);
     aplicarEstadoInstalavel('obs-cam', null);
 }
 

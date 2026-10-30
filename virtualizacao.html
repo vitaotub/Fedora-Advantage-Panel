@@ -44,15 +44,7 @@ data-i18n="sessoes.virtualizacao.btn_qemu">
 📦 Instalar QEMU/KVM
 </button>
 </div>
-<button class="btn-executar verde"
-style="display: none;"
-onclick="abrirVirtManager()"
-data-comando="abrir-virt-manager"
-data-logbox="log-sessao-virtualizacao"
-id="btn-abrir-virt-manager"
-data-i18n="sessoes.virtualizacao.btn_abrir_virt_manager">
-🚀 Abrir virt-manager
-</button>
+
 </div>
 </div>
 <div class="progress-container" id="progress-qemu-kvm-install">
@@ -82,15 +74,7 @@ data-i18n="sessoes.virtualizacao.btn_virtualbox">
 📦 Instalar VirtualBox
 </button>
 </div>
-<button class="btn-executar verde"
-style="display: none;"
-onclick="abrirVirtualBox()"
-data-comando="abrir-virtualbox"
-data-logbox="log-sessao-virtualizacao"
-id="btn-abrir-virtualbox"
-data-i18n="sessoes.virtualizacao.btn_abrir_virtualbox">
-🚀 Abrir VirtualBox
-</button>
+
 </div>
 </div>
 <div class="progress-container" id="progress-virtualbox-install">
@@ -120,15 +104,7 @@ data-i18n="sessoes.virtualizacao.btn_boxes">
 📦 Instalar GNOME Boxes
 </button>
 </div>
-<button class="btn-executar verde"
-style="display: none;"
-onclick="abrirGnomeBoxes()"
-data-comando="abrir-gnome-boxes"
-data-logbox="log-sessao-virtualizacao"
-id="btn-abrir-gnome-boxes"
-data-i18n="sessoes.virtualizacao.btn_abrir_boxes">
-🚀 Abrir GNOME Boxes
-</button>
+
 </div>
 </div>
 <div class="progress-container" id="progress-gnome-boxes-install">
@@ -217,6 +193,23 @@ registrarAppRemovivel('gnome-boxes-install', {
                     '  sudo dnf remove gnome-boxes'
 });
 
+// Rodada 2B: `Abrir X` vem do `_ABRIR_REGISTRY`.
+_registrarAbrir('qemu-kvm-install', {
+    textoKey: 'sessoes.virtualizacao.btn_abrir_virt_manager',
+    textoFallback: '🚀 Abrir virt-manager',
+    onclick: 'abrirVirtManager()'
+});
+_registrarAbrir('virtualbox-install', {
+    textoKey: 'sessoes.virtualizacao.btn_abrir_virtualbox',
+    textoFallback: '🚀 Abrir VirtualBox',
+    onclick: 'abrirVirtualBox()'
+});
+_registrarAbrir('gnome-boxes-install', {
+    textoKey: 'sessoes.virtualizacao.btn_abrir_boxes',
+    textoFallback: '🚀 Abrir GNOME Boxes',
+    onclick: 'abrirGnomeBoxes()'
+});
+
 // ------------------------------------------------------------
 // INSTALADORES
 // ------------------------------------------------------------
@@ -276,10 +269,10 @@ function abrirGnomeBoxes() {
 // ------------------------------------------------------------
 
 function restaurarEstadoSessao() {
-    // Todos os três são apps com GUI — Estado 2 (verde + lixeira).
-    aplicarEstadoInstalavel('qemu-kvm-install', 'abrir-virt-manager');
-    aplicarEstadoInstalavel('virtualbox-install', 'abrir-virtualbox');
-    aplicarEstadoInstalavel('gnome-boxes-install', 'abrir-gnome-boxes');
+    // Rodada 2B: o "Abrir X" vem do registry; `idAbrir = null`.
+    aplicarEstadoInstalavel('qemu-kvm-install', null);
+    aplicarEstadoInstalavel('virtualbox-install', null);
+    aplicarEstadoInstalavel('gnome-boxes-install', null);
 }
 
 // ------------------------------------------------------------

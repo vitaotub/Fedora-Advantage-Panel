@@ -2,7 +2,7 @@
 
 **🌐 Language:** [Português (BR)](README.md) | English | [Español](README.es.md)
 
-![Version](https://img.shields.io/badge/Version-v1.4.0--10282026-orange?style=flat-square)
+![Version](https://img.shields.io/badge/Version-v1.4.1--10302026-orange?style=flat-square)
 ![Fedora](https://img.shields.io/badge/Fedora-44%20%7C%2045-294172?style=flat-square&logo=fedora)
 ![License](https://img.shields.io/badge/License-GPL--3.0-green?style=flat-square)
 ![Languages](https://img.shields.io/badge/Languages-PT--BR%20%7C%20EN%20%7C%20ES-3c67e3?style=flat-square)
@@ -91,13 +91,21 @@ Updates are applied **on top of the existing installation** — no need to unins
 | 5 | 🎬 Media Production | OBS Studio, virtual camera, EasyEffects |
 | 6 | 📦 Apps | Flatpaks, 20+ `dnf` apps, **ArtCraft Launcher**, remote access, **utilities** |
 | 7 | 🏠 Home and Office | CUPS, Samba, LocalSend, KeePassXC |
-| 8 | 🎮 Gaming | Native Steam, Heroic, Lutris, Wine, GameMode, emulators |
+| 8 | 🎮 Gaming | Native Steam, Heroic, Lutris, Wine, GameMode, emulators, **NTSYNC** |
 | 9 | 📱 Waydroid | Android on Linux via container |
 | 10 | 🖥️ Virtualization | QEMU/KVM, VirtualBox, GNOME Boxes |
 | 11 | 📊 Diagnostics | System panel, SMART, temperatures, error journal |
 | 12 | 🛠️ Tunings and Maintenance | Performance tunings, DNF, dual-boot, GRUB, kernels, Fedora upgrade |
 | 13 | 🐧 Fedora Status | Version, Atomic/Silverblue, SELinux |
 | 14 | 📖 About FAP | Update/uninstall, dynamic changelog |
+
+### 🖥️ Session 3 — Hardware
+
+- **AMD** — Vulkan/Mesa/RADV and VA-API (RPM Fusion freeworld). AMD's open-source drivers are **one-shot**: install and turn gray, no removal button. Reason: `dnf remove` of the `.i686` packages would cascade into Steam and other dependents. Informational warning at the top of the section.
+- **Intel** — Intel Media Driver (Broadwell / 5th gen+ / Arc) or `libva-intel-driver` (Haswell / 4th gen or older), plus diagnostic utilities. **Also one-shot**.
+- **NVIDIA** — proprietary driver with automatic generation detection, revert to nouveau, modesetting (Wayland), VA-API translator (`nvidia-vaapi-driver`), env vars and verification utilities.
+- **Uniform cross-vendor panels** — AMD, Intel and NVIDIA all show a panel with GPU / driver / package (or series). If the vendor is absent, all buttons in the section are disabled with a warning.
+- **VA-API verification** — "Check Acceleration" buttons (AMD, Intel, NVIDIA) run `vainfo` and render the result in a panel with Decode/Encode badges.
 
 ### 📦 Session 6 — blocks and highlights
 
@@ -107,23 +115,16 @@ Updates are applied **on top of the existing installation** — no need to unins
 - **🎨 ArtCraft Suite** — **ArtCraft Launcher** (installs/updates all 13 suite apps through the launcher's own interface).
 - **🌐 Internet and Communication** — Opera, Brave, Edge, Chromium, Zoom, Vivaldi, Discord, Telegram, **Firefox**, **Packet**.
 - **🎞️ Video, Audio and 3D** — Kdenlive, Shotcut, Pitivi, OpenShot, Avidemux, Lightworks, Drift, Blender, Ardour, LMMS, Audacity.
-- **☁️ Cloud Sync** — Rclone Manager.
+- **☁️ Cloud Sync** — Rclone Manager (State 2 with full-cleanup trash — removes packages + shortcuts + caches, preserves `~/.config/rclone/`).
 - **📡 Remote Access Tools** — RustDesk, Remmina, GNOME Connections, KRDC.
 - **🔧 Utilities** — **Gear Lever** (AppImage manager).
-
-### 🖥️ Session 3 — Hardware
-
-- **AMD** — Vulkan/Mesa/RADV, VA-API (RPM Fusion freeworld driver), `vainfo` check, CoreCtrl, LACT, overclocking.
-- **Intel** — modern driver (`intel-media-driver`) for Broadwell+ / Arc, legacy driver (`libva-intel-driver`) for 7th-gen or older, verification utilities, `vainfo` check.
-- **NVIDIA** — proprietary driver with automatic generation detection, revert to nouveau, modesetting (Wayland), VA-API translator (`nvidia-vaapi-driver`), env vars for browser acceleration, `vainfo`/`vdpauinfo` check.
-
-**Reboot/logout warnings** are displayed automatically when a driver or setting requires it.
 
 ## 🛡️ Safety and transparency
 
 - **Never installs anything without you seeing it.** Every command is visible in the real-time log.
 - **Pre-existing detection.** Apps installed before FAP show "Open" from the start.
-- **13 critical items protected.** Drivers, codecs, CUPS, Samba, virtualization: if they existed before, the trash icon does not appear.
+- **Critical items protected.** Proprietary drivers, codecs, CUPS, Samba, virtualization: if they existed before, the trash icon does not appear.
+- **AMD/Intel open-source drivers are one-shot.** Install and turn gray. No removal via UI — `dnf remove` would cascade into critical dependents (Steam, kinfocenter). Explanatory warning at the top of each section.
 - **Real language detection.** The 3 translation buttons query the system state.
 - **Authentication via `pkexec`.** Native password dialog.
 - **Smart locking.** `dnf` locks other `dnf`; the Flatpak queue handles the global lock.
@@ -141,10 +142,7 @@ Updates are applied **on top of the existing installation** — no need to unins
 - **Fixed log dock** of 160px, always starts collapsed.
 - **N/A sessions** removed from progress calculation.
 - **🔄 header button** that reloads the system state.
-
-### 🔒 Protection of critical items
-
-**13 high-risk items** have removal blocked when pre-existing. The button shows "✅ Already active" with a tooltip including the exact manual revert command.
+- **"Open X" button** dynamically generated via `_ABRIR_REGISTRY` — the install button itself turns green after success, no duplicated HTML.
 
 ## 🖥️ Requirements and support
 

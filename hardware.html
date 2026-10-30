@@ -29,6 +29,10 @@ AMD
 <summary data-i18n="sessoes.hardware.amd_titulo">🟥 Hardware AMD</summary>
 <div class="acordeao-conteudo">
 
+<div class="aviso-caixa" data-i18n-html="sessoes.hardware.amd_aviso_one_shot">
+ℹ️ Os drivers AMD são todos de código aberto. Os botões abaixo instalam os <strong>complementos</strong> que o Fedora não traz por padrão: <strong>Vulkan 32-bit</strong> (necessário para Steam/Proton rodando jogos de 32 bits) e <strong>VA-API via RPM Fusion</strong> (para aceleração de vídeo sem os codecs restritos por licenciamento). O Fedora base já traz as versões 64-bit de Vulkan/Mesa e o VA-API padrão. <strong>Não há botão de remoção</strong> — o <code>dnf remove</code> desses pacotes cascatearia para o Steam e outros apps. Para desfazer, use o terminal e aceite os dependentes.
+</div>
+
 <div class="bloco-comando">
 <div class="comando-info">
 <h3 data-i18n="sessoes.hardware.vulkan_titulo">Vulkan, Mesa 3D e RADV</h3>
@@ -111,15 +115,7 @@ data-i18n="sessoes.hardware.btn_corectrl">
 📦 Instalar CoreCtrl
 </button>
 </div>
-<button class="btn-executar verde"
-style="display: none;"
-onclick="abrirCoreCtrl()"
-data-comando="abrir-corectrl"
-data-logbox="log-sessao-hardware"
-id="btn-abrir-corectrl"
-data-i18n="sessoes.hardware.btn_abrir_corectrl">
-🚀 Abrir CoreCtrl
-</button>
+
 </div>
 </div>
 <div class="progress-container" id="progress-corectrl-install">
@@ -143,15 +139,7 @@ data-i18n="sessoes.hardware.btn_lact">
 📦 Instalar LACT
 </button>
 </div>
-<button class="btn-executar verde"
-style="display: none;"
-onclick="abrirLACT()"
-data-comando="abrir-lact"
-data-logbox="log-sessao-hardware"
-id="btn-abrir-lact"
-data-i18n="sessoes.hardware.btn_abrir_lact">
-🚀 Abrir LACT
-</button>
+
 </div>
 </div>
 <div class="progress-container" id="progress-lact-install">
@@ -425,6 +413,10 @@ INTEL
 ⚠️ Estes pacotes são para iGPUs Intel (gráficos integrados). Se você tem GPU dedicada AMD ou NVIDIA, o driver da placa dedicada cuida da maior parte da aceleração — os drivers Intel ainda podem ser úteis se você usa a iGPU em conjunto, mas não são obrigatórios.
 </div>
 
+<div class="aviso-caixa" data-i18n-html="sessoes.hardware.intel_aviso_one_shot">
+ℹ️ Os drivers Intel são todos de código aberto. Os botões abaixo instalam os <strong>complementos</strong> para aceleração de vídeo que o Fedora não traz (ou traz em versão mais antiga): <strong>Intel Media Driver</strong> (Broadwell / 5ª gen ou mais recente) ou <strong>libva-intel-driver</strong> (Haswell / 4ª gen ou anterior), além de <strong>utilitários de diagnóstico</strong> (<code>libva-utils</code> + <code>gstreamer1-vaapi</code>). <strong>Não há botão de remoção</strong> — para desfazer, use o terminal.
+</div>
+
 <div class="bloco-comando">
 <div class="comando-info">
 <h3 data-i18n="sessoes.hardware.intel_media_titulo">Driver Moderno: Aceleração de Vídeo Intel (Broadwell / 5ª gen Core+ / Arc)</h3>
@@ -564,40 +556,14 @@ function _avisarLogout(nomeItem) {
 // ============================================================
 // REGISTRO DE APPS REMOVÍVEIS
 // ============================================================
-
-registrarAppRemovivel('vulkan-amd', {
-    tipo: 'dnf',
-    pacotes: ['mesa-vulkan-drivers', 'mesa-vulkan-drivers.i686', 'vulkan-tools', 'vulkan-loader', 'mesa-dri-drivers', 'mesa-dri-drivers.i686'],
-    nome: 'Vulkan e Mesa 3D',
-    ignorarPreExistente: true,
-    permitirRemocaoPreExistente: false,
-    motivoBloqueio: 'Vulkan/Mesa já estava instalado antes do FAP. ' +
-                    'Removê-lo desabilita jogos e aplicações 3D. ' +
-                    'Para reverter manualmente:\n\n' +
-                    '  sudo dnf remove mesa-vulkan-drivers vulkan-loader \\\n' +
-                    '    vulkan-tools mesa-dri-drivers'
-});
-
-registrarAppRemovivel('vaapi-amd', {
-    tipo: 'dnf',
-    pacotes: ['mesa-va-drivers-freeworld'],
-    nome: 'VA-API AMD',
-    ignorarPreExistente: true,
-    permitirRemocaoPreExistente: false,
-    // NÃO incluir `ffmpeg-libs`, `libva` ou `libva-utils` na remoção.
-    // Eles são dependências do Plasma Desktop (via `kpipewire`) e de
-    // outros pacotes do sistema. Removê-los quebra o `plasma-desktop`.
-    // O `mesa-va-drivers-freeworld` é o único pacote que o FAP
-    // instala explicitamente. O `dnf` remove as dependências órfãs
-    // automaticamente se forem seguras; se ainda forem necessárias,
-    // permanecem no sistema e nada quebra.
-    motivoBloqueio: 'A aceleração VA-API já estava ativa antes do FAP. ' +
-                    'Removê-la aumenta muito o uso de CPU em reprodução ' +
-                    'de vídeo HD/4K. Para reverter manualmente:\n\n' +
-                    '  sudo dnf remove mesa-va-drivers-freeworld\n\n' +
-                    'NÃO remova `ffmpeg-libs` nem `libva` — são dependências ' +
-                    'do Plasma Desktop (kpipewire) e de outros pacotes do sistema.'
-});
+//
+// Apenas os itens abaixo têm lixeira ou revert. Os drivers de
+// código livre (vulkan-amd, vaapi-amd, intel-media-install,
+// libva-intel-install, intel-vaapi-utils, nvidia-vaapi-install,
+// nvidia-vaapi-utils) usam `aplicarEstadoOneShot` — instalam e
+// ficam cinzas, sem caminho de remoção pelo FAP. O motivo: o
+// `dnf remove` desses pacotes cascateia em dependentes críticos
+// (Steam, kinfocenter) e não há forma cirúrgica de reverter.
 
 registrarAppRemovivel('corectrl-install', {
     tipo: 'dnf',
@@ -609,6 +575,20 @@ registrarAppRemovivel('lact-install', {
     tipo: 'dnf',
     pacotes: ['lact'],
     nome: 'LACT'
+});
+
+// Rodada 2B: `Abrir X` vem do `_ABRIR_REGISTRY`. `corectrl` e
+// `lact` migram; `nvidia-settings` fica controlado por
+// `_aplicarEstadoNvidia` (botão separado, comportamento diferente).
+_registrarAbrir('corectrl-install', {
+    textoKey: 'sessoes.hardware.btn_abrir_corectrl',
+    textoFallback: '🚀 Abrir CoreCtrl',
+    onclick: 'abrirCoreCtrl()'
+});
+_registrarAbrir('lact-install', {
+    textoKey: 'sessoes.hardware.btn_abrir_lact',
+    textoFallback: '🚀 Abrir LACT',
+    onclick: 'abrirLACT()'
 });
 
 registrarAppRemovivel('nvidia-driver-install', {
@@ -626,51 +606,6 @@ registrarAppRemovivel('nvidia-driver-install', {
                     'Depois reinicie o computador.'
 });
 
-registrarAppRemovivel('intel-media-install', {
-    tipo: 'dnf',
-    pacotes: ['intel-media-driver'],
-    nome: 'Intel Media Driver',
-    permitirRemocaoPreExistente: false,
-    motivoBloqueio: 'O Intel Media Driver já estava instalado antes do FAP. ' +
-                    'Removê-lo aumenta o uso de CPU em reprodução de vídeo. ' +
-                    'Para reverter manualmente:\n\n' +
-                    '  sudo dnf remove intel-media-driver'
-});
-
-registrarAppRemovivel('libva-intel-install', {
-    tipo: 'dnf',
-    pacotes: ['libva-intel-driver'],
-    nome: 'Driver Legado Intel (libva-intel)',
-    permitirRemocaoPreExistente: false,
-    motivoBloqueio: 'O driver legado Intel já estava instalado antes do FAP. ' +
-                    'Para remover manualmente:\n\n' +
-                    '  sudo dnf remove libva-intel-driver'
-});
-
-registrarAppRemovivel('intel-vaapi-utils', {
-    tipo: 'dnf',
-    pacotes: ['libva-utils', 'gstreamer1-vaapi'],
-    nome: 'Utilitários VA-API Intel',
-    ignorarPreExistente: true
-});
-
-registrarAppRemovivel('nvidia-vaapi-install', {
-    tipo: 'dnf',
-    pacotes: ['nvidia-vaapi-driver'],
-    nome: 'Tradutor VA-API NVIDIA',
-    permitirRemocaoPreExistente: false,
-    motivoBloqueio: 'O nvidia-vaapi-driver já estava instalado antes do FAP. ' +
-                    'Para remover manualmente:\n\n' +
-                    '  sudo dnf remove nvidia-vaapi-driver'
-});
-
-registrarAppRemovivel('nvidia-vaapi-utils', {
-    tipo: 'dnf',
-    pacotes: ['libva-utils', 'vdpauinfo', 'gstreamer1-vaapi'],
-    nome: 'Utilitários VA-API NVIDIA',
-    ignorarPreExistente: true
-});
-
 // ------------------------------------------------------------
 // AMD — Vulkan / VA-API
 // ------------------------------------------------------------
@@ -680,21 +615,20 @@ async function executarVulkan() {
     var comando = 'sudo dnf install -y mesa-vulkan-drivers mesa-vulkan-drivers.i686 vulkan-tools vulkan-loader mesa-dri-drivers mesa-dri-drivers.i686';
     await executarComandoGenerico(idComando, comando,
         _t('sessoes.hardware.btn_vulkan', '🚀 Instalar Vulkan e Mesa 3D'),
-        function() { aplicarEstadoInstalavel('vulkan-amd', null); });
+        function() { aplicarEstadoOneShot('vulkan-amd'); });
 }
 
 async function executarVaapi() {
     var idComando = 'vaapi-amd';
-    // A documentação do RPM Fusion recomenda apenas o pacote
-    // `mesa-va-drivers-freeworld` — as dependências (`libva`,
-    // `ffmpeg-libs`) são puxadas automaticamente pelo `dnf` quando
-    // necessário. Listá-las explicitamente é redundante e foi o que
-    // causou o bug de remoção (tentativa de remover `ffmpeg-libs`,
-    // que é dependência do `kpipewire`/`plasma-desktop`).
-    var comando = 'sudo dnf install -y mesa-va-drivers-freeworld';
+    // `libva-utils` é OBRIGATÓRIO: é o pacote que contém o binário
+    // `vainfo`, usado pelo botão "Verificar Aceleração". Sem ele,
+    // a verificação falha com "vainfo não encontrado".
+    // `libva` e `ffmpeg-libs` são puxados como dependências do
+    // `mesa-va-drivers-freeworld`, mas `libva-utils` não é.
+    var comando = 'sudo dnf install -y mesa-va-drivers-freeworld libva-utils';
     await executarComandoGenerico(idComando, comando,
         _t('sessoes.hardware.btn_vaapi', '🚀 Instalar VA-API'),
-        function() { aplicarEstadoInstalavel('vaapi-amd', null); });
+        function() { aplicarEstadoOneShot('vaapi-amd'); });
 }
 
 // ============================================================
@@ -917,7 +851,7 @@ async function executarIntelMedia() {
     var comando = 'sudo dnf install -y intel-media-driver';
     await executarComandoGenerico(idComando, comando,
         _t('sessoes.hardware.btn_intel_media_instalar', '🎬 Instalar Intel Media Driver'),
-        function() { aplicarEstadoInstalavel('intel-media-install', null); });
+        function() { aplicarEstadoOneShot('intel-media-install'); });
 }
 
 async function executarLibvaIntel() {
@@ -925,7 +859,7 @@ async function executarLibvaIntel() {
     var comando = 'sudo dnf install -y libva-intel-driver';
     await executarComandoGenerico(idComando, comando,
         _t('sessoes.hardware.btn_intel_legacy', '🎬 Instalar Driver Legado (libva-intel)'),
-        function() { aplicarEstadoInstalavel('libva-intel-install', null); });
+        function() { aplicarEstadoOneShot('libva-intel-install'); });
 }
 
 async function executarIntelVaapiUtils() {
@@ -933,7 +867,7 @@ async function executarIntelVaapiUtils() {
     var comando = 'sudo dnf install -y libva-utils gstreamer1-vaapi';
     await executarComandoGenerico(idComando, comando,
         _t('sessoes.hardware.btn_intel_utils', '📦 Instalar Utilitários'),
-        function() { aplicarEstadoInstalavel('intel-vaapi-utils', null); });
+        function() { aplicarEstadoOneShot('intel-vaapi-utils'); });
 }
 
 async function executarVaapiCheckIntel() {
@@ -1086,7 +1020,13 @@ function _mostrarAvisoX11Nvidia(info) {
 }
 
 function _aplicarEstadoNvidia(info) {
-    aplicarEstadoToggle('nvidia-driver-install', 'nvidia-driver-remove');
+    // `true` → o revert ("Reverter pro nouveau") fica OCULTO até o
+    // driver ser instalado. Padrão consistente com os demais toggles
+    // (amdgpu-overclock, nvidia-modeset, nvidia-vaapi-env). Antes,
+    // sem esse argumento, o revert era sempre visível — o que
+    // confundia: usuário clicava em "Reverter" sem ter nada instalado
+    // e recebia alert.
+    aplicarEstadoToggle('nvidia-driver-install', 'nvidia-driver-remove', true);
 
     var sec = document.getElementById('sec-nvidia');
     if (!sec) return;
@@ -1170,11 +1110,15 @@ async function _atualizarSecaoAmd() {
         if (conteudo) conteudo.insertBefore(painel, conteudo.firstChild);
     }
 
+    // Uniformização cross-vendor: painel sempre visível, com
+    // conteúdo diferente conforme detecção (mesmo padrão do
+    // `_renderizarPanelNvidia`). Antes, o painel era `display: none`
+    // quando detectado — o usuário não via qual GPU o FAP encontrou.
+    _renderizarPanelAmd(painel, info);
+
     var botoes = sec.querySelectorAll('.btn-executar, .btn-reverter');
 
     if (info.detected) {
-        painel.style.display = 'none';
-        painel.innerHTML = '';
         botoes.forEach(function(b) {
             if (b.getAttribute('data-hw-disabled') === '1') {
                 b.removeAttribute('data-hw-disabled');
@@ -1185,14 +1129,6 @@ async function _atualizarSecaoAmd() {
             }
         });
     } else {
-        painel.style.display = 'block';
-        painel.className = 'hardware-detection-panel aviso-caixa';
-        painel.innerHTML = '<strong>' +
-            _t('sessoes.hardware.amd_sem_gpu_titulo', '⚠️ Nenhuma GPU/APU AMD detectada') +
-            '</strong><p style="margin-top: 0.4rem;">' +
-            _t('sessoes.hardware.amd_sem_gpu_desc', 'Este sistema não possui GPU ou APU AMD. Os pacotes desta seção não fazem sentido aqui.') +
-            '</p>';
-
         var tooltip = _t('sessoes.hardware.amd_sem_gpu_curto',
             'Nenhuma GPU/APU AMD detectada neste sistema');
         botoes.forEach(function(b) {
@@ -1209,6 +1145,37 @@ async function _atualizarSecaoAmd() {
     }
 }
 
+function _renderizarPanelAmd(painel, info) {
+    if (!info.detected) {
+        painel.className = 'hardware-detection-panel aviso-caixa';
+        painel.style.display = 'block';
+        painel.innerHTML = '<strong>' +
+            _t('sessoes.hardware.amd_sem_gpu_titulo', '⚠️ Nenhuma GPU/APU AMD detectada') +
+            '</strong><p style="margin-top: 0.4rem;">' +
+            _t('sessoes.hardware.amd_sem_gpu_desc', 'Este sistema não possui GPU ou APU AMD. Os pacotes desta seção não fazem sentido aqui.') +
+            '</p>';
+        return;
+    }
+
+    var gpu = info.gpus[0];
+    var modelo = gpu.name || 'GPU AMD';
+    var driver = gpu.driver_in_use || '—';
+    var pacotes = (gpu.packages || []).join(', ') || '—';
+
+    painel.className = 'hardware-detection-panel bloco-info';
+    painel.style.display = 'block';
+    painel.innerHTML =
+        '<strong>' + _t('sessoes.hardware.hw_panel_titulo', '🔍 Hardware detectado') + '</strong>' +
+        '<ul class="lista-info" style="margin-top: 0.5rem;">' +
+        '<li><span class="label">' + _t('sessoes.hardware.hw_panel_label_gpu', 'GPU') +
+        '</span><span class="valor">' + _escapeHTML(modelo) + '</span></li>' +
+        '<li><span class="label">' + _t('sessoes.hardware.hw_panel_label_driver_kernel', 'Driver kernel') +
+        '</span><span class="valor"><code>' + _escapeHTML(driver) + '</code></span></li>' +
+        '<li><span class="label">' + _t('sessoes.hardware.hw_panel_label_pacote', 'Pacote sugerido') +
+        '</span><span class="valor"><code>' + _escapeHTML(pacotes) + '</code></span></li>' +
+        '</ul>';
+}
+
 async function _atualizarSecaoIntel() {
     var sec = document.getElementById('sec-intel');
     if (!sec) return;
@@ -1223,11 +1190,12 @@ async function _atualizarSecaoIntel() {
         if (conteudo) conteudo.insertBefore(painel, conteudo.firstChild);
     }
 
+    // Uniformização cross-vendor (idem AMD).
+    _renderizarPanelIntel(painel, info);
+
     var botoes = sec.querySelectorAll('.btn-executar, .btn-reverter');
 
     if (info.detected) {
-        painel.style.display = 'none';
-        painel.innerHTML = '';
         botoes.forEach(function(b) {
             if (b.getAttribute('data-hw-disabled') === '1') {
                 b.removeAttribute('data-hw-disabled');
@@ -1238,14 +1206,6 @@ async function _atualizarSecaoIntel() {
             }
         });
     } else {
-        painel.style.display = 'block';
-        painel.className = 'hardware-detection-panel aviso-caixa';
-        painel.innerHTML = '<strong>' +
-            _t('sessoes.hardware.intel_sem_gpu_titulo', '⚠️ Nenhuma GPU Intel detectada') +
-            '</strong><p style="margin-top: 0.4rem;">' +
-            _t('sessoes.hardware.intel_sem_gpu_desc', 'Este sistema não possui iGPU Intel. Os drivers Intel não fazem sentido aqui.') +
-            '</p>';
-
         var tooltip = _t('sessoes.hardware.intel_sem_gpu_curto',
             'Nenhuma GPU Intel detectada neste sistema');
         botoes.forEach(function(b) {
@@ -1260,6 +1220,37 @@ async function _atualizarSecaoIntel() {
             b.title = tooltip;
         });
     }
+}
+
+function _renderizarPanelIntel(painel, info) {
+    if (!info.detected) {
+        painel.className = 'hardware-detection-panel aviso-caixa';
+        painel.style.display = 'block';
+        painel.innerHTML = '<strong>' +
+            _t('sessoes.hardware.intel_sem_gpu_titulo', '⚠️ Nenhuma GPU Intel detectada') +
+            '</strong><p style="margin-top: 0.4rem;">' +
+            _t('sessoes.hardware.intel_sem_gpu_desc', 'Este sistema não possui iGPU Intel. Os drivers Intel não fazem sentido aqui.') +
+            '</p>';
+        return;
+    }
+
+    var gpu = info.gpus[0];
+    var modelo = gpu.name || 'iGPU Intel';
+    var driver = gpu.driver_in_use || '—';
+    var pacotes = (gpu.packages || []).join(', ') || '—';
+
+    painel.className = 'hardware-detection-panel bloco-info';
+    painel.style.display = 'block';
+    painel.innerHTML =
+        '<strong>' + _t('sessoes.hardware.hw_panel_titulo', '🔍 Hardware detectado') + '</strong>' +
+        '<ul class="lista-info" style="margin-top: 0.5rem;">' +
+        '<li><span class="label">' + _t('sessoes.hardware.hw_panel_label_gpu', 'GPU') +
+        '</span><span class="valor">' + _escapeHTML(modelo) + '</span></li>' +
+        '<li><span class="label">' + _t('sessoes.hardware.hw_panel_label_driver_kernel', 'Driver kernel') +
+        '</span><span class="valor"><code>' + _escapeHTML(driver) + '</code></span></li>' +
+        '<li><span class="label">' + _t('sessoes.hardware.hw_panel_label_pacote', 'Pacote sugerido') +
+        '</span><span class="valor"><code>' + _escapeHTML(pacotes) + '</code></span></li>' +
+        '</ul>';
 }
 
 // ------------------------------------------------------------
@@ -1311,11 +1302,20 @@ async function executarNvidiaDriver() {
         '  sudo dnf install -y "$GPU_PKG"; ' +
         'fi';
 
-    await executarComandoGenerico(idComando, comando,
+        await executarComandoGenerico(idComando, comando,
         _t('sessoes.hardware.btn_nvidia_driver', '📦 Instalar Driver NVIDIA'),
-        async function() {
-            await _atualizarSecaoNvidia();
-            _avisarReboot(_t('sessoes.hardware.nvidia_driver_titulo', 'Driver NVIDIA'));
+        function() {
+            // Limpa o marker de `nvidia-driver-remove` (se o usuário
+            // tinha revertido antes e está reinstalando). Sem isso,
+            // o `.progresso.json` acumularia entradas órfãs e o
+            // progresso do driver ficaria inconsistente.
+            desmarcarComoExecutado('nvidia-driver-remove').catch(function(e) {
+                console.warn('[nvidia] Erro ao limpar marker -remove:', e);
+            }).then(function() {
+                return _atualizarSecaoNvidia();
+            }).then(function() {
+                _avisarReboot(_t('sessoes.hardware.nvidia_driver_titulo', 'Driver NVIDIA'));
+            });
         });
 }
 
@@ -1369,6 +1369,16 @@ async function executarNvidiaModesetRemove() {
     await executarComandoGenerico(idComando, comando,
         _t('sessoes.hardware.btn_modeset_off', '↩️ Desativar modesetting'),
         function() {
+            // Bug pré-existente: sem este reset, o marker de
+            // `nvidia-modeset-on` continuava ativo mesmo após
+            // desativar, fazendo o botão mostrar "✅ Modesetting
+            // ativado" até reload. Espelha o que
+            // `executarOverclockRemoveAMD` já faz para o AMD.
+            desmarcarComoExecutado('nvidia-modeset-on').catch(function(e) {
+                console.warn('[nvidia-modeset] Erro ao limpar marker -on:', e);
+            }).then(function() {
+                aplicarEstadoToggle('nvidia-modeset-on', 'nvidia-modeset-off', true);
+            });
             _avisarReboot(_t('sessoes.hardware.nvidia_modeset_titulo', 'Modesetting (NVIDIA)'));
         });
 }
@@ -1378,7 +1388,7 @@ async function executarNvidiaVaapiInstall() {
     var comando = 'sudo dnf install -y nvidia-vaapi-driver';
     await executarComandoGenerico(idComando, comando,
         _t('sessoes.hardware.btn_nvidia_vaapi', '📦 Instalar Tradutor VA-API'),
-        function() { aplicarEstadoInstalavel('nvidia-vaapi-install', null); });
+        function() { aplicarEstadoOneShot('nvidia-vaapi-install'); });
 }
 
 async function executarNvidiaVaapiUtils() {
@@ -1386,7 +1396,7 @@ async function executarNvidiaVaapiUtils() {
     var comando = 'sudo dnf install -y libva-utils vdpauinfo gstreamer1-vaapi';
     await executarComandoGenerico(idComando, comando,
         _t('sessoes.hardware.btn_nvidia_vaapi_utils', '📦 Instalar Utilitários'),
-        function() { aplicarEstadoInstalavel('nvidia-vaapi-utils', null); });
+        function() { aplicarEstadoOneShot('nvidia-vaapi-utils'); });
 }
 
 async function executarNvidiaVaapiEnv() {
@@ -1461,36 +1471,53 @@ function _atualizarPainelFfmpeg() {
 // ------------------------------------------------------------
 
 async function restaurarEstadoSessao() {
-    // AMD
-    aplicarEstadoInstalavel('vulkan-amd', null);
-    aplicarEstadoInstalavel('vaapi-amd', null);
-    aplicarEstadoInstalavel('corectrl-install', 'abrir-corectrl');
-    aplicarEstadoInstalavel('lact-install', 'abrir-lact');
+    // AMD — drivers de código livre: one-shot (sem lixeira, sem
+    // revert). Respeitam apenas `isExecutado` do FAP; o estado real
+    // do sistema é ignorado, então o botão SEMPRE nasce clicável
+    // em instalação limpa.
+    //
+    // `corectrl-install` e `lact-install` mantêm Estado 2 — são
+    // apps GUI isolados (o `dnf remove` de cada um não cascateia
+    // em nada crítico).
+    aplicarEstadoOneShot('vulkan-amd');
+    aplicarEstadoOneShot('vaapi-amd');
+    // Rodada 2B: o "Abrir X" vem do registry; `idAbrir = null`.
+    aplicarEstadoInstalavel('corectrl-install', null);
+    aplicarEstadoInstalavel('lact-install', null);
 
-    // Intel
-    aplicarEstadoInstalavel('intel-media-install', null);
-    aplicarEstadoInstalavel('libva-intel-install', null);
-    aplicarEstadoInstalavel('intel-vaapi-utils', null);
+    // Intel — drivers e utilitários de código livre: one-shot.
+    // O `intel-media-driver` / `libva-intel-driver` vêm no Fedora
+    // em versões diferentes e o `dnf remove` pode cascatear.
+    // Utilitários (`libva-utils`) entram no mesmo balde.
+    aplicarEstadoOneShot('intel-media-install');
+    aplicarEstadoOneShot('libva-intel-install');
+    aplicarEstadoOneShot('intel-vaapi-utils');
 
-    // NVIDIA
-    aplicarEstadoInstalavel('nvidia-driver-install', 'abrir-nvidia-settings');
-    aplicarEstadoInstalavel('nvidia-vaapi-install', null);
-    aplicarEstadoInstalavel('nvidia-vaapi-utils', null);
+    // NVIDIA — utilitários VA-API são open source: one-shot.
+    // O driver proprietário (`nvidia-driver-install`) tem toggle
+    // separado em `_aplicarEstadoNvidia`, chamado mais abaixo.
+    aplicarEstadoOneShot('nvidia-vaapi-install');
+    aplicarEstadoOneShot('nvidia-vaapi-utils');
 
     // Toggles
+    // `true` → revert oculto até o install rodar. Antes era `false`
+    // (sempre visível), mas isso confundia: usuário clicava em
+    // "Desativar" sem ter nada ativado e via mensagem enganosa.
     aplicarEstadoToggle(
         'amdgpu-overclock',
         'amdgpu-overclock-remove',
-        false,
+        true,
         function() {
             return SystemState.kernelParam('amdgpu.ppfeaturemask') === '0xffffffff';
         }
     );
 
+    // `true` → revert oculto até o install rodar. Padrão consistente
+    // com nvidia-vaapi-env e nvidia-driver-install.
     aplicarEstadoToggle(
         'nvidia-modeset-on',
         'nvidia-modeset-off',
-        false,
+        true,
         function() {
             return SystemState.kernelParam('nvidia-drm.modeset') === '1';
         }

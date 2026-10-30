@@ -176,15 +176,6 @@ id="btn-selinux-setroubleshoot-install"
 data-i18n="sessoes.estado-fedora.btn_setroubleshoot_install">
 📦 Instalar setroubleshoot
 </button>
-<button class="btn-executar verde"
-style="display: none;"
-onclick="abrirSetroubleshoot()"
-data-comando="abrir-setroubleshoot"
-data-logbox="log-sessao-estado-fedora"
-id="btn-abrir-setroubleshoot"
-data-i18n="sessoes.estado-fedora.btn_setroubleshoot_abrir">
-🚀 Abrir setroubleshoot
-</button>
 </div>
 </div>
 <div class="progress-container" id="progress-selinux-setroubleshoot-install">
@@ -221,15 +212,6 @@ data-logbox="log-sessao-estado-fedora"
 id="btn-selinux-gui-install"
 data-i18n="sessoes.estado-fedora.btn_selinux_gui_install">
 📦 Instalar Gerenciador SELinux
-</button>
-<button class="btn-executar verde"
-style="display: none;"
-onclick="abrirSelinuxGUI()"
-data-comando="abrir-selinux-gui"
-data-logbox="log-sessao-estado-fedora"
-id="btn-abrir-selinux-gui"
-data-i18n="sessoes.estado-fedora.btn_selinux_gui_open">
-🚀 Abrir Gerenciador SELinux
 </button>
 </div>
 </div>
@@ -293,6 +275,28 @@ registrarAppRemovivel('selinux-gui-install', {
 tipo: 'dnf',
 pacotes: ['policycoreutils-gui'],
 nome: 'Gerenciador SELinux'
+});
+
+// ============================================================
+// REGISTRO DE "ABRIR X" (Rodada 2B)
+// ============================================================
+//
+// O `<button class="btn-executar verde">` foi removido do HTML.
+// `aplicarEstadoInstalavel` consulta este registry para saber
+// como transformar o botão de instalar em "🚀 Abrir X" após
+// instalação. `onclick` é string JS avaliada no clique — deve
+// referenciar função global (a sessão já carregou antes do
+// clique ser possível).
+_registrarAbrir('selinux-setroubleshoot-install', {
+textoKey: 'sessoes.estado-fedora.btn_setroubleshoot_abrir',
+textoFallback: '🚀 Abrir setroubleshoot',
+onclick: 'abrirSetroubleshoot()'
+});
+
+_registrarAbrir('selinux-gui-install', {
+textoKey: 'sessoes.estado-fedora.btn_selinux_gui_open',
+textoFallback: '🚀 Abrir Gerenciador SELinux',
+onclick: 'abrirSelinuxGUI()'
 });
 
 // ------------------------------------------------------------
@@ -681,11 +685,11 @@ abrirFerramentaExterna('gtk-launch system-config-selinux', 'selinux-gui-install'
 // RESTAURAR ESTADO DA SESSÃO
 // ============================================================
 function restaurarEstadoSessao() {
-// setroubleshoot tem GUI via `sealert -b` → Estado 2 (verde "Abrir").
-aplicarEstadoInstalavel('selinux-setroubleshoot-install', 'abrir-setroubleshoot');
-
-// Gerenciador SELinux tem GUI → Estado 2 (verde + "Abrir").
-aplicarEstadoInstalavel('selinux-gui-install', 'abrir-selinux-gui');
+// Rodada 2B: o "Abrir X" vem do `_ABRIR_REGISTRY` (registrado
+// acima). Passamos `null` no segundo argumento — o `idAbrir`
+// apontaria para um `<button>` que não existe mais no DOM.
+aplicarEstadoInstalavel('selinux-setroubleshoot-install', null);
+aplicarEstadoInstalavel('selinux-gui-install', null);
 
 // Botões de leitura: sempre clicáveis (sem estado visual).
 ['fedora-version-check', 'atomic-check', 'selinux-status-check', 'selinux-troubleshoot'].forEach(function(id) {

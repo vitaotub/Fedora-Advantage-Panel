@@ -431,30 +431,21 @@ var SystemState = (function() {
             _dados = dados || {};
             _promessa = null;
 
-            // ============================================================
-            // RETRY: flatpaks vazios + Flathub ativo
-            // ============================================================
-            //
-            // O `/system-state` do server tem cache de 60s. Na
-            // primeira chamada ao boot, o `flatpak list` pode não
-            // ter rodado ainda, e `flatpaks_installed` volta vazio
-            // mesmo com OBS/EasyEffects/etc. instalados via Flatpak.
-            //
-            // Sintoma: botão "Instalar" no OBS/EasyEffects numa
-            // instalação que já os tem. Ao sair/reabrir a sessão,
-            // o botão vira "Abrir" (o cache atualizou).
-            //
-            // A correção: se vier vazio com Flathub ativo, pedimos
-            // um refresh (que invalida o cache do server) e
-            // tentamos de novo UMA vez. Se o segundo retorno
-            // ainda vier vazio, aceitamos — pode ser um sistema
-            // sem Flatpaks instalados.
+            // Considera a resposta suspeita se alguma lista crítica
+            // veio vazia (rpm -qa / dnf repolist podem estourar
+            // timeout em cache frio). Retry único com ?refresh=1.
             var flatpaks = Array.isArray(_dados.flatpaks_installed) ? _dados.flatpaks_installed : [];
-            var repos = Array.isArray(_dados.repos_enabled) ? _dados.repos_enabled : [];
+            var pacotes  = Array.isArray(_dados.packages_installed) ? _dados.packages_installed : [];
+            var repos    = Array.isArray(_dados.repos_enabled)     ? _dados.repos_enabled     : [];
             var flathubAtivo = repos.indexOf('flatpak:flathub') !== -1;
 
-            if (flatpaks.length === 0 && flathubAtivo) {
-                console.log('[SystemState] flatpaks vazios com Flathub ativo — refetch com ?refresh=1');
+            var suspeito =
+            (flatpaks.length === 0 && flathubAtivo) ||
+            pacotes.length === 0 ||
+            repos.length === 0;
+
+            if (suspeito) {
+                console.log('[SystemState] resposta suspeita (flatpaks/pacotes/repos vazios) — refetch com ?refresh=1');
                 return fetch(API_URL + '/system-state?refresh=1', { cache: 'no-store' })
                 .then(function(r) { return r.ok ? r.json() : null; })
                 .then(function(dados2) {
@@ -463,14 +454,13 @@ var SystemState = (function() {
                 })
                 .catch(function() { return _dados; });
             }
-
             return _dados;
         })
         .catch(function(e) {
             console.warn('[SystemState] Falha ao carregar:', e.message);
-            _dados = {};
+            _dados = null;         // NÃO cachear falha — permite retry na próxima chamada
             _promessa = null;
-            return _dados;
+            return {};             // devolve vazio só para esta chamada
         });
 
         return _promessa;
@@ -619,7 +609,20 @@ function appJaInstaladoNoSistema(idComando) {
 // do `await SystemState.carregar()`), nada é resetado por engano.
 function _estaRealmenteInstalado(idComando) {
     var info = APPS_REMOVIVEIS[idComando];
-    if (!info) return false;
+    if (!info) {
+        // Sem registro em APPS_REMOVIVEIS (item one-shot como
+        // `vulkan-amd`, `intel-media-install`, etc.), NÃO temos como
+        // consultar o estado real no sistema. Retornar `true` é o
+        // fallback conservador: previne que `aplicarEstadoInstalavel`
+        // (chamada acidental) dispare auto-reset e limpe um marker
+        // válido do `.progresso.json`.
+        //
+        // A versão anterior retornava `false`, o que — combinado com
+        // `aplicarEstadoInstalavel` chamada no `onSucesso` dos botões
+        // one-shot — fazia o progresso ser limpo imediatamente após
+        // a instalação, e o botão voltava clicável no Ctrl+R.
+        return true;
+    }
 
     var bruto = SystemState.bruto();
     if (!bruto || !Array.isArray(bruto.packages_installed) ||
@@ -876,9 +879,18 @@ var SESSOES = [
             textoConcluido: '✅ Driver Nvidia instalado',
             textoConcluidoKey: 'sessoes.hardware.texto_concluido_nvidia_driver'
         },
-        'nvidia-driver-remove': { sempreClicavel: true },
-        'nvidia-modeset-on': { sempreClicavel: true },
-        'nvidia-modeset-off': { sempreClicavel: true },
+        'nvidia-driver-remove': {
+            textoConcluido: '✅ Driver Nvidia removido',
+            textoConcluidoKey: 'sessoes.hardware.texto_concluido_nvidia_driver_remove'
+        },
+        'nvidia-modeset-on': {
+            textoConcluido: '✅ Modesetting ativado',
+            textoConcluidoKey: 'sessoes.hardware.texto_concluido_modeset_on'
+        },
+        'nvidia-modeset-off': {
+            textoConcluido: '✅ Modesetting desativado',
+            textoConcluidoKey: 'sessoes.hardware.texto_concluido_modeset_off'
+        },
         'nvidia-vaapi-install': {
             textoConcluido: '✅ Tradutor VA-API instalado',
             textoConcluidoKey: 'sessoes.hardware.texto_concluido_nvidia_vaapi'
@@ -1063,9 +1075,7 @@ var SESSOES = [
         'instalar-rclone-manager': {
             textoConcluido: '✅ Rclone Manager instalado',
             textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_rclone_manager'
-        },
-        'desfazer-rclone-manager': { sempreClicavel: true },
-        'instalar-lightworks-remove': { sempreClicavel: true }
+        }
     }
 },
 {
@@ -1094,9 +1104,7 @@ var SESSOES = [
         'keepassxc-install': {
             textoConcluido: '✅ KeePassXC instalado',
             textoConcluidoKey: 'sessoes.casa-escritorio.texto_concluido_keepassxc'
-        },
-        'samba-remove': { sempreClicavel: true },
-        'keepassxc-remove': { sempreClicavel: true }
+        }
     }
 },
 {
@@ -1168,16 +1176,7 @@ var SESSOES = [
             textoConcluido: '✅ Duckstation instalado',
             textoConcluidoKey: 'sessoes.gaming.texto_concluido_duckstation',
             flatpakId: 'org.duckstation.DuckStation'
-        },
-        'wine-remove': { sempreClicavel: true },
-        'winetricks-remove': { sempreClicavel: true },
-        'gamemode-remove': { sempreClicavel: true },
-        'mangohud-remove': { sempreClicavel: true },
-        'goverlay-remove': { sempreClicavel: true },
-        'gamescope-remove': { sempreClicavel: true },
-        'vkbasalt-remove': { sempreClicavel: true },
-        'controller-test-remove': { sempreClicavel: true },
-        'desfazer-ntsync': { sempreClicavel: true }
+        }
     }
 },
 {
@@ -1252,8 +1251,6 @@ var SESSOES = [
         'tcp-bbr-remove': { textoConcluido: '✅ TCP BBR desativado', textoConcluidoKey: 'sessoes.ajustes-manutencao.texto_concluido_tcp_bbr_remove' },
         'realtime-setup': { textoConcluido: '✅ Grupo realtime configurado', textoConcluidoKey: 'sessoes.ajustes-manutencao.texto_concluido_realtime_setup' },
         'realtime-setup-remove': { textoConcluido: '✅ Grupo realtime removido', textoConcluidoKey: 'sessoes.ajustes-manutencao.texto_concluido_realtime_setup_remove' },
-        'pipewire-quantum-low': { textoConcluido: '✅ Baixa latência ativada', textoConcluidoKey: 'sessoes.ajustes-manutencao.texto_concluido_pipewire_quantum' },
-        'pipewire-quantum-low-remove': { textoConcluido: '✅ Latência padrão restaurada', textoConcluidoKey: 'sessoes.ajustes-manutencao.texto_concluido_pipewire_quantum_remove' },
         'dnf-speed': { sempreClicavel: true },
         'idioma-packs': { textoConcluido: '✅ Tradução instalada', textoConcluidoKey: 'sessoes.ajustes-manutencao.texto_concluido_packs' },
         'idioma-hunspell': { textoConcluido: '✅ Corretor instalado', textoConcluidoKey: 'sessoes.ajustes-manutencao.texto_concluido_hunspell' },
@@ -2982,28 +2979,19 @@ function aplicarEstadoInstalavel(idInstall, idAbrir, idRemover, preExistente) {
     var btnInstall = document.getElementById('btn-' + idInstall);
     if (!btnInstall) return;
 
-    // Limpa o tooltip de estado anterior (pré-existente, ou outro)
-    // para que `_renderizarBadgeOrigem` possa repor o tooltip de
-    // origem corretamente em todos os fluxos. Sem isso, o tooltip
-    // de pré-existente ficava "grudado" no botão depois de uma
-    // instalação via FAP, e o de origem sumia em qualquer
-    // re-render.
     btnInstall.title = '';
     btnInstall.removeAttribute('data-title-origem');
-
-    // Badge de origem: idempotente, só adiciona se ainda não existir
-    // e se `_origemDoApp` retornar uma origem conhecida.
     _renderizarBadgeOrigem(idInstall);
 
-    var btnAbrir = idAbrir ? document.getElementById('btn-' + idAbrir) : null;
+    // Prioridade: `_ABRIR_REGISTRY` (fonte nova, independente do
+    // DOM) → `idAbrir` (compat com sessões ainda não migradas
+    // para Rodada 2B) → null (cinza sem abrir).
+    var dadosAbrir = _dadosAbrirDoApp(idInstall);
+    var btnAbrir = (!dadosAbrir && idAbrir) ? document.getElementById('btn-' + idAbrir) : null;
+
     var instalado = isExecutado(idInstall);
     var idRem = idRemover || _idRemocaoDe(idInstall);
 
-    // Auto-reset (item #12/#13): se o FAP marcou como instalado,
-    // mas o pacote não está mais no sistema (removido por fora),
-    // limpa o estado. Fire-and-forget: não bloqueia renderização.
-    // SEMPRE_CLICAVEIS não entra aqui (nunca é marcado como
-    // instalado, então `isExecutado` já retorna false).
     if (instalado && !_estaRealmenteInstalado(idInstall)) {
         console.log('[estado] auto-reset:', idInstall, '(removido por fora)');
         desmarcarComoExecutado(idInstall).catch(function(e) {
@@ -3044,35 +3032,46 @@ function aplicarEstadoInstalavel(idInstall, idAbrir, idRemover, preExistente) {
     }
 
     if (tratadoComoInstalado) {
-        if (btnAbrir) {
-            var textoAbrir = _textoOriginalTraduzido(btnAbrir);
+        // Resolve "Abrir X" — duas fontes possíveis:
+        //   1. `_ABRIR_REGISTRY[idInstall]` — fonte nova (Rodada 2B)
+        //   2. `btnAbrir` no DOM — legacy, sessões não migradas
+        var textoAbrir = null;
+        var onclickAbrir = null;
+
+        if (dadosAbrir) {
+            textoAbrir = _t(dadosAbrir.textoKey, dadosAbrir.textoFallback);
+            onclickAbrir = dadosAbrir.onclick;
+        } else if (btnAbrir) {
+            textoAbrir = _textoOriginalTraduzido(btnAbrir);
+            onclickAbrir = btnAbrir.getAttribute('onclick') || '';
+        }
+
+        if (textoAbrir !== null) {
             btnInstall.textContent = textoAbrir;
             btnInstall.style.backgroundColor = '#10b981';
             btnInstall.style.cursor = 'pointer';
             btnInstall.disabled = false;
             btnInstall.style.opacity = '1';
 
-            var onclickAbrir = btnAbrir.getAttribute('onclick') || '';
             var onclickInstall = btnInstall.getAttribute('data-onclick-install');
-
             if (!onclickInstall) {
                 btnInstall.setAttribute('data-onclick-install', btnInstall.getAttribute('onclick') || '');
             }
-            btnInstall.setAttribute('onclick', onclickAbrir);
-
-            btnAbrir.style.display = 'none';
+            if (onclickAbrir) {
+                btnInstall.setAttribute('onclick', onclickAbrir);
+            } else {
+                btnInstall.removeAttribute('onclick');
+            }
 
             btnInstall.setAttribute('data-estado', 'instalado-abrir');
+
+            if (btnAbrir) btnAbrir.style.display = 'none';
 
             if (preExistente && !instalado) {
                 btnInstall.title = _t('comum.tooltip_preexistente_app',
                                       'Este app já estava instalado antes do FAP. A lixeira remove o app do sistema, mas o FAP não foi o responsável pela instalação.');
                 btnInstall.setAttribute('data-title-origem', '1');
             } else {
-                // FAP instalou. O tooltip de origem ("de onde o pacote
-                // vem") não faz sentido num botão que agora diz "Abrir X"
-                // — o pacote já está instalado. A badge continua
-                // mostrando a origem ao hover.
                 btnInstall.title = '';
                 btnInstall.removeAttribute('data-title-origem');
             }
@@ -3088,8 +3087,6 @@ function aplicarEstadoInstalavel(idInstall, idAbrir, idRemover, preExistente) {
                 btnInstall.title = _t('comum.tooltip_preexistente_app',
                                       'Este app já estava instalado antes do FAP. A lixeira remove o app do sistema, mas o FAP não foi o responsável pela instalação.');
             }
-            // else: preserva o tooltip de origem (setado por
-            // _renderizarBadgeOrigem no topo da função).
         }
 
         _mostrarLixeira(idInstall, idRem);
@@ -3099,10 +3096,6 @@ function aplicarEstadoInstalavel(idInstall, idAbrir, idRemover, preExistente) {
         btnInstall.style.cursor = 'pointer';
         btnInstall.disabled = false;
         btnInstall.style.opacity = '1';
-        // NÃO limpa `btnInstall.title` aqui — o tooltip de origem
-        // (setado por _renderizarBadgeOrigem no topo) é útil mesmo
-        // com o botão no estado "Instalar". Só o cleanup no topo
-        // da função pode resetar o estado anterior.
 
         var onclickInstallSalvo = btnInstall.getAttribute('data-onclick-install');
         if (onclickInstallSalvo !== null) {
@@ -3112,6 +3105,52 @@ function aplicarEstadoInstalavel(idInstall, idAbrir, idRemover, preExistente) {
 
         if (btnAbrir) btnAbrir.style.display = 'none';
 
+        _esconderLixeira(idInstall);
+    }
+}
+
+// ============================================================
+// ONE-SHOT — instalar, marcar como feito, sem lixeira, sem revert
+// ============================================================
+//
+// Usado nos drivers de código livre (AMD, Intel e utilitários NVIDIA
+// VA-API). A lógica:
+//
+//   • Respeita APENAS `isExecutado(idInstall)` (estado do FAP).
+//     NÃO consulta `appJaInstaladoNoSistema` (estado do sistema).
+//   • Sem lixeira, sem revert, sem `motivoBloqueio`.
+//   • Se `isExecutado` → cinza desabilitado "✅ Instalado".
+//   • Se não → azul clicável, com o texto original do HTML.
+//
+// Motivo de existir: drivers de código livre no Fedora são
+// instalados em camadas (32-bit + 64-bit, versão freeworld, etc.).
+// Uma vez instalados, o `dnf remove` dos 32-bit cascateia para
+// dependentes críticos (Steam, kinfocenter). Não existe forma
+// cirúrgica de reverter via FAP. Por isso o botão é de mão única:
+// instala, marca e o usuário decide remover manualmente se quiser.
+function aplicarEstadoOneShot(idInstall) {
+    var btn = document.getElementById('btn-' + idInstall);
+    if (!btn) return;
+
+    var feito = isExecutado(idInstall);
+
+    if (feito) {
+        btn.textContent = getTextoAposExecucao(idInstall);
+        btn.style.backgroundColor = '#4b5563';
+        btn.style.cursor = 'default';
+        btn.disabled = true;
+        btn.style.opacity = '1';
+        btn.removeAttribute('data-estado');
+        btn.title = '';
+        _esconderLixeira(idInstall);
+    } else {
+        btn.textContent = _textoOriginalTraduzido(btn) || btn.textContent;
+        btn.style.backgroundColor = _corOriginalDoBotao(btn) || '';
+        btn.style.cursor = 'pointer';
+        btn.disabled = false;
+        btn.style.opacity = '1';
+        btn.removeAttribute('data-estado');
+        btn.title = '';
         _esconderLixeira(idInstall);
     }
 }
@@ -3441,6 +3480,23 @@ async function aguardarConclusaoEEntao(idComando, onSucesso, timeoutMs) {
     }
 
     if (sucesso) {
+        // ============================================================
+        // INVALIDA O SystemState ANTES do onSucesso (correção v1.4.0)
+        // ============================================================
+        //
+        // O `onSucesso` de cada botão chama `aplicarEstadoInstalavel`,
+        // que roda `_estaRealmenteInstalado` para o auto-reset (v1.3.2).
+        // Se o `SystemState` ainda tiver o cache antigo (TTL de 60s),
+        // o Flatpak/pacote recém-instalado não aparece na lista, e o
+        // auto-reset limpa o estado do botão ANTES de pintá-lo como
+        // instalado. Resultado: botão volta para "Instalar" e a
+        // lixeira/o botão "Abrir" não aparecem.
+        //
+        // Invalidar força o recarregamento do zero na próxima consulta,
+        // que já enxerga o pacote recém-instalado.
+        if (typeof SystemState !== 'undefined' && typeof SystemState.invalidar === 'function') {
+            try { SystemState.invalidar(); } catch (e) { /* ignore */ }
+        }
         onSucesso(idComando);
     }
 }
@@ -3690,6 +3746,48 @@ var _MAPA_ORIGEM = {
     'selinux-setroubleshoot-install': 'fedora',
     'selinux-gui-install': 'fedora'
 };
+
+// ============================================================
+// REGISTRO DE "ABRIR X" — v1.4.1 (Rodada 2B)
+// ============================================================
+//
+// Cada app instalável registra como deve virar o botão "🚀 Abrir X"
+// após a instalação. O registro é feito pela SESSÃO no momento em
+// que ela carrega (dentro do seu próprio `<script>`), evitando que
+// `script.js` precise conhecer `abrirVlc()`, `abrirOBSStudio()`
+// etc. — que vivem no escopo global da sessão via
+// `eval.call(window, ...)` do guiado.html.
+//
+// A partir do momento em que a sessão foi migrada para 2B (sem os
+// `<button class="verde">` originais), `aplicarEstadoInstalavel`
+// consulta este registry em vez de depender do DOM.
+//
+// Formato:
+//   _registrarAbrir('instalar-vlc', {
+//       textoKey: 'sessoes.aplicativos.btn_abrir_vlc',
+//       textoFallback: '🚀 Abrir VLC Media Player',
+//       onclick: "abrirAppGenerico('instalar-vlc')"
+//   });
+//
+// `onclick` DEVE ser string não vazia. Ela é colocada em
+// `setAttribute('onclick', ...)` do botão de instalar e avaliada
+// pelo navegador no clique — por isso precisa de função global
+// (a sessão já carregou quando o botão é clicável).
+var _ABRIR_REGISTRY = {};
+
+function _registrarAbrir(idInstall, dados) {
+    if (!idInstall || !dados) return;
+    if (!dados.textoKey || typeof dados.onclick !== 'string' || !dados.onclick) {
+        console.warn('[abrir-registry] registro inválido para', idInstall);
+        return;
+    }
+    _ABRIR_REGISTRY[idInstall] = dados;
+}
+
+function _dadosAbrirDoApp(idInstall) {
+    if (!idInstall) return null;
+    return _ABRIR_REGISTRY[idInstall] || null;
+}
 
 function _origemDoApp(idComando) {
     if (!idComando) return null;

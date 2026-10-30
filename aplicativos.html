@@ -321,15 +321,6 @@ data-i18n="sessoes.aplicativos.btn_artcraft_launcher">
 🎨 Instalar ArtCraft Launcher
 </button>
 </div>
-<button class="btn-executar verde"
-style="display: none;"
-onclick="abrirArtCraftLauncher()"
-data-comando="abrir-artcraft-launcher"
-data-logbox="log-sessao-aplicativos"
-id="btn-abrir-artcraft-launcher"
-data-i18n="sessoes.aplicativos.btn_abrir_artcraft_launcher">
-🚀 Abrir ArtCraft Launcher
-</button>
 </div>
 
 <div class="progress-container" id="progress-instalar-artcraft-launcher">
@@ -455,9 +446,6 @@ BLOCO 6 — EDIÇÃO DE VÍDEO, ÁUDIO E MODELAGEM 3D
 <div class="btn-flatpak-wrapper">
 <button class="btn-executar" onclick="instalarLightworks()" data-comando="instalar-lightworks" data-logbox="log-sessao-aplicativos" id="btn-instalar-lightworks" data-i18n="sessoes.aplicativos.btn_lightworks">🎞️ Lightworks</button>
 </div>
-<button class="btn-executar verde" style="display: none;" onclick="abrirLightworks()" data-comando="abrir-lightworks" data-logbox="log-sessao-aplicativos" id="btn-abrir-lightworks" data-i18n="sessoes.aplicativos.btn_abrir_lightworks">
-🚀 Abrir Lightworks
-</button>
 </div>
 <div class="launcher-item">
 <div class="btn-flatpak-wrapper">
@@ -525,35 +513,9 @@ data-i18n="sessoes.aplicativos.btn_rclone_manager">
 🎛️ Instalar Rclone Manager
 </button>
 </div>
-<button class="btn-executar verde"
-style="display: none;"
-onclick="abrirRcloneManager()"
-data-comando="abrir-rclone-manager"
-data-logbox="log-sessao-aplicativos"
-id="btn-abrir-rclone-manager"
-data-i18n="sessoes.aplicativos.btn_abrir_rclone_manager">
-🚀 Abrir Rclone Manager
-</button>
-</div>
-
-<div class="aviso-caixa" style="margin-top: 1rem;" data-i18n-html="sessoes.aplicativos.rclone_uninstall_aviso">
-⚠️ <strong>Remover completamente o Rclone Manager?</strong> Este botão remove os pacotes <code>rclone-manager</code> e <code>rclone</code> do sistema, incluindo qualquer versão do Rclone que o próprio Rclone Manager tenha instalado. <strong>Suas contas de nuvem ficam salvas em <code>~/.config/rclone</code> e NÃO são apagadas</strong> — se reinstalar depois, suas contas continuam lá. Ação irreversível em relação aos pacotes.
-</div>
-
-<div class="botoes-flex">
-<button class="btn-executar destrutivo"
-onclick="desfazerRcloneManager()"
-data-comando="desfazer-rclone-manager"
-data-logbox="log-sessao-aplicativos"
-id="btn-desfazer-rclone-manager"
-data-i18n="sessoes.aplicativos.btn_desfazer_rclone_manager"
-disabled>
-🗑️ Remover completamente o Rclone Manager
-</button>
 </div>
 
 <div class="progress-container" id="progress-instalar-rclone-manager"><div class="progress-bar"><div class="progress-fill" id="progress-fill-instalar-rclone-manager"></div></div><div class="progress-text"><span class="status" id="progress-status-instalar-rclone-manager">⏳ Iniciando...</span><span class="percentage" id="progress-percent-instalar-rclone-manager">0%</span></div></div>
-<div class="progress-container" id="progress-desfazer-rclone-manager"><div class="progress-bar"><div class="progress-fill" id="progress-fill-desfazer-rclone-manager"></div></div><div class="progress-text"><span class="status" id="progress-status-desfazer-rclone-manager">⏳ Iniciando...</span><span class="percentage" id="progress-percent-desfazer-rclone-manager">0%</span></div></div>
 
 </div>
 </details>
@@ -580,9 +542,6 @@ BLOCO 8 — FERRAMENTAS DE ACESSO REMOTO
 🖥️ RustDesk
 </button>
 </div>
-<button class="btn-executar verde" style="display: none;" onclick="abrirRustDesk()" data-comando="abrir-rustdesk" data-logbox="log-sessao-aplicativos" id="btn-abrir-rustdesk" data-i18n="sessoes.aplicativos.btn_abrir_rustdesk">
-🚀 Abrir RustDesk
-</button>
 </div>
 
 <div class="launcher-item">
@@ -591,9 +550,6 @@ BLOCO 8 — FERRAMENTAS DE ACESSO REMOTO
 🖥️ Remmina
 </button>
 </div>
-<button class="btn-executar verde" style="display: none;" onclick="abrirRemmina()" data-comando="abrir-remmina" data-logbox="log-sessao-aplicativos" id="btn-abrir-remmina" data-i18n="sessoes.aplicativos.btn_abrir_remmina">
-🚀 Abrir Remmina
-</button>
 </div>
 
 <div class="launcher-item">
@@ -602,9 +558,6 @@ BLOCO 8 — FERRAMENTAS DE ACESSO REMOTO
 🖥️ GNOME Connections
 </button>
 </div>
-<button class="btn-executar verde" style="display: none;" onclick="abrirGnomeConnections()" data-comando="abrir-gnome-connections" data-logbox="log-sessao-aplicativos" id="btn-abrir-gnome-connections" data-i18n="sessoes.aplicativos.btn_abrir_gnome_connections">
-🚀 Abrir GNOME Connections
-</button>
 </div>
 
 <div class="launcher-item">
@@ -613,9 +566,6 @@ BLOCO 8 — FERRAMENTAS DE ACESSO REMOTO
 🖥️ KRDC
 </button>
 </div>
-<button class="btn-executar verde" style="display: none;" onclick="abrirKrdc()" data-comando="abrir-krdc" data-logbox="log-sessao-aplicativos" id="btn-abrir-krdc" data-i18n="sessoes.aplicativos.btn_abrir_krdc">
-🚀 Abrir KRDC
-</button>
 </div>
 
 </div>
@@ -781,45 +731,76 @@ var APPS_RPM_REPO = {
 };
 
 // ============================================================
-// BOTÕES "ABRIR X" DINÂMICOS
+// REGISTRO DE "ABRIR X" (Rodada 2B)
 // ============================================================
+//
+// Substitui a antiga `_criarBotoesAbrir()`, que inseria botões
+// verde no DOM. Agora o "Abrir X" é resolvido pelo registry e
+// `aplicarEstadoInstalavel` faz o próprio botão de instalar
+// virar "Abrir X" após sucesso. Todos os verdes estáticos do
+// HTML foram removidos.
+function _registrarAbrirEmMassa() {
+    var mapas = {
+        'APPS_FLATPAK': APPS_FLATPAK,
+        'APPS_DNF':     APPS_DNF,
+        'APPS_RPM_REPO': APPS_RPM_REPO,
+        'APPS_URL_RPM': APPS_URL_RPM
+    };
 
-function _criarBotoesAbrir() {
-    var todos = Object.assign({}, APPS_FLATPAK, APPS_DNF, APPS_RPM_REPO, APPS_URL_RPM);
+    Object.keys(mapas).forEach(function(nomeMapa) {
+        var mapa = mapas[nomeMapa];
+        Object.keys(mapa).forEach(function(id) {
+            var info = mapa[id];
+            // Só registra os que têm como abrir (todos têm para Flatpak/
+            // DNF/RPM_REPO; URL_RPM precisa de `binAbrir`).
+            if (nomeMapa === 'APPS_URL_RPM' && !info.binAbrir) return;
 
-    Object.keys(todos).forEach(function(idInstall) {
-        var idAbrir = 'abrir-' + idInstall.replace(/^instalar-/, '');
+            var chaveI18n = 'sessoes.aplicativos.btn_abrir_' +
+                id.replace(/^instalar-/, '');
+            var nomeAmigavel = (info.fallback || 'App').replace(/^[^\s]+\s*/, '');
+            _registrarAbrir(id, {
+                textoKey: chaveI18n,
+                textoFallback: '🚀 Abrir ' + nomeAmigavel,
+                onclick: "abrirAppGenerico('" + id + "')"
+            });
+        });
+    });
 
-        if (document.getElementById('btn-' + idAbrir)) return;
-
-        var btnInstall = document.getElementById('btn-' + idInstall);
-        if (!btnInstall) return;
-
-        var wrapper = btnInstall.closest('.btn-flatpak-wrapper');
-        if (!wrapper) return;
-
-        var container = wrapper.parentElement;
-        if (!container) return;
-
-        var info = todos[idInstall];
-        var nomeAmigavel = (info.fallback || 'App').replace(/^[^\s]+\s*/, '');
-        var chaveI18n = 'sessoes.aplicativos.btn_abrir_' + idInstall.replace(/^instalar-/, '');
-        var textoFallback = '🚀 Abrir ' + nomeAmigavel;
-
-        var btnAbrir = document.createElement('button');
-        btnAbrir.className = 'btn-executar verde';
-        btnAbrir.style.display = 'none';
-        btnAbrir.id = 'btn-' + idAbrir;
-        btnAbrir.setAttribute('data-comando', idAbrir);
-        btnAbrir.setAttribute('data-logbox', 'log-sessao-aplicativos');
-        btnAbrir.setAttribute('data-i18n', chaveI18n);
-        btnAbrir.setAttribute('onclick', 'abrirAppGenerico(\'' + idInstall + '\')');
-
-        var textoInicial = _t(chaveI18n, textoFallback);
-        btnAbrir.textContent = textoInicial;
-        btnAbrir.setAttribute('data-texto-original', textoFallback);
-
-        container.appendChild(btnAbrir);
+    // Casos especiais com função de abertura dedicada.
+    _registrarAbrir('instalar-lightworks', {
+        textoKey: 'sessoes.aplicativos.btn_abrir_lightworks',
+        textoFallback: '🚀 Abrir Lightworks',
+        onclick: 'abrirLightworks()'
+    });
+    _registrarAbrir('instalar-rclone-manager', {
+        textoKey: 'sessoes.aplicativos.btn_abrir_rclone_manager',
+        textoFallback: '🚀 Abrir Rclone Manager',
+        onclick: 'abrirRcloneManager()'
+    });
+    _registrarAbrir('instalar-artcraft-launcher', {
+        textoKey: 'sessoes.aplicativos.btn_abrir_artcraft_launcher',
+        textoFallback: '🚀 Abrir ArtCraft Launcher',
+        onclick: 'abrirArtCraftLauncher()'
+    });
+    _registrarAbrir('instalar-rustdesk', {
+        textoKey: 'sessoes.aplicativos.btn_abrir_rustdesk',
+        textoFallback: '🚀 Abrir RustDesk',
+        onclick: 'abrirRustDesk()'
+    });
+    _registrarAbrir('instalar-remmina', {
+        textoKey: 'sessoes.aplicativos.btn_abrir_remmina',
+        textoFallback: '🚀 Abrir Remmina',
+        onclick: 'abrirRemmina()'
+    });
+    _registrarAbrir('instalar-gnome-connections', {
+        textoKey: 'sessoes.aplicativos.btn_abrir_gnome_connections',
+        textoFallback: '🚀 Abrir GNOME Connections',
+        onclick: 'abrirGnomeConnections()'
+    });
+    _registrarAbrir('instalar-krdc', {
+        textoKey: 'sessoes.aplicativos.btn_abrir_krdc',
+        textoFallback: '🚀 Abrir KRDC',
+        onclick: 'abrirKrdc()'
     });
 }
 
@@ -892,7 +873,7 @@ function abrirAppGenerico(idInstall) {
     }
 }
 
-_criarBotoesAbrir();
+_registrarAbrirEmMassa();
 
 // ============================================================
 // REGISTRO DE APPS REMOVÍVEIS
@@ -939,11 +920,21 @@ registrarAppRemovivel('instalar-rustdesk', {
 
 // --- Rclone Manager ("desfazer tudo") ---
 
+// ============================================================
+// RCLONE MANAGER — Estado 2 com lixeira full-cleanup
+// ============================================================
+//
+// O Rclone Manager deixa vários resíduos fora do `dnf remove`
+// (atalho .desktop, ícone no hicolor, caches). Se o usuário
+// apenas removesse via lixeira padrão, esses resíduos ficariam
+// órfãos. Por isso a lixeira roda o mesmo `comandoRemocao`
+// completo que antes estava no botão "desfazer tudo" — o
+// comportamento funcional é o mesmo, só muda o ponto de entrada
+// (lixeira em vez de botão destrutivo separado).
 registrarAppRemovivel('instalar-rclone-manager', {
-    modo: 'desfazerTudo',
-    idDesfazer: 'desfazer-rclone-manager',
+    tipo: 'dnf',
     pacotes: ['rclone-manager', 'rclone'],
-    comandoDesfazer:
+    comandoRemocao:
         'PKGS=$(rpm -qa | grep -i "^rclone"); ' +
         'if [ -n "$PKGS" ]; then ' +
         '  sudo dnf remove -y $PKGS; ' +
@@ -1274,25 +1265,24 @@ async function instalarRcloneManager() {
 
     var comando = 'sudo dnf install -y --setopt=localpkg_gpgcheck=0 "' + rpmUrl + '"';
     var nomeAcao = _t('sessoes.aplicativos.btn_rclone_manager', '🎛️ Instalar Rclone Manager');
-    await executarComandoGenerico(idComando, comando, nomeAcao, function() {
-        atualizarBotaoAbrirRclone();
-        aplicarEstadoToggle('instalar-rclone-manager', 'desfazer-rclone-manager');
+        await executarComandoGenerico(idComando, comando, nomeAcao, function() {
+        // Estado 2: Instalar → Abrir + lixeira. A lixeira executa
+        // o `comandoRemocao` completo (pacotes + atalhos + ícones
+        // + caches), mas preserva `~/.config/rclone/`.
+        aplicarEstadoInstalavel('instalar-rclone-manager', 'abrir-rclone-manager');
     });
-}
-
-function desfazerRcloneManager() {
-    _executarDesfazerTudo('instalar-rclone-manager');
 }
 
 function abrirRcloneManager() {
     abrirFerramentaExterna('rclone-manager', 'instalar-rclone-manager', 'Rclone Manager');
 }
 
-function atualizarBotaoAbrirRclone() {
-    var btn = document.getElementById('btn-abrir-rclone-manager');
-    if (!btn) return;
-    btn.style.display = isExecutado('instalar-rclone-manager') ? '' : 'none';
-}
+// `desfazerRcloneManager` e `atualizarBotaoAbrirRclone` foram
+// removidos na v1.4.1. Rclone Manager agora é Estado 2 puro: a
+// lixeira (`_executarRemocaoApp`) executa o `comandoRemocao`
+// completo registrado em `registrarAppRemovivel`, e o botão
+// "Abrir Rclone Manager" é gerenciado automaticamente por
+// `aplicarEstadoInstalavel`.
 
 // ============================================================
 // AFFINITY
@@ -1530,60 +1520,35 @@ function abrirKrdc() {
 // ============================================================
 
 async function restaurarEstadoSessao() {
-    // Flatpaks.
+    // Rodada 2B: todos os "Abrir X" vêm do `_ABRIR_REGISTRY`
+    // (registrado por `_registrarAbrirEmMassa()` no boot da
+    // sessão). `idAbrir = null`.
     Object.keys(APPS_FLATPAK).forEach(function(idComando) {
-        aplicarEstadoInstalavel(idComando, _derivarIdAbrir(idComando));
+        aplicarEstadoInstalavel(idComando, null);
     });
-
-    // DNF (repos oficiais do Fedora).
     Object.keys(APPS_DNF).forEach(function(idComando) {
-        aplicarEstadoInstalavel(idComando, _derivarIdAbrir(idComando));
+        aplicarEstadoInstalavel(idComando, null);
     });
-
-    // RPM via repo oficial do fabricante (navegadores).
     Object.keys(APPS_RPM_REPO).forEach(function(idComando) {
-        aplicarEstadoInstalavel(idComando, _derivarIdAbrir(idComando));
+        aplicarEstadoInstalavel(idComando, null);
     });
-
-    // RPM via URL direta (RustDesk).
     Object.keys(APPS_URL_RPM).forEach(function(idComando) {
-        aplicarEstadoInstalavel(idComando, _derivarIdAbrir(idComando));
+        aplicarEstadoInstalavel(idComando, null);
     });
 
-    // Lightworks (RPM baixado de URL, botão de abrir presente no HTML).
-    aplicarEstadoInstalavel('instalar-lightworks', 'abrir-lightworks');
+    aplicarEstadoInstalavel('instalar-lightworks', null);
+    aplicarEstadoInstalavel('instalar-rclone-manager', null);
 
-    // Rclone Manager ("desfazer tudo").
-    if (isExecutado('instalar-rclone-manager')) {
-        var btnRcloneMgr = document.getElementById('btn-instalar-rclone-manager');
-        if (btnRcloneMgr) {
-            btnRcloneMgr.textContent = getTextoAposExecucao('instalar-rclone-manager');
-            btnRcloneMgr.style.backgroundColor = '#4b5563';
-            btnRcloneMgr.style.cursor = 'default';
-            btnRcloneMgr.disabled = true;
-        }
-    }
-
-    // Ferramentas de acesso remoto não-Flatpak.
     ['instalar-remmina', 'instalar-gnome-connections', 'instalar-krdc'].forEach(function(id) {
-        aplicarEstadoInstalavel(id, _derivarIdAbrir(id));
+        aplicarEstadoInstalavel(id, null);
     });
 
-    // ArtCraft Launcher (v1.2.2).
-    aplicarEstadoInstalavel('instalar-artcraft-launcher', 'abrir-artcraft-launcher');
-
-    // 5 apps novos (v1.2.2).
-    aplicarEstadoInstalavel('instalar-firefox', 'abrir-firefox');
-    aplicarEstadoInstalavel('instalar-vscode', 'abrir-vscode');
-    aplicarEstadoInstalavel('instalar-drawy', 'abrir-drawy');
-    aplicarEstadoInstalavel('instalar-gear-lever', 'abrir-gear-lever');
-    aplicarEstadoInstalavel('instalar-packet', 'abrir-packet');
-
-    atualizarBotaoAbrirRclone();
-    aplicarEstadoToggle('instalar-rclone-manager', 'desfazer-rclone-manager');
-
-    // O caso pré-existente é tratado pela Opção B do
-    // `aplicarEstadoInstalavel` (script.js).
+    aplicarEstadoInstalavel('instalar-artcraft-launcher', null);
+    aplicarEstadoInstalavel('instalar-firefox', null);
+    aplicarEstadoInstalavel('instalar-vscode', null);
+    aplicarEstadoInstalavel('instalar-drawy', null);
+    aplicarEstadoInstalavel('instalar-gear-lever', null);
+    aplicarEstadoInstalavel('instalar-packet', null);
 }
 
 (function() {

@@ -288,6 +288,50 @@ var SUPLEMENTO_COMMANDS = {
     'firmware-vendor-remove': 'sudo dnf remove -y linux-firmware-vendor'
 };
 
+// ============================================================
+// REGISTRO DE APPS REMOVÍVEIS — permite detecção de pré-existência
+// ============================================================
+//
+// Sem `registrarAppRemovivel`, `appJaInstaladoNoSistema()` retorna
+// `false` para estes IDs — o que faz o botão mostrar "Instalar"
+// mesmo com o driver já presente no sistema (via instalação manual
+// ou sessão anterior do FAP). Estes registros permitem que
+// `aplicarEstadoItemCompleto`/`aplicarEstadoToggle` detectem
+// corretamente o estado real.
+
+registrarAppRemovivel('firmware-vendor-install', {
+    tipo: 'dnf',
+    pacotes: ['linux-firmware-vendor'],
+    nome: 'Firmware adicional de fabricantes'
+});
+
+registrarAppRemovivel('driver-openrazer-install', {
+    tipo: 'dnf',
+    // Pode vir como `akmod-openrazer` (preferido) ou como
+    // `openrazer-kernel-modules-dkms` (fallback). O `rpm -qa`
+    // pega qualquer um dos dois.
+    pacotes: ['openrazer-daemon', 'akmod-openrazer', 'openrazer-kernel-modules-dkms'],
+    nome: 'Driver OpenRazer'
+});
+
+registrarAppRemovivel('driver-xpadneo-install', {
+    tipo: 'dnf',
+    pacotes: ['xpadneo'],
+    nome: 'Driver xpadneo'
+});
+
+registrarAppRemovivel('driver-broadcom-wl-install', {
+    tipo: 'dnf',
+    pacotes: ['akmod-wl'],
+    nome: 'Driver Broadcom (akmod-wl)'
+});
+
+registrarAppRemovivel('driver-realtek-r8168-install', {
+    tipo: 'dnf',
+    pacotes: ['akmod-r8168'],
+    nome: 'Driver Realtek r8168'
+});
+
 var COPR_COMMANDS = {
     // OpenRazer: usa o repositório oficial do projeto, não um COPR
     'copr-openrazer-enable': 'sudo dnf config-manager addrepo --from-repofile=https://openrazer.github.io/hardware:razer.repo',

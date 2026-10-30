@@ -270,15 +270,7 @@ id="btn-waydroid-helper-install"
 data-i18n="sessoes.waydroid.btn_helper_install">
 📦 Instalar waydroid-helper
 </button>
-<button class="btn-executar verde"
-style="display: none;"
-onclick="executarWaydroidHelperOpen()"
-data-comando="waydroid-helper-open"
-data-logbox="log-sessao-waydroid"
-id="btn-waydroid-helper-open"
-data-i18n="sessoes.waydroid.btn_helper_open">
-🚀 Abrir waydroid-helper
-</button>
+
 </div>
 </div>
 <div class="progress-container" id="progress-waydroid-helper-install">
@@ -374,6 +366,15 @@ var WAYDROID_EXTRAS_IDS = [
 'waydroid-smartdock',
 'waydroid-prefs'
 ];
+
+// Rodada 2B: `Abrir X` do waydroid-helper vem do registry.
+// `btn-abrir-waydroid` NÃO migra — é botão independente (poll +
+// guard), não é "instalar vira abrir".
+_registrarAbrir('waydroid-helper-install', {
+    textoKey: 'sessoes.waydroid.btn_helper_open',
+    textoFallback: '🚀 Abrir waydroid-helper',
+    onclick: 'executarWaydroidHelperOpen()'
+});
 
 // ============================================================
 // HELPERS: status do container
@@ -505,11 +506,22 @@ await executarComandoGenerico(idComando, comando, _t('sessoes.waydroid.btn_init'
 }
 
 async function abrirWaydroidUI() {
-var idComando = 'abrir-waydroid';
-var logBox = _getLogBox(idComando);
-var btn = document.getElementById('btn-' + idComando);
+    var idComando = 'abrir-waydroid';
+    var logBox = _getLogBox(idComando);
+    var btn = document.getElementById('btn-' + idComando);
 
-if (btn && btn.disabled) return;
+    if (btn && btn.disabled) return;
+
+    // Guard: só abre se o Waydroid estiver instalado no sistema.
+    // Sem isso, o usuário clica e o `waydroid show-full-ui` falha
+    // com "comando não encontrado" — o que parece bug do FAP.
+    var status = await _verificarContainerWaydroid();
+    if (!status.installed) {
+        alert(_t('sessoes.waydroid.container_not_ready',
+            'Waydroid ainda não está instalado ou inicializado. Siga os passos da seção acima primeiro.'));
+        await _atualizarBotaoAbrirWaydroid();
+        return;
+    }
 
 if (logBox) {
 logBox.style.display = 'block';
@@ -689,15 +701,12 @@ async function executarWaydroidUninstall() {
                 }
             }
 
-            // Esconde os botões "Abrir" que dependem do Waydroid.
-            // - btn-abrir-waydroid: não é irmão de nenhum install
-            //   (está em seção diferente), então escondemos direto.
-            // - btn-waydroid-helper-open: usa o helper DOM (é irmão
-            //   do waydroid-helper-install em .botoes-flex).
+            // Esconde o botão "Abrir Waydroid" (independente, não
+            // depende do registry). O "Abrir waydroid-helper" é
+            // recriado por `aplicarEstadoInstalavel` no próximo
+            // `restaurarEstadoSessao`, então não precisa esconder.
             var btnAbrirWaydroid = document.getElementById('btn-abrir-waydroid');
             if (btnAbrirWaydroid) btnAbrirWaydroid.style.display = 'none';
-
-            esconderBotoesAbrirDe('waydroid-helper-install');
 
             // O botão "Instalar Waydroid" já foi reabilitado no loop
             // acima. Esconde o próprio botão de uninstall também.
@@ -765,13 +774,22 @@ await _waydroidExtra('waydroid-smartdock', 'smartdock', _t('sessoes.waydroid.btn
 // CONFIGURAÇÕES AVANÇADAS — waydroid-helper (install + open)
 // ============================================================
 
+// Registro para detecção de pré-existência. Sem isso, o botão
+// mostra "Instalar" mesmo com `waydroid-helper` já presente.
+registrarAppRemovivel('waydroid-helper-install', {
+    tipo: 'dnf',
+    pacotes: ['waydroid-helper'],
+    nome: 'waydroid-helper'
+});
+
 async function executarWaydroidHelperInstall() {
 var idComando = 'waydroid-helper-install';
 var comando = 'sudo dnf copr enable cuteneko/waydroid-helper -y && sudo dnf install -y waydroid-helper';
 await executarComandoGenerico(idComando, comando,
 _t('sessoes.waydroid.btn_helper_install', '📦 Instalar waydroid-helper'),
 function() {
-aplicarEstadoInstalavel('waydroid-helper-install', 'waydroid-helper-open');
+// Rodada 2B: o "Abrir X" vem do registry.
+aplicarEstadoInstalavel('waydroid-helper-install', null);
 });
 }
 
@@ -846,12 +864,16 @@ async function restaurarEstadoSessao() {
         }
 
         // 2. Pré-existente no sistema → cinza "já estava" com
-        //    tooltip. Só se aplica aos 3 botões cujo estado é
-        //    detectável: install, init e extras-prep.
+        //    tooltip. Cobre os 3 botões de estado persistente do
+        //    Waydroid + o waydroid-helper (detectado via rpm).
         var preExistente = false;
-        if (id === 'waydroid-install')        preExistente = wd.installed;
-        else if (id === 'waydroid-init')      preExistente = wd.initialized;
+        if (id === 'waydroid-install')          preExistente = wd.installed;
+        else if (id === 'waydroid-init')        preExistente = wd.initialized;
         else if (id === 'waydroid-extras-prep') preExistente = wd.extras_prepared;
+        else if (id === 'waydroid-helper-install') {
+            try { preExistente = SystemState.pacoteInstalado('waydroid-helper'); }
+            catch (e) { preExistente = false; }
+        }
 
         if (preExistente) {
             b.textContent = _t('sessoes.waydroid.ja_feito_preexistente', '✅ Já foi feito (antes do FAP)');
@@ -881,6 +903,32 @@ async function restaurarEstadoSessao() {
     _atualizarBloqueioExtrasWaydroid();
 
     _atualizarBotaoUninstallWaydroid();
+
+    _atualizarBotaoAbrirWaydroid();
+}
+
+// ============================================================
+// BOTÃO "ABRIR WAYDROID" — só habilitado se Waydroid estiver instalado
+// ============================================================
+async function _atualizarBotaoAbrirWaydroid() {
+    var btn = document.getElementById('btn-abrir-waydroid');
+    if (!btn) return;
+
+    // Tenta cache primeiro (rápido). Se não tiver, consulta status.
+    var status = await _verificarContainerWaydroid();
+
+    if (status.installed) {
+        btn.disabled = false;
+        btn.style.opacity = '1';
+        btn.style.cursor = 'pointer';
+        btn.title = '';
+    } else {
+        btn.disabled = true;
+        btn.style.opacity = '0.4';
+        btn.style.cursor = 'not-allowed';
+        btn.title = _t('sessoes.waydroid.container_not_ready',
+            'Waydroid ainda não está instalado ou inicializado. Siga os passos da seção acima primeiro.');
+    }
 }
 
 // ============================================================
