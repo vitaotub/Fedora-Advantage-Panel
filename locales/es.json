@@ -179,6 +179,7 @@
             "titulo": "🖥️ Hardware",
             "descricao": "Configuraciones específicas de tu hardware. Elige abajo el tipo de GPU (AMD, NVIDIA o Intel) para ver los controladores y herramientas correspondientes. Para mandos, webcams, Wi-Fi y otros periféricos, usa la sesión <strong>Dispositivos y Periféricos</strong>.",
             "amd_titulo": "🟥 Hardware AMD",
+            "amd_aviso_one_shot": "ℹ️ Los drivers AMD son todos de código abierto. Los botones de abajo instalan los <strong>complementos</strong> que Fedora no trae por defecto: <strong>Vulkan 32-bit</strong> (necesario para Steam/Proton ejecutando juegos de 32 bits) y <strong>VA-API vía RPM Fusion</strong> (para aceleración de vídeo sin los códecs restringidos por licenciamiento). La base de Fedora ya trae las versiones 64-bit de Vulkan/Mesa y el VA-API predeterminado. <strong>Sin botón de remoción</strong> — el <code>dnf remove</code> de estos paquetes cascadearía al Steam y otras apps. Para deshacer, usa la terminal y acepta los dependientes.",
             "vulkan_titulo": "Vulkan, Mesa 3D y RADV",
             "vulkan_desc": "Instala las bibliotecas Vulkan (versiones de 32 y 64 bits), Mesa 3D con el controlador RADV (controlador Vulkan de código abierto de AMD), herramientas de diagnóstico y controladores de compatibilidad. Esencial para Steam, Proton y juegos nativos.",
             "btn_vulkan": "🚀 Instalar Vulkan y Mesa 3D",
@@ -228,10 +229,13 @@
             "nvidia_panel_label_serie": "Serie",
             "nvidia_panel_rpmfusion_aviso": "⚠️ <strong>RPM Fusion Nonfree no está activo.</strong> Actívalo en la sesión <strong>Primeros Pasos</strong> antes de instalar el controlador.",
             "texto_concluido_nvidia_driver": "✅ Controlador NVIDIA instalado",
+            "texto_concluido_nvidia_driver_remove": "✅ Controlador NVIDIA eliminado",
             "nvidia_modeset_titulo": "NVIDIA Modesetting (Wayland)",
             "nvidia_modeset_desc": "Activa el parámetro nvidia-drm.modeset=1 en el kernel, necesario para que Wayland funcione correctamente con tarjetas NVIDIA.",
             "btn_modeset_on": "⚙️ Activar modesetting",
             "btn_modeset_off": "↩️ Desactivar modesetting",
+            "texto_concluido_modeset_on": "✅ Modesetting activado",
+            "texto_concluido_modeset_off": "✅ Modesetting desactivado",
             "nvidia_vaapi_titulo": "Aceleración de Vídeo por Hardware (VA-API vía NVIDIA)",
             "nvidia_vaapi_desc": "El controlador propietario de NVIDIA no expone VA-API nativamente — usa la API competidora VDPAU. El paquete <code>nvidia-vaapi-driver</code> es una capa de traducción: recibe las llamadas VA-API de las aplicaciones (Firefox, Chrome, VLC, etc.) y las convierte al chip NVDEC de NVIDIA. Sin él, la aceleración de vídeo en el navegador no funciona.",
             "nvidia_vaapi_info": "ℹ️ <strong>Qué se instala:</strong> <code>nvidia-vaapi-driver</code> (el traductor), <code>libva-utils</code> (contiene <code>vainfo</code>), <code>vdpauinfo</code> (verificador VDPAU) y <code>gstreamer1-vaapi</code> (integración con GStreamer).",
@@ -259,6 +263,7 @@
             "prereq_ffmpeg_link": "Ir a la sesión Códecs",
             "intel_titulo": "🟦 Hardware Intel",
             "intel_aviso": "⚠️ Estos paquetes son para iGPUs Intel (gráficos integrados). Si tienes una GPU dedicada AMD o NVIDIA, el controlador de la tarjeta dedicada se encarga de la mayor parte de la aceleración — los controladores Intel aún pueden ser útiles si usas la iGPU en conjunto, pero no son obligatorios.",
+            "intel_aviso_one_shot": "ℹ️ Los drivers Intel son todos de código abierto. Los botones de abajo instalan los <strong>complementos</strong> para aceleración de vídeo que Fedora no trae (o trae en versión más antigua): <strong>Intel Media Driver</strong> (Broadwell / 5ª gen o más reciente) o <strong>libva-intel-driver</strong> (Haswell / 4ª gen o anterior), además de <strong>utilidades de diagnóstico</strong> (<code>libva-utils</code> + <code>gstreamer1-vaapi</code>). <strong>Sin botón de remoción</strong> — para deshacer, usa la terminal.",
             "intel_media_titulo": "Driver Moderno: Aceleración de Vídeo Intel (Broadwell / 5ª gen Core+ / Arc)",
             "intel_media_desc": "El paquete <code>intel-media-driver</code> habilita la aceleración de vídeo por hardware en iGPUs Intel <strong>Broadwell (5ª gen) o más recientes</strong> — incluyendo Coffee Lake, Ice Lake, Tiger Lake, Alder Lake, Raptor Lake, Meteor Lake y las GPUs dedicadas Intel Arc. Reduce el uso de CPU al ver vídeos en 4K, al usar el navegador y al editar vídeo.",
             "btn_intel_media_instalar": "🎬 Instalar Intel Media Driver",
@@ -290,7 +295,11 @@
             "amd_sem_gpu_curto": "No se detectó ninguna GPU/APU AMD en este sistema",
             "intel_sem_gpu_titulo": "⚠️ No se detectó ninguna GPU Intel",
             "intel_sem_gpu_desc": "Este sistema no tiene iGPU Intel. El Intel Media Driver no aplica.",
-            "intel_sem_gpu_curto": "No se detectó ninguna GPU Intel en este sistema"
+            "intel_sem_gpu_curto": "No se detectó ninguna GPU Intel en este sistema",
+            "hw_panel_titulo": "🔍 Hardware detectado",
+            "hw_panel_label_gpu": "GPU",
+            "hw_panel_label_driver_kernel": "Driver del kernel",
+            "hw_panel_label_pacote": "Paquete sugerido"
         },
 
         "dispositivos-perifericos": {
@@ -979,14 +988,6 @@
             "btn_realtime_setup_remove": "↩️ Revertir",
             "texto_concluido_realtime_setup": "✅ Grupo realtime configurado",
             "texto_concluido_realtime_setup_remove": "✅ Grupo realtime eliminado",
-
-            "pipewire_quantum_titulo": "Baja Latencia en PipeWire",
-            "pipewire_quantum_desc": "Reduce el <em>quantum</em> de PipeWire (tamaño del búfer de audio) de 1024 a 256 muestras. Reduce la latencia de audio de ~21ms a ~5ms — esencial para grabación y juegos con audio posicional.",
-            "pipewire_quantum_info": "ℹ️ <strong>Qué cambia:</strong><br>• Crea <code>~/.config/pipewire/pipewire.conf.d/99-fap-quantum.conf</code>.<br>• Reinicia <code>pipewire</code>, <code>pipewire-pulse</code> y <code>wireplumber</code>.<br>• Se aplica inmediatamente — sin reiniciar.<br>• <strong>Compromiso:</strong> menor latencia usa un poco más de CPU. En equipos modestos, puede causar crackling.",
-            "btn_pipewire_quantum": "⚙️ Activar Baja Latencia",
-            "btn_pipewire_quantum_remove": "↩️ Revertir",
-            "texto_concluido_pipewire_quantum": "✅ Baja latencia activada",
-            "texto_concluido_pipewire_quantum_remove": "✅ Latencia predeterminada restaurada",
 
             "dnf_titulo": "⚡ Mejorar la velocidad de descarga de DNF",
             "dnf_desc": "Configura las descargas paralelas simultáneas y activa la búsqueda automática del espejo de servidor más rápido.",

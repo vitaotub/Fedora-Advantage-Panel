@@ -179,6 +179,7 @@
             "titulo": "🖥️ Hardware",
             "descricao": "Hardware-specific settings. Choose your GPU type (AMD, NVIDIA or Intel) below to see the corresponding drivers and tools. For controllers, webcams, Wi-Fi and other peripherals, use the <strong>Devices and Peripherals</strong> session.",
             "amd_titulo": "🟥 AMD Hardware",
+            "amd_aviso_one_shot": "ℹ️ AMD drivers are all open source. The buttons below install the <strong>complements</strong> that Fedora doesn't ship by default: <strong>Vulkan 32-bit</strong> (needed for Steam/Proton running 32-bit games) and <strong>VA-API via RPM Fusion</strong> (for video acceleration without the codecs restricted by licensing). The Fedora base already includes the 64-bit versions of Vulkan/Mesa and the default VA-API. <strong>No removal button</strong> — <code>dnf remove</code> of these packages would cascade into Steam and other apps. To undo, use the terminal and accept the dependents.",
             "vulkan_titulo": "Vulkan, Mesa 3D and RADV",
             "vulkan_desc": "Installs the Vulkan libraries (32-bit and 64-bit), Mesa 3D with the RADV driver (AMD's open-source Vulkan driver), diagnostic tools and compatibility drivers. Essential for Steam, Proton and native games.",
             "btn_vulkan": "🚀 Install Vulkan and Mesa 3D",
@@ -228,10 +229,13 @@
             "nvidia_panel_label_serie": "Series",
             "nvidia_panel_rpmfusion_aviso": "⚠️ <strong>RPM Fusion Nonfree is not active.</strong> Enable it in the <strong>First Steps</strong> session before installing the driver.",
             "texto_concluido_nvidia_driver": "✅ NVIDIA Driver installed",
+            "texto_concluido_nvidia_driver_remove": "✅ NVIDIA Driver removed",
             "nvidia_modeset_titulo": "NVIDIA Modesetting (Wayland)",
             "nvidia_modeset_desc": "Enables the nvidia-drm.modeset=1 kernel parameter, required for Wayland to work correctly with NVIDIA cards.",
             "btn_modeset_on": "⚙️ Enable modesetting",
             "btn_modeset_off": "↩️ Disable modesetting",
+            "texto_concluido_modeset_on": "✅ Modesetting enabled",
+            "texto_concluido_modeset_off": "✅ Modesetting disabled",
             "nvidia_vaapi_titulo": "Hardware Video Acceleration (VA-API via NVIDIA)",
             "nvidia_vaapi_desc": "The NVIDIA proprietary driver does not natively expose VA-API — it uses the competing VDPAU API. The <code>nvidia-vaapi-driver</code> package is a translation layer: it receives the VA-API calls from applications (Firefox, Chrome, VLC, etc.) and converts them to the NVIDIA NVDEC chip. Without it, browser video acceleration does not work.",
             "nvidia_vaapi_info": "ℹ️ <strong>What gets installed:</strong> <code>nvidia-vaapi-driver</code> (the translator), <code>libva-utils</code> (contains <code>vainfo</code>), <code>vdpauinfo</code> (VDPAU checker) and <code>gstreamer1-vaapi</code> (GStreamer integration).",
@@ -259,6 +263,7 @@
             "prereq_ffmpeg_link": "Go to Codecs session",
             "intel_titulo": "🟦 Intel Hardware",
             "intel_aviso": "⚠️ These packages are for Intel iGPUs (integrated graphics). If you have a dedicated AMD or NVIDIA GPU, the dedicated card's driver handles most acceleration — the Intel drivers may still be useful if you use the iGPU in tandem, but they're not mandatory.",
+            "intel_aviso_one_shot": "ℹ️ Intel drivers are all open source. The buttons below install the <strong>complements</strong> for video acceleration that Fedora doesn't ship (or ships in an older version): <strong>Intel Media Driver</strong> (Broadwell / 5th gen or newer) or <strong>libva-intel-driver</strong> (Haswell / 4th gen or older), plus <strong>diagnostic utilities</strong> (<code>libva-utils</code> + <code>gstreamer1-vaapi</code>). <strong>No removal button</strong> — to undo, use the terminal.",
             "intel_media_titulo": "Modern Driver: Intel Video Acceleration (Broadwell / 5th-gen Core+ / Arc)",
             "intel_media_desc": "The <code>intel-media-driver</code> package enables hardware video acceleration on Intel iGPUs <strong>Broadwell (5th gen) or newer</strong> — including Coffee Lake, Ice Lake, Tiger Lake, Alder Lake, Raptor Lake, Meteor Lake, and the Intel Arc discrete GPUs. Reduces CPU usage when watching 4K videos, using the browser, and editing video.",
             "btn_intel_media_instalar": "🎬 Install Intel Media Driver",
@@ -290,7 +295,11 @@
             "amd_sem_gpu_curto": "No AMD GPU/APU detected on this system",
             "intel_sem_gpu_titulo": "⚠️ No Intel GPU detected",
             "intel_sem_gpu_desc": "This system has no Intel iGPU. The Intel Media Driver does not apply.",
-            "intel_sem_gpu_curto": "No Intel GPU detected on this system"
+            "intel_sem_gpu_curto": "No Intel GPU detected on this system",
+            "hw_panel_titulo": "🔍 Hardware detected",
+            "hw_panel_label_gpu": "GPU",
+            "hw_panel_label_driver_kernel": "Kernel driver",
+            "hw_panel_label_pacote": "Suggested package"
         },
 
         "dispositivos-perifericos": {
@@ -979,14 +988,6 @@
             "btn_realtime_setup_remove": "↩️ Revert",
             "texto_concluido_realtime_setup": "✅ Realtime group configured",
             "texto_concluido_realtime_setup_remove": "✅ Realtime group removed",
-
-            "pipewire_quantum_titulo": "Low Latency in PipeWire",
-            "pipewire_quantum_desc": "Reduces the PipeWire <em>quantum</em> (audio buffer size) from 1024 to 256 samples. Reduces audio latency from ~21ms to ~5ms — essential for recording and games with positional audio.",
-            "pipewire_quantum_info": "ℹ️ <strong>What changes:</strong><br>• Creates <code>~/.config/pipewire/pipewire.conf.d/99-fap-quantum.conf</code>.<br>• Restarts <code>pipewire</code>, <code>pipewire-pulse</code> and <code>wireplumber</code>.<br>• Applies immediately — no reboot.<br>• <strong>Trade-off:</strong> lower latency uses slightly more CPU. On modest machines, it can cause crackling.",
-            "btn_pipewire_quantum": "⚙️ Enable Low Latency",
-            "btn_pipewire_quantum_remove": "↩️ Revert",
-            "texto_concluido_pipewire_quantum": "✅ Low latency enabled",
-            "texto_concluido_pipewire_quantum_remove": "✅ Default latency restored",
 
             "dnf_titulo": "⚡ Improve DNF download speed",
             "dnf_desc": "Configures simultaneous parallel downloads and enables automatic lookup of the fastest server mirror.",
