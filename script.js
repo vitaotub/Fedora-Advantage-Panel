@@ -419,11 +419,13 @@ var SystemState = (function() {
     var _dadosTs = 0;
     var _promessa = null;
 
-    function _carregar() {
-        if (_dados) return Promise.resolve(_dados);
+    function _carregar(forcarRefresh) {
+        if (_dados && !forcarRefresh) return Promise.resolve(_dados);
         if (_promessa) return _promessa;
 
-        _promessa = fetch(API_URL + '/system-state', { cache: 'no-store' })
+        var url = API_URL + '/system-state' + (forcarRefresh ? '?refresh=1' : '');
+
+        _promessa = fetch(url, { cache: 'no-store' })
         .then(function(r) {
             if (!r.ok) throw new Error('HTTP ' + r.status);
             return r.json();
@@ -629,54 +631,24 @@ function _estaRealmenteInstalado(idComando) {
         return true;
     }
 
-    // Verifica se o pacote está no cache.
-    var noCache = false;
-
     if (info.modo === 'desfazerTudo') {
         if (Array.isArray(info.pacotes)) {
             for (var i = 0; i < info.pacotes.length; i++) {
-                if (SystemState.pacoteInstalado(info.pacotes[i])) { noCache = true; break; }
+                if (SystemState.pacoteInstalado(info.pacotes[i])) return true;
             }
         }
-    } else if (info.tipo === 'flatpak' && info.appId) {
-        noCache = SystemState.flatpakInstalado(info.appId);
-    } else if (info.tipo === 'dnf' && Array.isArray(info.pacotes)) {
-        for (var j = 0; j < info.pacotes.length; j++) {
-            if (SystemState.pacoteInstalado(info.pacotes[j])) { noCache = true; break; }
-        }
-    } else {
-        // Tipo desconhecido ou sem pacotes: assume instalado.
-        return true;
-    }
-
-    if (noCache) return true;
-
-    // Cache diz "ausente". Distinguir:
-    //
-    //   • Cache FRESCO (< 60s): confiar. Significa que o pacote foi
-    //     removido por fora e o `SystemState` já revalidou. Retorna
-    //     `false` → auto-reset dispara → marker limpo → botão volta
-    //     a "Instalar".
-    //
-    //   • Cache VELHO (>= 60s): desconfiar. O `flatpak list` do
-    //     server pode ter rodado antes do usuário remover. Retorna
-    //     `true` → não reseta → espera a próxima renderização (que
-    //     vai revalidar o cache via `/system-state`).
-    //
-    // O limiar de 60s casa com o `TTL_CACHE_MS` do
-    // `system-state-service.js`.
-    var idadeCache = (typeof SystemState.cacheIdade === 'function')
-        ? SystemState.cacheIdade()
-        : 0;
-
-    var CACHE_FRESCO_MS = 60 * 1000;
-
-    if (idadeCache < CACHE_FRESCO_MS) {
-        // Cache fresco + pacote ausente → remoção externa confirmada.
         return false;
     }
-
-    // Cache velho → não confiar; próxima renderização vai revalidar.
+    if (info.tipo === 'flatpak' && info.appId) {
+        return SystemState.flatpakInstalado(info.appId);
+    }
+    if (info.tipo === 'dnf' && Array.isArray(info.pacotes)) {
+        for (var j = 0; j < info.pacotes.length; j++) {
+            if (SystemState.pacoteInstalado(info.pacotes[j])) return true;
+        }
+        return false;
+    }
+    // Tipo desconhecido ou sem pacotes: assume instalado.
     return true;
 }
 
@@ -3439,21 +3411,37 @@ async function aguardarConclusaoEEntao(idComando, onSucesso, timeoutMs) {
 
     if (sucesso) {
         // ============================================================
-        // INVALIDA O SystemState ANTES do onSucesso (correção v1.4.0)
+        // INVALIDA + RECARREGA O SystemState ANTES do onSucesso (v1.4.3)
         // ============================================================
         //
-        // O `onSucesso` de cada botão chama `aplicarEstadoInstalavel`,
-        // que roda `_estaRealmenteInstalado` para o auto-reset (v1.3.2).
-        // Se o `SystemState` ainda tiver o cache antigo (TTL de 60s),
-        // o Flatpak/pacote recém-instalado não aparece na lista, e o
-        // auto-reset limpa o estado do botão ANTES de pintá-lo como
-        // instalado. Resultado: botão volta para "Instalar" e a
-        // lixeira/o botão "Abrir" não aparecem.
+        // Histórico:
+        //   • v1.4.0: invalidava (`invalidar()`) mas NÃO aguardava o
+        //     recarregamento.
+        //   • v1.4.3: aguarda `carregar(true)` — passa `?refresh=1`
+        //     no server, que invalida o cache de 60s do
+        //     `system-state-service.js`.
         //
-        // Invalidar força o recarregamento do zero na próxima consulta,
-        // que já enxerga o pacote recém-instalado.
+        // Sintoma da v1.4.0: quando o `SystemState` era repopulado
+        // por outro fluxo (ex.: `marcarFlatpaksJaInstalados` do
+        // `sessao-carregada`), o cache do server ainda estava com os
+        // dados de ANTES do `flatpak install` (TTL de 60s do
+        // `system-state-service.js`). Resultado: `flatpakInstalado`
+        // retornava `false` para o app recém-instalado, o
+        // `_estaRealmenteInstalado` disparava auto-reset, e o botão
+        // voltava a "Instalar".
+        //
+        // Com `carregar(true)`, o server invalida o próprio cache e
+        // roda `flatpak list` / `rpm -qa` de novo. O `onSucesso` vê
+        // o app instalado e pinta "🚀 Abrir X" corretamente.
         if (typeof SystemState !== 'undefined' && typeof SystemState.invalidar === 'function') {
             try { SystemState.invalidar(); } catch (e) { /* ignore */ }
+        }
+        if (typeof SystemState !== 'undefined' && typeof SystemState.carregar === 'function') {
+            try {
+                await SystemState.carregar(true);
+            } catch (e) {
+                console.warn('[aguardarConclusaoEEntao] Falha ao recarregar SystemState:', e);
+            }
         }
         onSucesso(idComando);
     }
