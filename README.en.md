@@ -2,7 +2,7 @@
 
 **🌐 Language:** [Português (BR)](README.md) | English | [Español](README.es.md)
 
-![Version](https://img.shields.io/badge/Version-v1.4.1--10302026-orange?style=flat-square)
+![Version](https://img.shields.io/badge/Version-v1.4.2--10312026-orange?style=flat-square)
 ![Fedora](https://img.shields.io/badge/Fedora-44%20%7C%2045-294172?style=flat-square&logo=fedora)
 ![License](https://img.shields.io/badge/License-GPL--3.0-green?style=flat-square)
 ![Languages](https://img.shields.io/badge/Languages-PT--BR%20%7C%20EN%20%7C%20ES-3c67e3?style=flat-square)
@@ -13,7 +13,7 @@
 
 **Fedora Advantage Panel (FAP)** is a visual automation panel for Fedora Linux. It turns a clean installation into a complete system — codecs, drivers, repositories, tools — through clicks, without opening the terminal.
 
-A single button, **Start Setup**, walks you through **14 guided sessions** step by step. Each button remembers its own state: close FAP, reopen it, and it shows exactly where you stopped.
+A single button, **Start Setup**, walks you through **13 guided sessions** step by step. Each button remembers its own state: close FAP, reopen it, and it shows exactly where you stopped.
 
 ## 📸 Screenshots
 
@@ -27,7 +27,7 @@ On boot, FAP queries the real system state and shows **4 progress bars** — Gen
 
 ![FAP sidebar](prints/02-sidebar.png)
 
-Collapsible sidebar with the 14 sessions, each with icon, name and progress indicator. It has **global search** — type "vlc" or "steam" and the sidebar filters both sessions and inner items.
+Collapsible sidebar with the 13 sessions, each with icon, name and progress indicator. It has **global search** — type "vlc" or "steam" and the sidebar filters both sessions and inner items.
 
 In collapsed mode, each icon gets its own **neon effect** on hover.
 
@@ -80,7 +80,7 @@ fap --uninstall  # uninstall
 
 Updates are applied **on top of the existing installation** — no need to uninstall between versions. Progress, theme and language are preserved.
 
-## ✨ The 14 Sessions
+## ✨ The 13 Sessions
 
 | # | Session | What it does |
 |---|---|---|
@@ -92,12 +92,11 @@ Updates are applied **on top of the existing installation** — no need to unins
 | 6 | 📦 Apps | Flatpaks, 20+ `dnf` apps, **ArtCraft Launcher**, remote access, **utilities** |
 | 7 | 🏠 Home and Office | CUPS, Samba, LocalSend, KeePassXC |
 | 8 | 🎮 Gaming | Native Steam, Heroic, Lutris, Wine, GameMode, emulators, **NTSYNC** |
-| 9 | 📱 Waydroid | Android on Linux via container |
-| 10 | 🖥️ Virtualization | QEMU/KVM, VirtualBox, GNOME Boxes |
-| 11 | 📊 Diagnostics | System panel, SMART, temperatures, error journal |
-| 12 | 🛠️ Tunings and Maintenance | Performance tunings, DNF, dual-boot, GRUB, kernels, Fedora upgrade |
-| 13 | 🐧 Fedora Status | Version, Atomic/Silverblue, SELinux |
-| 14 | 📖 About FAP | Update/uninstall, dynamic changelog |
+| 9 | 🖥️ Virtualization | QEMU/KVM, VirtualBox, GNOME Boxes |
+| 10 | 📊 Diagnostics | System panel, SMART, temperatures, CoolerControl, error journal |
+| 11 | 🛠️ Tunings and Maintenance | Performance tunings, DNF, dual-boot, GRUB, kernels, Fedora upgrade |
+| 12 | 🐧 Fedora Status | Version, Atomic/Silverblue, SELinux |
+| 13 | 📖 About FAP | Update/uninstall, dynamic changelog |
 
 ### 🖥️ Session 3 — Hardware
 
@@ -125,6 +124,7 @@ Updates are applied **on top of the existing installation** — no need to unins
 - **Pre-existing detection.** Apps installed before FAP show "Open" from the start.
 - **Critical items protected.** Proprietary drivers, codecs, CUPS, Samba, virtualization: if they existed before, the trash icon does not appear.
 - **AMD/Intel open-source drivers are one-shot.** Install and turn gray. No removal via UI — `dnf remove` would cascade into critical dependents (Steam, kinfocenter). Explanatory warning at the top of each section.
+- **Backup before overwriting.** GameMode + MangoHud presets back up the user's files before applying; the trash icon restores the original.
 - **Real language detection.** The 3 translation buttons query the system state.
 - **Authentication via `pkexec`.** Native password dialog.
 - **Smart locking.** `dnf` locks other `dnf`; the Flatpak queue handles the global lock.
@@ -135,7 +135,7 @@ Updates are applied **on top of the existing installation** — no need to unins
 
 - **High-contrast black/gray theme** in dark; light theme keeps the Fedora blues.
 - **Collapsible lateral sidebar** with monochrome SVG icons and **per-session neon effect** in collapsed mode.
-- **Global search** with an index built in the background covering all 14 sessions.
+- **Global search** with an index built in the background covering all 13 sessions.
 - **Origin badges** (6 variants) with tooltip on the entire button and popover.
 - **Combinable filters** (state + origin) in session 6.
 - **Status card on landing** with 4 bars.
@@ -143,6 +143,7 @@ Updates are applied **on top of the existing installation** — no need to unins
 - **N/A sessions** removed from progress calculation.
 - **🔄 header button** that reloads the system state.
 - **"Open X" button** dynamically generated via `_ABRIR_REGISTRY` — the install button itself turns green after success, no duplicated HTML.
+- **External links open in the system's default browser** via `xdg-open`, independent of the container.
 
 ## 🖥️ Requirements and support
 
