@@ -502,9 +502,11 @@ async function executarTerraExtras() {
         'terra-release-mesa ' +
         'terra-release-nvidia ' +
         'terra-release-multimedia';
-    await executarComandoGenerico(idComando, comando,
+        await executarComandoGenerico(idComando, comando,
         _t('sessoes.primeiros-passos.btn_ativar_terra_extras', '⚠️ Ativar Terra Extras (perigoso)'),
-        function() {
+        async function() {
+            SystemState.invalidar();
+            try { await SystemState.carregar(); } catch (e) { /* ignore */ }
             aplicarEstadoToggle('terra-extras-install', 'terra-extras-remove');
             _atualizarVisibilidadeTerra();
         });
@@ -540,15 +542,21 @@ async function executarTerraExtrasRemove() {
         '/etc/yum.repos.d/terra-multimedia.repo';
     await executarComandoGenerico(idComando, comando,
         _t('sessoes.primeiros-passos.btn_remover_terra_extras', '↩️ Remover Terra Extras'),
-        function() {
-            desmarcarComoExecutado('terra-extras-install').then(function() {
-                aplicarEstadoToggle('terra-extras-install', 'terra-extras-remove');
-                _atualizarVisibilidadeTerra();
-            }).catch(function(e) {
+        async function() {
+            // Invalida o SystemState e aguarda o recarregamento ANTES
+            // de recalcular a visibilidade dos botões. Sem isso, o
+            // cache de 60s ainda dizia que `terra-extras` estava ativo
+            // e `_atualizarVisibilidadeTerra` escondia o botão
+            // "Habilitar Terra Extras" até reload da página.
+            try {
+                await desmarcarComoExecutado('terra-extras-install');
+            } catch (e) {
                 console.warn('[toggle] Erro ao limpar estado do terra-extras:', e);
-                aplicarEstadoToggle('terra-extras-install', 'terra-extras-remove');
-                _atualizarVisibilidadeTerra();
-            });
+            }
+            SystemState.invalidar();
+            try { await SystemState.carregar(); } catch (e) { /* ignore */ }
+            aplicarEstadoToggle('terra-extras-install', 'terra-extras-remove');
+            _atualizarVisibilidadeTerra();
         });
 }
 
