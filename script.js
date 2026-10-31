@@ -1876,6 +1876,29 @@ async function _sincronizarEstadoFlatpaks() {
     try {
         await SystemState.carregar();
 
+        // ============================================================
+        // GUARD DE CACHE FRESCO (v1.4.3)
+        // ============================================================
+        //
+        // Se o `SystemState` foi populado há menos de 10s, é muito
+        // provável que o `flatpak list` do server tenha rodado
+        // ANTES do `flatpak install` que o usuário acabou de fazer.
+        // Nesse caso, `flatpakInstalado` retorna `false` para apps
+        // que acabaram de ser instalados, e o loop de "removidos"
+        // desmarca o marker válido — o botão volta a "Instalar".
+        //
+        // Só sincronizamos quando o cache tem >= 10s, o que dá
+        // tempo para o `flatpak list` refletir o novo estado.
+        var idadeCache = (typeof SystemState.cacheIdade === 'function')
+            ? SystemState.cacheIdade()
+            : 0;
+
+        if (idadeCache < 10 * 1000) {
+            console.log('[Flatpak] sync pulado: cache recente (' +
+                Math.round(idadeCache / 1000) + 's < 10s)');
+            return;
+        }
+
         var progress = await getProgress();
         var executados = progress.executados || [];
 
@@ -1902,10 +1925,11 @@ async function _sincronizarEstadoFlatpaks() {
 
         for (var k = 0; k < marcados.length; k++) {
             try {
-                var idAbrirMarc = (typeof _derivarIdAbrir === 'function')
-                ? _derivarIdAbrir(marcados[k])
-                : null;
-                aplicarEstadoInstalavel(marcados[k], idAbrirMarc);
+                // v1.4.3: passa `null` no segundo argumento (o
+                // "Abrir X" vem do `_ABRIR_REGISTRY`). Antes
+                // passava `_derivarIdAbrir(id)`, que retornava um
+                // ID de DOM inexistente desde a Rodada 2B.
+                aplicarEstadoInstalavel(marcados[k], null);
             } catch (e) { /* ignora */ }
         }
 
@@ -1914,10 +1938,7 @@ async function _sincronizarEstadoFlatpaks() {
             console.log('[Flatpak] Removido externamente:', item.id, '→', item.appId);
             await desmarcarComoExecutado(item.id);
             try {
-                var idAbrirRem = (typeof _derivarIdAbrir === 'function')
-                ? _derivarIdAbrir(item.id)
-                : null;
-                aplicarEstadoInstalavel(item.id, idAbrirRem);
+                aplicarEstadoInstalavel(item.id, null);
             } catch (e) {
                 console.warn('[Flatpak] Erro ao restaurar botão de', item.id, ':', e.message);
             }
