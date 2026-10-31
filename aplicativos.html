@@ -1289,11 +1289,14 @@ function abrirRcloneManager() {
 // ============================================================
 
 function abrirGitHubAffinity() {
-    // `window.open` abre em nova aba. No container WebKitGTK, o
-    // `decide_policy` intercepta e redireciona pro `xdg-open`. No
-    // browser fallback, abre nova aba (FAP permanece aberto).
-    window.open('https://github.com/ryzendew/Linux-Affinity-Installer',
-                '_blank', 'noopener,noreferrer');
+    // `window.open` não funciona no WebKitGTK (o `decide_policy`
+    // do container só trata NAVIGATION_ACTION, não NEW_WINDOW_ACTION).
+    // `xdg-open` invoca o navegador padrão do sistema.
+    abrirFerramentaExterna(
+        'xdg-open https://github.com/ryzendew/Linux-Affinity-Installer',
+        'affinity-github',
+        'GitHub da Affinity'
+    );
 }
 
 async function abrirInstaladorAffinity() {
