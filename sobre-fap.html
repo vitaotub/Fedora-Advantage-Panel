@@ -404,21 +404,9 @@ async function carregarChangelog() {
 
 function abrirChangelogCompleto() {
     var url = 'https://github.com/vitaotub/Fedora-Advantage-Panel/releases';
-    // `window.open` em nova aba: no container WebKitGTK, o
-    // `decide_policy` intercepta e redireciona pro `xdg-open`;
-    // no browser fallback, abre nova aba (FAP permanece).
-    window.open(url, '_blank', 'noopener,noreferrer');
-
-    var logBox = _getLogBox('changelog-completo');
-    if (logBox) {
-        logBox.style.display = 'block';
-        _separadorLog(logBox, '📝 Changelog');
-        var linha = document.createElement('div');
-        linha.className = 'log-line info';
-        linha.textContent = '📝 Changelog aberto no navegador: ' + url;
-        logBox.appendChild(linha);
-        logBox.scrollTop = logBox.scrollHeight;
-    }
+    // `xdg-open` invoca o navegador padrão do sistema, sem depender
+    // do `decide_policy` do WebKitGTK (que não trata NEW_WINDOW_ACTION).
+    abrirFerramentaExterna('xdg-open ' + url, 'changelog-completo', 'Changelog no GitHub');
 }
 
 // ------------------------------------------------------------
@@ -461,7 +449,8 @@ async function verificarEExibirAvisoAtualizacao() {
 // ------------------------------------------------------------
 
 function restaurarEstadoSessao() {
-    // Atualizar: sempre clicável
+    // Atualizar: começa clicável; a verificação de versão (abaixo)
+    // pode desabilitar se já está na última.
     var btnAtualizar = document.getElementById('btn-atualizar-fap');
     if (btnAtualizar) {
         btnAtualizar.disabled = false;
@@ -469,6 +458,8 @@ function restaurarEstadoSessao() {
         btnAtualizar.style.opacity = '1';
         btnAtualizar.style.cursor = 'pointer';
     }
+    // Verifica versão local vs remota e desabilita se já está atualizado.
+    _verificarVersaoParaBotaoAtualizar();
 
     // Desinstalar: se já foi executado, desabilitar
     if (isExecutado('desinstalar-fap')) {
@@ -493,6 +484,51 @@ function restaurarEstadoSessao() {
     // Carrega changelog + aviso de atualização
     carregarChangelog();
     verificarEExibirAvisoAtualizacao();
+}
+
+// ------------------------------------------------------------
+// VERIFICAÇÃO DE VERSÃO — desabilita "Atualizar FAP" se já está atual
+// ------------------------------------------------------------
+//
+// Fluxo:
+//   1. Ao carregar a sessão 14, verifica versão local vs. remota.
+//   2. Se remota == local, desabilita o botão com tooltip.
+//   3. Se remota > local, mantém habilitado.
+//   4. Se falha de rede, mantém habilitado (conservador).
+//
+// NÃO interfere na notificação da landing (que usa
+// `mostrarBadgeSeHouverAtualizacao`).
+async function _verificarVersaoParaBotaoAtualizar() {
+    var versaoLocal = window.FAP_VERSION_UI18N || '';
+    if (!versaoLocal) {
+        // Aguarda o `carregarVersaoServidor` terminar.
+        document.addEventListener('fap-versao-pronta', function() {
+            _verificarVersaoParaBotaoAtualizar();
+        }, { once: true });
+        return;
+    }
+
+    var versaoRemota = await verificarAtualizacoesForcado();
+    if (!versaoRemota) return;  // falha de rede: conservador
+
+    var tem = (typeof temAtualizacao === 'function')
+        ? temAtualizacao(versaoLocal, versaoRemota)
+        : (versaoRemota !== versaoLocal);
+
+    var btn = document.getElementById('btn-atualizar-fap');
+    if (!btn) return;
+
+    if (tem) {
+        btn.disabled = false;
+        btn.style.opacity = '1';
+        btn.style.cursor = 'pointer';
+        btn.title = '';
+    } else {
+        btn.disabled = true;
+        btn.style.opacity = '0.5';
+        btn.style.cursor = 'not-allowed';
+        btn.title = 'Você já está na versão mais recente (v' + versaoLocal + ')';
+    }
 }
 
 // ------------------------------------------------------------
