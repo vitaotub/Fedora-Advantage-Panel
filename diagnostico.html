@@ -378,8 +378,12 @@ registrarAppRemovivel('gsmartcontrol-install', {
 
 registrarAppRemovivel('coolercontrol-install', {
     tipo: 'dnf',
-    pacotes: ['coolercontrol'],
-    nome: 'CoolerControl'
+    pacotes: ['coolercontrol', 'liquidctl'],
+    nome: 'CoolerControl',
+    comandoRemocao:
+        'sudo systemctl disable --now coolercontrold.service 2>/dev/null || true; ' +
+        'sudo dnf remove -y coolercontrol liquidctl; ' +
+        'sudo rm -f /etc/yum.repos.d/_copr:copr.fedorainfracloud.org:codifryed:CoolerControl.repo'
 });
 
 // Rodada 2B: `Abrir X` vem do `_ABRIR_REGISTRY`.
@@ -725,14 +729,28 @@ function abrirGSmartControl() {
 
 async function executarCoolerControl() {
     var idComando = 'coolercontrol-install';
+    // Receita conforme documentação oficial (docs.coolercontrol.org).
+    // O `usermod -aG coolercontrol` foi REMOVIDO: o grupo não existe
+    // no momento da instalação (só é criado pelo daemon na primeira
+    // execução), e o `&&` propagava o erro fazendo o botão não mudar
+    // para "Abrir". O daemon (`coolercontrold`) já sobe com as
+    // permissões corretas via systemd.
+    //
+    // `liquidctl` é o pacote recomendado para suportar AIOs USB,
+    // fan hubs e telas LCD (sem ele, esses dispositivos não são
+    // detectados pelo CoolerControl).
+    //
+    // `lm_sensors` geralmente já vem instalado no Fedora. Quem tiver
+    // sensores não detectados pode rodar `sudo sensors-detect`
+    // manualmente depois (interativo; não automatizamos aqui).
     var comando =
+        'sudo dnf install -y dnf-plugins-core && ' +
         'sudo dnf copr enable codifryed/CoolerControl -y && ' +
-        'sudo dnf install -y coolercontrol && ' +
-        'sudo systemctl enable --now coolercontrold && ' +
-        'sudo usermod -aG coolercontrol $USER';
+        'sudo dnf install -y coolercontrol liquidctl && ' +
+        'sudo systemctl enable --now coolercontrold';
     await executarComandoGenerico(idComando, comando,
         _t('sessoes.diagnostico.btn_coolercontrol_install', '📦 Instalar CoolerControl'),
-        function() { aplicarEstadoInstalavel(idComando, 'abrir-coolercontrol'); });
+        function() { aplicarEstadoInstalavel(idComando, null); });
 }
 
 function abrirCoolerControl() {
