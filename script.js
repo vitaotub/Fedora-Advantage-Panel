@@ -510,14 +510,6 @@ var SystemState = (function() {
             return _lista('config_files_present').indexOf(caminho) !== -1;
         },
 
-        waydroid: function() {
-            return (_dados && _dados.waydroid) || {
-                installed: false,
-                initialized: false,
-                extras_prepared: false
-            };
-        },
-
         localRtc: function() {
             return !!(_dados && _dados.local_rtc);
         },
@@ -1177,26 +1169,6 @@ var SESSOES = [
             textoConcluidoKey: 'sessoes.gaming.texto_concluido_duckstation',
             flatpakId: 'org.duckstation.DuckStation'
         }
-    }
-},
-{
-    id: 'waydroid',
-    nome: 'Waydroid',
-    nomeKey: 'sessoes.waydroid.nome',
-    comandos: {
-        'waydroid-install': { textoConcluido: '✅ Waydroid instalado', textoConcluidoKey: 'sessoes.waydroid.texto_concluido_waydroid' },
-        'waydroid-init': { textoConcluido: '✅ Waydroid inicializado', textoConcluidoKey: 'sessoes.waydroid.texto_concluido_init' },
-        'waydroid-uninstall': { sempreClicavel: true },
-        'waydroid-extras-prep': { textoConcluido: '✅ Ambiente preparado', textoConcluidoKey: 'sessoes.waydroid.texto_concluido_prep' },
-        'waydroid-gapps': { textoConcluido: '✅ GApps instalado', textoConcluidoKey: 'sessoes.waydroid.texto_concluido_gapps' },
-        'waydroid-libndk': { textoConcluido: '✅ libndk instalado', textoConcluidoKey: 'sessoes.waydroid.texto_concluido_libndk' },
-        'waydroid-libhoudini': { textoConcluido: '✅ libhoudini instalado', textoConcluidoKey: 'sessoes.waydroid.texto_concluido_libhoudini' },
-        'waydroid-magisk': { textoConcluido: '✅ Magisk instalado', textoConcluidoKey: 'sessoes.waydroid.texto_concluido_magisk' },
-        'waydroid-widevine': { textoConcluido: '✅ Widevine instalado', textoConcluidoKey: 'sessoes.waydroid.texto_concluido_widevine' },
-        'waydroid-smartdock': { textoConcluido: '✅ SmartDock instalado', textoConcluidoKey: 'sessoes.waydroid.texto_concluido_smartdock' },
-        'waydroid-helper-install': { textoConcluido: '✅ waydroid-helper instalado', textoConcluidoKey: 'sessoes.waydroid.texto_concluido_helper_install' },
-        'waydroid-helper-open': { sempreClicavel: true },
-        'waydroid-prefs': { textoConcluido: '✅ Preferências aplicadas', textoConcluidoKey: 'sessoes.waydroid.texto_concluido_prefs' }
     }
 },
 {
@@ -3729,10 +3701,6 @@ var _MAPA_ORIGEM = {
     'rpcs3-install': 'flathub',
     'duckstation-install': 'flathub',
 
-    // ---- Sessão 9 ----
-    'waydroid-install': 'comunidade',
-    'waydroid-helper-install': 'comunidade',
-
     // ---- Sessão 10 ----
     'qemu-kvm-install': 'fedora',
     'virtualbox-install': 'rpmfusion',
@@ -4236,7 +4204,7 @@ async function _refreshEstadoSessao() {
 var _GRUPOS_LANDING = {
     'geral': {
         label: 'Uso geral',
-        sessoes: ['primeiros-passos', 'codecs', 'casa-escritorio', 'waydroid', 'virtualizacao', 'ajustes-manutencao']
+        sessoes: ['primeiros-passos', 'codecs', 'casa-escritorio', 'virtualizacao', 'ajustes-manutencao']
     },
     'gaming': {
         label: 'Gaming',
