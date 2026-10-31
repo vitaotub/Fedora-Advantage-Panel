@@ -10,9 +10,9 @@
 // Cada fase do projeto adiciona campos aqui. Fase 1: repositórios.
 // Fases futuras: pacotes, grupos, kernel params, serviços, arquivos.
 //
-// Cache em memória por 5 minutos (TTL_CACHE_MS). O endpoint é
-// chamado no boot e a cada troca de sessão; o cache evita rodar
-// `dnf repolist` 14 vezes seguidas.
+// Cache em memória por 60s (TTL_CACHE_MS). O endpoint é chamado
+// no boot e a cada troca de sessão; o cache evita rodar
+// `dnf repolist` 13 vezes seguidas.
 //
 // Nenhum comando aqui requer senha (todos são read-only).
 
@@ -278,7 +278,7 @@ async function _detectarKernelParams() {
 // ============================================================
 //
 // Verifica a existência dos arquivos que o FAP cria como estado
-// persistente (sysctl.d, pipewire conf.d, etc.).
+// persistente (sysctl.d, environment.d, etc.).
 //
 // O HOME do usuário é `process.env.HOME`. Os caminhos são
 // expandidos aqui porque `fs.existsSync` não expande `~`.
@@ -287,7 +287,7 @@ async function _detectarKernelParams() {
 //   - /etc/sysctl.d/99-fap-vm-max-map-count.conf
 //   - /etc/sysctl.d/99-fap-vm-swappiness.conf
 //   - /etc/sysctl.d/99-fap-tcp-bbr.conf
-//   - ~/.config/pipewire/pipewire.conf.d/99-fap-quantum.conf
+//   - ~/.config/environment.d/99-fap-nvidia-vaapi.conf
 //
 // Nota: os arquivos em /etc são legíveis pelo usuário (644 por
 // padrão no FAP), mas se por algum motivo não forem, o `test -f`
@@ -324,7 +324,6 @@ async function _detectarArquivosConfig() {
         '/etc/sysctl.d/99-fap-vm-max-map-count.conf',
         '/etc/sysctl.d/99-fap-vm-swappiness.conf',
         '/etc/sysctl.d/99-fap-tcp-bbr.conf',
-        home + '/.config/pipewire/pipewire.conf.d/99-fap-quantum.conf',
         home + '/.config/environment.d/99-fap-nvidia-vaapi.conf'
     ];
 
@@ -378,7 +377,7 @@ async function scanSystemState() {
         return _cache.dados;
     }
 
-    // As 8 consultas são independentes — rodam em paralelo.
+    // As 10 consultas são independentes — rodam em paralelo.
     // Numa máquina típica o gargalo continua sendo `dnf repolist`
     // (~500-1000 ms); as demais cabem dentro dessa janela.
     var resultados = await Promise.all([
