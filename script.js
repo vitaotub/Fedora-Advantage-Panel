@@ -416,6 +416,7 @@ function _escapeHTML(s) {
 
 var SystemState = (function() {
     var _dados = null;
+    var _dadosTs = 0;
     var _promessa = null;
 
     function _carregar() {
@@ -429,6 +430,7 @@ var SystemState = (function() {
         })
         .then(function(dados) {
             _dados = dados || {};
+            _dadosTs = Date.now();
             _promessa = null;
 
             // Considera a resposta suspeita se alguma lista crítica
@@ -449,7 +451,10 @@ var SystemState = (function() {
                 return fetch(API_URL + '/system-state?refresh=1', { cache: 'no-store' })
                 .then(function(r) { return r.ok ? r.json() : null; })
                 .then(function(dados2) {
-                    if (dados2) _dados = dados2;
+                    if (dados2) {
+                        _dados = dados2;
+                        _dadosTs = Date.now();
+                    }
                     return _dados;
                 })
                 .catch(function() { return _dados; });
@@ -522,8 +527,18 @@ var SystemState = (function() {
 
         bruto: function() { return _dados; },
 
+        // Idade do cache em ms (v1.4.3). Usado pelo auto-reset para
+        // distinguir "cache velho" (esperar) de "cache fresco" (confiar).
+        // Se `_dados` é `null` (nunca carregou), retorna `Infinity`.
+        // O `_ts` é setado no `_carregar()` quando o fetch resolve.
+        cacheIdade: function() {
+            if (!_dados || !_dadosTs) return Infinity;
+            return Date.now() - _dadosTs;
+        },
+
                    invalidar: function() {
                        _dados = null;
+                       _dadosTs = 0;
                        _promessa = null;
                    }
     };
@@ -614,51 +629,55 @@ function _estaRealmenteInstalado(idComando) {
         return true;
     }
 
-    // v1.4.3: a verificação direta usa o cache. Se o cache está com
-    // menos de 60s de idade mas o usuário acabou de instalar/remover
-    // algo (via FAP ou por fora), ele pode estar velho.
-    //
-    // Em vez de invalidar o cache inteiro a cada chamada (caro), só
-    // validamos que o "estado real" não é um falso-negativo óbvio:
-    // se `isExecutado` é `true` mas o cache diz que não está
-    // instalado, ISSO é suspeito — devolvemos `true` (conservador)
-    // para não disparar auto-reset indevidamente.
-    //
-    // Só retornamos `false` (dispara auto-reset) quando o cache
-    // está vazio (bootstrap) ou quando o item foi realmente
-    // removido com confirmação.
-    var suspeitoFalsoNegativo = false;
+    // Verifica se o pacote está no cache.
+    var noCache = false;
 
     if (info.modo === 'desfazerTudo') {
         if (Array.isArray(info.pacotes)) {
             for (var i = 0; i < info.pacotes.length; i++) {
-                if (SystemState.pacoteInstalado(info.pacotes[i])) return true;
+                if (SystemState.pacoteInstalado(info.pacotes[i])) { noCache = true; break; }
             }
         }
-        suspeitoFalsoNegativo = true;
     } else if (info.tipo === 'flatpak' && info.appId) {
-        if (SystemState.flatpakInstalado(info.appId)) return true;
-        suspeitoFalsoNegativo = true;
+        noCache = SystemState.flatpakInstalado(info.appId);
     } else if (info.tipo === 'dnf' && Array.isArray(info.pacotes)) {
         for (var j = 0; j < info.pacotes.length; j++) {
-            if (SystemState.pacoteInstalado(info.pacotes[j])) return true;
+            if (SystemState.pacoteInstalado(info.pacotes[j])) { noCache = true; break; }
         }
-        suspeitoFalsoNegativo = true;
     } else {
         // Tipo desconhecido ou sem pacotes: assume instalado.
         return true;
     }
 
-    // Se chegamos aqui, o cache diz "não instalado" mas pode estar
-    // velho. Retornar `true` previne o auto-reset falso. Quando o
-    // usuário realmente desinstalar (via FAP ou por fora), o
-    // `_executarRemocaoApp` invalida o cache explicitamente, e o
-    // próximo `_estaRealmenteInstalado` verá dados frescos.
-    if (suspeitoFalsoNegativo) {
-        return true;
+    if (noCache) return true;
+
+    // Cache diz "ausente". Distinguir:
+    //
+    //   • Cache FRESCO (< 60s): confiar. Significa que o pacote foi
+    //     removido por fora e o `SystemState` já revalidou. Retorna
+    //     `false` → auto-reset dispara → marker limpo → botão volta
+    //     a "Instalar".
+    //
+    //   • Cache VELHO (>= 60s): desconfiar. O `flatpak list` do
+    //     server pode ter rodado antes do usuário remover. Retorna
+    //     `true` → não reseta → espera a próxima renderização (que
+    //     vai revalidar o cache via `/system-state`).
+    //
+    // O limiar de 60s casa com o `TTL_CACHE_MS` do
+    // `system-state-service.js`.
+    var idadeCache = (typeof SystemState.cacheIdade === 'function')
+        ? SystemState.cacheIdade()
+        : 0;
+
+    var CACHE_FRESCO_MS = 60 * 1000;
+
+    if (idadeCache < CACHE_FRESCO_MS) {
+        // Cache fresco + pacote ausente → remoção externa confirmada.
+        return false;
     }
 
-    return false;
+    // Cache velho → não confiar; próxima renderização vai revalidar.
+    return true;
 }
 
 // ============================================================
