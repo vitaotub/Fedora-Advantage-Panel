@@ -602,46 +602,63 @@ function appJaInstaladoNoSistema(idComando) {
 function _estaRealmenteInstalado(idComando) {
     var info = APPS_REMOVIVEIS[idComando];
     if (!info) {
-        // Sem registro em APPS_REMOVIVEIS (item one-shot como
-        // `vulkan-amd`, `intel-media-install`, etc.), NÃO temos como
-        // consultar o estado real no sistema. Retornar `true` é o
-        // fallback conservador: previne que `aplicarEstadoInstalavel`
-        // (chamada acidental) dispare auto-reset e limpe um marker
-        // válido do `.progresso.json`.
-        //
-        // A versão anterior retornava `false`, o que — combinado com
-        // `aplicarEstadoInstalavel` chamada no `onSucesso` dos botões
-        // one-shot — fazia o progresso ser limpo imediatamente após
-        // a instalação, e o botão voltava clicável no Ctrl+R.
+        // Sem registro em APPS_REMOVIVEIS (item one-shot), não há
+        // como consultar o estado real no sistema. `true` é o
+        // fallback conservador (não reseta).
         return true;
     }
 
     var bruto = SystemState.bruto();
     if (!bruto || !Array.isArray(bruto.packages_installed) ||
         !Array.isArray(bruto.flatpaks_installed)) {
-        // Sem dados reais: assume instalado (não reseta por engano).
         return true;
-        }
+    }
 
-        if (info.modo === 'desfazerTudo') {
-            if (Array.isArray(info.pacotes)) {
-                for (var i = 0; i < info.pacotes.length; i++) {
-                    if (SystemState.pacoteInstalado(info.pacotes[i])) return true;
-                }
+    // v1.4.3: a verificação direta usa o cache. Se o cache está com
+    // menos de 60s de idade mas o usuário acabou de instalar/remover
+    // algo (via FAP ou por fora), ele pode estar velho.
+    //
+    // Em vez de invalidar o cache inteiro a cada chamada (caro), só
+    // validamos que o "estado real" não é um falso-negativo óbvio:
+    // se `isExecutado` é `true` mas o cache diz que não está
+    // instalado, ISSO é suspeito — devolvemos `true` (conservador)
+    // para não disparar auto-reset indevidamente.
+    //
+    // Só retornamos `false` (dispara auto-reset) quando o cache
+    // está vazio (bootstrap) ou quando o item foi realmente
+    // removido com confirmação.
+    var suspeitoFalsoNegativo = false;
+
+    if (info.modo === 'desfazerTudo') {
+        if (Array.isArray(info.pacotes)) {
+            for (var i = 0; i < info.pacotes.length; i++) {
+                if (SystemState.pacoteInstalado(info.pacotes[i])) return true;
             }
-            return false;
         }
-        if (info.tipo === 'flatpak' && info.appId) {
-            return SystemState.flatpakInstalado(info.appId);
+        suspeitoFalsoNegativo = true;
+    } else if (info.tipo === 'flatpak' && info.appId) {
+        if (SystemState.flatpakInstalado(info.appId)) return true;
+        suspeitoFalsoNegativo = true;
+    } else if (info.tipo === 'dnf' && Array.isArray(info.pacotes)) {
+        for (var j = 0; j < info.pacotes.length; j++) {
+            if (SystemState.pacoteInstalado(info.pacotes[j])) return true;
         }
-        if (info.tipo === 'dnf' && Array.isArray(info.pacotes)) {
-            for (var j = 0; j < info.pacotes.length; j++) {
-                if (SystemState.pacoteInstalado(info.pacotes[j])) return true;
-            }
-            return false;
-        }
+        suspeitoFalsoNegativo = true;
+    } else {
         // Tipo desconhecido ou sem pacotes: assume instalado.
         return true;
+    }
+
+    // Se chegamos aqui, o cache diz "não instalado" mas pode estar
+    // velho. Retornar `true` previne o auto-reset falso. Quando o
+    // usuário realmente desinstalar (via FAP ou por fora), o
+    // `_executarRemocaoApp` invalida o cache explicitamente, e o
+    // próximo `_estaRealmenteInstalado` verá dados frescos.
+    if (suspeitoFalsoNegativo) {
+        return true;
+    }
+
+    return false;
 }
 
 // ============================================================
@@ -2687,96 +2704,18 @@ executarComandoGenerico = async function(idComando, comando, nomeAcao, onSucesso
 };
 
 // ============================================================
-// DESINSTALAR PACOTE
+// DESINSTALAR PACOTE — removido na v1.4.2
 // ============================================================
-async function desinstalarPacote(idComando, comandoRemover, nomeExibicao) {
-    if (!isExecutado(idComando)) {
-        alert(_tVars('comum.nao_instalado', nomeExibicao + ' não está instalado.', { nome: nomeExibicao }));
-        return;
-    }
-
-    if (!confirm(_tVars('comum.confirmar_desinstalar', 'Deseja desinstalar o ' + nomeExibicao + '?', { nome: nomeExibicao }))) return;
-
-    const logBox = _getLogBox(idComando);
-    const btn = document.getElementById('btn-' + idComando);
-    const btnReverter = document.getElementById('btn-reverter-' + idComando);
-    const idRevert = idComando + '-revert';
-
-    if (logBox) {
-        logBox.style.display = 'block';
-        _separadorLog(logBox, '🗑️ Desinstalar ' + nomeExibicao);
-        const infoLine = document.createElement('div');
-        infoLine.className = 'log-line info';
-        infoLine.textContent = '🗑️ Desinstalando ' + nomeExibicao + '...';
-        logBox.appendChild(infoLine);
-        logBox.scrollTop = logBox.scrollHeight;
-    }
-
-    if (btnReverter) {
-        btnReverter.disabled = true;
-    }
-
-    conectarSSE(idRevert, logBox);
-
-    try {
-        await fetch(API_URL + '/executar', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ comando: comandoRemover, idComando: idRevert })
-        });
-
-        const sucesso = await aguardarConclusaoReal(idRevert, 180000);
-
-        if (!sucesso) {
-            if (btnReverter) btnReverter.disabled = false;
-            if (logBox) {
-                const errorLine = document.createElement('div');
-                errorLine.className = 'log-line error';
-                errorLine.textContent = sucesso === null
-                ? _t('comum.erro_timeout_desinstalar', '❌ Tempo esgotado esperando a desinstalação.')
-                : _tVars('comum.erro_falha_desinstalar', '❌ Falha ao desinstalar ' + nomeExibicao + '.', { nome: nomeExibicao });
-                logBox.appendChild(errorLine);
-                logBox.scrollTop = logBox.scrollHeight;
-            }
-            return;
-        }
-
-        desmarcarComoExecutado(idComando);
-
-        if (btn) {
-            btn.textContent = _textoOriginalTraduzido(btn) || nomeExibicao;
-            btn.style.backgroundColor = _corOriginalDoBotao(btn);
-            btn.style.cursor = 'pointer';
-            btn.style.opacity = '1';
-            btn.disabled = false;
-        }
-
-        if (btnReverter) {
-            btnReverter.disabled = true;
-            btnReverter.style.display = 'none';
-        }
-
-        if (logBox) {
-            const successLine = document.createElement('div');
-            successLine.className = 'log-line success';
-            successLine.textContent = _tVars('comum.sucesso_desinstalar', '✅ ' + nomeExibicao + ' desinstalado com sucesso!', { nome: nomeExibicao });
-            logBox.appendChild(successLine);
-            logBox.scrollTop = logBox.scrollHeight;
-        }
-
-    } catch (e) {
-        if (btnReverter) {
-            btnReverter.disabled = false;
-        }
-        if (logBox) {
-            const errorLine = document.createElement('div');
-            errorLine.className = 'log-line error';
-            errorLine.textContent = _tVars('comum.erro_desinstalar', '❌ Erro ao desinstalar: ' + e.message, { msg: e.message });
-            logBox.appendChild(errorLine);
-            logBox.scrollTop = logBox.scrollHeight;
-        }
-    }
-}
+//
+// A função `desinstalarPacote()` era o fluxo legado de remoção
+// (antes do `_executarRemocaoApp`). Ninguém mais chama desde a
+// v1.3.0 — `_executarRemocaoPeloWrapper` → `_executarRemocaoApp`
+// cobre 100% dos casos.
+//
+// Ela foi removida porque usava `idComando + '-revert'` como ID
+// de execução, e o server gravava esse ID no `.progresso.json`
+// antes da v1.4.3 (o filtro de `-revert` no `salvarProgresso`
+// foi adicionado junto). Como não há callers, é código morto.
 
 // ============================================================
 // ABRIR FERRAMENTA EXTERNA
@@ -3329,13 +3268,20 @@ async function _executarRemocaoApp(idComando) {
 
         await desmarcarComoExecutado(idComando);
 
+        // Invalida o cache ANTES de repintar o botão: o
+        // `aplicarEstadoInstalavel` chama `_estaRealmenteInstalado`,
+        // e o cache velho faria o botão reverter para "Abrir" (o
+        // pacote ainda estaria na lista antiga). Com o cache
+        // invalidado, o `SystemState.carregar()` no próximo
+        // `restaurarEstadoSessao` verá o pacote ausente.
         if (typeof SystemState !== 'undefined' && typeof SystemState.invalidar === 'function') {
             SystemState.invalidar();
         }
 
-        var idAbrir = _derivarIdAbrir(idComando);
-
-        aplicarEstadoInstalavel(idComando, idAbrir, idComando);
+        // `null` no segundo argumento: o "Abrir X" vem do registry
+        // (o `<button class="verde">` não existe mais no DOM desde
+        // a Rodada 2B).
+        aplicarEstadoInstalavel(idComando, null, idComando);
 
         if (logBox) {
             var successLine = document.createElement('div');
