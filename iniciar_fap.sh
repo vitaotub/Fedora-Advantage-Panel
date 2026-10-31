@@ -580,7 +580,6 @@ verificar_arquivos() {
         "aplicativos.html"
         "casa-escritorio.html"
         "gaming.html"
-        "waydroid.html"
         "virtualizacao.html"
         "diagnostico.html"
         "ajustes-manutencao.html"
