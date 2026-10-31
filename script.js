@@ -480,6 +480,9 @@ var SystemState = (function() {
 
     return {
         carregar: _carregar,
+        // `carregar(true)` força o server a invalidar o cache dele
+        // (`?refresh=1`). Usado após instalar/remover algo, quando
+        // o cache local do cliente não é suficiente.
 
         repoAtivo: function(id) {
             return _lista('repos_enabled').indexOf(id) !== -1;
