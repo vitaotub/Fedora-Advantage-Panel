@@ -2600,6 +2600,34 @@ async function _dispararFlatpak(idComando, comando, nomeAcao, onSucesso) {
     var sucesso = await aguardarConclusaoReal(idComando, 1800000);
 
     if (sucesso && typeof onSucesso === 'function') {
+        // ============================================================
+        // INVALIDA + RECARREGA O SystemState ANTES DO onSucesso (v1.4.3)
+        // ============================================================
+        //
+        // O `_executarComandoGenericoOriginal` (com `ehFlatpak=true`)
+        // chama `completarProgresso` → `aguardarConclusaoReal`, mas
+        // NÃO invalida o `SystemState`. Resultado: o `onSucesso` →
+        // `aplicarEstadoInstalavel` → `_estaRealmenteInstalado` →
+        // `SystemState.flatpakInstalado` consulta um cache de até
+        // 60s atrás, que **não viu** o `flatpak install` recém-
+        // terminado. Botão fica "Instalar" até o próximo reload.
+        //
+        // O fluxo DNF funciona porque `executarComandoGenerico`
+        // (não-Flatpak) passa por `aguardarConclusaoEEntao`, que já
+        // faz esse `invalidar` + `carregar(true)`. Aqui replicamos
+        // o mesmo padrão para o caminho Flatpak (que não passa por
+        // `aguardarConclusaoEEntao`).
+        if (typeof SystemState !== 'undefined' && typeof SystemState.invalidar === 'function') {
+            try { SystemState.invalidar(); } catch (e) { /* ignore */ }
+        }
+        if (typeof SystemState !== 'undefined' && typeof SystemState.carregar === 'function') {
+            try {
+                await SystemState.carregar(true);
+            } catch (e) {
+                console.warn('[flatpak-fila] Falha ao recarregar SystemState:', e);
+            }
+        }
+
         try {
             onSucesso(idComando);
         } catch (e) {
