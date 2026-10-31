@@ -70,16 +70,6 @@ const LOCALES_DIR = path.join(__dirname, 'locales');
 // - A whitelist faz ele rodar como o usuário real, com o env
 //   correto ajustado por `_precisaEnvUserContext()`.
 //
-// SOBRE `setsid -f waydroid show-full-ui`:
-// - O Waydroid iniciado via `waydroid show-full-ui` herda a sessão
-//   de terminal do FAP. Quando o FAP fecha, o kernel envia SIGHUP
-//   para toda a sessão, e o Waydroid (que não está em nohup) morre.
-// - `setsid -f` força o Waydroid a criar uma nova sessão própria,
-//   desatada do terminal do FAP. Fechar o FAP NÃO fecha mais o
-//   Waydroid — mesmo comportamento de abrir pelo menu do Fedora.
-// - O comando entra na whitelist para não exigir senha a cada
-//   abertura do Waydroid (é uma ação de usuário, não administrativa).
-//
 // SOBRE AS ENTRADAS `setsid -f <app>`:
 // - Todos os botões "Abrir X" usam `setsid -f <comando>` para que
 //   o app ganhe uma sessão própria, desacoplada do FAP. Isso
@@ -105,8 +95,6 @@ const COMANDOS_SEM_AUTENTICACAO = [
 'rclone-manager',
 'corectrl',
 'lact',
-'waydroid status',
-'waydroid show-full-ui',
 'vainfo',
 'vdpauinfo',
 'env LIBVA_DRIVER_NAME=nvidia vainfo',
@@ -121,7 +109,6 @@ const COMANDOS_SEM_AUTENTICACAO = [
 'setsid -f steam',
 'setsid -f heroic',
 'setsid -f rustdesk',
-'setsid -f waydroid show-full-ui',
 'setsid -f keepassxc',
 'setsid -f firefox',
 'setsid -f okular',
@@ -309,10 +296,7 @@ const COMANDOS_USER_CONTEXT = [
 // Cobre todos os botões "Abrir X" baseados em .desktop —
 // tanto flatpaks (gtk-launch <appId>) quanto pacotes dnf
 // (gtk-launch <nome>).
-'gtk-launch',
-// Waydroid também depende do D-Bus do usuário para exibir
-// a UI. `show-full-ui` é o único subcomando que abre janela.
-'waydroid show-full-ui'
+'gtk-launch'
 ];
 
 function _precisaEnvUserContext(comando) {
@@ -2944,81 +2928,6 @@ const server = http.createServer((req, res) => {
     }
 
     // ----------------------------------------------------------
-    // /waydroid-status — status do container Android
-    // ----------------------------------------------------------
-    //
-    // O campo `clean` é usado pelo frontend para decidir se o botão
-    // de remoção do Waydroid deve ficar habilitado. `clean: true`
-    // significa: nenhum pacote instalado E nenhum resquício no
-    // filesystem (pastas de dados, venv de extras, atalhos).
-    //
-    // Sem esse campo, o botão de remoção é sempre clicável porque
-    // `waydroid-uninstall` está registrado como `sempreClicavel` no
-    // script.js — o que faz sentido para permitir re-execuções, mas
-    // deixa o botão "vivo" mesmo depois de uma limpeza completa.
-    if (req.method === 'GET' && url === '/waydroid-status') {
-        exec('waydroid status 2>&1', { shell: '/bin/bash', timeout: 5000 }, (error, stdout, stderr) => {
-            const output = ((stdout || '') + (stderr || '')).trim();
-
-            let installed = true;
-            let initialized = false;
-            let running = false;
-
-            // Detecção de "não instalado" multilíngue: o bash do Fedora
-            // emite mensagens localizadas ("comando não encontrado" em
-            // PT-BR, "command not found" em EN). O `error` do exec
-            // também é checado — o shell retorna 127 quando o comando
-            // não existe, o que cobre qualquer variação de locale.
-            if (/command not found/i.test(output) ||
-                /comando não encontrado/i.test(output) ||
-                /No such file or directory/i.test(output) ||
-                error) {
-                installed = false;
-                }
-
-                if (output.indexOf('is not initialized') !== -1) {
-                    initialized = false;
-                } else if (output.indexOf('Session:') !== -1 || output.indexOf('Vendor type:') !== -1) {
-                    initialized = true;
-                    if (/Session:\s*RUNNING/i.test(output)) {
-                        running = true;
-                    }
-                }
-
-                // Verifica resquícios no filesystem. Se NADA for
-                // encontrado (nem pacote, nem pastas, nem atalhos),
-                // `clean` é true e o frontend desabilita o botão.
-                //
-                // Usa $HOME do usuário real (HOME_DIR_USUARIO), porque
-                // o Node pode ter sido iniciado com HOME diferente.
-                const homeDir = HOME_DIR_USUARIO;
-                const residualCmd =
-                '[ -d /var/lib/waydroid ] && echo "residual" && exit 0; ' +
-                '[ -d "' + homeDir + '/.local/share/waydroid" ] && echo "residual" && exit 0; ' +
-                '[ -d "' + homeDir + '/.local/share/fap-waydroid" ] && echo "residual" && exit 0; ' +
-                '[ -f "' + homeDir + '/.local/share/applications/Waydroid.desktop" ] && echo "residual" && exit 0; ' +
-                '[ -f "' + homeDir + '/.local/share/applications/waydroid-helper.desktop" ] && echo "residual" && exit 0; ' +
-                'echo "clean"';
-
-                exec(residualCmd, { shell: '/bin/bash', timeout: 3000 }, (errResidual, stdoutResidual) => {
-                    const residual = (stdoutResidual || '').trim();
-                    // Clean = nenhum resquício E pacote não instalado.
-                    const clean = (residual === 'clean') && !installed;
-
-                    res.writeHead(200, { 'Content-Type': 'application/json' });
-                    res.end(JSON.stringify({
-                        installed: installed,
-                        initialized: initialized,
-                        running: running,
-                        clean: clean,
-                        raw: output
-                    }));
-                });
-        });
-        return;
-    }
-
-    // ----------------------------------------------------------
     // /executar — executa comando (POST)
     // ----------------------------------------------------------
     //
@@ -3255,7 +3164,6 @@ server.listen(PORT, HOST, () => {
     console.log(` 🔧 idComandos sem auth: atualizar-fap, desinstalar-fap (com SUDO_ASKPASS)`);
     console.log(` 🎯 Comandos USER-CONTEXT (env ajustado): ${COMANDOS_USER_CONTEXT.join(', ')}`);
     console.log(` 📊 Progresso: .progresso.json (persistente no servidor)`);
-    console.log(` 📱 Waydroid status: /waydroid-status`);
     console.log(` 📦 Flatpak instalados: /flatpak-installed`);
     console.log(` 🔌 Hardware scan: /hardware-scan (lê hardware_map.json)`);
     console.log(` 🧠 Kernels: /kernels`);
