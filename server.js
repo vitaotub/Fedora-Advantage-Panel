@@ -1086,7 +1086,8 @@ function salvarProgresso(idComando, origem) {
     if (!idComando ||
         idComando.startsWith('open-') ||
         idComando.endsWith('-open') ||
-        idComando.endsWith('-remove')) {
+        idComando.endsWith('-remove') ||
+        idComando.endsWith('-revert')) {
         return;
         }
     try {
