@@ -685,6 +685,36 @@ registrarAppRemovivel('controller-test-install', {
     nome: 'Preferências de Joysticks'
 });
 
+// Presets de GameMode + MangoHud: sobrescreve arquivos do usuário.
+// A remoção restaura o backup (se existia antes) ou apaga o arquivo
+// (se o FAP foi quem criou). Isso preserva a configuração original
+// do usuário.
+registrarAppRemovivel('gamemode-presets-apply', {
+    tipo: 'dnf',
+    pacotes: [],
+    nome: 'Presets de GameMode + MangoHud',
+    comandoRemocao:
+        'if [ -f $HOME/.config/MangoHud/MangoHud.conf.fap-backup ]; then ' +
+        '  mv $HOME/.config/MangoHud/MangoHud.conf.fap-backup $HOME/.config/MangoHud/MangoHud.conf; ' +
+        '  echo "✅ MangoHud.conf restaurado do backup."; ' +
+        'else ' +
+        '  rm -f $HOME/.config/MangoHud/MangoHud.conf; ' +
+        '  echo "✅ MangoHud.conf removido (não existia antes do FAP)."; ' +
+        'fi; ' +
+        'if [ -f $HOME/.config/gamemode.ini.fap-backup ]; then ' +
+        '  mv $HOME/.config/gamemode.ini.fap-backup $HOME/.config/gamemode.ini; ' +
+        '  echo "✅ gamemode.ini restaurado do backup."; ' +
+        'else ' +
+        '  rm -f $HOME/.config/gamemode.ini; ' +
+        '  echo "✅ gamemode.ini removido (não existia antes do FAP)."; ' +
+        'fi',
+    confirmMsg:
+        '⚠️ Remover os presets de GameMode + MangoHud?\n\n' +
+        'Se você tinha MangoHud.conf ou gamemode.ini antes do FAP, eles serão restaurados do backup.\n' +
+        'Caso contrário, os arquivos criados pelo FAP serão removidos.\n\n' +
+        'Continuar?'
+});
+
 // NTSYNC — Estado 2 com lixeira full-cleanup (mesmo comportamento
 // que o antigo botão "Desfazer tudo", agora acessível pela lixeira
 // ao lado do botão de instalar).
@@ -858,8 +888,13 @@ async function executarVkBasalt() {
 
 async function executarGameModePresets() {
     const idComando = 'gamemode-presets-apply';
+    // Backup antes de sobrescrever. Se já existia, o FAP preserva
+    // como `.fap-backup` — a lixeira restaura o original depois.
     const comando =
-        'mkdir -p $HOME/.config/MangoHud && ' +
+        'mkdir -p $HOME/.config/MangoHud; ' +
+        'if [ -f $HOME/.config/MangoHud/MangoHud.conf ] && [ ! -f $HOME/.config/MangoHud/MangoHud.conf.fap-backup ]; then ' +
+        '  cp $HOME/.config/MangoHud/MangoHud.conf $HOME/.config/MangoHud/MangoHud.conf.fap-backup; ' +
+        'fi; ' +
         'cat > $HOME/.config/MangoHud/MangoHud.conf << \'MANGOHUDEOF\'\n' +
         '# Preset FAP - overlay limpo, canto superior esquerdo\n' +
         'position=top-left\n' +
@@ -876,7 +911,10 @@ async function executarGameModePresets() {
         'fps_limit_method=early\n' +
         'toggle_key=F12\n' +
         'MANGOHUDEOF\n' +
-        'mkdir -p $HOME/.config && ' +
+        'mkdir -p $HOME/.config; ' +
+        'if [ -f $HOME/.config/gamemode.ini ] && [ ! -f $HOME/.config/gamemode.ini.fap-backup ]; then ' +
+        '  cp $HOME/.config/gamemode.ini $HOME/.config/gamemode.ini.fap-backup; ' +
+        'fi; ' +
         'cat > $HOME/.config/gamemode.ini << \'GAMEMODEEOF\'\n' +
         '[general]\n' +
         'renice=10\n' +
@@ -889,7 +927,8 @@ async function executarGameModePresets() {
         'GAMEMODEEOF\n' +
         'chown -R $USER:$USER $HOME/.config/MangoHud $HOME/.config/gamemode.ini';
     await executarComandoGenerico(idComando, comando,
-        _t('sessoes.gaming.btn_gamemode_presets', '⚙️ Aplicar Presets'));
+        _t('sessoes.gaming.btn_gamemode_presets', '⚙️ Aplicar Presets'),
+        function() { aplicarEstadoInstalavel(idComando, null); });
 }
 
 async function executarControllerTest() {
