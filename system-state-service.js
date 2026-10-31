@@ -343,46 +343,6 @@ async function _detectarArquivosConfig() {
 }
 
 // ============================================================
-// WAYDROID (Fase 4)
-// ============================================================
-//
-// O Waydroid tem 3 estágios independentes:
-//   1. Pacote instalado (rpm -q waydroid).
-//   2. Container inicializado (waydroid init criou
-//      /var/lib/waydroid/waydroid.cfg).
-//   3. Extras preparados (o waydroid_script foi clonado e o venv
-//      criado em ~/.local/share/fap-waydroid/waydroid_script).
-//
-// Cada botão da sessão 9 (install, init, extras-prep) só deve
-// habilitar quando o estágio anterior foi cumprido. O frontend
-// usa esses booleanos para pintar os botões.
-//
-// O `waydroid-status` (endpoint separado) cobre o "running" — não
-// incluímos aqui porque ele muda a cada abertura da UI e não
-// pertence ao estado persistente.
-
-async function _detectarWaydroid() {
-    var home = process.env.HOME || ('/home/' + (process.env.USER || 'user'));
-
-    var resultados = await Promise.all([
-        _exec('rpm -q waydroid 2>/dev/null'),
-                                       _exec('[ -f /var/lib/waydroid/waydroid.cfg ] && echo "yes" 2>/dev/null'),
-                                       _exec('[ -d "' + home + '/.local/share/fap-waydroid/waydroid_script" ] && echo "yes" 2>/dev/null')
-    ]);
-
-    var rpmOut = resultados[0].toLowerCase();
-    var pacoteInstalado = rpmOut.length > 0 &&
-    !rpmOut.includes('not installed') &&
-    !rpmOut.includes('não instalado');
-
-    return {
-        installed: pacoteInstalado,
-        initialized: resultados[1].trim() === 'yes',
-        extras_prepared: resultados[2].trim() === 'yes'
-    };
-}
-
-// ============================================================
 // HARDWARE VENDORS (para filtrar comandos hardware-dependentes)
 // ============================================================
 //
@@ -429,7 +389,6 @@ async function scanSystemState() {
                                        _detectarServicos(),
                                        _detectarKernelParams(),
                                        _detectarArquivosConfig(),
-                                       _detectarWaydroid(),
                                        _detectarLocalRtc(),
                                        _detectarLocaleLang(),
                                        _detectarHardwareVendors()
@@ -443,10 +402,9 @@ async function scanSystemState() {
         kernel_params: resultados[5],
         services_active: resultados[4],
         config_files_present: resultados[6],
-        waydroid: resultados[7],
-        local_rtc: resultados[8],
-        locale_lang: resultados[9],
-        hardware_vendors: resultados[10]
+        local_rtc: resultados[7],
+        locale_lang: resultados[8],
+        hardware_vendors: resultados[9]
     };
 
     _cache = { dados: dados, ts: agora };
