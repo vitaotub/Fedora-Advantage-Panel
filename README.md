@@ -2,7 +2,7 @@
 
 **🌐 Idioma:** Português (BR) | [English](README.en.md) | [Español](README.es.md)
 
-![Versão](https://img.shields.io/badge/Vers%C3%A3o-v1.4.1--10302026-orange?style=flat-square)
+![Versão](https://img.shields.io/badge/Vers%C3%A3o-v1.4.2--10312026-orange?style=flat-square)
 ![Fedora](https://img.shields.io/badge/Fedora-44%20%7C%2045-294172?style=flat-square&logo=fedora)
 ![Licença](https://img.shields.io/badge/Licen%C3%A7a-GPL--3.0-green?style=flat-square)
 ![Idiomas](https://img.shields.io/badge/Idiomas-PT--BR%20%7C%20EN%20%7C%20ES-3c67e3?style=flat-square)
@@ -13,7 +13,7 @@
 
 O **Fedora Advantage Panel (FAP)** é um painel de automação visual para o Fedora Linux. Ele transforma uma instalação limpa em um sistema completo — codecs, drivers, repositórios, ferramentas — através de cliques, sem abrir o terminal.
 
-Um único botão, **Iniciar Configuração**, leva você por **14 sessões guiadas** passo a passo. Cada botão lembra o próprio estado: feche o FAP, reabra, e ele mostra exatamente onde você parou.
+Um único botão, **Iniciar Configuração**, leva você por **13 sessões guiadas** passo a passo. Cada botão lembra o próprio estado: feche o FAP, reabra, e ele mostra exatamente onde você parou.
 
 ## 📸 Telas
 
@@ -27,7 +27,7 @@ Logo ao abrir, o FAP consulta o estado real do sistema (repositórios ativos, ap
 
 ![Navegação lateral do FAP](prints/02-sidebar.png)
 
-Sidebar lateral retrátil com as 14 sessões, cada uma com ícone, nome e indicador de progresso. Tem **busca global** — digite "vlc" ou "steam" e a sidebar filtra tanto sessões quanto itens internos.
+Sidebar lateral retrátil com as 13 sessões, cada uma com ícone, nome e indicador de progresso. Tem **busca global** — digite "vlc" ou "steam" e a sidebar filtra tanto sessões quanto itens internos.
 
 No modo colapsado, cada ícone ganha um **efeito neon próprio** ao passar o mouse.
 
@@ -80,7 +80,7 @@ fap --uninstall  # desinstala
 
 Atualizações são feitas **em cima da instalação existente** — não precisa desinstalar entre versões. Progresso, tema e idioma são preservados.
 
-## ✨ As 14 Sessões
+## ✨ As 13 Sessões
 
 | # | Sessão | O que faz |
 |---|---|---|
@@ -92,12 +92,11 @@ Atualizações são feitas **em cima da instalação existente** — não precis
 | 6 | 📦 Aplicativos | Flatpaks, 20+ apps `dnf`, **ArtCraft Launcher**, acesso remoto, **utilitários** |
 | 7 | 🏠 Casa e Escritório | CUPS, Samba, LocalSend, KeePassXC |
 | 8 | 🎮 Gaming | Steam nativo, Heroic, Lutris, Wine, GameMode, emuladores, **NTSYNC** |
-| 9 | 📱 Waydroid | Android no Linux via container |
-| 10 | 🖥️ Virtualização | QEMU/KVM, VirtualBox, GNOME Boxes |
-| 11 | 📊 Diagnóstico | Painel do sistema, SMART, temperaturas, journal |
-| 12 | 🛠️ Ajustes e Manutenção | Tunings, DNF, dual-boot, GRUB, kernels, upgrade do Fedora |
-| 13 | 🐧 Estado do Fedora | Versão, Atomic/Silverblue, SELinux |
-| 14 | 📖 Sobre o FAP | Atualizar/desinstalar, changelog |
+| 9 | 🖥️ Virtualização | QEMU/KVM, VirtualBox, GNOME Boxes |
+| 10 | 📊 Diagnóstico | Painel do sistema, SMART, temperaturas, CoolerControl, journal |
+| 11 | 🛠️ Ajustes e Manutenção | Tunings, DNF, dual-boot, GRUB, kernels, upgrade do Fedora |
+| 12 | 🐧 Estado do Fedora | Versão, Atomic/Silverblue, SELinux |
+| 13 | 📖 Sobre o FAP | Atualizar/desinstalar, changelog |
 
 ### 🖥️ Sessão 3 — Hardware
 
@@ -125,6 +124,7 @@ Atualizações são feitas **em cima da instalação existente** — não precis
 - **Detecção de pré-existência.** Apps instalados antes do FAP aparecem como "Abrir" desde o início.
 - **Itens críticos protegidos.** Drivers proprietários, codecs, CUPS, Samba, virtualização: se já existiam, a lixeira não aparece.
 - **Drivers de código livre AMD/Intel são one-shot.** Instalam, ficam cinza. Sem remoção pela UI — o `dnf remove` cascatearia para dependentes críticos (Steam, kinfocenter). Aviso explicativo no topo de cada seção.
+- **Backup antes de sobrescrever.** Presets de GameMode + MangoHud fazem backup dos arquivos do usuário antes de aplicar; a lixeira restaura o original.
 - **Detecção real de idiomas.** Os 3 botões de tradução consultam o estado do sistema.
 - **Autenticação via `pkexec`.** Diálogo de senha nativo do desktop.
 - **Bloqueio inteligente.** `dnf` bloqueia outros `dnf`; fila de Flatpaks resolve o lock global.
@@ -135,7 +135,7 @@ Atualizações são feitas **em cima da instalação existente** — não precis
 
 - **Tema preto/cinza de alto contraste** no dark; claro mantém os azuis Fedora.
 - **Sidebar lateral colapsável** com ícones SVG monocromáticos e **neon por sessão** no hover do modo colapsado.
-- **Busca global** com índice em background cobrindo as 14 sessões.
+- **Busca global** com índice em background cobrindo as 13 sessões.
 - **Badges de origem** (6 variantes) com tooltip em qualquer parte do botão e popover com comando exato, como atualizar e como remover.
 - **Filtros combináveis** (estado + origem) na sessão 6.
 - **Card de status na landing** com 4 barras.
@@ -143,6 +143,7 @@ Atualizações são feitas **em cima da instalação existente** — não precis
 - **Sessões N/A** que saem do cálculo de progresso.
 - **Botão 🔄 no header** que recarrega o estado do sistema.
 - **Botão "Abrir X"** gerado dinamicamente via `_ABRIR_REGISTRY` — o próprio botão de instalar vira verde após sucesso, sem dependência de HTML duplicado.
+- **Links externos abrem no navegador padrão** do sistema via `xdg-open`, independente do container.
 
 ## 🖥️ Requisitos e suporte
 
