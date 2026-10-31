@@ -343,7 +343,7 @@ async function executarLocalSend() {
     const comando = 'flatpak install flathub org.localsend.localsend_app -y';
     await executarComandoGenerico(idComando, comando,
         _t('sessoes.casa-escritorio.btn_localsend', '📦 Instalar LocalSend'),
-        function() { aplicarEstadoInstalavel(idComando, 'abrir-localsend'); });
+        function() { aplicarEstadoInstalavel(idComando, null); });
 }
 
 function abrirLocalSend() {
@@ -355,7 +355,7 @@ async function executarWarpinator() {
     const comando = 'flatpak install flathub org.x.Warpinator -y';
     await executarComandoGenerico(idComando, comando,
         _t('sessoes.casa-escritorio.btn_warpinator', '📦 Instalar Warpinator'),
-        function() { aplicarEstadoInstalavel(idComando, 'abrir-warpinator'); });
+        function() { aplicarEstadoInstalavel(idComando, null); });
 }
 
 function abrirWarpinator() {
