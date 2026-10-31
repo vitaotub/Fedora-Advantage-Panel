@@ -13,184 +13,125 @@ que exibe a seção da versão atual dentro do FAP, na sessão **Sobre o FAP**.
 
 ---
 
-## v1.4.1-10302026
+## v1.4.2-10312026
 
-Rodada de correções focada em **detecção de estado do sistema** e na
-**uniformização dos botões de GPU**. O FAP deixou de apresentar "Instalar"
-para apps já presentes no sistema, e os drivers de código livre AMD/Intel
-passaram a ser one-shot (instalam e ficam cinza, sem lixeira).
+Rodada de correções baseada em teste completo em instalação limpa do
+**Fedora 44** em hardware real (GPU AMD Barceló). Corrige 6 bugs de UX
+identificados nesse teste e **remove completamente a sessão Waydroid
+(Android no Linux)**.
 
 ### 🐛 Corrigido
 
-**Detecção de estado (`/system-state`):**
+- **Sessão 1 (Primeiros Passos)** — botão **"Habilitar Terra Extras"** não
+  reaparecia após remover os repositórios extras. `_atualizarVisibilidadeTerra`
+  consultava o `SystemState` com cache antigo (TTL 60s) e escondia o botão
+  até reload da página. Agora `executarTerraExtras` e `executarTerraExtrasRemove`
+  invalidam o cache (`SystemState.invalidar()`) e aguardam o recarregamento
+  antes de recalcular a visibilidade. Botão reaparece automaticamente.
 
-- `SystemState` não cacheia mais falha de rede como `{}`. Antes, uma falha
-  no primeiro fetch travava todos os ~165 botões em "Instalar" até o
-  usuário recarregar a página. Agora a próxima chamada refaz a consulta.
-- O retry automático de resposta suspeita (listas vazias) passou a cobrir
-  `packages_installed` e `repos_enabled` (antes só checava
-  `flatpaks_installed`).
-- `appJaInstaladoNoSistema` passou a funcionar para itens sem `pacotes[]`.
-  Adicionados registros faltantes em: `codecs-essenciais`,
-  `firmware-vendor-install`, `driver-openrazer-install`,
-  `driver-xpadneo-install`, `driver-broadcom-wl-install`,
-  `driver-realtek-r8168-install`, `waydroid-helper-install`,
-  `ntsync-install`, `instalar-obs-studio`, `instalar-easyeffects`.
-- A combinação `ignorarPreExistente: true` + `permitirRemocaoPreExistente: false`
-  não se anula mais. Removido `ignorarPreExistente` de `fontes-ms-all`,
-  `cups-install` e `samba-install` — agora o usuário vê "✅ Já estava ativo"
-  com tooltip e sem lixeira (antes via "Instalar" para sempre e a lixeira
-  apagava pacotes que já existiam).
-- `codecs-essenciais` ganhou `onSucesso` — a lixeira aparece imediatamente
-  após instalar, sem precisar recarregar a sessão.
-- `aplicativos.html` tinha um `}` faltando em `restaurarEstadoSessao` que
-  causava `SyntaxError: Unexpected end of script` no `guiado.html` — a
-  sessão 6 inteira ficava em "Instalar" mesmo com apps pré-instalados.
+- **Sessão 6 (Aplicativos)** — botão **"🐙 GitHub do Projeto"** da suíte
+  Affinity não abria nada. `window.open(..., '_blank')` não funciona no
+  WebKitGTK (o `decide_policy` do container trata apenas `NAVIGATION_ACTION`,
+  não `NEW_WINDOW_ACTION`). Agora usa `abrirFerramentaExterna('xdg-open <url>')`,
+  que abre no navegador padrão do sistema, independente do FAP.
 
-**Drivers de GPU:**
+- **Sessão 7 (Casa e Escritório)** — **LocalSend** e **Warpinator** instalavam
+  mas o botão não mudava para "🚀 Abrir" até reload da sessão. O `onSucesso`
+  passava `idAbrir` do DOM antigo (não existe mais desde a Rodada 2B). Agora
+  passa `null` e usa exclusivamente o `_ABRIR_REGISTRY`.
 
-- `vulkan-amd`, `vaapi-amd`, `intel-media-install`, `libva-intel-install`,
-  `intel-vaapi-utils`, `nvidia-vaapi-install` e `nvidia-vaapi-utils`
-  agora usam `aplicarEstadoOneShot`. Antes, a lixeira de `vulkan-amd`
-  cascateava `dnf remove` para `steam`, `kinfocenter`, `lm_sensors`,
-  `gamemode` e ~34 dependências de 32 bits, quebrando o sistema.
-- Avisos informativos no topo das seções AMD e Intel explicam o que
-  cada botão instala, o que já vem no Fedora e por que não há botão
-  de remoção.
-- `nvidia-driver-install` — dupla fonte de estado removida. O botão era
-  gerenciado simultaneamente por `aplicarEstadoInstalavel` (código morto)
-  e `aplicarEstadoToggle`; agora só o toggle.
-- `nvidia-driver-remove`, `nvidia-modeset-on` e `nvidia-modeset-off`
-  passaram a ser rastreados em `SESSOES` (antes `sempreClicavel: true`
-  fazia o estado se perder entre reloads).
-- `nvidia-modeset-off` agora reseta o marker `nvidia-modeset-on` — antes
-  o botão continuava "✅ Modesetting ativado" após desativar.
-- `amdgpu-overclock` — revert oculto até ativar (padrão consistente com
-  os demais toggles).
+- **Sessão 8 (Gaming)** — presets de **GameMode + MangoHud** sobrescreviam
+  `~/.config/MangoHud/MangoHud.conf` e `~/.config/gamemode.ini` sem backup.
+  Agora faz backup (`.fap-backup`) antes de sobrescrever. A lixeira restaura
+  o backup original (se existia antes do FAP) ou remove os arquivos criados
+  pelo FAP (se não existiam). `registrarAppRemovivel` ganhou `comandoRemocao`
+  e `confirmMsg`.
 
-**Sessão 12 — toggles:**
+- **Sessão 11 (Diagnóstico)** — **CoolerControl** instalava mas o botão não
+  mudava para "Abrir" porque `sudo usermod -aG coolercontrol $USER` falhava
+  (o grupo não existe no momento da instalação; só o daemon o cria na
+  primeira execução). Comando reescrito conforme documentação oficial
+  (`docs.coolercontrol.org/installation/fedora`):
+  ```bash
+  sudo dnf install dnf-plugins-core
+  sudo dnf copr enable codifryed/CoolerControl -y
+  sudo dnf install -y coolercontrol liquidctl
+  sudo systemctl enable --now coolercontrold
+  ```
+  `liquidctl` adiciona suporte a AIOs USB, fan hubs e telas LCD. Removido
+  o `usermod` (desnecessário — o daemon sobe com as permissões corretas
+  via systemd). Adicionado `comandoRemocao` que desabilita o serviço,
+  remove os pacotes e limpa o arquivo `.repo` do COPR.
 
-- `vm-max-map-count`, `vm-swappiness-cache` e `tcp-bbr` — o botão de
-  reverter agora aparece após aplicar. Antes `_resetarIrmao` restaurava
-  texto e cor, mas não removia o `display: none` do revert (que começa
-  oculto por `esconderRevertSeNaoFeito: true`).
-- O loop de `restaurarEstadoSessao` passou a usar só `aplicarEstadoToggle`
-  como fonte de verdade visual. Antes misturava com `_marcarBotaoConcluido`,
-  que divergia do toggle em relação a cor do install e `display` do revert.
+- **Sessão 14 (Sobre o FAP)** — botão **"🔄 Atualizar FAP"** ficava sempre
+  habilitado, mesmo quando o FAP já estava na última versão. Agora, ao
+  carregar a sessão, `_verificarVersaoParaBotaoAtualizar()` compara a
+  versão local (`window.FAP_VERSION_UI18N`) com a versão remota
+  (`verificarAtualizacoesForcado`) e desabilita se forem iguais. Tooltip
+  explica ("Você já está na versão mais recente"). Não interfere na
+  notificação da landing (`mostrarBadgeSeHouverAtualizacao`), que continua
+  funcionando normalmente.
 
-**Sessão 6 — Rclone Manager:**
-
-- Estado 2 puro: instalar → "🚀 Abrir Rclone Manager" + lixeira. A
-  lixeira executa o `comandoRemocao` completo (pacotes + atalhos +
-  ícones + caches), mas preserva `~/.config/rclone/` (contas de nuvem).
-- `<button class="btn-executar destrutivo">` removido do HTML.
-- Aviso de texto órfão ("Remover completamente o Rclone Manager?...")
-  removido.
-
-**Sessão 8 — NTSYNC:**
-
-- Estado 2 puro: instalar → cinza + lixeira. A lixeira remove
-  `wine-ntsync`, `/etc/modules-load.d/ntsync.conf` e descarrega o
-  módulo do kernel — mesmo comportamento do antigo botão destrutivo.
-- `<button class="btn-executar destrutivo">` e o aviso de texto
-  órfão removidos.
-- `pacotes: ['wine-ntsync']` adicionado ao registro (antes o
-  console emitia `[appJaInstalado] desfazerTudo sem pacotes`).
-
-**Sessão 9 — Waydroid:**
-
-- `abrir-waydroid` tem guard de instalação: fica desabilitado até
-  o Waydroid ser instalado e inicializado. Antes, o usuário podia
-  clicar sem nada instalado e recebia "comando não encontrado".
-
-### ✨ Adicionado
-
-- Novo helper `aplicarEstadoOneShot` em `script.js` — instalar, marcar
-  como feito, sem lixeira, sem revert. Respeita apenas `isExecutado`
-  (estado do FAP); não consulta o sistema.
-- Novo sistema de registry para "Abrir X": `_registrarAbrir()`,
-  `_ABRIR_REGISTRY` e `_dadosAbrirDoApp()` em `script.js`. Cada sessão
-  registra no boot como o botão de instalar deve virar "Abrir" após o
-  sucesso. Elimina a dependência dos `<button class="verde">` no HTML.
-- `aplicarEstadoInstalavel` adaptado para consultar o registry —
-  funciona com ou sem o `<button>` verde no DOM (compatibilidade com
-  sessões ainda não migradas).
-- `_renderizarPanelAmd` e `_renderizarPanelIntel` em `hardware.html` —
-  painéis detalhados com **GPU / Driver kernel / Pacote sugerido**.
-  Uniformização cross-vendor com o painel do NVIDIA (**GPU / Driver
-  recomendado / Série**).
-- `_atualizarBotaoAbrirWaydroid` em `waydroid.html` — habilita/desabilita
-  o botão "Abrir Waydroid" conforme o estado real do container.
-- Chaves i18n em en+es: `hw_panel_titulo`, `hw_panel_label_gpu`,
-  `hw_panel_label_driver_kernel`, `hw_panel_label_pacote`,
-  `amd_aviso_one_shot`, `intel_aviso_one_shot`.
+- **Sessão 14 (Sobre o FAP)** — botão **"📝 Ver Changelog Completo no GitHub"**
+  também usava `window.open` e não abria no WebKitGTK. Mesmo fix do item 2:
+  agora usa `abrirFerramentaExterna('xdg-open <url>')`.
 
 ### 🗑️ Removido
 
-- `<button class="btn-executar verde">` de 9 HTMLs de sessão (3, 5, 6,
-  7, 8, 9, 10, 11, 13) — ~50 botões. O "Abrir X" agora é resolvido
-  pelo registry, com o próprio botão de instalar virando verde após o
-  sucesso.
-- `_criarBotoesAbrir` em `aplicativos.html` — substituído por
-  `_registrarAbrirEmMassa` (que registra ~50 apps em uma passada).
-- **PipeWire quantum** da sessão 12 — ajuste perigoso (reduzia latência
-  ao custo de CPU e podia causar crackling em máquinas modestas). A
-  seção "Ajustes de Áudio" agora só tem `realtime-setup`.
-- `desfazer-ntsync` de `SESSOES` — migrado para Estado 2.
-- Entradas mortas de `SESSOES` (não tinham `<button>` no HTML):
-  `instalar-lightworks-remove`, `samba-remove`, `keepassxc-remove`,
-  `wine-remove`, `winetricks-remove`, `gamemode-remove`,
-  `mangohud-remove`, `goverlay-remove`, `gamescope-remove`,
-  `vkbasalt-remove`, `controller-test-remove`,
-  `pipewire-quantum-low`, `pipewire-quantum-low-remove`.
-- `ignorarPreExistente: true` de `fontes-ms-all`, `cups-install`,
-  `samba-install` (anulava `permitirRemocaoPreExistente`).
-- Chaves i18n `pipewire_quantum_titulo`, `pipewire_quantum_desc`,
-  `pipewire_quantum_info`, `btn_pipewire_quantum`,
-  `btn_pipewire_quantum_remove`, `texto_concluido_pipewire_quantum`,
-  `texto_concluido_pipewire_quantum_remove` de en+es.
+- **Sessão Waydroid (Android no Linux) — removida completamente.**
+  Arquivos alterados: `waydroid.html` (deletado), `script.js` (entrada em
+  `SESSOES`, `_MAPA_ORIGEM`, `_GRUPOS_LANDING`, método `SystemState.waydroid()`),
+  `guiado.html` (emoji + SVG do ícone), `iniciar_fap.sh` e `install.sh`
+  (arrays de arquivos de sessão), `server.js` (endpoint `/waydroid-status`,
+  entradas `waydroid status` / `waydroid show-full-ui` em
+  `COMANDOS_SEM_AUTENTICACAO`, entrada `waydroid show-full-ui` em
+  `COMANDOS_USER_CONTEXT`), `system-state-service.js` (`_detectarWaydroid`
+  e ajuste dos índices em `scanSystemState`), `locales/en.json` e
+  `locales/es.json` (bloco `sessoes.waydroid.*` inteiro).
+
+  **Motivo:** sessão difícil de manter (bugs do COPR yanqiyu/waydroid no
+  Fedora 44, dependências quebradas, sem hardware AMD/Intel nas máquinas
+  de teste do autor), escopo fora do público-alvo principal (usuários
+  migrando do Windows) e o uso de Android em Linux hoje é bem atendido
+  por alternativas nativas (`adb`, scrcpy, apps Flatpak de mirroring).
 
 ### 🔄 Alterado
 
-- `aplicarEstadoInstalavel` aceita `dadosAbrir` do registry (Rodada 2B).
-- `restaurarEstadoSessao` simplificado em 9 sessões (2º argumento
-  `idAbrir` passou a ser `null` — o "Abrir X" vem do registry).
-- `registrarAppRemovivel` de `vulkan-amd` reescrito (one-shot sem
-  lixeira); `vaapi-amd`, `intel-media-install`, `libva-intel-install`,
-  `intel-vaapi-utils`, `nvidia-vaapi-install` e `nvidia-vaapi-utils`
-  tiveram o registro removido (viraram one-shot).
+- **`script.js` → `_GRUPOS_LANDING`** — grupo "Uso geral" perdeu a entrada
+  `waydroid`. O card de status na landing continua com as 4 barras, mas
+  a barra "Uso geral" passa a somar 5 sessões (era 6). Total global
+  passa de **14** para **13 sessões**.
+- **`.gitignore`** — adicionados `*.bak`, `*.orig`, `*.rej`,
+  `.fap-backup-*`, `*.fap-backup` e `.history/` (artefatos de patch/merge
+  e histórico local de editores). Defesa em profundidade (regras `!`) mantida.
 
 ### ⚠️ Nota de atualização
 
-- **Arquivos alterados:** `script.js`, `hardware.html`,
-  `aplicativos.html`, `gaming.html`, `waydroid.html`,
-  `casa-escritorio.html`, `codecs.html`, `dispositivos-perifericos.html`,
-  `ajustes-manutencao.html`, `diagnostico.html`,
-  `producao-multimidia.html`, `virtualizacao.html`,
-  `estado-fedora.html`, `locales/en.json`, `locales/es.json`,
-  `CHANGELOG.md`, `package.json`.
-- **Arquivos não tocados:** `server.js`, `system-state-service.js`,
-  `hardware-service.js`, `hardware_map.json`, `fap-container.c`,
-  `build-container.sh`, `iniciar_fap.sh`, `iniciar_fap_compat.sh`,
-  `install.sh`, `style.css`, `index.html`, `guiado.html`, `i18n.js`,
-  `template-sessao.html`.
-- `.progresso.json` existente continua compatível. IDs órfãos
-  (`desfazer-ntsync`, `*-remove` fantasmas, `pipewire-quantum-low`,
-  `pipewire-quantum-low-remove`) são removidos automaticamente pelo
-  `_limparIdsOrfaos` no próximo boot.
-- Usuário com `vulkan-amd`, `vaapi-amd` ou drivers Intel/NVIDIA-VAAPI
-  marcados como feitos: o botão continua cinza (one-shot), e para
-  reinstalar via FAP é preciso resetar o progresso (Sessão 14 →
-  "Resetar progresso").
+- **Sessão removida.** Usuários que tinham o Waydroid instalado pelo FAP
+  continuam com o container funcionando no sistema — o FAP apenas deixa
+  de gerenciá-lo. Para remover manualmente:
+  ```bash
+  systemctl stop waydroid-container
+  waydroid container stop
+  sudo dnf remove waydroid lzip
+  rm -rf ~/.local/share/fap-waydroid ~/.local/share/waydroid
+  sudo rm -rf /var/lib/waydroid /var/lib/waydroid-data
+  ```
+- `.progresso.json` existente continua compatível. IDs órfãos do Waydroid
+  (`waydroid-install`, `waydroid-init`, `waydroid-extras-prep`, etc.) são
+  removidos automaticamente pelo `_limparIdsOrfaos` no próximo boot.
+- **Requisito:** `Fedora 44` ou `45`.
 
 ### 🧪 Não testado
 
-- **NVIDIA driver em hardware real** — install/revert/modeset em
-  Quadro/Tesla/MX; detecção por regex validada, mas não em GPU física.
-- **`nvidia-vaapi-driver` em GPU com NVDEC** — receita validada por
-  documentação (Arch Wiki, RPM Fusion).
-- **`libva-intel-driver` em Haswell/Ivy Bridge/Sandy Bridge físico** —
-  receita validada por documentação oficial.
-- **Waydroid em bare metal** — testar em máquina com Waydroid funcional.
-- **Painéis cross-vendor em máquina com múltiplas GPUs** (AMD+Intel,
-  NVIDIA+Intel) — validado conceitualmente, não em hardware.
+- **`xdg-open` no container** — testado apenas em VM (Intel) e notebook
+  (AMD). Ambientes sem `xdg-open` (desktop minimalista, SSH) podem falhar
+  com `xdg-open: command not found` no log. Correção: instalar `xdg-utils`
+  via `dnf`.
+- **Presets backup/restore do GameMode** — testado com e sem arquivos
+  pré-existentes no notebook AMD. Cenário "usuário já tinha config
+  personalizada e faz remoção duas vezes" validado conceitualmente, não
+  em hardware.
+- **`_verificarVersaoParaBotaoAtualizar` offline** — comportamento
+  esperado é manter o botão habilitado (fallback conservador). Cenário
+  testado com mock, não com GitHub realmente offline.
