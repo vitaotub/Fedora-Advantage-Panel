@@ -13,56 +13,59 @@ que exibe a seção da versão atual dentro do FAP, na sessão **Sobre o FAP**.
 
 ---
 
-## v1.4.4-11042026
+## v1.4.5-11042026
 
-Correções pontuais na detecção de upgrade do Fedora 44 → 45 e no aviso
-de reboot da sessão 1.
+Correção da detecção de download do DNF5 e adição das ações
+recomendadas pós-upgrade do Fedora 44 → 45.
 
 ### 🐛 Corrigido
 
-- **`server.js` → `_verificarCanalRpmFusion`** — a verificação usava a URL
-  `.../updates/45/.../repomd.xml`, que retorna **404** desde o lançamento
-  do Fedora 45 (03/11/2026). O RPM Fusion publica o repositório
-  `releases/45` no dia do GA, mas só popula o canal `updates/45` depois
-  do primeiro batch de atualizações — o que pode levar dias ou semanas.
-  O resultado era que o FAP mostrava "⏳ RPM Fusion 45 publicado —
-  Aguardando" indefinidamente. Agora a verificação usa
-  `.../releases/45/.../repomd.xml`, que é o critério correto: é esse
-  repositório que o `dnf system-upgrade` do FAP consome como base.
+- **`server.js` → `_verificarDownloadConcluido`** — o FAP procurava o
+  download do system-upgrade em `/var/lib/dnf/system-upgrade` (DNF4) e
+  `/var/lib/dnf5/offline` (caminho errado). O DNF5 (padrão no Fedora 44+)
+  armazena a transação offline em `/usr/lib/sysimage/libdnf5/offline`.
+  Resultado: o estado `downloaded` nunca era detectado, e o botão
+  "Reiniciar agora e atualizar" não aparecia após o download. Agora
+  verifica o caminho correto do DNF5 primeiro, com fallback para DNF4.
 
 ### ✨ Adicionado
 
-- **`server.js` → `GET /reboot-needed`** — novo endpoint read-only que
-  roda `dnf needs-restarting -r` e devolve `{ reboot: boolean }`. Mesmo
-  padrão de `/kernel-atual` (sem autenticação, sem SSE, timeout de 10s).
-- **`primeiros-passos.html` → aviso dinâmico de reboot** — o botão
-  "Atualizar Fedora" agora consulta `/reboot-needed` em dois momentos:
-  (1) após o `dnf upgrade` terminar com sucesso, e (2) no boot da
-  sessão (para cobrir o caso "atualizou, fechou o FAP sem reiniciar,
-  voltou depois"). Se `reboot === true`, mostra o aviso
-  "🔄 Reinicie o computador para aplicar as atualizações."; senão,
-  esconde. Antes, o aviso "💡 Recomenda-se reiniciar…" era **estático**
-  e aparecia sempre, mesmo quando não havia reboot pendente.
-- **`locales/en.json`** e **`locales/es.json`** — chave
-  `sessoes.primeiros-passos.aviso_reboot_necessario` (substitui
-  `aviso_reiniciar`). PT-BR fica no HTML.
+- **Aviso pós-download** — após o download terminar, a área de upgrade
+  mostra um aviso: "Após reiniciar e concluir o upgrade, volte a esta
+  sessão para os próximos passos (ações recomendadas pós-upgrade)."
+- **Ações pós-upgrade** — quando o FAP detecta que o usuário está no
+  Fedora 45 **e** fez o upgrade pelo FAP (marcador `upgrade-f45-download`
+  executado), a área de upgrade substitui a mensagem estática por 5
+  botões de ações recomendadas pela documentação oficial do Fedora:
+  - **🧹 Limpeza Pós-Upgrade** (seguro): `remove-retired-packages`,
+    `dnf remove --duplicates`, `dnf autoremove`, `dnf clean all`,
+    `clean-rpm-gpg-pubkey`.
+  - **⚙️ Mesclar Configurações** (seguro): `rpmconf -a`.
+  - **🔄 Distro-Sync** (avançado, aviso vermelho): `dnf distro-sync`.
+  - **🛡️ Relabel SELinux** (avançado, aviso amarelo): `fixfiles -B onboot`.
+  - **🛟 Regenerar Rescue Kernel** (opcional): instala
+    `dracut-config-rescue` (a regeneração acontece no próximo kernel
+    update, conforme doc oficial).
+- **`locales/en.json`** e **`locales/es.json`** — ~15 chaves para os
+  textos dos botões de pós-upgrade.
 
 ### 🔄 Alterado
 
-- **`package.json`** — versão atualizada para `1.4.4-11042026`.
-- **`README.md` / `README.en.md` / `README.es.md`** — badge de versão.
-- **`BRIEFING.md`** — versão atual + histórico + nota pós-GA.
-- **`RELEASE_NOTES.md`** — release notes da versão.
+- **`package.json`** — versão `1.4.5-11042026`.
+- **`CHANGELOG.md`** — seção da v1.4.5.
 
-### 🧪 Não testado (pendências herdadas da v1.4.3)
+### 🧪 Não testado
 
-- **Upgrade Fedora 44 → 45 em hardware real** — o fluxo
-  `ready → downloaded → reboot` foi validado com mocks e com o Fedora 45
-  já publicado nos mirrors. Falta testar o reboot real em hardware.
-- **Presets de GameMode com backup/restore** — validado conceitualmente.
-- **Fila de Flatpaks com 3+ apps em sequência** — validado conceitualmente.
-- **Container WebKitGTK após remoção do label de status** (v1.4.3) —
-  validar visualmente em KDE Plasma e GNOME.
+- **`rpmconf -a` em modo não-interativo** — a doc oficial recomenda
+  `rpmconf -a` para aceitar as ações padrão. Se o comando travar
+  esperando input no FAP (sem TTY), será necessário ajustar para
+  `yes | rpmconf -a` ou similar. Testar em hardware real.
+- **`fixfiles -B onboot`** — o tempo de relabel varia com o tamanho
+  do disco. Testar em hardware real para confirmar que não trava o
+  boot.
+- **Ações pós-upgrade em Fedora 45 real** — o fluxo completo
+  (`upgrade → reboot → Fedora 45 → botões de pós-upgrade`) foi
+  validado conceitualmente. Falta testar em hardware real.
 
 ### 🧪 Requisito
 
