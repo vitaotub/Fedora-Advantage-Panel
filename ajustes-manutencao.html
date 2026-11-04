@@ -1922,7 +1922,15 @@ function _renderizarAreaUpgrade(data) {
     var html;
     switch (data.status) {
         case 'no_upgrade_needed':
-            html = _renderUpgradeJaAtual(data);
+            // Se o usuário está no Fedora 45 E fez o upgrade pelo FAP
+            // (marcador `upgrade-f45-download` executado), mostra os
+            // botões de pós-upgrade. Senão, cai na mensagem estática.
+            if (String(data.current_version) === '45' &&
+                isExecutado('upgrade-f45-download')) {
+                html = _renderUpgradePosUpgrade(data);
+            } else {
+                html = _renderUpgradeJaAtual(data);
+            }
             break;
         case 'atomic':
             html = _renderUpgradeAtomic(data);
@@ -1956,6 +1964,128 @@ function _renderizarAreaUpgrade(data) {
     if (data.status === 'ready') {
         _plugarListenersUpgradePronto();
     }
+}
+
+// ============================================================
+// PÓS-UPGRADE — ações recomendadas após o Fedora 44 → 45
+// ============================================================
+//
+// Renderizado no estado `no_upgrade_needed` + `current_version === '45'`
+// + `isExecutado('upgrade-f45-download')`. Cada botão usa
+// `executarComandoGenerico` com `idComando` próprio, `data-logbox`
+// apontando para o log da sessão, e é desabilitado após execução
+// (via `isExecutado`). Nenhum tem revert — são one-way.
+//
+// Ordem: seguro → avançado. Os avançados têm avisos coloridos.
+function _renderUpgradePosUpgrade(data) {
+    var html = '';
+
+    html += '<div class="aviso-sucesso">✅ <strong>' +
+        _tUpgrade('upgrade_pos_titulo',
+            'Upgrade concluído! Você está no Fedora ' + data.current_version + '.') +
+        '</strong><br>' +
+        _tUpgrade('upgrade_pos_desc',
+            'Abaixo estão as ações recomendadas pela documentação oficial do Fedora para após um upgrade de versão. São opcionais, mas ajudam a manter o sistema limpo e consistente.') +
+        '</div>';
+
+    // ---------- Bloco 1: Limpeza básica ----------
+    html += '<div class="bloco-comando" style="margin-top: 1rem;">';
+    html += '<div class="comando-info">';
+    html += '<h3>' + _tUpgrade('upgrade_pos_limpeza_titulo', '🧹 Limpeza Pós-Upgrade') + '</h3>';
+    html += '<p>' + _tUpgrade('upgrade_pos_limpeza_desc',
+        'Remove pacotes que não existem mais no Fedora 45 (retired packages), versões duplicadas de pacotes, dependências órfãs e chaves GPG antigas. Também limpa o cache do DNF. É seguro e recomendado.') + '</p>';
+    html += '<div class="botoes-flex">';
+    html += '<button class="btn-executar" id="btn-pos-limpeza" ' +
+        'data-comando="pos-upgrade-limpeza" ' +
+        'data-logbox="log-sessao-ajustes-manutencao" ' +
+        'onclick="executarPosLimpeza()">' +
+        '🧹 Executar Limpeza</button>';
+    html += '</div></div>';
+    html += '<div class="progress-container" id="progress-pos-upgrade-limpeza">' +
+        '<div class="progress-bar"><div class="progress-fill" id="progress-fill-pos-upgrade-limpeza"></div></div>' +
+        '<div class="progress-text"><span class="status" id="progress-status-pos-upgrade-limpeza">⏳ Iniciando...</span>' +
+        '<span class="percentage" id="progress-percent-pos-upgrade-limpeza">0%</span></div></div>';
+    html += '</div>';
+
+    // ---------- Bloco 2: rpmconf ----------
+    html += '<div class="bloco-comando">';
+    html += '<div class="comando-info">';
+    html += '<h3>' + _tUpgrade('upgrade_pos_rpmconf_titulo', '⚙️ Mesclar Configurações') + '</h3>';
+    html += '<p>' + _tUpgrade('upgrade_pos_rpmconf_desc',
+        'Instala o rpmconf e mescla os arquivos de configuração que foram modificados durante o upgrade. Aceita as ações padrão (-a). Arquivos não mesclados ficam como .rpmnew/.rpmsave para revisão manual posterior.') + '</p>';
+    html += '<div class="botoes-flex">';
+    html += '<button class="btn-executar" id="btn-pos-rpmconf" ' +
+        'data-comando="pos-upgrade-rpmconf" ' +
+        'data-logbox="log-sessao-ajustes-manutencao" ' +
+        'onclick="executarPosRpmconf()">' +
+        '⚙️ Mesclar Configurações</button>';
+    html += '</div></div>';
+    html += '<div class="progress-container" id="progress-pos-upgrade-rpmconf">' +
+        '<div class="progress-bar"><div class="progress-fill" id="progress-fill-pos-upgrade-rpmconf"></div></div>' +
+        '<div class="progress-text"><span class="status" id="progress-status-pos-upgrade-rpmconf">⏳ Iniciando...</span>' +
+        '<span class="percentage" id="progress-percent-pos-upgrade-rpmconf">0%</span></div></div>';
+    html += '</div>';
+
+    // ---------- Bloco 3: distro-sync (avançado) ----------
+    html += '<div class="bloco-comando" style="border-left: 4px solid var(--danger);">';
+    html += '<div class="comando-info">';
+    html += '<h3>' + _tUpgrade('upgrade_pos_distrosync_titulo', '🔄 Distro-Sync (Avançado)') + '</h3>';
+    html += '<div class="aviso-caixa" style="border-color: var(--danger); color: var(--danger);">' +
+        '⚠️ ' + _tUpgrade('upgrade_pos_distrosync_aviso',
+            'Este comando alinha todos os pacotes com os repositórios do Fedora 45. Pode REMOVER pacotes de COPRs que ainda não têm versão para o Fedora 45. Verifique os avisos de terceiros antes de rodar. Use apenas se houver problemas de dependência.') + '</div>';
+    html += '<div class="botoes-flex">';
+    html += '<button class="btn-executar vermelho" id="btn-pos-distrosync" ' +
+        'data-comando="pos-upgrade-distrosync" ' +
+        'data-logbox="log-sessao-ajustes-manutencao" ' +
+        'onclick="executarPosDistroSync()">' +
+        '🔄 Distro-Sync</button>';
+    html += '</div></div>';
+    html += '<div class="progress-container" id="progress-pos-upgrade-distrosync">' +
+        '<div class="progress-bar"><div class="progress-fill" id="progress-fill-pos-upgrade-distrosync"></div></div>' +
+        '<div class="progress-text"><span class="status" id="progress-status-pos-upgrade-distrosync">⏳ Iniciando...</span>' +
+        '<span class="percentage" id="progress-percent-pos-upgrade-distrosync">0%</span></div></div>';
+    html += '</div>';
+
+    // ---------- Bloco 4: fixfiles (avançado) ----------
+    html += '<div class="bloco-comando" style="border-left: 4px solid var(--warning-border);">';
+    html += '<div class="comando-info">';
+    html += '<h3>' + _tUpgrade('upgrade_pos_fixfiles_titulo', '🛡️ Relabel SELinux (Avançado)') + '</h3>';
+    html += '<div class="aviso-caixa" style="border-color: var(--warning-border); color: var(--warning-soft);">' +
+        '⚠️ ' + _tUpgrade('upgrade_pos_fixfiles_aviso',
+            'Agenda um relabel completo do SELinux para o próximo boot. Pode demorar de 10 a 60 minutos dependendo do tamanho do disco. NÃO desligue o computador durante o relabel. Use apenas se houver avisos de SELinux após o upgrade.') + '</div>';
+    html += '<div class="botoes-flex">';
+    html += '<button class="btn-executar" id="btn-pos-fixfiles" ' +
+        'data-comando="pos-upgrade-fixfiles" ' +
+        'data-logbox="log-sessao-ajustes-manutencao" ' +
+        'onclick="executarPosFixfiles()">' +
+        '🛡️ Agendar Relabel</button>';
+    html += '</div></div>';
+    html += '<div class="progress-container" id="progress-pos-upgrade-fixfiles">' +
+        '<div class="progress-bar"><div class="progress-fill" id="progress-fill-pos-upgrade-fixfiles"></div></div>' +
+        '<div class="progress-text"><span class="status" id="progress-status-pos-upgrade-fixfiles">⏳ Iniciando...</span>' +
+        '<span class="percentage" id="progress-percent-pos-upgrade-fixfiles">0%</span></div></div>';
+    html += '</div>';
+
+    // ---------- Bloco 5: rescue kernel ----------
+    html += '<div class="bloco-comando" style="border-left: 4px solid var(--warning-border);">';
+    html += '<div class="comando-info">';
+    html += '<h3>' + _tUpgrade('upgrade_pos_rescue_titulo', '🛟 Regenerar Rescue Kernel') + '</h3>';
+    html += '<p>' + _tUpgrade('upgrade_pos_rescue_desc',
+        'Instala o pacote dracut-config-rescue, que habilita a regeneração automática do rescue kernel no próximo kernel update. O rescue kernel atual não é removido — a substituição acontece quando um novo kernel for instalado.') + '</p>';
+    html += '<div class="botoes-flex">';
+    html += '<button class="btn-executar" id="btn-pos-rescue" ' +
+        'data-comando="pos-upgrade-rescue" ' +
+        'data-logbox="log-sessao-ajustes-manutencao" ' +
+        'onclick="executarPosRescue()">' +
+        '🛟 Instalar dracut-config-rescue</button>';
+    html += '</div></div>';
+    html += '<div class="progress-container" id="progress-pos-upgrade-rescue">' +
+        '<div class="progress-bar"><div class="progress-fill" id="progress-fill-pos-upgrade-rescue"></div></div>' +
+        '<div class="progress-text"><span class="status" id="progress-status-pos-upgrade-rescue">⏳ Iniciando...</span>' +
+        '<span class="percentage" id="progress-percent-pos-upgrade-rescue">0%</span></div></div>';
+    html += '</div>';
+
+    return html;
 }
 
 function _renderUpgradeJaAtual(data) {
@@ -2283,6 +2413,16 @@ function _renderUpgradeBaixado(data) {
             'Se precisar cancelar o upgrade, use o botão "Cancelar upgrade" abaixo. Ele apaga o download feito e retorna ao estado inicial.') +
         '</div>';
 
+    // Aviso para o usuário voltar após o reboot. Só aparece no estado
+    // `downloaded` (download concluído, reboot pendente). Depois do
+    // reboot, a área muda para o estado `no_upgrade_needed` com os
+    // botões de pós-upgrade.
+    html += '<div class="aviso-caixa" style="margin-top: 1rem; border-color: var(--accent); color: var(--accent-soft);">' +
+        '💡 ' +
+        _tUpgrade('upgrade_baixado_aviso_voltar',
+            'Após reiniciar e concluir o upgrade, volte a esta sessão para os próximos passos (ações recomendadas pós-upgrade).') +
+        '</div>';
+
     html += '<div class="botoes-flex" style="margin-top: 1.5rem;">';
     html += '<button class="btn-executar" onclick="executarUpgradeReboot()">' +
         '🔄 ' + _tUpgrade('upgrade_btn_reboot', 'Reiniciar agora e atualizar') +
@@ -2360,6 +2500,70 @@ async function executarUpgradeCancelar() {
             var novoStatus = await _carregarUpgradeStatus(true);
             _renderizarAreaUpgrade(novoStatus);
         });
+}
+
+// ============================================================
+// PÓS-UPGRADE — FUNÇÕES EXECUTORAS
+// ============================================================
+
+async function executarPosLimpeza() {
+    var idComando = 'pos-upgrade-limpeza';
+    var comando =
+        'sudo dnf install -y remove-retired-packages clean-rpm-gpg-pubkey && ' +
+        'remove-retired-packages && ' +
+        'sudo dnf remove --duplicates -y && ' +
+        'sudo dnf autoremove -y && ' +
+        'sudo dnf clean all && ' +
+        'sudo clean-rpm-gpg-pubkey';
+    await executarComandoGenerico(idComando, comando,
+        _t('sessoes.ajustes-manutencao.upgrade_pos_limpeza_btn', '🧹 Executar Limpeza'),
+        function() { aplicarEstadoPosUpgrade(idComando); });
+}
+
+async function executarPosRpmconf() {
+    var idComando = 'pos-upgrade-rpmconf';
+    var comando = 'sudo dnf install -y rpmconf && sudo rpmconf -a';
+    await executarComandoGenerico(idComando, comando,
+        _t('sessoes.ajustes-manutencao.upgrade_pos_rpmconf_btn', '⚙️ Mesclar Configurações'),
+        function() { aplicarEstadoPosUpgrade(idComando); });
+}
+
+async function executarPosDistroSync() {
+    var idComando = 'pos-upgrade-distrosync';
+    var comando = 'sudo dnf distro-sync -y';
+    await executarComandoGenerico(idComando, comando,
+        _t('sessoes.ajustes-manutencao.upgrade_pos_distrosync_btn', '🔄 Distro-Sync'),
+        function() { aplicarEstadoPosUpgrade(idComando); });
+}
+
+async function executarPosFixfiles() {
+    var idComando = 'pos-upgrade-fixfiles';
+    var comando = 'sudo fixfiles -B onboot';
+    await executarComandoGenerico(idComando, comando,
+        _t('sessoes.ajustes-manutencao.upgrade_pos_fixfiles_btn', '🛡️ Agendar Relabel'),
+        function() { aplicarEstadoPosUpgrade(idComando); });
+}
+
+async function executarPosRescue() {
+    var idComando = 'pos-upgrade-rescue';
+    var comando = 'sudo dnf install -y dracut-config-rescue';
+    await executarComandoGenerico(idComando, comando,
+        _t('sessoes.ajustes-manutencao.upgrade_pos_rescue_btn', '🛟 Instalar dracut-config-rescue'),
+        function() { aplicarEstadoPosUpgrade(idComando); });
+}
+
+// Aplica o estado visual do botão após execução: cinza, desabilitado,
+// texto "✅ concluído". Sem lixeira, sem revert — são one-way.
+// O estado persiste via `.progresso.json` (marcarComoExecutado é
+// chamado pelo `executarComandoGenerico` no sucesso).
+function aplicarEstadoPosUpgrade(idComando) {
+    var btn = document.getElementById('btn-pos-' + idComando.replace('pos-upgrade-', ''));
+    if (!btn) return;
+    btn.textContent = _t('comum.btn_concluido', '✅ Concluído');
+    btn.style.backgroundColor = '#4b5563';
+    btn.style.cursor = 'default';
+    btn.disabled = true;
+    btn.style.opacity = '1';
 }
 
 // ------------------------------------------------------------
