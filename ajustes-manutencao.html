@@ -2219,8 +2219,23 @@ function _renderUpgradePronto(data) {
     html += '<span>' +
         _tUpgrade('upgrade_checkbox', 'Li os avisos acima e entendo os riscos.') +
         '</span></label>';
+    // `data-logbox` aponta para o log compartilhado da sessão.
+    // Sem isso, `_getLogBox('upgrade-f45-download')` retorna null
+    // (não há `data-logbox` no botão nem `log-upgrade-f45-download`
+    // no DOM), e `executarComandoGenerico` sai silenciosamente no
+    // `if (!logBox) return;` — o clique no botão não faz nada.
+    //
+    // `data-comando` também é necessário para `_renderizarBadgesFixas`
+    // e para o bloqueio de navegação (`_bloqueiaNavegacao` consulta
+    // `[data-comando]`). O `id` fica como `btn-upgrade-baixar` para
+    // não conflitar com o `idComando` (`upgrade-f45-download`) usado
+    // na lógica de progresso.
     html += '<div class="botoes-flex" style="margin-top: 1rem;">';
-    html += '<button class="btn-executar" id="btn-upgrade-baixar" disabled onclick="executarUpgradeDownload()" style="opacity: 0.5; cursor: not-allowed;">';
+    html += '<button class="btn-executar" id="btn-upgrade-baixar" ' +
+        'data-comando="upgrade-f45-download" ' +
+        'data-logbox="log-sessao-ajustes-manutencao" ' +
+        'disabled onclick="executarUpgradeDownload()" ' +
+        'style="opacity: 0.5; cursor: not-allowed;">';
     html += '📥 ' +
         _tVarsUpgrade('upgrade_btn_baixar',
             'Baixar pacotes do Fedora {alvo}',
