@@ -2438,11 +2438,26 @@ function _renderUpgradeBaixado(data) {
             'Após reiniciar e concluir o upgrade, volte a esta sessão para os próximos passos (ações recomendadas pós-upgrade).') +
         '</div>';
 
+    // `data-comando` e `data-logbox` são obrigatórios aqui pelo
+    // mesmo motivo do botão de download: `executarComandoGenerico`
+    // chama `_getLogBox(idComando)` no início, e se retornar `null`
+    // (sem `data-logbox` no botão e sem `log-<idComando>` no DOM),
+    // a função sai silenciosamente no `if (!logBox) return;`.
+    //
+    // Sem isso, o clique em "Reiniciar agora e atualizar" (ou
+    // "Cancelar upgrade") passa pelo `confirm()`, mas o comando
+    // nunca é executado — nem aparece no log.
     html += '<div class="botoes-flex" style="margin-top: 1.5rem;">';
-    html += '<button class="btn-executar" onclick="executarUpgradeReboot()">' +
+    html += '<button class="btn-executar" id="btn-upgrade-reboot" ' +
+        'data-comando="upgrade-f45-reboot" ' +
+        'data-logbox="log-sessao-ajustes-manutencao" ' +
+        'onclick="executarUpgradeReboot()">' +
         '🔄 ' + _tUpgrade('upgrade_btn_reboot', 'Reiniciar agora e atualizar') +
         '</button>';
-    html += '<button class="btn-executar vermelho" onclick="executarUpgradeCancelar()">' +
+    html += '<button class="btn-executar vermelho" id="btn-upgrade-cancelar" ' +
+        'data-comando="upgrade-f45-cancelar" ' +
+        'data-logbox="log-sessao-ajustes-manutencao" ' +
+        'onclick="executarUpgradeCancelar()">' +
         '🗑️ ' + _tUpgrade('upgrade_btn_cancelar', 'Cancelar upgrade') +
         '</button></div>';
 
