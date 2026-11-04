@@ -1818,6 +1818,18 @@ async function restaurarEstadoSessao() {
         btnLimpeza.textContent = _t('sessoes.ajustes-manutencao.btn_limpeza', 'Executar Limpeza');
         btnLimpeza.style.backgroundColor = '';
     }
+
+    // --- Pós-upgrade: restaura estado dos botões se já foram executados ---
+    // Só faz sentido se a área de upgrade estiver no estado pós-upgrade.
+    // Os botões são gerados dinamicamente por `_renderUpgradePosUpgrade`,
+    // então o `restaurarEstadoSessao` pode rodar antes deles existirem.
+    // O `aplicarEstadoPosUpgrade` é chamado no `onSucesso` de cada botão,
+    // e o estado persiste via `.progresso.json` — se o usuário recarregar
+    // a página, o `_renderizarAreaUpgrade` vai chamar
+    // `_renderUpgradePosUpgrade` de novo, e o botão nasce habilitado.
+    // Para persistir o estado visual entre reloads, o `_renderUpgradePosUpgrade`
+    // checa `isExecutado` no HTML gerado. (Ver bloco 3B: cada botão
+    // precisa checar `isExecutado` ao ser renderizado.)
 }
 
 // ============================================================
@@ -1995,11 +2007,14 @@ function _renderUpgradePosUpgrade(data) {
     html += '<p>' + _tUpgrade('upgrade_pos_limpeza_desc',
         'Remove pacotes que não existem mais no Fedora 45 (retired packages), versões duplicadas de pacotes, dependências órfãs e chaves GPG antigas. Também limpa o cache do DNF. É seguro e recomendado.') + '</p>';
     html += '<div class="botoes-flex">';
+    var limpezaFeita = isExecutado('pos-upgrade-limpeza');
     html += '<button class="btn-executar" id="btn-pos-limpeza" ' +
         'data-comando="pos-upgrade-limpeza" ' +
         'data-logbox="log-sessao-ajustes-manutencao" ' +
+        (limpezaFeita ? 'disabled style="background-color:#4b5563;cursor:default;opacity:1;" ' : '') +
         'onclick="executarPosLimpeza()">' +
-        '🧹 Executar Limpeza</button>';
+        (limpezaFeita ? '✅ Concluído' : '🧹 Executar Limpeza') +
+        '</button>';
     html += '</div></div>';
     html += '<div class="progress-container" id="progress-pos-upgrade-limpeza">' +
         '<div class="progress-bar"><div class="progress-fill" id="progress-fill-pos-upgrade-limpeza"></div></div>' +
