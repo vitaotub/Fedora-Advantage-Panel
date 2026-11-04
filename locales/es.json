@@ -542,13 +542,9 @@
             "bloco_utilidades_desc": "Herramientas de sistema que no encajan en otras categorías.",
 
             "rclone_aviso": "ℹ️ <strong>Configuración de cuentas en la nube:</strong> Rclone Manager es una interfaz gráfica para Rclone. Permite configurar acceso a Google Drive, OneDrive, Dropbox, S3 y docenas de otros servicios de almacenamiento en la nube. Después de instalar, abra Rclone Manager y siga la guía dentro de su interfaz para añadir sus cuentas. <strong>Si necesita el Rclone CLI, el propio Rclone Manager ofrece una opción para instalarlo.</strong> La configuración de las cuentas la hace usted, dentro de Rclone Manager.",
-            "btn_rclone": "☁️ Instalar Rclone",
-            "texto_concluido_rclone": "✅ Rclone instalado",
             "btn_rclone_manager": "🎛️ Instalar Rclone Manager",
             "texto_concluido_rclone_manager": "✅ Rclone Manager instalado",
             "btn_abrir_rclone_manager": "🚀 Abrir Rclone Manager",
-            "rclone_uninstall_aviso": "⚠️ <strong>¿Eliminar completamente Rclone Manager?</strong> Este botón elimina los paquetes <code>rclone-manager</code> y <code>rclone</code> del sistema, incluyendo cualquier versión de Rclone que el propio Rclone Manager haya instalado. <strong>Sus cuentas de nube se guardan en <code>~/.config/rclone</code> y NO se eliminan</strong> — si reinstala después, sus cuentas seguirán allí. Acción irreversible en cuanto a los paquetes.",
-            "btn_desfazer_rclone_manager": "🗑️ Eliminar completamente Rclone Manager",
 
             "bloco7_titulo": "📡 Herramientas de Acceso Remoto",
             "bloco7_desc": "Herramientas para acceder y controlar otras computadoras remotamente, o para conectarse a servidores Windows y Linux vía RDP, VNC y otros protocolos. Ideal para soporte técnico, acceso a máquinas del trabajo y administración de servidores.",
@@ -689,7 +685,6 @@
             "texto_concluido_winetricks": "✅ Winetricks instalado",
             "texto_concluido_bottles": "✅ Bottles instalado",
             "texto_concluido_ntsync": "✅ NTSYNC instalado",
-            "btn_desfazer_ntsync": "🗑️ Eliminar completamente NTSYNC",
             "compat_info_extra": "ℹ️ <strong>Winetricks</strong> instala componentes extras (fuentes, bibliotecas) dentro de un prefijo Wine. <strong>Bottles</strong> es una alternativa moderna al Wine puro, con gestión visual de \"botellas\" (prefijos) y soporte para runners Proton-GE. <strong>NTSYNC</strong> es un módulo del kernel que aporta mejoras significativas de rendimiento y compatibilidad para juegos Windows vía Wine/Proton.",
             "ntsync_aviso": "⚠️ <strong>¿Qué es NTSYNC?</strong> Es un módulo del kernel Linux que implementa la sincronización de hilos de Windows nativamente en el kernel, reduciendo la sobrecarga de CPU y mejorando la fluidez en juegos (menos micro-stutters y frame times más estables). Es seguro activarlo — Fedora 44 ya lo habilita por defecto para Wine/Steam. <strong>Recomendado para usuarios de GE-Proton</strong>, donde el soporte de NTSYNC ya es nativo. El Wine estándar de los repositorios aún no se beneficia de NTSYNC — en ese caso, la ganancia real llega al ejecutar juegos vía Proton/GE-Proton. <strong>El módulo se cargará automáticamente</strong> y persistirá entre reinicios. Si algún juego aún no lo reconoce, reinicia el equipo.",
             "performance_titulo": "⚡ Rendimiento y Monitoreo",
