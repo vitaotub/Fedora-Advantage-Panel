@@ -2143,6 +2143,23 @@ function _renderUpgradePronto(data) {
     html += '</ul></div>';
 
     // Warnings de terceiros
+    //
+    // Em PT-BR o `i18n.js` não carrega JSON (PT-BR é o próprio HTML),
+    // então `_tVarsUpgrade` cai no fallback. O fallback precisa ser o
+    // texto PT-BR completo — passar `''` (versão anterior) fazia a
+    // lista de warnings sair VAZIA em PT-BR, mesmo quando
+    // `data.warnings` tinha itens. Em EN/ES, `_t` encontra a chave
+    // no locale e usa a tradução; o fallback PT-BR não é acionado.
+    var _FALLBACKS_WARN_PT = {
+        nvidia:   'Driver NVIDIA proprietário instalado. Recomendamos reinstalar akmod-nvidia após a atualização, ou o sistema usará nouveau até o próximo reboot.',
+        broadcom: 'Driver Broadcom akmod-wl instalado. Se o RPM Fusion 45 ainda não tiver o pacote, o Wi-Fi pode parar de funcionar até a atualização.',
+        terra:    'Repositório Terra ativo. Pode ser necessário reativá-lo ou removê-lo antes da atualização — dependendo do estado do Terra para Fedora 45.',
+        razer:    'Repositório OpenRazer ativo. Pode ser necessário reconfigurá-lo após a atualização.',
+        xpadneo:  'Driver xpadneo instalado. Controles Xbox Wireless podem precisar ser reinstalados após a atualização.',
+        realtek:  'Driver Realtek r8168 instalado. Recomendamos reinstalar após a atualização para manter a conectividade Ethernet.',
+        coprs:    '{n} repositório(s) COPR de terceiros ativo(s). Verifique se cada um já tem pacotes para Fedora 45 antes de atualizar.'
+    };
+
     html += '<div class="aviso-caixa" style="margin-top: 1rem;">';
     html += '<strong>' +
         _tUpgrade('upgrade_terceiros_titulo', '⚠️ Avisos sobre componentes de terceiros:') +
@@ -2151,7 +2168,8 @@ function _renderUpgradePronto(data) {
         html += '<ul style="margin: 0.5rem 0 0 1.25rem; padding: 0;">';
         data.warnings.forEach(function(w) {
             var chave = 'upgrade_warn_' + w.tipo;
-            var texto = _tVarsUpgrade(chave, '', { n: w.n });
+            var fallbackPT = _FALLBACKS_WARN_PT[w.tipo] || '';
+            var texto = _tVarsUpgrade(chave, fallbackPT, { n: w.n });
             if (texto) html += '<li>' + _escapeHTML(texto) + '</li>';
         });
         html += '</ul>';
