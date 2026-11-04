@@ -2506,11 +2506,29 @@ async function executarUpgradeReboot() {
         'Continuar?'))) return;
 
     var idComando = 'upgrade-f45-reboot';
-    var comando = 'sudo dnf system-upgrade reboot';
+
+    // `-y` é obrigatório: o `dnf system-upgrade reboot` (e o
+    // `dnf5 offline reboot`) pergunta "Isso está correto? [s/N]:"
+    // quando roda sem `-y`. Como o FAP executa via `pkexec` sem
+    // TTY, a pergunta fica pendurada esperando input que nunca
+    // chega, e o reboot não acontece.
+    //
+    // O `confirm()` do frontend já pediu a confirmação ao usuário
+    // antes de chegar aqui, então o `-y` é seguro.
+    //
+    // Fedora 44+ usa DNF5 por padrão. O `dnf system-upgrade reboot`
+    // funciona como alias no DNF5, mas `dnf5 offline reboot -y` é
+    // o comando nativo. Tentamos o `dnf5` primeiro e caímos no `dnf`
+    // se o `dnf5` não existir.
+    var comando =
+        'if command -v dnf5 > /dev/null 2>&1; then ' +
+        '  sudo dnf5 offline reboot -y; ' +
+        'else ' +
+        '  sudo dnf -y system-upgrade reboot; ' +
+        'fi';
 
     await executarComandoGenerico(idComando, comando,
         _tUpgrade('upgrade_log_reiniciando', '🔄 Reiniciando para aplicar upgrade'));
-}
 
 async function executarUpgradeCancelar() {
     if (!confirm(_tUpgrade('upgrade_cancelar_confirmar',
