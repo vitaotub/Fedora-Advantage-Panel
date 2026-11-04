@@ -2,7 +2,7 @@
 
 **🌐 Language:** [Português (BR)](README.md) | English | [Español](README.es.md)
 
-![Version](https://img.shields.io/badge/Version-v1.4.4--11042026-orange?style=flat-square)
+![Version](https://img.shields.io/badge/Version-v1.4.5--11042026-orange?style=flat-square)
 ![Fedora](https://img.shields.io/badge/Fedora-44%20%7C%2045-294172?style=flat-square&logo=fedora)
 ![License](https://img.shields.io/badge/License-GPL--3.0-green?style=flat-square)
 ![Languages](https://img.shields.io/badge/Languages-PT--BR%20%7C%20EN%20%7C%20ES-3c67e3?style=flat-square)
@@ -94,7 +94,7 @@ Updates are applied **on top of the existing installation** — no need to unins
 | 8 | 🎮 Gaming | Native Steam, Heroic, Lutris, Wine, GameMode, emulators, **NTSYNC** |
 | 9 | 🖥️ Virtualization | QEMU/KVM, VirtualBox, GNOME Boxes |
 | 10 | 📊 Diagnostics | System panel, SMART, temperatures, CoolerControl, journal |
-| 11 | 🛠️ Tunings and Maintenance | Tunings, DNF, dual-boot, GRUB, kernels, Fedora upgrade |
+| 11 | 🛠️ Tunings and Maintenance | Tunings, DNF, dual-boot, GRUB, kernels, Fedora upgrade, **post-upgrade actions** |
 | 12 | 🐧 Fedora Status | Version, Atomic/Silverblue, SELinux |
 | 13 | 📖 About FAP | Update/uninstall, changelog |
 
@@ -117,6 +117,20 @@ Updates are applied **on top of the existing installation** — no need to unins
 - **☁️ Cloud Sync** — Rclone Manager (State 2 with full-cleanup trash — removes packages + shortcuts + caches, preserves `~/.config/rclone/`).
 - **📡 Remote Access Tools** — RustDesk, Remmina, GNOME Connections, KRDC.
 - **🔧 Utilities** — **Gear Lever** (AppImage manager).
+
+### 🛠️ Session 11 — Upgrade and post-upgrade actions
+
+The **"Fedora Upgrade"** area detects when Fedora 45 is available (GA + RPM Fusion published) and unlocks the download button. After the download, it shows the **"Reboot now and upgrade"** button and a notice to return to the session after the reboot.
+
+When FAP detects that the user is on Fedora 45 **and** upgraded through it, the area switches to **post-upgrade actions recommended by the official Fedora documentation**:
+
+- **🧹 Post-Upgrade Cleanup** (safe): `remove-retired-packages`, `dnf remove --duplicates`, `dnf autoremove`, `dnf clean all`, `clean-rpm-gpg-pubkey`.
+- **⚙️ Merge Configuration Files** (safe): `rpmconf -a`.
+- **🔄 Distro-Sync** (advanced, red warning): `dnf distro-sync` — may remove outdated COPR packages.
+- **🛡️ SELinux Relabel** (advanced, yellow warning): `fixfiles -B onboot` — schedules a relabel for the next boot; may take long.
+- **🛟 Regenerate Rescue Kernel** (optional): installs `dracut-config-rescue`; regeneration happens on the next kernel update.
+
+Each button is **one-way** (no trash/revert), with state persisted in `.progresso.json`.
 
 ## 🛡️ Security and transparency
 
