@@ -2507,22 +2507,20 @@ async function executarUpgradeReboot() {
 
     var idComando = 'upgrade-f45-reboot';
 
-    // `-y` é obrigatório: o `dnf system-upgrade reboot` (e o
-    // `dnf5 offline reboot`) pergunta "Isso está correto? [s/N]:"
-    // quando roda sem `-y`. Como o FAP executa via `pkexec` sem
-    // TTY, a pergunta fica pendurada esperando input que nunca
-    // chega, e o reboot não acontece.
+    // `dnf5 offline reboot` NÃO tem flag `-y` — ele reinicia direto,
+    // sem perguntar. O `dnf system-upgrade reboot` (DNF clássico)
+    // aceita `-y` globalmente, mas o Fedora 44+ usa DNF5 por padrão,
+    // e o `dnf` já é um alias para o `dnf5`.
     //
-    // O `confirm()` do frontend já pediu a confirmação ao usuário
-    // antes de chegar aqui, então o `-y` é seguro.
+    // A correção precisa ser:
+    //   • dnf5 offline reboot          → SEM `-y` (reinicia direto)
+    //   • dnf -y system-upgrade reboot → COM `-y` (aceita a pergunta)
     //
-    // Fedora 44+ usa DNF5 por padrão. O `dnf system-upgrade reboot`
-    // funciona como alias no DNF5, mas `dnf5 offline reboot -y` é
-    // o comando nativo. Tentamos o `dnf5` primeiro e caímos no `dnf`
-    // se o `dnf5` não existir.
+    // Tentamos o `dnf5` primeiro (caso comum). Se não existir,
+    // caímos no `dnf` clássico com `-y`.
     var comando =
         'if command -v dnf5 > /dev/null 2>&1; then ' +
-        '  sudo dnf5 offline reboot -y; ' +
+        '  sudo dnf5 offline reboot; ' +
         'else ' +
         '  sudo dnf -y system-upgrade reboot; ' +
         'fi';
@@ -2537,14 +2535,20 @@ async function executarUpgradeCancelar() {
         'Continuar?'))) return;
 
     var idComando = 'upgrade-f45-cancelar';
-    var comando = 'sudo dnf system-upgrade clean';
+
+    // Mesma lógica do reboot: `dnf5 offline clean` é não-interativo
+    // (não tem flag `-y`), e `dnf -y system-upgrade clean` aceita a
+    // pergunta via `-y`. O Fedora 44+ usa DNF5 por padrão.
+    var comando =
+        'if command -v dnf5 > /dev/null 2>&1; then ' +
+        '  sudo dnf5 offline clean; ' +
+        'else ' +
+        '  sudo dnf -y system-upgrade clean; ' +
+        'fi';
 
     await executarComandoGenerico(idComando, comando,
         _tUpgrade('upgrade_log_cancelando', '🗑️ Cancelando upgrade agendado'),
         async function() {
-            // `?refresh=1` idem download: o estado muda de
-            // `downloaded` para `ready`, e o cache do servidor
-            // estaria no estado antigo.
             var novoStatus = await _carregarUpgradeStatus(true);
             _renderizarAreaUpgrade(novoStatus);
         });
