@@ -63,12 +63,14 @@ void set_app_icon(GtkWindow *window, const char *icon_path) {
     }
 }
 
+// `atualizar_status` mantida como no-op para não quebrar as chamadas
+// existentes em `on_webview_load_changed`. O label foi removido do
+// header bar; o feedback de carregamento agora é dado apenas pelo
+// spinner + barra de progresso.
 void atualizar_status(AppData *data, const char *mensagem, const char *estilo) {
-    if (data->status_label) {
-        char buffer[256];
-        snprintf(buffer, sizeof(buffer), "<span %s>%s</span>", estilo ? estilo : "", mensagem);
-        gtk_label_set_markup(GTK_LABEL(data->status_label), buffer);
-    }
+    (void)data;
+    (void)mensagem;
+    (void)estilo;
 }
 
 // ============================================================
@@ -309,10 +311,11 @@ static gboolean on_permission_request(WebKitWebView *web_view,
                                                                                                             gtk_widget_hide(data->spinner);
                                                                                                             gtk_header_bar_pack_start(GTK_HEADER_BAR(data->header_bar), data->spinner);
 
-                                                                                                            data->status_label = gtk_label_new(NULL);
-                                                                                                            gtk_label_set_markup(GTK_LABEL(data->status_label), "<span foreground='#9ca3af'>Pronto</span>");
-                                                                                                            gtk_widget_set_size_request(data->status_label, 120, -1);
-                                                                                                            gtk_header_bar_pack_start(GTK_HEADER_BAR(data->header_bar), data->status_label);
+                                                                                                            // `data->status_label` foi removido do header bar. O campo
+                                                                                                            // continua no struct `AppData` (inicializado como NULL no
+                                                                                                            // `main`) para não quebrar a assinatura de `atualizar_status`
+                                                                                                            // — que agora é no-op. O título central (`gtk_header_bar_set_title`)
+                                                                                                            // permanece intacto.
 
                                                                                                             data->progress_bar = gtk_progress_bar_new();
                                                                                                             gtk_progress_bar_set_show_text(GTK_PROGRESS_BAR(data->progress_bar), TRUE);
