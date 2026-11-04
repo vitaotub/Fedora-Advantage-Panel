@@ -873,14 +873,30 @@ async function _verificarEspacoDisco() {
 }
 
 async function _verificarDownloadConcluido() {
-    // O system-upgrade do DNF mantém o estado em /var/lib/dnf/system-upgrade/.
-    // Se a pasta existe e tem conteúdo, o download foi feito.
-    var out = await _execReadOnly(
-        '[ -d /var/lib/dnf/system-upgrade ] && ' +
-        '[ -n "$(ls -A /var/lib/dnf/system-upgrade 2>/dev/null)" ] && ' +
-        'echo "yes" || echo "no"',
-        3000
-    );
+    // O caminho do system-upgrade depende do gerenciador de pacotes:
+    //
+    //   • DNF4 (clássico):  /var/lib/dnf/system-upgrade/
+    //   • DNF5 (Fedora 41+): /usr/lib/sysimage/libdnf5/offline/
+    //
+    // O Fedora 44 usa DNF5 por padrão. A documentação oficial do
+    // dnf5 (dnf5-offline(8)) confirma que os dados da transação
+    // offline ficam em `/usr/lib/sysimage/libdnf5/offline`. Os
+    // caminhos em /var/lib/dnf5/ que tentamos antes NÃO são usados
+    // pelo dnf5 — por isso o `ls` voltou vazio e o FAP nunca
+    // detectava o estado `downloaded`.
+    //
+    // Tentamos o caminho do DNF5 primeiro (caso comum no Fedora 44+),
+    // depois o do DNF4 (fallback para sistemas mais antigos).
+    var script =
+        'if [ -d /usr/lib/sysimage/libdnf5/offline ] && [ -n "$(ls -A /usr/lib/sysimage/libdnf5/offline 2>/dev/null)" ]; then ' +
+        '  echo "yes"; ' +
+        'elif [ -d /var/lib/dnf/system-upgrade ] && [ -n "$(ls -A /var/lib/dnf/system-upgrade 2>/dev/null)" ]; then ' +
+        '  echo "yes"; ' +
+        'else ' +
+        '  echo "no"; ' +
+        'fi';
+
+    var out = await _execReadOnly(script, 3000);
     return out.trim() === 'yes';
 }
 
