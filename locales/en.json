@@ -1069,7 +1069,24 @@
             "upgrade_warn_razer": "OpenRazer repository active. May need to be reconfigured after the upgrade.",
             "upgrade_warn_xpadneo": "xpadneo driver installed. Xbox Wireless controllers may need to be reinstalled after the upgrade.",
             "upgrade_warn_realtek": "Realtek r8168 driver installed. We recommend reinstalling after the upgrade to keep Ethernet connectivity.",
-            "upgrade_warn_coprs": "{n} third-party COPR repository(ies) active. Check that each one already has packages for Fedora 45 before upgrading."
+            "upgrade_warn_coprs": "{n} third-party COPR repository(ies) active. Check that each one already has packages for Fedora 45 before upgrading.",
+            "upgrade_pos_titulo": "Upgrade complete! You are on Fedora {atual}.",
+            "upgrade_pos_desc": "Below are the actions recommended by the official Fedora documentation after a version upgrade. They are optional, but help keep the system clean and consistent.",
+            "upgrade_pos_limpeza_titulo": "🧹 Post-Upgrade Cleanup",
+            "upgrade_pos_limpeza_desc": "Removes packages that no longer exist in Fedora 45 (retired packages), duplicate versions, orphaned dependencies, and old GPG keys. Also cleans the DNF cache. Safe and recommended.",
+            "upgrade_pos_limpeza_btn": "🧹 Run Cleanup",
+            "upgrade_pos_rpmconf_titulo": "⚙️ Merge Configuration Files",
+            "upgrade_pos_rpmconf_desc": "Installs rpmconf and merges configuration files modified during the upgrade. Accepts default actions (-a). Unmerged files remain as .rpmnew/.rpmsave for manual review.",
+            "upgrade_pos_rpmconf_btn": "⚙️ Merge Configurations",
+            "upgrade_pos_distrosync_titulo": "🔄 Distro-Sync (Advanced)",
+            "upgrade_pos_distrosync_aviso": "This command aligns all packages with the Fedora 45 repositories. It may REMOVE packages from COPRs that don't have a Fedora 45 version yet. Check third-party warnings before running. Use only if you have dependency issues.",
+            "upgrade_pos_distrosync_btn": "🔄 Distro-Sync",
+            "upgrade_pos_fixfiles_titulo": "🛡️ SELinux Relabel (Advanced)",
+            "upgrade_pos_fixfiles_aviso": "Schedules a full SELinux relabel for the next boot. May take 10 to 60 minutes depending on disk size. Do NOT power off during the relabel. Use only if you have SELinux warnings after the upgrade.",
+            "upgrade_pos_fixfiles_btn": "🛡️ Schedule Relabel",
+            "upgrade_pos_rescue_titulo": "🛟 Regenerate Rescue Kernel",
+            "upgrade_pos_rescue_desc": "Installs the dracut-config-rescue package, which enables automatic rescue kernel regeneration on the next kernel update. The current rescue kernel is not removed — replacement happens when a new kernel is installed.",
+            "upgrade_pos_rescue_btn": "🛟 Install dracut-config-rescue"
         },
 
         "estado-fedora": {
