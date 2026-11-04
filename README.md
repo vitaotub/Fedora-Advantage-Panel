@@ -15,6 +15,36 @@ O **Fedora Advantage Panel (FAP)** é um painel de automação visual para o Fed
 
 Um único botão, **Iniciar Configuração**, leva você por **13 sessões guiadas** passo a passo. Cada botão lembra o próprio estado: feche o FAP, reabra, e ele mostra exatamente onde você parou.
 
+## 📸 Telas
+
+### Tela inicial — seu Fedora em um relance
+
+![Tela inicial do FAP](prints/01-landing.png)
+
+Logo ao abrir, o FAP consulta o estado real do sistema (repositórios ativos, apps instalados, ajustes aplicados) e mostra **4 barras de progresso** — Uso geral, Gaming, Produção e Segurança. A frase abaixo resume: *"Faltam N passos para deixar o Fedora completo"*. Quando tudo estiver pronto, vira *"Seu Fedora está pronto. 🎉"*.
+
+### Navegação lateral + busca
+
+![Navegação lateral do FAP](prints/02-sidebar.png)
+
+Sidebar lateral retrátil com as 13 sessões, cada uma com ícone, nome e indicador de progresso. Tem **busca global** — digite "vlc" ou "steam" e a sidebar filtra tanto sessões quanto itens internos.
+
+No modo colapsado, cada ícone ganha um **efeito neon próprio** ao passar o mouse.
+
+### Origem de cada pacote, filtros e badges
+
+![Filtros e origem dos pacotes](prints/03-filtros.png)
+
+Cada aplicativo mostra de onde vem — **Flathub, Fedora, RPM Fusion, Fabricante, Download ou Comunidade**, cada origem com uma cor distinta. Passe o mouse em qualquer parte do botão e o tooltip mostra a origem; clique no selo para abrir um popover com **comando exato**, **como atualizar** e **como remover**.
+
+Filtros combináveis (estado + origem) na sessão 6.
+
+### Log em tempo real com tema Matrix
+
+![Log em tempo real do FAP](prints/04-log.png)
+
+Tudo que o FAP faz passa por um **terminal fixo no rodapé**, com cores distinguindo saída normal, sucesso e erro real. O log começa colapsado e acompanha a sidebar.
+
 ## 🎯 Para quem é
 
 - **Quem está migrando do Windows 10 ou 11 para o Fedora** e quer uma transição fácil, prática e sem mexer no terminal.
