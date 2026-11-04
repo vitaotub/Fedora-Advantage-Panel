@@ -187,8 +187,7 @@ const SERVICOS_FAP = [
 'nmb',
 'libvirtd',
 'coolercontrold',
-'lactd',
-'dkms'
+'lactd'
 ];
 
 async function _detectarServicos() {
@@ -324,7 +323,9 @@ async function _detectarArquivosConfig() {
         '/etc/sysctl.d/99-fap-vm-max-map-count.conf',
         '/etc/sysctl.d/99-fap-vm-swappiness.conf',
         '/etc/sysctl.d/99-fap-tcp-bbr.conf',
-        home + '/.config/environment.d/99-fap-nvidia-vaapi.conf'
+        home + '/.config/environment.d/99-fap-nvidia-vaapi.conf',
+        home + '/.config/MangoHud/MangoHud.conf',
+        home + '/.config/gamemode.ini'
     ];
 
     // `test -f a -o -f b` não escala bem; rodamos em paralelo.

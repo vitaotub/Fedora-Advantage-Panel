@@ -2,7 +2,7 @@
 
 **🌐 Idioma:** [Português (BR)](README.md) | [English](README.en.md) | Español
 
-![Versión](https://img.shields.io/badge/Versi%C3%B3n-v1.4.2--10312026-orange?style=flat-square)
+![Versión](https://img.shields.io/badge/Versi%C3%B3n-v1.4.3--11042026-orange?style=flat-square)
 ![Fedora](https://img.shields.io/badge/Fedora-44%20%7C%2045-294172?style=flat-square&logo=fedora)
 ![Licencia](https://img.shields.io/badge/Licencia-GPL--3.0-green?style=flat-square)
 ![Idiomas](https://img.shields.io/badge/Idiomas-PT--BR%20%7C%20EN%20%7C%20ES-3c67e3?style=flat-square)
@@ -21,13 +21,13 @@ Un único botón, **Iniciar Configuración**, te lleva por **13 sesiones guiadas
 
 ![Página de inicio del FAP](prints/01-landing.png)
 
-Al arrancar, FAP consulta el estado real del sistema y muestra **4 barras de progreso** — Uso general, Gaming, Producción y Seguridad. La línea de abajo resume: *"Faltan {n} pasos para dejar Fedora completo."* Cuando todo está listo, se convierte en *"Tu Fedora está listo. 🎉"*.
+Al arrancar, FAP consulta el estado real del sistema (repositorios activos, apps instaladas, ajustes aplicados) y muestra **4 barras de progreso** — Uso general, Gaming, Producción y Seguridad. La línea de abajo resume: *"Faltan {n} pasos para dejar Fedora completo."* Cuando todo está listo, se convierte en *"Tu Fedora está listo. 🎉"*.
 
 ### Navegación lateral + búsqueda
 
 ![Barra lateral del FAP](prints/02-sidebar.png)
 
-Barra lateral retráctil con las 13 sesiones. Tiene **búsqueda global** — escribe "vlc" o "steam" y la barra filtra tanto sesiones como ítems internos.
+Barra lateral retráctil con las 13 sesiones, cada una con ícono, nombre e indicador de progreso. Tiene **búsqueda global** — escribe "vlc" o "steam" y la barra filtra tanto sesiones como ítems internos.
 
 En modo colapsado, cada ícono recibe su propio **efecto neón** al pasar el mouse.
 
@@ -138,14 +138,13 @@ Las actualizaciones se aplican **sobre la instalación existente** — no es nec
 - **Búsqueda global** con índice en segundo plano cubriendo las 13 sesiones.
 - **Insignias de origen** (6 variantes) con tooltip en cualquier parte del botón y popover.
 - **Filtros combinables** (estado + origen) en la sesión 6.
-- **Tarjeta de estado en la landing** con 4 barras.
 - **Dock de registro fijo** de 160px, siempre comienza colapsado.
 - **Sesiones N/A** eliminadas del cálculo de progreso.
 - **Botón 🔄 en el encabezado** que recarga el estado del sistema.
 - **Botón "Abrir X"** generado dinámicamente vía `_ABRIR_REGISTRY` — el propio botón de instalar se vuelve verde tras el éxito, sin HTML duplicado.
 - **Enlaces externos se abren en el navegador predeterminado** del sistema vía `xdg-open`, independiente del contenedor.
 
-## 🖥️ Requisitos y soporte
+## 🖥️ Requisitos
 
 - **Fedora 44 o 45** (desarrollado y probado ampliamente en ambos).
 - **GNOME, KDE Plasma, XFCE, Cinnamon, MATE, LXQt, LXDE, Budgie, Sway, Hyprland, i3** y otros tiling WMs.

@@ -2049,7 +2049,6 @@ body.log-dock-visivel.log-dock-expandido .fap-main {
 .fap-layout.colapsada .fap-sidebar-item[data-sessao="aplicativos"]              { --neon-sessao: #ffd93d; }
 .fap-layout.colapsada .fap-sidebar-item[data-sessao="casa-escritorio"]          { --neon-sessao: #06d6a0; }
 .fap-layout.colapsada .fap-sidebar-item[data-sessao="gaming"]                   { --neon-sessao: #ff006e; }
-.fap-layout.colapsada .fap-sidebar-item[data-sessao="waydroid"]                 { --neon-sessao: #3bceac; }
 .fap-layout.colapsada .fap-sidebar-item[data-sessao="virtualizacao"]            { --neon-sessao: #6c7bff; }
 .fap-layout.colapsada .fap-sidebar-item[data-sessao="diagnostico"]              { --neon-sessao: #ffbe0b; }
 .fap-layout.colapsada .fap-sidebar-item[data-sessao="ajustes-manutencao"]       { --neon-sessao: #9d4edd; }
@@ -2066,6 +2065,8 @@ body.log-dock-visivel.log-dock-expandido .fap-main {
     drop-shadow(0 0 4px var(--neon-sessao, transparent))
     drop-shadow(0 0 10px var(--neon-sessao, transparent));
 }
+
+.fap-sidebar-item.na {
     opacity: 0.55;
 }
 

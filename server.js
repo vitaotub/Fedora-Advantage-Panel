@@ -202,8 +202,7 @@ const IDS_SEM_AUTENTICACAO = new Set([
 
 const PADROES_UPDATE_WHITELIST = [
     /^bash <\(curl -s https:\/\/raw\.githubusercontent\.com\/vitaotub\/Fedora-Advantage-Panel\/main\/install\.sh\) --update$/,
-    /^echo "s" \| bash <\(curl -s https:\/\/raw\.githubusercontent\.com\/vitaotub\/Fedora-Advantage-Panel\/main\/install\.sh\) --uninstall$/,
-    /^setsid -f bash -c 'echo "s" \| bash <\(curl -s https:\/\/raw\.githubusercontent\.com\/vitaotub\/Fedora-Advantage-Panel\/main\/install\.sh\) --uninstall'$/,
+    /^setsid -f bash -c 'bash <\(curl -s https:\/\/raw\.githubusercontent\.com\/vitaotub\/Fedora-Advantage-Panel\/main\/install\.sh\) --uninstall -y'$/,
     /^setsid -f bash -c 'bash <\(curl -s https:\/\/raw\.githubusercontent\.com\/vitaotub\/Fedora-Advantage-Panel\/main\/install\.sh\) --uninstall -y'$/,
     // nvidia-vaapi-env: escreve arquivo de env do usuário (sem sudo)
     /^mkdir -p ~\/\.config\/environment\.d && tee ~\/\.config\/environment\.d\/99-fap-nvidia-vaapi\.conf <<'FAPEOF'[\s\S]*FAPEOF$/,
