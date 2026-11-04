@@ -101,7 +101,7 @@
             "atualizacao_desc": "Updates the repository index, syncs security keys and downloads the latest versions of all system components.",
             "btn_atualizar": "🔄 Update Fedora",
             "log_iniciando": "🚀 Starting update...",
-            "aviso_reiniciar": "💡 It's recommended to restart your computer after applying system updates.",
+            "aviso_reboot_necessario": "Restart your computer to apply the updates.",
 
             "repositorios_titulo": "📦 Fedora Repositories",
 

@@ -101,7 +101,7 @@
             "atualizacao_desc": "Actualiza el índice de repositorios, sincroniza las claves de seguridad y descarga las versiones más recientes de todos los componentes del sistema.",
             "btn_atualizar": "🔄 Actualizar Fedora",
             "log_iniciando": "🚀 Iniciando actualización...",
-            "aviso_reiniciar": "💡 Se recomienda reiniciar el equipo después de aplicar actualizaciones del sistema.",
+            "aviso_reboot_necessario": "Reinicia el equipo para aplicar las actualizaciones.",
 
             "repositorios_titulo": "📦 Repositorios de Fedora",
 
