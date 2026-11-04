@@ -1069,7 +1069,24 @@
             "upgrade_warn_razer": "Repositorio OpenRazer activo. Puede ser necesario reconfigurarlo después de la actualización.",
             "upgrade_warn_xpadneo": "Driver xpadneo instalado. Los mandos Xbox Wireless pueden necesitar reinstalación después de la actualización.",
             "upgrade_warn_realtek": "Driver Realtek r8168 instalado. Recomendamos reinstalar después de la actualización para mantener la conectividad Ethernet.",
-            "upgrade_warn_coprs": "{n} repositorio(s) COPR de terceros activo(s). Verifica que cada uno ya tenga paquetes para Fedora 45 antes de actualizar."
+            "upgrade_warn_coprs": "{n} repositorio(s) COPR de terceros activo(s). Verifica que cada uno ya tenga paquetes para Fedora 45 antes de actualizar.",
+            "upgrade_pos_titulo": "¡Actualización completada! Estás en Fedora {atual}.",
+            "upgrade_pos_desc": "Abajo están las acciones recomendadas por la documentación oficial de Fedora tras una actualización de versión. Son opcionales, pero ayudan a mantener el sistema limpio y consistente.",
+            "upgrade_pos_limpeza_titulo": "🧹 Limpieza Post-Actualización",
+            "upgrade_pos_limpeza_desc": "Elimina paquetes que ya no existen en Fedora 45 (retired packages), versiones duplicadas, dependencias huérfanas y claves GPG antiguas. También limpia la caché de DNF. Seguro y recomendado.",
+            "upgrade_pos_limpeza_btn": "🧹 Ejecutar Limpieza",
+            "upgrade_pos_rpmconf_titulo": "⚙️ Fusionar Archivos de Configuración",
+            "upgrade_pos_rpmconf_desc": "Instala rpmconf y fusiona los archivos de configuración modificados durante la actualización. Acepta las acciones predeterminadas (-a). Los archivos no fusionados quedan como .rpmnew/.rpmsave para revisión manual.",
+            "upgrade_pos_rpmconf_btn": "⚙️ Fusionar Configuraciones",
+            "upgrade_pos_distrosync_titulo": "🔄 Distro-Sync (Avanzado)",
+            "upgrade_pos_distrosync_aviso": "Este comando alinea todos los paquetes con los repositorios de Fedora 45. Puede ELIMINAR paquetes de COPRs que aún no tienen versión para Fedora 45. Verifica los avisos de terceros antes de ejecutar. Úsalo solo si tienes problemas de dependencias.",
+            "upgrade_pos_distrosync_btn": "🔄 Distro-Sync",
+            "upgrade_pos_fixfiles_titulo": "🛡️ Relabel SELinux (Avanzado)",
+            "upgrade_pos_fixfiles_aviso": "Programa un relabel completo de SELinux para el próximo arranque. Puede tardar de 10 a 60 minutos dependiendo del tamaño del disco. NO apagues el equipo durante el relabel. Úsalo solo si tienes avisos de SELinux tras la actualización.",
+            "upgrade_pos_fixfiles_btn": "🛡️ Programar Relabel",
+            "upgrade_pos_rescue_titulo": "🛟 Regenerar Rescue Kernel",
+            "upgrade_pos_rescue_desc": "Instala el paquete dracut-config-rescue, que habilita la regeneración automática del rescue kernel en la próxima actualización de kernel. El rescue kernel actual no se elimina — el reemplazo ocurre cuando se instala un nuevo kernel.",
+            "upgrade_pos_rescue_btn": "🛟 Instalar dracut-config-rescue"
         },
 
         "estado-fedora": {
