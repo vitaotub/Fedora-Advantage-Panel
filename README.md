@@ -2,7 +2,7 @@
 
 **🌐 Idioma:** Português (BR) | [English](README.en.md) | [Español](README.es.md)
 
-![Versão](https://img.shields.io/badge/Vers%C3%A3o-v1.4.3--11042026-orange?style=flat-square)
+![Versão](https://img.shields.io/badge/Vers%C3%A3o-v1.4.4--11042026-orange?style=flat-square)
 ![Fedora](https://img.shields.io/badge/Fedora-44%20%7C%2045-294172?style=flat-square&logo=fedora)
 ![Licença](https://img.shields.io/badge/Licen%C3%A7a-GPL--3.0-green?style=flat-square)
 ![Idiomas](https://img.shields.io/badge/Idiomas-PT--BR%20%7C%20EN%20%7C%20ES-3c67e3?style=flat-square)
@@ -100,6 +100,7 @@ Atualizações são feitas **em cima da instalação existente** — não precis
 - **Bloqueio inteligente.** `dnf` bloqueia outros `dnf`; fila de Flatpaks resolve o lock global.
 - **Container nativo WebKitGTK.** Interface própria, sem dependência do Firefox/Chromium. Modo `fap-compat` para GPUs antigas.
 - **`install.sh` recusa rodar como root.** Instala em `~/.local/share` e usa `sudo` apenas onde precisa.
+- **Aviso de reboot só quando necessário.** O botão "Atualizar Fedora" consulta `dnf needs-restarting -r` após o upgrade e no boot da sessão. O aviso "Reinicie o computador" só aparece quando há reboot pendente.
 
 ## 🎨 Recursos da Interface
 

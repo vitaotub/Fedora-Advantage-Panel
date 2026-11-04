@@ -798,8 +798,24 @@ async function _verificarCanalFedora(versao) {
 
 async function _verificarCanalRpmFusion(versao) {
     try {
-        var url = 'https://mirrors.rpmfusion.org/free/fedora/updates/' + versao +
-        '/Everything/x86_64/repodata/repomd.xml';
+        // Verifica o repositório `releases/<versao>` (canal GA), não o
+        // `updates/<versao>` (canal de atualizações).
+        //
+        // Por que `releases` e não `updates`:
+        //   • O RPM Fusion publica o repo `releases/45` no mesmo dia
+        //     do Fedora GA.
+        //   • O canal `updates/45` só é populado depois que o primeiro
+        //     batch de atualizações é enviado — o que pode levar dias
+        //     ou semanas.
+        //   • O `dnf system-upgrade` do FAP usa o repo `releases/45`
+        //     como base (o `updates/45` é adicionado automaticamente
+        //     pelo `rpmfusion-*-release-45` depois do reboot).
+        //
+        // Portanto, verificar `releases/45` é o critério correto para
+        // saber se o RPM Fusion 45 está pronto para o upgrade. Foi o
+        // que destravou a UI na v1.4.4 (Fedora 45 GA em 03/11/2026).
+        var url = 'https://download1.rpmfusion.org/free/fedora/releases/' + versao +
+        '/Everything/x86_64/os/repodata/repomd.xml';
         var resp = await fetch(url, { method: 'HEAD', signal: AbortSignal.timeout(10000) });
         return { ok: resp.ok, status: resp.status };
     } catch (e) {
@@ -2204,6 +2220,37 @@ const server = http.createServer((req, res) => {
             });
             res.end(JSON.stringify({ kernel: kernel }));
         });
+        return;
+    }
+
+    // ----------------------------------------------------------
+    // /reboot-needed — verifica se há reboot pendente
+    // ----------------------------------------------------------
+    //
+    // Roda `dnf needs-restarting -r` e devolve JSON estruturado.
+    // Usado pelo botão "Atualizar Fedora" da sessão 1 para avisar
+    // o usuário quando um reboot é necessário após o upgrade.
+    //
+    // Exit codes do `needs-restarting -r`:
+    //   0 → reboot não necessário
+    //   1 → reboot necessário
+    //   2+ / erro → falha na checagem (tratamos como "não necessário"
+    //              para não incomodar o usuário com falso positivo)
+    //
+    // Read-only, sem autenticação. Mesmo padrão de `/kernel-atual`.
+    if (req.method === 'GET' && url === '/reboot-needed') {
+        exec('dnf needs-restarting -r > /dev/null 2>&1; echo "exit=$?"',
+             { shell: '/bin/bash', timeout: 10000 },
+             (error, stdout) => {
+                 var m = (stdout || '').match(/exit=(\d+)/);
+                 var codigo = m ? parseInt(m[1], 10) : -1;
+                 var reboot = (codigo === 1);
+                 res.writeHead(200, {
+                     'Content-Type': 'application/json',
+                     'Cache-Control': 'no-cache, no-store, must-revalidate'
+                 });
+                 res.end(JSON.stringify({ reboot: reboot }));
+             });
         return;
     }
 

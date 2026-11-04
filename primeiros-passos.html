@@ -33,8 +33,8 @@ Atualiza o índice de repositórios, sincroniza as chaves de segurança e baixa 
 🔄 Atualizar Fedora
 </button>
 </div>
-<div class="aviso-caixa" style="margin-top: 1rem;" data-i18n="sessoes.primeiros-passos.aviso_reiniciar">
-💡 Recomenda-se reiniciar o computador após aplicar atualizações de sistema.
+<div id="aviso-reboot-necessario" class="aviso-caixa" style="margin-top: 1rem; display: none;">
+🔄 <span data-i18n="sessoes.primeiros-passos.aviso_reboot_necessario">Reinicie o computador para aplicar as atualizações.</span>
 </div>
 </div>
 <div class="progress-container" id="progress-atualizacao-inicial">
@@ -236,6 +236,12 @@ async function executarAtualizacaoFedora() {
     // em paralelo — o que trava o banco do rpm.
     if (btn && btn.disabled) return;
 
+    // Esconde o aviso de reboot antes de começar. Se o `dnf upgrade`
+    // terminar com sucesso e o `needs-restarting` indicar reboot
+    // pendente, ele será mostrado de novo no final.
+    var avisoReboot = document.getElementById('aviso-reboot-necessario');
+    if (avisoReboot) avisoReboot.style.display = 'none';
+
     iniciarProgresso(idComando);
     logBox.style.display = 'block';
 
@@ -290,6 +296,14 @@ async function executarAtualizacaoFedora() {
             btn.disabled = false;
             btn.textContent = nomeAcao;
             btn.style.opacity = '1';
+        }
+
+        // Após sucesso, consulta /reboot-needed e mostra o aviso se
+        // um reboot for necessário. Sem isso, o usuário fechava o
+        // FAP sem saber que precisava reiniciar para aplicar o
+        // kernel/glibc/systemd atualizados.
+        if (sucesso) {
+            await _verificarRebootNecessario();
         }
     } catch (e) {
         var errorLine2 = document.createElement('div');
@@ -678,6 +692,13 @@ async function restaurarEstadoSessao() {
         btnAtualizacao.style.backgroundColor = '';
         btnAtualizacao.style.cursor = 'pointer';
     }
+
+    // Verifica se há reboot pendente (de uma atualização anterior).
+    // Se o usuário atualizou, fechou o FAP sem reiniciar e voltou
+    // depois, `dnf needs-restarting -r` ainda retorna 1 até o
+    // reboot acontecer — então o aviso precisa aparecer mesmo sem
+    // o usuário ter clicado em "Atualizar" nesta sessão.
+    _verificarRebootNecessario();
 }
 
 // Aplica o estado visual de um botão one-shot (sem par revert)
@@ -687,6 +708,38 @@ async function restaurarEstadoSessao() {
 // - Senão, se jaAtivoNoSistema → cinza "✅ Já estava ativo" com
 //   tooltip (pré-existente, opção C).
 // - Senão → azul clicável original (comportamento atual).
+// ============================================================
+// VERIFICAÇÃO DE REBOOT PENDENTE
+// ============================================================
+//
+// Consulta /reboot-needed e mostra/esconde o aviso. Chamada em dois
+// momentos:
+//   1. No `onSucesso` do `executarAtualizacaoFedora` — logo após
+//      o `dnf upgrade` terminar, para o usuário saber na hora.
+//   2. No `restaurarEstadoSessao` — quando a sessão carrega, para
+//      cobrir o caso "atualizou, fechou o FAP sem reiniciar,
+//      voltou depois". `needs-restarting -r` continua retornando 1
+//      até o reboot acontecer.
+//
+// Falha de rede é silenciosa (não mostra aviso) — o usuário não
+// precisa ser incomodado se a consulta não puder ser feita.
+async function _verificarRebootNecessario() {
+    var aviso = document.getElementById('aviso-reboot-necessario');
+    if (!aviso) return;
+
+    try {
+        var r = await fetch(API_URL + '/reboot-needed', { cache: 'no-store' });
+        if (!r.ok) {
+            aviso.style.display = 'none';
+            return;
+        }
+        var data = await r.json();
+        aviso.style.display = data && data.reboot ? 'block' : 'none';
+    } catch (e) {
+        aviso.style.display = 'none';
+    }
+}
+
 function _aplicarEstadoOneShotOuPreExistente(idComando, jaAtivoNoSistema) {
     var btn = document.getElementById('btn-' + idComando);
     if (!btn) return;

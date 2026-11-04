@@ -13,86 +13,56 @@ que exibe a seção da versão atual dentro do FAP, na sessão **Sobre o FAP**.
 
 ---
 
-## v1.4.3-11042026
+## v1.4.4-11042026
 
-Rodada de manutenção pós-lançamento do Fedora 45. Corrige um bloco CSS
-quebrado, remove código morto acumulado e limpa inconsistências de UI
-(landing + container). **Não altera nenhuma funcionalidade existente**
-— todas as mudanças são de limpeza, consistência ou correção de
-defeitos visuais.
+Correções pontuais na detecção de upgrade do Fedora 44 → 45 e no aviso
+de reboot da sessão 1.
 
 ### 🐛 Corrigido
 
-- **`style.css`** — bloco CSS quebrado após a regra de neon por sessão
-  (havia um `}` órfão e um `opacity: 0.55` solto). Isso impedia que
-  `.fap-sidebar-item.na` aplicasse o esmaecimento correto em sessões
-  marcadas como N/A. O `opacity` foi movido de volta para o corpo da
-  regra correta.
-- **`style.css`** — removida a entrada morta
-  `[data-sessao="waydroid"]` do bloco de neon por sessão (a sessão foi
-  deletada na v1.4.2, mas a regra CSS permaneceu).
-- **`iniciar_fap.sh`** — `mostrar_ajuda()` dizia "14 sessões" no lugar
-  de "13" (ficou desatualizado após a remoção do Waydroid).
-- **`src/fap-container.c`** — removido o label de status ("Pronto" /
-  "Carregando..." / "Redirecionando..." / "Carregando conteúdo...")
-  do header bar. O feedback de carregamento agora é dado apenas pelo
-  spinner + barra de progresso. `atualizar_status()` virou no-op
-  (mantida para não quebrar as chamadas existentes). O título central
-  e o botão de fechar/minimizar/maximizar permanecem intactos.
-- **`index.html`** — removido o bloco `#card-status` (as 4 barras de
-  progresso — Uso geral, Gaming, Produção, Segurança — e a frase
-  "Faltam N passos..."). O progresso global continua visível na
-  sidebar do `guiado.html` e no `progresso-global` do header.
-  `_renderizarCardStatus()` em `script.js` detecta a ausência e
-  retorna cedo — sem erro, sem warning.
+- **`server.js` → `_verificarCanalRpmFusion`** — a verificação usava a URL
+  `.../updates/45/.../repomd.xml`, que retorna **404** desde o lançamento
+  do Fedora 45 (03/11/2026). O RPM Fusion publica o repositório
+  `releases/45` no dia do GA, mas só popula o canal `updates/45` depois
+  do primeiro batch de atualizações — o que pode levar dias ou semanas.
+  O resultado era que o FAP mostrava "⏳ RPM Fusion 45 publicado —
+  Aguardando" indefinidamente. Agora a verificação usa
+  `.../releases/45/.../repomd.xml`, que é o critério correto: é esse
+  repositório que o `dnf system-upgrade` do FAP consome como base.
 
-### 🗑️ Removido
+### ✨ Adicionado
 
-- **`server.js`** — regex legada em `PADROES_UPDATE_WHITELIST` que casava
-  `echo "s" | bash <(curl ...) --uninstall` (formato antigo, sem `-y`).
-  O frontend atual usa `--uninstall -y`, que tem regex própria.
-- **`system-state-service.js`** — `dkms` removido de `SERVICOS_FAP`.
-  `dkms` não é um serviço systemd no Fedora; `systemctl is-active dkms`
-  sempre retornava `inactive`, e a entrada era morta.
-- **`locales/en.json`** e **`locales/es.json`** — chaves órfãs removidas:
-  `btn_rclone`, `texto_concluido_rclone`, `rclone_uninstall_aviso`,
-  `btn_desfazer_rclone_manager` e `btn_desfazer_ntsync`. Nenhuma delas
-  era referenciada por HTML ou JS desde a v1.4.1/v1.4.2.
+- **`server.js` → `GET /reboot-needed`** — novo endpoint read-only que
+  roda `dnf needs-restarting -r` e devolve `{ reboot: boolean }`. Mesmo
+  padrão de `/kernel-atual` (sem autenticação, sem SSE, timeout de 10s).
+- **`primeiros-passos.html` → aviso dinâmico de reboot** — o botão
+  "Atualizar Fedora" agora consulta `/reboot-needed` em dois momentos:
+  (1) após o `dnf upgrade` terminar com sucesso, e (2) no boot da
+  sessão (para cobrir o caso "atualizou, fechou o FAP sem reiniciar,
+  voltou depois"). Se `reboot === true`, mostra o aviso
+  "🔄 Reinicie o computador para aplicar as atualizações."; senão,
+  esconde. Antes, o aviso "💡 Recomenda-se reiniciar…" era **estático**
+  e aparecia sempre, mesmo quando não havia reboot pendente.
+- **`locales/en.json`** e **`locales/es.json`** — chave
+  `sessoes.primeiros-passos.aviso_reboot_necessario` (substitui
+  `aviso_reiniciar`). PT-BR fica no HTML.
 
 ### 🔄 Alterado
 
-- **`system-state-service.js`** — `_detectarArquivosConfig` agora inclui
-  `~/.config/MangoHud/MangoHud.conf` e `~/.config/gamemode.ini` (criados
-  pelo FAP na sessão Gaming). Consistência com o estado real do sistema;
-  a detecção de UI continua usando `isExecutado` (sem regressão).
-- **`package.json`** — versão atualizada para `1.4.3-11042026`.
+- **`package.json`** — versão atualizada para `1.4.4-11042026`.
+- **`README.md` / `README.en.md` / `README.es.md`** — badge de versão.
+- **`BRIEFING.md`** — versão atual + histórico + nota pós-GA.
+- **`RELEASE_NOTES.md`** — release notes da versão.
 
-### ⚠️ Nota sobre o Fedora 45
+### 🧪 Não testado (pendências herdadas da v1.4.3)
 
-O Fedora 45 foi lançado oficialmente em **3 de novembro de 2026**, e o
-RPM Fusion 45 já está publicado. A área de upgrade da sessão 11
-(Ajustes e Manutenção) continua funcional: usuários no Fedora 44 com
-sistema atualizado verão o botão "Baixar pacotes do Fedora 45". Nenhuma
-mudança de lógica foi necessária nesta versão — a detecção via
-`releases.json` + `HEAD` nos canais `updates/45` do Fedora e do RPM
-Fusion já cobre o cenário pós-GA.
-
-### 🧪 Não testado (pendências para a próxima rodada)
-
-- **Presets de GameMode com backup/restore** — testado com e sem
-  arquivos pré-existentes no notebook AMD. Cenário "usuário já tinha
-  config personalizada e faz remoção duas vezes" validado
-  conceitualmente, não em hardware.
-- **Fila de Flatpaks com 3+ apps em sequência** — validado
-  conceitualmente. Recomendado testar com múltiplas instalações
-  disparadas em rápida sucessão.
 - **Upgrade Fedora 44 → 45 em hardware real** — o fluxo
   `ready → downloaded → reboot` foi validado com mocks e com o Fedora 45
   já publicado nos mirrors. Falta testar o reboot real em hardware.
-- **Container WebKitGTK após remoção do label de status** — validar
-  visualmente em KDE Plasma e GNOME que o spinner + barra de progresso
-  continuam dando feedback adequado durante o carregamento, sem o label
-  textual que existia antes.
+- **Presets de GameMode com backup/restore** — validado conceitualmente.
+- **Fila de Flatpaks com 3+ apps em sequência** — validado conceitualmente.
+- **Container WebKitGTK após remoção do label de status** (v1.4.3) —
+  validar visualmente em KDE Plasma e GNOME.
 
 ### 🧪 Requisito
 
