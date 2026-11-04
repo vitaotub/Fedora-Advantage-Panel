@@ -878,15 +878,13 @@ async function _verificarDownloadConcluido() {
     //   • DNF4 (clássico):  /var/lib/dnf/system-upgrade/
     //   • DNF5 (Fedora 41+): /usr/lib/sysimage/libdnf5/offline/
     //
-    // O Fedora 44 usa DNF5 por padrão. A documentação oficial do
-    // dnf5 (dnf5-offline(8)) confirma que os dados da transação
-    // offline ficam em `/usr/lib/sysimage/libdnf5/offline`. Os
-    // caminhos em /var/lib/dnf5/ que tentamos antes NÃO são usados
-    // pelo dnf5 — por isso o `ls` voltou vazio e o FAP nunca
-    // detectava o estado `downloaded`.
+    // O DNF5 é o padrão no Fedora 44+, e a documentação oficial
+    // (dnf5-offline(8)) confirma que os dados da transação offline
+    // ficam em /usr/lib/sysimage/libdnf5/offline. Os caminhos em
+    // /var/lib/dnf5/ que tentamos antes NÃO são usados pelo DNF5.
     //
-    // Tentamos o caminho do DNF5 primeiro (caso comum no Fedora 44+),
-    // depois o do DNF4 (fallback para sistemas mais antigos).
+    // Tentamos o caminho do DNF5 primeiro (caso comum), depois o
+    // do DNF4 (fallback para sistemas mais antigos).
     var script =
         'if [ -d /usr/lib/sysimage/libdnf5/offline ] && [ -n "$(ls -A /usr/lib/sysimage/libdnf5/offline 2>/dev/null)" ]; then ' +
         '  echo "yes"; ' +
