@@ -2527,6 +2527,7 @@ async function executarUpgradeReboot() {
 
     await executarComandoGenerico(idComando, comando,
         _tUpgrade('upgrade_log_reiniciando', '🔄 Reiniciando para aplicar upgrade'));
+}
 
 async function executarUpgradeCancelar() {
     if (!confirm(_tUpgrade('upgrade_cancelar_confirmar',
