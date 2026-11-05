@@ -2519,20 +2519,20 @@ async function executarUpgradeReboot() {
     // Tentamos o `dnf5` primeiro (caso comum). Se não existir,
     // caímos no `dnf` clássico com `-y`.
     // `dnf5 offline reboot` NÃO tem flag `-y` e PEDE confirmação
-    // (`Isso está correto? [s/N]:`) quando roda sem TTY. Como o
-    // `pkexec` executa o script sem TTY, o comando fica pendurado
-    // esperando um `s` que nunca chega, e o reboot não acontece.
+    // (`Is this ok [y/N]:`) quando roda sem TTY. O `echo s |` não
+    // resolve porque o `dnf5` lê a confirmação do terminal, não
+    // do stdin do script.
     //
-    // `echo s |` alimenta o `s` no stdin. O `pkexec` repassa o
-    // stdin para o script, então o `dnf5` aceita e reinicia.
+    // A solução é usar `system-upgrade reboot`, que é o comando
+    // compatível com o DNF4 e ACEITA `-y` para pular a confirmação.
+    // A documentação do Fedora e os relatos da lista de usuários
+    // confirmam que `dnf system-upgrade reboot` funciona no DNF5.
     //
-    // O ramo do `dnf` clássico (fallback) mantém o `-y`, que
-    // funciona nele. Em Fedora 44+ o `dnf` é symlink para o
-    // `dnf5`, mas o `-y` global do DNF4 é aceito pelo subcomando
-    // `system-upgrade reboot` do DNF5 via compat.
+    // Tentamos o `dnf5` primeiro (caso comum). Se não existir,
+    // caímos no `dnf` clássico com `-y`.
     var comando =
         'if command -v dnf5 > /dev/null 2>&1; then ' +
-        '  echo s | sudo dnf5 offline reboot; ' +
+        '  sudo dnf5 system-upgrade reboot -y; ' +
         'else ' +
         '  sudo dnf -y system-upgrade reboot; ' +
         'fi';
@@ -2552,13 +2552,13 @@ async function executarUpgradeCancelar() {
     // Mesma lógica do reboot: `dnf5 offline clean` é não-interativo
     // (não tem flag `-y`), e `dnf -y system-upgrade clean` aceita a
     // pergunta via `-y`. O Fedora 44+ usa DNF5 por padrão.
-    // Mesma lógica do reboot: `dnf5 offline clean` não tem flag
-    // `-y` e pede confirmação (`[s/N]`) quando roda sem TTY.
-    // `echo s |` alimenta o `s` no stdin, o `dnf5` aceita e
-    // limpa a transação offline.
+    // Mesma lógica do reboot: `dnf5 offline clean` não aceita `-y`
+    // e pede confirmação quando roda sem TTY. Usamos
+    // `system-upgrade clean` (compatível com DNF4), que aceita
+    // `-y` para pular a confirmação.
     var comando =
         'if command -v dnf5 > /dev/null 2>&1; then ' +
-        '  echo s | sudo dnf5 offline clean; ' +
+        '  sudo dnf5 system-upgrade clean -y; ' +
         'else ' +
         '  sudo dnf -y system-upgrade clean; ' +
         'fi';
