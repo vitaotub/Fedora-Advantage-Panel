@@ -1934,11 +1934,15 @@ function _renderizarAreaUpgrade(data) {
     var html;
     switch (data.status) {
         case 'no_upgrade_needed':
-            // Se o usuário está no Fedora 45 E fez o upgrade pelo FAP
-            // (marcador `upgrade-f45-download` executado), mostra os
-            // botões de pós-upgrade. Senão, cai na mensagem estática.
-            if (String(data.current_version) === '45' &&
-                isExecutado('upgrade-f45-download')) {
+            // Mostra os botões de pós-upgrade sempre que o usuário
+            // estiver no Fedora 45 (ou superior). A versão anterior
+            // também exigia `isExecutado('upgrade-f45-download')`,
+            // mas esse marcador se perdia facilmente (reset de
+            // progresso, troca de diretório, SSE perdido) e os
+            // botões nunca apareciam. As ações pós-upgrade são
+            // genéricas e úteis de qualquer forma — quem atualizou
+            // por fora também se beneficia.
+            if (String(data.current_version) === '45') {
                 html = _renderUpgradePosUpgrade(data);
             } else {
                 html = _renderUpgradeJaAtual(data);
