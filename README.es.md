@@ -21,37 +21,32 @@ Un único botón, **Iniciar Configuración**, te lleva por **13 sesiones guiadas
 
 ![Página de inicio del FAP](prints/01-landing.png)
 
-Al arrancar, FAP consulta el estado real del sistema (repositorios activos, apps instaladas, ajustes aplicados) y muestra **4 barras de progreso** — Uso general, Gaming, Producción y Seguridad. La línea de abajo resume: *"Faltan {n} pasos para dejar Fedora completo."* Cuando todo está listo, se convierte en *"Tu Fedora está listo. 🎉"*.
+Barras de progreso por grupo (Uso general, Gaming, Producción, Seguridad), con la línea *"Faltan {n} pasos para dejar Fedora completo."*
 
 ### Navegación lateral + búsqueda
 
 ![Barra lateral del FAP](prints/02-sidebar.png)
 
-Barra lateral retráctil con las 13 sesiones, cada una con ícono, nombre e indicador de progreso. Tiene **búsqueda global** — escribe "vlc" o "steam" y la barra filtra tanto sesiones como ítems internos.
-
-En modo colapsado, cada ícono recibe su propio **efecto neón** al pasar el mouse.
+Barra lateral retráctil con las 13 sesiones, indicador de progreso por sesión y búsqueda global. En modo colapsado, cada ícono recibe un efecto neón al pasar el mouse.
 
 ### Origen de cada paquete, filtros e insignias
 
 ![Filtros y origen de paquetes del FAP](prints/03-filtros.png)
 
-Cada aplicación muestra de dónde viene — **Flathub, Fedora, RPM Fusion, Fabricante, Descarga o Comunidad**, cada origen con un color distinto. Pasa el mouse en cualquier parte del botón y el tooltip muestra el origen; haz clic en la insignia para abrir un popover con el **comando exacto**, **cómo actualizar** y **cómo eliminar**.
-
-Los filtros combinables (estado + origen) están en la sesión 6.
+Cada app muestra de dónde viene (Flathub, Fedora, RPM Fusion, Fabricante, Descarga o Comunidad). Haz clic en la insignia para ver el comando exacto, cómo actualizar y cómo eliminar. Filtros combinables (estado + origen) en la sesión 6.
 
 ### Registro en tiempo real con tema Matrix
 
 ![Registro en tiempo real del FAP](prints/04-log.png)
 
-Todo lo que FAP hace pasa por un **terminal fijo en la parte inferior**, con colores que distinguen salida normal, éxito y error real. El registro comienza colapsado y acompaña la barra lateral.
+Terminal fijo en la parte inferior, con colores que distinguen salida normal, éxito y error real. Comienza colapsado.
 
 ## 🎯 Para quién es
 
-- **Quien está migrando de Windows 10 u 11 a Fedora** y quiere una transición fácil, práctica y sin tocar la terminal.
+- **Quien está migrando de Windows 10 u 11 a Fedora** y quiere una transición práctica, sin terminal.
 - **Quien está empezando con Fedora** y quiere dejarlo listo para uso diario.
 - **Quien viene de Ubuntu/Mint** y quiere la misma fluidez de configuración inicial.
 - **Quien juega en Linux** y quiere Steam, Heroic, Lutris, Proton, MangoHud y similares.
-- **Quien ya usa Fedora desde hace tiempo** y quiere automatizar el post-instalación.
 - **Quien administra la PC de otra persona** sin terminal.
 
 ## 🚀 Instalación
@@ -60,14 +55,14 @@ Todo lo que FAP hace pasa por un **terminal fijo en la parte inferior**, con col
 bash <(curl -s https://raw.githubusercontent.com/vitaotub/Fedora-Advantage-Panel/main/install.sh)
 ```
 
-> **💡 ¿No sabes cómo ejecutar ese comando?** Es más simple de lo que parece:
+> **💡 ¿No sabes cómo ejecutar ese comando?**
 >
-> 1. **Copia el comando completo** — selecciona todo el texto de arriba con el mouse, o haz clic en el ícono de copiar que aparece en el lado derecho del bloque de código.
-> 2. **Abre la terminal** — busca **"Terminal"** en el menú de aplicaciones de tu Fedora. En la mayoría de los escritorios (GNOME, KDE, XFCE, Cinnamon, MATE), el atajo `Ctrl+Alt+T` también funciona.
-> 3. **Pega el comando** — en la terminal, presiona `Ctrl+Shift+V` o haz clic con el botón derecho del mouse y elige **"Pegar"**.
-> 4. **Presiona `Enter`** — el instalador pedirá tu contraseña de administrador (la misma que usas para iniciar sesión en la computadora). Eso es normal — el instalador está pidiendo permiso para instalar los paquetes del sistema.
+> 1. **Copia el comando completo** — selecciona el texto de arriba y cópialo.
+> 2. **Abre la terminal** — busca **"Terminal"** en el menú de aplicaciones. El atajo `Ctrl+Alt+T` también funciona en la mayoría de los escritorios.
+> 3. **Pega el comando** — `Ctrl+Shift+V` o clic derecho → **Pegar**.
+> 4. **Presiona `Enter`** — el instalador pedirá tu contraseña de administrador (la misma del login). Es normal — está pidiendo permiso para instalar los paquetes del sistema.
 >
-> Al terminar, abre FAP escribiendo `fap` en la terminal o buscando **"Fedora Advantage Panel"** en el menú de aplicaciones.
+> Al terminar, abre FAP escribiendo `fap` en la terminal o buscando **"Fedora Advantage Panel"** en el menú.
 
 **Comandos tras instalar:**
 
@@ -78,7 +73,7 @@ fap --update     # actualiza (o haz clic en el badge dentro de FAP)
 fap --uninstall  # desinstala
 ```
 
-Las actualizaciones se aplican **sobre la instalación existente** — no es necesario desinstalar entre versiones. El progreso, el tema y el idioma se conservan.
+Las actualizaciones se aplican **sobre la instalación existente** — el progreso, el tema y el idioma se conservan.
 
 ## ✨ Las 13 Sesiones
 
@@ -86,106 +81,46 @@ Las actualizaciones se aplican **sobre la instalación existente** — no es nec
 |---|---|---|
 | 1 | 🚀 Primeros Pasos | Actualización, RPM Fusion, Flathub, Terra Repository |
 | 2 | 🔤 Códecs | Códecs completos, DVD comercial, fuentes Microsoft |
-| 3 | 🖥️ Hardware | Controladores AMD/NVIDIA/Intel, CoreCtrl, LACT, overclock, aceleración VA-API |
-| 4 | 🔌 Dispositivos | Detección automática, controladores COPR de red, mandos, firmware |
+| 3 | 🖥️ Hardware | Controladores AMD/NVIDIA/Intel, CoreCtrl, LACT, overclock, VA-API |
+| 4 | 🔌 Dispositivos | Detección automática, COPRs de red, mandos, firmware |
 | 5 | 🎬 Producción Multimedia | OBS Studio, cámara virtual, EasyEffects |
-| 6 | 📦 Aplicaciones | Flatpaks, 20+ apps `dnf`, **ArtCraft Launcher**, acceso remoto, **utilidades** |
+| 6 | 📦 Aplicaciones | Flatpaks, 20+ apps `dnf`, ArtCraft, acceso remoto, utilidades |
 | 7 | 🏠 Hogar y Oficina | CUPS, Samba, LocalSend, KeePassXC |
-| 8 | 🎮 Gaming | Steam nativo, Heroic, Lutris, Wine, GameMode, emuladores, **NTSYNC** |
+| 8 | 🎮 Gaming | Steam, Heroic, Lutris, Wine, GameMode, emuladores, NTSYNC |
 | 9 | 🖥️ Virtualización | QEMU/KVM, VirtualBox, GNOME Boxes |
 | 10 | 📊 Diagnóstico | Panel del sistema, SMART, temperaturas, CoolerControl, journal |
-| 11 | 🛠️ Ajustes y Mantenimiento | Ajustes, DNF, dual-boot, GRUB, kernels, actualización de Fedora, **acciones post-actualización** |
+| 11 | 🛠️ Ajustes y Mantenimiento | Ajustes, DNF, dual-boot, GRUB, kernels, **actualización de Fedora 44 → 45**, **acciones post-actualización** |
 | 12 | 🐧 Estado de Fedora | Versión, Atomic/Silverblue, SELinux |
 | 13 | 📖 Acerca de FAP | Actualizar/desinstalar, changelog |
 
-### 🖥️ Sesión 3 — Hardware
-
-- **AMD** — Vulkan/Mesa/RADV y VA-API (RPM Fusion freeworld). Los controladores de código abierto de AMD son **one-shot**: instalan y quedan grises, sin botón de remoción. Motivo: `dnf remove` de los `.i686` cascadearía a Steam y otros dependientes. Aviso informativo en el tope de la sección.
-- **Intel** — Intel Media Driver (Broadwell / 5ª gen+ / Arc) o `libva-intel-driver` (Haswell / 4ª gen o anterior), más utilidades de diagnóstico. **También one-shot**.
-- **NVIDIA** — controlador propietario con detección automática de generación, revert a nouveau, modesetting (Wayland), traductor VA-API (`nvidia-vaapi-driver`), variables de entorno y utilidades de verificación.
-- **Paneles cross-vendor uniformes** — AMD, Intel y NVIDIA muestran un panel con GPU / driver / paquete (o serie). Si el vendor no está presente, todos los botones de la sección quedan deshabilitados con aviso.
-- **Verificación VA-API** — botones "Verificar Aceleración" (AMD, Intel, NVIDIA) ejecutan `vainfo` y renderizan el resultado en un panel con insignias Decode/Encode.
-
-### 📦 Sesión 6 — bloques y destacados
-
-- **📄 Productividad y Oficina** — OnlyOffice, Obsidian, Thunderbird, Okular, Kate, Joplin, Foliate, **Visual Studio Code**.
-- **🎬 Entretenimiento y Multimedia** — Haruna, VLC, MPV, Spotify, Plex, Stremio.
-- **🎨 Herramientas Gráficas** — Krita, Inkscape, Pinta, GIMP, Darktable, FreeCAD, LibreCAD, Cura, Upscayl, XnView MP, **Drawy**.
-- **🎨 Suite ArtCraft** — **ArtCraft Launcher** (instala/actualiza las 13 apps de la suite por la propia interfaz del launcher).
-- **🌐 Internet y Comunicación** — Opera, Brave, Edge, Chromium, Zoom, Vivaldi, Discord, Telegram, **Firefox**, **Packet**.
-- **🎞️ Edición de Vídeo, Audio y 3D** — Kdenlive, Shotcut, Pitivi, OpenShot, Avidemux, Lightworks, Drift, Blender, Ardour, LMMS, Audacity.
-- **☁️ Sincronización en la Nube** — Rclone Manager (Estado 2 con papelera full-cleanup — elimina paquetes + accesos + cachés, preserva `~/.config/rclone/`).
-- **📡 Herramientas de Acceso Remoto** — RustDesk, Remmina, GNOME Connections, KRDC.
-- **🔧 Utilidades** — **Gear Lever** (gestor de AppImages).
-
-### 🛠️ Sesión 11 — Actualización y acciones post-actualización
-
-El área **"Actualización de Fedora"** detecta cuando Fedora 45 está disponible (GA + RPM Fusion publicados) y libera el botón de descarga. Tras la descarga, muestra el botón **"Reiniciar ahora y actualizar"** y un aviso para volver a la sesión tras el reinicio.
-
-Cuando FAP detecta que el usuario está en Fedora 45, el área cambia a **acciones post-actualización recomendadas por la documentación oficial de Fedora**:
-
-- **🧹 Limpieza Post-Actualización** (seguro): `remove-retired-packages`, `dnf remove --duplicates`, `dnf autoremove`, `dnf clean all`, `clean-rpm-gpg-pubkey`.
-- **⚙️ Fusionar Archivos de Configuración** (seguro): `rpmconf -a`.
-- **🔄 Distro-Sync** (avanzado, aviso rojo): `dnf distro-sync` — puede eliminar paquetes de COPRs desactualizados.
-- **🛡️ Relabel SELinux** (avanzado, aviso amarillo): `fixfiles -B onboot` — programa un relabel para el próximo arranque; puede tardar.
-- **🛟 Regenerar Rescue Kernel** (opcional): instala `dracut-config-rescue`; la regeneración ocurre en la próxima actualización de kernel.
-
-Cada botón es **one-way** (sin papelera/revert), con estado persistido en `.progresso.json`. Al final, un **checkbox "Ya migré a Fedora 45 y ya ejecuté todos los botones post-actualización"** oculta el área entera — el marcador vive en `.progresso.json` y solo vuelve con "Restablecer progreso" en la sesión 13.
+**Sesión 11 en foco:** detecta cuando Fedora 45 está disponible, descarga los paquetes y reinicia para actualizar. Tras el reinicio, muestra las **acciones post-actualización recomendadas por la documentación oficial de Fedora** — limpieza básica, `rpmconf`, `distro-sync`, relabel SELinux, regeneración del rescue kernel. Un checkbox "Ya migré a Fedora 45…" oculta el área cuando terminas.
 
 ## 🛡️ Seguridad y transparencia
 
 - **Nunca instala nada sin que lo veas.** Todo comando es visible en el registro en tiempo real.
 - **Detección de preexistencia.** Apps instaladas antes de FAP aparecen como "Abrir" desde el inicio.
 - **Ítems críticos protegidos.** Controladores propietarios, códecs, CUPS, Samba, virtualización: si existían antes, la papelera no aparece.
-- **Controladores de código abierto AMD/Intel son one-shot.** Instalan y quedan grises. Sin remoción por la UI — `dnf remove` cascadearía a dependientes críticos (Steam, kinfocenter). Aviso explicativo en el tope de cada sección.
-- **Backup antes de sobrescribir.** Los presets de GameMode + MangoHud hacen backup de los archivos del usuario antes de aplicar; la papelera restaura el original.
-- **Detección real de idiomas.** Los 3 botones de traducción consultan el estado del sistema.
+- **Backup antes de sobrescribir.** Los presets de GameMode + MangoHud hacen backup de los archivos del usuario antes de aplicar.
 - **Autenticación vía `pkexec`.** Diálogo de contraseña nativo.
-- **Bloqueo inteligente.** `dnf` bloquea otros `dnf`; la cola de Flatpaks maneja el bloqueo global.
-- **Contenedor WebKitGTK nativo.** Interfaz propia, sin dependencia de Firefox/Chromium. `fap-compat` para GPUs antiguas.
-- **`install.sh` se niega a ejecutarse como root.** Instala en `~/.local/share`.
-- **Aviso de reinicio solo cuando es necesario.** El botón "Actualizar Fedora" consulta `dnf needs-restarting -r` tras la actualización y al abrir la sesión. El aviso "Reinicia el equipo" solo aparece cuando hay un reinicio pendiente.
-
-## 🎨 Características de la Interfaz
-
-- **Tema negro/gris de alto contraste** en dark; el claro mantiene los azules Fedora.
-- **Barra lateral colapsable** con íconos SVG monocromáticos y **efecto neón por sesión** en modo colapsado.
-- **Búsqueda global** con índice en segundo plano cubriendo las 13 sesiones.
-- **Insignias de origen** (6 variantes) con tooltip en cualquier parte del botón y popover.
-- **Filtros combinables** (estado + origen) en la sesión 6.
-- **Dock de registro fijo** de 160px, siempre comienza colapsado.
-- **Sesiones N/A** eliminadas del cálculo de progreso.
-- **Botón 🔄 en el encabezado** que recarga el estado del sistema.
-- **Botón "Abrir X"** generado dinámicamente vía `_ABRIR_REGISTRY` — el propio botón de instalar se vuelve verde tras el éxito, sin HTML duplicado.
-- **Enlaces externos se abren en el navegador predeterminado** del sistema vía `xdg-open`, independiente del contenedor.
+- **Contenedor WebKitGTK nativo.** Interfaz propia, sin depender de Firefox/Chromium.
+- **`install.sh` se niega a ejecutarse como root.** Instala en `~/.local/share` y usa `sudo` solo donde hace falta.
 
 ## 🖥️ Requisitos
 
-- **Fedora 44 o 45** (desarrollado y probado ampliamente en ambos).
+- **Fedora 44 o 45.**
 - **GNOME, KDE Plasma, XFCE, Cinnamon, MATE, LXQt, LXDE, Budgie, Sway, Hyprland, i3** y otros tiling WMs.
 - **PT-BR, EN y ES.**
 
 ## 🔄 Actualizar y desinstalar
 
-**Actualizar:**
 ```bash
-./install.sh --update
+./install.sh --update     # o haz clic en el badge dentro de FAP
+./install.sh --uninstall  # o usa el botón en "Acerca de FAP"
 ```
-O haz clic en el badge de actualización o usa el botón en la sesión **Acerca de FAP**.
 
-**Desinstalar:**
-```bash
-./install.sh --uninstall
-```
-O usa el botón en la sesión **Acerca de FAP**.
+## 🐛 Feedback
 
-## 🐛 Feedback, bugs y sugerencias
-
-FAP es un proyecto open-source (GPL-3.0), mantenido por **VitãoTub** en su tiempo libre.
-
-- **Bugs:** abre un [issue](https://github.com/vitaotub/Fedora-Advantage-Panel/issues) con la salida de `/tmp/fap-*.log` y la versión de Fedora.
-- **Sugerencias:** también vía issue.
-- **Capturas de pantalla:** si algo se ve raro, una captura ayuda mucho.
+Abre un [issue](https://github.com/vitaotub/Fedora-Advantage-Panel/issues) con la salida de `/tmp/fap-*.log` y la versión de Fedora. Las capturas de pantalla ayudan mucho.
 
 ## 📄 Licencia
 
