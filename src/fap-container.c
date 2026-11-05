@@ -49,18 +49,16 @@ typedef struct {
 // ============================================================
 void set_app_icon(GtkWindow *window, const char *icon_path) {
     if (icon_path && g_file_test(icon_path, G_FILE_TEST_EXISTS)) {
-        gtk_window_set_icon_from_file(GTK_WINDOW(window), icon_path, NULL);
-        g_print("[FAP] ✅ Ícone aplicado: %s\n", icon_path);
-
         GdkPixbuf *pixbuf = gdk_pixbuf_new_from_file(icon_path, NULL);
         if (pixbuf) {
             gtk_window_set_icon(GTK_WINDOW(window), pixbuf);
             g_object_unref(pixbuf);
+            g_print("[FAP] ✅ Ícone aplicado: %s\n", icon_path);
+            return;
         }
-    } else {
-        gtk_window_set_icon_name(GTK_WINDOW(window), "applications-utilities");
-        g_print("[FAP] ⚠️ Ícone não encontrado: %s\n", icon_path ? icon_path : "(nenhum)");
     }
+    gtk_window_set_icon_name(GTK_WINDOW(window), "applications-utilities");
+    g_print("[FAP] ⚠️ Ícone não encontrado: %s\n", icon_path ? icon_path : "(nenhum)");
 }
 
 // `atualizar_status` mantida como no-op para não quebrar as chamadas
