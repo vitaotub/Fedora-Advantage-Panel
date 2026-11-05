@@ -77,6 +77,15 @@ _perguntar_sim_nao() {
         local resposta
         read -p "$prompt (s/N): " -n 1 -r resposta
         echo
+        # Enter vazio respeita o default passado — antes, a função
+        # ignorava `$default` no modo TTY e sempre retornava falso,
+        # quebrando qualquer prompt com default="s" (não existe hoje,
+        # mas o contrato da função passa a ser consistente com o
+        # modo não-TTY).
+        if [ -z "$resposta" ]; then
+            [ "$default" = "s" ]
+            return $?
+        fi
         [[ $resposta =~ ^[Ss]$ ]]
         return $?
     fi
@@ -604,17 +613,28 @@ fi
 verificar_sistema() {
 print_step "Verificando sistema operacional..."
 
-if [ -f /etc/fedora-release ]; then
-local version=$(cat /etc/fedora-release | grep -oP '[0-9]+' | head -1)
-print_success "Fedora $version detectado"
-log "Sistema: Fedora $version"
+# Lê /etc/os-release (padrão freedesktop, presente em todo Fedora e
+# derivados). Antes usávamos /etc/fedora-release, que é específico do
+# Fedora "puro" e pode não existir em derivados (Nobara, Ultramarine).
+if [ -f /etc/os-release ]; then
+    . /etc/os-release
+    if [ "$ID" = "fedora" ]; then
+        print_success "Fedora $VERSION_ID detectado"
+        log "Sistema: Fedora $VERSION_ID"
+    else
+        print_warning "Sistema não identificado como Fedora (detectado: ${ID:-desconhecido} ${VERSION_ID:-})"
+        print_warning "A instalação pode não funcionar corretamente"
+        if ! _perguntar_sim_nao "Continuar mesmo assim?" "n"; then
+            print_error "Instalação cancelada"
+            exit 1
+        fi
+    fi
 else
-print_warning "Sistema não identificado como Fedora"
-print_warning "A instalação pode não funcionar corretamente"
-if ! _perguntar_sim_nao "Continuar mesmo assim?" "n"; then
-print_error "Instalação cancelada"
-exit 1
-fi
+    print_warning "Arquivo /etc/os-release não encontrado — sistema não identificado"
+    if ! _perguntar_sim_nao "Continuar mesmo assim?" "n"; then
+        print_error "Instalação cancelada"
+        exit 1
+    fi
 fi
 }
 
@@ -719,6 +739,18 @@ else
 if command -v zenity &> /dev/null; then
 print_success "zenity: $(zenity --version 2>/dev/null || echo 'presente')"
 fi
+fi
+
+# pciutils fornece `lspci`, usado por hardware-service.js para
+# detectar GPUs (NVIDIA/AMD/Intel) e placas de rede. Sem ele,
+# /hardware-scan retorna vazio e a sessão 3 (Hardware) não
+# identifica a GPU — o painel mostra "Nenhuma GPU detectada" e o
+# botão de instalação fica desabilitado por engano.
+if ! command -v lspci &> /dev/null; then
+faltando+=("pciutils")
+print_warning "pciutils (lspci) não encontrado — necessário para detecção de hardware"
+else
+print_success "pciutils: $(lspci --version 2>/dev/null | head -1 || echo 'presente')"
 fi
 
 if [ ${#faltando[@]} -gt 0 ]; then

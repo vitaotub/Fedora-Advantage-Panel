@@ -2,7 +2,7 @@
 
 **🌐 Language:** [Português (BR)](README.md) | English | [Español](README.es.md)
 
-![Version](https://img.shields.io/badge/Version-v1.4.6--11042026-orange?style=flat-square)
+![Version](https://img.shields.io/badge/Version-v1.4.7--11052026-orange?style=flat-square)
 ![Fedora](https://img.shields.io/badge/Fedora-44%20%7C%2045-294172?style=flat-square&logo=fedora)
 ![License](https://img.shields.io/badge/License-GPL--3.0-green?style=flat-square)
 ![Languages](https://img.shields.io/badge/Languages-PT--BR%20%7C%20EN%20%7C%20ES-3c67e3?style=flat-square)
@@ -69,9 +69,10 @@ bash <(curl -s https://raw.githubusercontent.com/vitaotub/Fedora-Advantage-Panel
 ```bash
 fap              # starts FAP
 fap-compat       # compatibility mode (old GPUs, VMs)
-fap --update     # updates (or click the badge inside FAP)
-fap --uninstall  # uninstalls
 ```
+
+To **update**: click the **update badge** (top of the home screen) or use the **"🔄 Update FAP"** button in the **About FAP** session.
+To **uninstall**: use the **"🗑️ Uninstall FAP"** button in the **About FAP** session.
 
 Updates are applied **on top of the existing installation** — progress, theme, and language are preserved.
 
@@ -101,7 +102,10 @@ Updates are applied **on top of the existing installation** — progress, theme,
 - **Pre-existence detection.** Apps installed before FAP appear as "Open" from the start.
 - **Critical items protected.** Proprietary drivers, codecs, CUPS, Samba, virtualization: if they already existed, the trash icon doesn't appear.
 - **Backup before overwriting.** GameMode + MangoHud presets back up the user's files before applying.
-- **Authentication via `pkexec`.** Native desktop password dialog.
+- **Authentication via `pkexec`.** Native desktop password dialog. The script to be executed is logged **before** pkexec opens — you see what you're authorizing.
+- **File-based audit.** Every `pkexec` leaves a trail in `/tmp/fap-audit-*.log` (removed after 7 days).
+- **Local CSRF protection.** The `/executar` endpoint rejects requests with a `Origin` from another host. A malicious page can't trigger FAP commands via `fetch(..., { mode: 'no-cors' })`.
+- **Secure Boot aware.** When installing the NVIDIA driver with Secure Boot enabled, FAP guides the user through MOK enrollment (kmodgenca + mokutil) before installing — without it, the module wouldn't load.
 - **Native WebKitGTK container.** Own interface, no dependence on Firefox/Chromium.
 - **`install.sh` refuses to run as root.** Installs to `~/.local/share` and uses `sudo` only where needed.
 

@@ -716,7 +716,7 @@ async function executarGSmartControl() {
     var comando = 'sudo dnf install -y gsmartcontrol';
     await executarComandoGenerico(idComando, comando,
         _t('sessoes.diagnostico.btn_gsmart_install', '📦 Instalar GSmartControl'),
-        function() { aplicarEstadoInstalavel(idComando, 'abrir-gsmartcontrol'); });
+        function() { aplicarEstadoInstalavel(idComando, null); });
 }
 
 function abrirGSmartControl() {

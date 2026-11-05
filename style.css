@@ -2266,7 +2266,7 @@ body.log-dock-visivel.log-dock-expandido .fap-main {
 }
 
 /* Paleta dos badges: 6 famílias de cor distintas para máxima
- d istinção a 14×14. Antes Fedora/Flathub eram ambos azuis e                          *
+ d istinção a 14×14. Antes Fedora/Flathub eram ambos az*uis e
  RPM Fusion/Fabricante ambos laranjas — confundiam. */
 .fap-badge-origem[data-origem="flathub"]    { background-color: #3b82f6; } /* azul   */
 .fap-badge-origem[data-origem="fedora"]     { background-color: #dc2626; } /* vermelho */
@@ -2290,7 +2290,10 @@ body.log-dock-visivel.log-dock-expandido .fap-main {
     border-radius: 8px;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
     padding: 0;
-    max-width: 360px;
+    /* `min()` evita overflow horizontal em viewports < 360px — o
+     *      `_posicionarPopover` clampa `left` em 8, mas não sabe a
+     *      largura real, então o popover estourava à direita. */
+    max-width: min(360px, calc(100vw - 16px));
     min-width: 260px;
     font-size: 0.85rem;
     line-height: 1.45;

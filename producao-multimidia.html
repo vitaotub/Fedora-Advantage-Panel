@@ -189,7 +189,7 @@ async function executarOBSStudio() {
     await executarComandoGenerico(idComando, comando,
         _t('sessoes.producao-multimidia.btn_instalar_obs', '📹 Instalar OBS Studio'),
         function() {
-            aplicarEstadoInstalavel('instalar-obs-studio', 'abrir-obs-studio');
+            aplicarEstadoInstalavel('instalar-obs-studio', null);
         });
 }
 
@@ -231,7 +231,7 @@ async function executarEasyEffects() {
     await executarComandoGenerico(idComando, comando,
         _t('sessoes.producao-multimidia.btn_instalar_easyeffects', 'Instalar EasyEffects (Flatpak)'),
         function() {
-            aplicarEstadoInstalavel('instalar-easyeffects', 'abrir-easyeffects');
+            aplicarEstadoInstalavel('instalar-easyeffects', null);
         });
 }
 

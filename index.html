@@ -448,67 +448,9 @@ box-shadow: 0 0 0 2px rgba(60, 103, 227, 0.3);
  * TOASTS
  * ============================================================ */
 
-.fap-toast-container {
-position: fixed;
-top: 0;
-left: 0;
-right: 0;
-bottom: 0;
-z-index: 99999;
-pointer-events: none;
-display: flex;
-flex-direction: column;
-align-items: flex-end;
-justify-content: flex-start;
-padding: 1rem;
-gap: 0.5rem;
-overflow: hidden;
-}
-
-.fap-toast {
-background-color: var(--bg-card);
-border: 1px solid var(--border);
-border-left: 4px solid var(--accent);
-border-radius: 8px;
-padding: 0.75rem 1rem;
-color: var(--text-main);
-box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
-font-size: 0.9rem;
-line-height: 1.4;
-pointer-events: auto;
-animation: slideInToast 0.3s ease-out;
-max-width: min(360px, calc(100vw - 2rem));
-word-wrap: break-word;
-overflow-wrap: break-word;
-box-sizing: border-box;
-flex-shrink: 0;
-}
-
-.fap-toast.success {
-border-left-color: var(--success);
-}
-
-.fap-toast.error {
-border-left-color: var(--danger);
-}
-
-.fap-toast.info {
-border-left-color: var(--accent);
-}
-
-.fap-toast.removendo {
-animation: slideOutToast 0.3s ease-in forwards;
-}
-
-@keyframes slideInToast {
-from { transform: translateX(120%); opacity: 0; }
-to   { transform: translateX(0);   opacity: 1; }
-}
-
-@keyframes slideOutToast {
-from { transform: translateX(0);   opacity: 1; }
-to   { transform: translateX(120%); opacity: 0; }
-}
+/* (bloco removido — `.fap-toast-*` e keyframes agora vivem apenas
+   em style.css. A duplicação inline era dead code desde que
+   style.css foi carregado.) */
 
 @media (max-width: 768px) {
 body {

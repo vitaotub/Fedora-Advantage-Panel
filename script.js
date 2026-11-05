@@ -307,9 +307,12 @@ async function _dispararAtualizacaoFAP() {
             _finalizar(false);
         };
 
-        // Timeout defensivo: se o `end` não chegar em 10min, algo
-        // travou. Trata como falha e reabilita o botão.
-        setTimeout(function() { _finalizar(false); }, 10 * 60 * 1000);
+        // Timeout defensivo: se o `end` não chegar em 30min, algo
+        // travou. 10min era curto — `install.sh --update` faz
+        // `git pull` + `npm install` + compilar o container, o que
+        // pode passar de 10min em conexões lentas ou máquinas com
+        // WebKitGTK frio. Trata como falha e reabilita o botão.
+        setTimeout(function() { _finalizar(false); }, 30 * 60 * 1000);
 
     } catch (err) {
         mostrarToast(
@@ -645,7 +648,12 @@ function _estaRealmenteInstalado(idComando) {
     if (info.tipo === 'flatpak' && info.appId) {
         return SystemState.flatpakInstalado(info.appId);
     }
-    if (info.tipo === 'dnf' && Array.isArray(info.pacotes)) {
+    // `info.pacotes.length > 0` é obrigatório: `gamemode-presets-apply`
+    // registra `pacotes: []` (são arquivos em ~/.config/, não
+    // pacotes). Sem o length check, o loop era no-op e retornava
+    // `false` — o auto-reset disparava e o botão voltava para
+    // "Aplicar Presets" após cada reload da sessão.
+    if (info.tipo === 'dnf' && Array.isArray(info.pacotes) && info.pacotes.length > 0) {
         for (var j = 0; j < info.pacotes.length; j++) {
             if (SystemState.pacoteInstalado(info.pacotes[j])) return true;
         }
@@ -1337,11 +1345,20 @@ function _construirIdsValidos() {
     return set;
 }
 
+var _infoComandoCache = {};
+
 function _infoComando(idComando) {
+    if (idComando in _infoComandoCache) {
+        return _infoComandoCache[idComando];
+    }
     for (var i = 0; i < SESSOES.length; i++) {
         var comandos = SESSOES[i].comandos;
-        if (comandos && comandos[idComando]) return comandos[idComando];
+        if (comandos && comandos[idComando]) {
+            _infoComandoCache[idComando] = comandos[idComando];
+            return comandos[idComando];
+        }
     }
+    _infoComandoCache[idComando] = null;
     return null;
 }
 
@@ -2568,15 +2585,9 @@ function _marcarBotaoNaFila(idComando, posicao) {
     btn.style.cursor = 'not-allowed';
 }
 
-function _desmarcarBotaoDaFila(idComando) {
-    var btn = document.getElementById('btn-' + idComando);
-    if (!btn) return;
-    var original = btn.getAttribute('data-texto-original') || btn.textContent;
-    btn.textContent = original;
-    btn.disabled = false;
-    btn.style.opacity = '1';
-    btn.style.cursor = 'pointer';
-}
+// (removido) `_desmarcarBotaoDaFila` era dead code — o retorno do
+// app à fila é feito por `_reajustarPosicoesDaFila` e
+// `_dispararFlatpak`. Nenhum call site existia.
 
 function _reajustarPosicoesDaFila() {
     for (var i = 0; i < _filaFlatpaks.length; i++) {
@@ -2613,23 +2624,9 @@ async function _dispararFlatpak(idComando, comando, nomeAcao, onSucesso) {
     var sucesso = await aguardarConclusaoReal(idComando, 1800000);
 
     if (sucesso && typeof onSucesso === 'function') {
-        // ============================================================
-        // INVALIDA + RECARREGA O SystemState ANTES DO onSucesso (v1.4.3)
-        // ============================================================
-        //
-        // O `_executarComandoGenericoOriginal` (com `ehFlatpak=true`)
-        // chama `completarProgresso` → `aguardarConclusaoReal`, mas
-        // NÃO invalida o `SystemState`. Resultado: o `onSucesso` →
-        // `aplicarEstadoInstalavel` → `_estaRealmenteInstalado` →
-        // `SystemState.flatpakInstalado` consulta um cache de até
-        // 60s atrás, que **não viu** o `flatpak install` recém-
-        // terminado. Botão fica "Instalar" até o próximo reload.
-        //
-        // O fluxo DNF funciona porque `executarComandoGenerico`
-        // (não-Flatpak) passa por `aguardarConclusaoEEntao`, que já
-        // faz esse `invalidar` + `carregar(true)`. Aqui replicamos
-        // o mesmo padrão para o caminho Flatpak (que não passa por
-        // `aguardarConclusaoEEntao`).
+        // Invalida + recarrega o SystemState ANTES do onSucesso.
+        // Sem isso, `SystemState.flatpakInstalado` consultaria um
+        // cache de até 60s atrás e o botão ficaria "Instalar".
         if (typeof SystemState !== 'undefined' && typeof SystemState.invalidar === 'function') {
             try { SystemState.invalidar(); } catch (e) { /* ignore */ }
         }
@@ -2638,6 +2635,34 @@ async function _dispararFlatpak(idComando, comando, nomeAcao, onSucesso) {
                 await SystemState.carregar(true);
             } catch (e) {
                 console.warn('[flatpak-fila] Falha ao recarregar SystemState:', e);
+            }
+        }
+
+        // ============================================================
+        // RETRY: `flatpak install` pode retornar antes do app aparecer
+        // ============================================================
+        //
+        // O processo `flatpak install` pode terminar ANTES do app
+        // aparecer em `flatpak list` (race condition entre o processo
+        // sair e o registro ser atualizado no banco do Flatpak).
+        // Quando isso acontece, o `carregar(true)` acima pega uma
+        // lista antiga e o auto-reset (`_estaRealmenteInstalado`)
+        // desmarca o botão indevidamente.
+        //
+        // A solução é um pequeno retry: recarrega até 3 vezes com
+        // 500ms de intervalo, até o appId aparecer.
+        if (typeof SystemState !== 'undefined' && typeof SystemState.flatpakInstalado === 'function') {
+            var info = (typeof APPS_REMOVIVEIS !== 'undefined') ? APPS_REMOVIVEIS[idComando] : null;
+            if (info && info.tipo === 'flatpak' && info.appId) {
+                for (var i = 0; i < 3; i++) {
+                    if (SystemState.flatpakInstalado(info.appId)) break;
+                    console.log('[flatpak] ' + info.appId + ' ainda não visível no cache, retry ' + (i + 1) + '/3');
+                    await new Promise(function(r) { setTimeout(r, 500); });
+                    SystemState.invalidar();
+                    try {
+                        await SystemState.carregar(true);
+                    } catch (e) { /* ignore */ }
+                }
             }
         }
 
@@ -2976,7 +3001,11 @@ function aplicarEstadoInstalavel(idInstall, idAbrir, idRemover, preExistente) {
     }
 
     var corOriginal = _corOriginalDoBotao(btnInstall);
-    var textoOriginalInstall = btnInstall.getAttribute('data-texto-original') || btnInstall.textContent;
+    // `_textoOriginalTraduzido` respeita o idioma corrente. Sem isso,
+    // após uma remoção o botão voltava para o texto PT-BR original
+    // (data-texto-original) mesmo em EN/ES — o `aplicarTraducoes`
+    // só roda no load da sessão.
+    var textoOriginalInstall = _textoOriginalTraduzido(btnInstall) || btnInstall.textContent;
 
     var tratadoComoInstalado = instalado || preExistente;
 
@@ -3168,12 +3197,6 @@ function _executarRemocaoPeloWrapper(idInstall) {
         console.warn('[remove-icon] App não registrado:', idInstall);
         return;
     }
-
-    if (info.modo === 'desfazerTudo') {
-        _executarDesfazerTudo(idInstall);
-        return;
-    }
-
     _executarRemocaoApp(idInstall);
 }
 
@@ -3364,58 +3387,10 @@ async function _executarRemocaoApp(idComando) {
 // HELPER GLOBAL — "DESFAZER TUDO"
 // ============================================================
 
-async function _executarDesfazerTudo(idInstall) {
-    var info = APPS_REMOVIVEIS[idInstall];
-    if (!info || info.modo !== 'desfazerTudo') return;
-
-    var marcadoPeloFap = isExecutado(idInstall);
-    var instaladoNoSistema = false;
-    try {
-        instaladoNoSistema = appJaInstaladoNoSistema(idInstall);
-    } catch (e) {
-        instaladoNoSistema = false;
-    }
-    if (!marcadoPeloFap && !instaladoNoSistema) return;
-
-    var preExistente = instaladoNoSistema && !marcadoPeloFap;
-
-    var nome = info.nome || idInstall;
-    var idDesfazer = info.idDesfazer;
-
-    var msg1 = _tVars('comum.desfazer_tudo_confirm1',
-                      '⚠️ Remover completamente o ' + nome + '?\n\n' +
-                      'Este botão remove TUDO que o FAP instalou:\n' +
-                      '• Pacotes do sistema\n' +
-                      '• Arquivos de configuração criados\n' +
-                      '• Grupos de usuário e serviços\n\n' +
-                      'Ação irreversível.',
-                      { nome: nome });
-    if (preExistente) {
-        msg1 = _t('comum.confirm_preexistente_prefixo',
-                  '⚠️ ATENÇÃO!\n\nEste app já estava instalado antes do FAP. ' +
-                  'Removê-lo do sistema pode apagar configurações e ' +
-                  'dados que você criou (perfis, favoritos, saves).\n\n') + msg1;
-    }
-    if (!confirm(msg1)) return;
-
-    var msg2 = _tVars('comum.desfazer_tudo_confirm2',
-                      '🔄 Última confirmação!\n\n' +
-                      'Todos os resquícios do ' + nome + ' serão removidos.\n\n' +
-                      'Tem certeza absoluta?',
-                      { nome: nome });
-    if (!confirm(msg2)) return;
-
-    var nomeAcao = _tVars('comum.btn_desfazer_tudo',
-                          '🗑️ Remover completamente o ' + nome,
-                          { nome: nome });
-
-    await executarComandoGenerico(idDesfazer, info.comandoDesfazer, nomeAcao,
-                                  async function() {
-                                      await desmarcarComoExecutado(idInstall);
-                                      aplicarEstadoToggle(idInstall, idDesfazer);
-                                      esconderBotoesAbrirDe(idInstall);
-                                  });
-}
+// (removido) `_executarDesfazerTudo` era dead code — nenhum
+// `registrarAppRemovivel` declara `modo: 'desfazerTudo'`. A remoção
+// de apps é feita por `_executarRemocaoApp` via lixeira ou
+// `comandoRemocao` custom.
 
 function mostrarBotaoDesinstalar(idComando) {
     const btnReverter = document.getElementById('btn-reverter-' + idComando);
@@ -3570,20 +3545,9 @@ document.addEventListener('keydown', function(e) {
 // HELPER GLOBAL — DERIVAR IDs DE ABRIR A PARTIR DO INSTALL
 // ============================================================
 
-var _MAPA_ABRIR_EXCECOES = {};
-
-function _derivarIdAbrir(idInstall) {
-    if (_MAPA_ABRIR_EXCECOES[idInstall]) {
-        return _MAPA_ABRIR_EXCECOES[idInstall];
-    }
-    if (idInstall.indexOf('instalar-') === 0) {
-        return 'abrir-' + idInstall.substring('instalar-'.length);
-    }
-    if (idInstall.indexOf('-install') !== -1) {
-        return 'abrir-' + idInstall.replace(/-install$/, '');
-    }
-    return null;
-}
+// (bloco removido — `_derivarIdAbrir` e `_MAPA_ABRIR_EXCECOES` são
+// dead code desde a Rodada 2B. A fonte de verdade do "Abrir X" é
+// `_ABRIR_REGISTRY`, populado via `_registrarAbrir()` em cada sessão.)
 
 // ============================================================
 // ============================================================

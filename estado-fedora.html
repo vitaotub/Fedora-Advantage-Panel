@@ -603,16 +603,15 @@ async function verificarSelinuxTroubleshoot() {
 var idComando = 'selinux-troubleshoot';
 var resultadoEl = document.getElementById('diag-selinux-avisos');
 
+// journalctl lê o journal do sistema sem root (o usuário pode ter
+// acesso ao grupo `systemd-journal` no Fedora Workstation por padrão).
+// Se não tiver, o pkexec abaixo pede a senha — comportamento correto,
+// em vez do `-n` que falhava silenciosamente.
 var comando =
-'if command -v ausearch > /dev/null 2>&1; then ' +
-'  echo "Procurando AVC denials nas últimas 24h..."; ' +
-'  COUNT=$(sudo -n ausearch -m avc -ts recent 2>/dev/null | grep -c "^type=AVC" || echo 0); ' +
-'  echo "TOTAL_AVC=$COUNT"; ' +
-'  echo "---"; ' +
-'  sudo -n ausearch -m avc -ts recent 2>/dev/null | grep "comm=" | sed "s/.*comm=\\"\\?\\([^\\" ]*\\)\\"\\?.*/\\1/" | sort | uniq -c | sort -rn | head -10 || true; ' +
-'else ' +
-'  echo "ausearch não encontrado (instale audit)"; ' +
-'fi';
+'COUNT=$(journalctl -g "avc: *denied" -S "24 hours ago" 2>/dev/null | grep -c "avc: *denied" || echo 0); ' +
+'echo "TOTAL_AVC=$COUNT"; ' +
+'echo "---"; ' +
+'journalctl -g "avc: *denied" -S "24 hours ago" 2>/dev/null | grep -oP "comm=\\"\\K[^\\"]+" | sort | uniq -c | sort -rn | head -10 || true';
 
 await _executarLeitura(idComando, comando, _t('sessoes.estado-fedora.btn_selinux_troubleshoot', '🔍 Verificar Avisos Recentes'));
 
@@ -655,7 +654,7 @@ var idComando = 'selinux-setroubleshoot-install';
 var comando = 'sudo dnf install -y setroubleshoot-server setools-console policycoreutils-python-utils';
 await executarComandoGenerico(idComando, comando,
 _t('sessoes.estado-fedora.btn_setroubleshoot_install', '📦 Instalar setroubleshoot'),
-function() { aplicarEstadoInstalavel(idComando, 'abrir-setroubleshoot'); });
+function() { aplicarEstadoInstalavel(idComando, null); });
 }
 
 function abrirSetroubleshoot() {
@@ -674,7 +673,7 @@ var idComando = 'selinux-gui-install';
 var comando = 'sudo dnf install -y policycoreutils-gui';
 await executarComandoGenerico(idComando, comando,
 _t('sessoes.estado-fedora.btn_selinux_gui_install', '📦 Instalar Gerenciador SELinux'),
-function() { aplicarEstadoInstalavel(idComando, 'abrir-selinux-gui'); });
+function() { aplicarEstadoInstalavel(idComando, null); });
 }
 
 function abrirSelinuxGUI() {

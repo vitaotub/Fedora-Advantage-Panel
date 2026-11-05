@@ -325,13 +325,46 @@ const _CARACTERES_ENCADEAMENTO = /[\n\r;`|]|\$\(|&&|<\(|>\(|(?:^|\s)&(?:\s|$)|(?
 // — o idLog é sanitizado em `/^[a-zA-Z0-9_-]+$/`. Whitelist exata
 // do formato esperado para permitir o redirect sem afrouxar o
 // chain check geral.
-const _REDIRECT_ABRIR_PADRAO = /^setsid\s+-f\s+[^>\n]+\s>\s+\/tmp\/fap-open-[\w.\-]+\.log\s+2>&1\s+<\s+\/dev\/null$/;
+// Whitelist de binários que podem aparecer em `setsid -f <binario>`.
+// Espelha as entradas `setsid -f <binario>` de
+// COMANDOS_SEM_AUTENTICACAO, mais `xdg-open` (usado por
+// abrirFerramentaExterna para links externos).
+//
+// O regex antigo usava `[^>\n]+` no lugar do binário — o que
+// aceitava `setsid -f bash -c 'rm -rf ~' > /tmp/fap-open-x.log
+// 2>&1 < /dev/null` como "abertura de app" e passava sem auth.
+// A whitelist bloqueia isso.
+const _BINARIOS_ABRIR_WHITELIST = new Set([
+    'gtk-launch', 'xdg-open', 'sealert',
+    'corectrl', 'lact', 'rclone-manager', 'steam', 'heroic', 'rustdesk',
+    'keepassxc', 'firefox', 'okular', 'artcraft-launcher', 'lightworks',
+    'desktopeditors', 'photocraft', 'vectorcraft', 'filmcraft', 'lightcraft',
+    'pdfcraft', 'effectcraft', 'designcraft', 'figcraft', 'deckcraft',
+    'gridcraft', 'wordcraft', 'cadcraft', 'soundcraft',
+    'vlc', 'krita', 'inkscape', 'gimp', 'darktable', 'coolercontrol',
+    'jstest-gtk', 'freecad', 'librecad', 'kdenlive', 'pitivi', 'shotcut',
+    'avidemux', 'blender', 'ardour8', 'lmms', 'audacity',
+    'chromium-browser', 'opera', 'brave-browser', 'vivaldi-stable',
+    'microsoft-edge-stable'
+]);
+
+// Regex captura o binário no grupo 1 para consulta na whitelist.
+// `(?:\s+[^>\n]+)?` cobre argumentos opcionais (appIds, URLs, etc.)
+// sem permitir `>` (que indica redirect extra, vetor de XSS).
+const _REDIRECT_ABRIR_PADRAO = /^setsid\s+-f\s+(\S+)(?:\s+[^>\n]+)?\s>\s+\/tmp\/fap-open-[\w.\-]+\.log\s+2>&1\s+<\s+\/dev\/null$/;
+
+function _ehRedirectAbrirValido(trimmed) {
+    var m = trimmed.match(_REDIRECT_ABRIR_PADRAO);
+    if (!m) return false;
+    return _BINARIOS_ABRIR_WHITELIST.has(m[1]);
+}
 
 function _cmdSemAutenticacao(comando) {
     const trimmed = (comando || '').trim();
 
     // Exceção: padrão interno de abrir app (redirect legítimo).
-    if (_REDIRECT_ABRIR_PADRAO.test(trimmed)) {
+    // Só passa se o binário estiver na whitelist.
+    if (_ehRedirectAbrirValido(trimmed)) {
         return true;
     }
 
@@ -470,7 +503,13 @@ function _execReadOnly(comando, timeoutMs) {
             shell: '/bin/bash',
             timeout: timeoutMs || 5000,
             maxBuffer: 1024 * 1024 * 5,
-            env: process.env
+            env: process.env,
+            // `detached: true` faz o bash ser líder de sessão. Sem
+            // ele, quando o `timeout` do exec envia SIGTERM ao bash
+            // pai, os netos (`dnf repolist`, `lspci`) ficam órfãos
+            // segurando locks. Com o grupo isolado, o SO pode fazer
+            // cleanup depois mesmo que o Node morra abruptamente.
+            detached: true
         }, function(error, stdout, stderr) {
             if (error && !stdout) {
                 resolve('');
@@ -864,8 +903,15 @@ async function _verificarAtualizacoesPendentes() {
 }
 
 async function _verificarEspacoDisco() {
+    // Verifica /var E /var/tmp: o `dnf system-upgrade` usa /var/tmp
+    // como staging. Se estiver em outra partição (raro, mas possível),
+    // o `df /var` mede o espaço errado. Pegamos o MENOR livre entre
+    // os dois para garantir que o download cabe.
     var out = await _execReadOnly(
-        "df -BG /var 2>/dev/null | tail -1 | awk '{print $4}' | tr -d 'G'",
+        "L1=$(df -BG /var 2>/dev/null | tail -1 | awk '{print $4}' | tr -d 'G'); " +
+        "L2=$(df -BG /var/tmp 2>/dev/null | tail -1 | awk '{print $4}' | tr -d 'G'); " +
+        "[ -z \"$L2\" ] && L2=$L1; " +
+        "if [ \"${L1:-0}\" -lt \"${L2:-0}\" ]; then echo $L1; else echo $L2; fi",
         3000
     );
     var livre = parseFloat(out) || 0;
@@ -873,29 +919,24 @@ async function _verificarEspacoDisco() {
 }
 
 async function _verificarDownloadConcluido() {
-    // O caminho do system-upgrade depende do gerenciador de pacotes:
+    // Marcador oficial: `transaction.json` só é gravado quando o
+    // `dnf system-upgrade download` TERMINA com sucesso. A presença
+    // do diretório sozinha não basta — downloads interrompidos
+    // deixam arquivos parciais mas sem `transaction.json`.
     //
-    //   • DNF4 (clássico):  /var/lib/dnf/system-upgrade/
-    //   • DNF5 (Fedora 41+): /usr/lib/sysimage/libdnf5/offline/
-    //
-    // O DNF5 é o padrão no Fedora 44+, e a documentação oficial
-    // (dnf5-offline(8)) confirma que os dados da transação offline
-    // ficam em /usr/lib/sysimage/libdnf5/offline. Os caminhos em
-    // /var/lib/dnf5/ que tentamos antes NÃO são usados pelo DNF5.
-    //
-    // Tentamos o caminho do DNF5 primeiro (caso comum), depois o
-    // do DNF4 (fallback para sistemas mais antigos).
+    // DNF5 (Fedora 41+) usa /usr/lib/sysimage/libdnf5/offline/.
+    // DNF4 (legado) usa /var/lib/dnf/system-upgrade/.
     var script =
-        'if [ -d /usr/lib/sysimage/libdnf5/offline ] && [ -n "$(ls -A /usr/lib/sysimage/libdnf5/offline 2>/dev/null)" ]; then ' +
-        '  echo "yes"; ' +
-        'elif [ -d /var/lib/dnf/system-upgrade ] && [ -n "$(ls -A /var/lib/dnf/system-upgrade 2>/dev/null)" ]; then ' +
-        '  echo "yes"; ' +
-        'else ' +
-        '  echo "no"; ' +
-        'fi';
+    'if [ -f /usr/lib/sysimage/libdnf5/offline/transaction.json ]; then ' +
+    '  echo "yes"; ' +
+    'elif [ -f /var/lib/dnf/system-upgrade/transaction.json ]; then ' +
+    '  echo "yes"; ' +
+    'else ' +
+    '  echo "no"; ' +
+    'fi';
 
-    var out = await _execReadOnly(script, 3000);
-    return out.trim() === 'yes';
+var out = await _execReadOnly(script, 3000);
+return out.trim() === 'yes';
 }
 
 async function _detectarComponentesTerceiros() {
@@ -1034,6 +1075,7 @@ async function _calcularUpgradeStatus() {
 
     var fedoraOk = fedoraGa.ok && fedoraChannel.ok;
     var rpmfusionOk = rpmfusionChannel.ok;
+    var checagemFalhou = !updates.checagem_ok;
     var sistemaOk = resultado.checks.is_current_up_to_date.ok;
     var espacoOk = disk.suficiente;
 
@@ -1043,6 +1085,12 @@ async function _calcularUpgradeStatus() {
         resultado.status = 'waiting_ga';
     } else if (!rpmfusionOk) {
         resultado.status = 'waiting_rpmfusion';
+    } else if (checagemFalhou) {
+        // Diferencia "não consegui checar" (rede/repo quebrado) de
+        // "há updates pendentes". Antes, os dois viravam
+        // `outdated_current` e o usuário via "atualize primeiro" sem
+        // saber que a checagem em si falhou.
+        resultado.status = 'check_failed';
     } else if (!sistemaOk) {
         resultado.status = 'outdated_current';
     } else if (!espacoOk) {
@@ -1679,10 +1727,36 @@ async function executarComAutenticacaoSegura(comandoOriginal, idComando, isRever
         }
     }
 
-    enviarLog(idComando, `🔐 Autenticando para: ${descricao}\n`, 'info');
-
+    // ============================================================
+    // ORDEM CRÍTICA: declara comandoCorrigido ANTES de qualquer uso
+    // ============================================================
+    //
+    // A versão anterior declarava `comandoCorrigido` DEPOIS dos
+    // `enviarLog`/`fs.writeFileSync` que o usavam. Como `const`
+    // tem TDZ (Temporal Dead Zone), isso disparava
+    // `ReferenceError: Cannot access 'comandoCorrigido' before
+    // initialization` toda vez que um comando precisava de
+    // autenticação — o usuário via "Autenticação cancelada" sem
+    // o pkexec nem ser invocado.
     const comandoSemSudo = comandoOriginal.replace(/sudo\s+(?!-)/g, '');
     const comandoCorrigido = _substituirCaminhosUsuario(comandoSemSudo);
+
+    enviarLog(idComando, `🔐 Autenticando para: ${descricao}\n`, 'info');
+
+    // Mostra o script COMPLETO no log antes do pkexec. O usuário precisa
+    // ver o que está autorizando — o diálogo nativo do polkit não exibe
+    // o conteúdo, apenas o caminho do script.
+    enviarLog(idComando, '─── Conteúdo do script que será executado ───\n', 'info');
+    enviarLog(idComando, comandoCorrigido + '\n', 'info');
+    enviarLog(idComando, '────────────────────────────────────────────\n', 'info');
+
+    // Auditoria em arquivo: se o usuário quiser revisar depois, o
+    // histórico fica em /tmp/fap-audit-*.log (removido pela limpeza
+    // de logs antigos do server.js).
+    try {
+        const auditPath = '/tmp/fap-audit-' + Date.now() + '-' + Math.random().toString(36).slice(2) + '.log';
+        fs.writeFileSync(auditPath, `[${new Date().toISOString()}] ${descricao}\n\n${comandoCorrigido}\n`, { mode: 0o600 });
+    } catch (e) { /* auditoria é best-effort */ }
 
     const hasPkexec = commandExists('pkexec');
     const hasZenity = commandExists('zenity');
@@ -3003,6 +3077,30 @@ const server = http.createServer((req, res) => {
         let body = '';
         req.on('data', chunk => { body += chunk.toString(); });
         req.on('end', () => {
+            // CSRF guard: `/executar` NÃO valida Content-Type (aceita
+            // qualquer body), então um site malicioso pode fazer
+            // `fetch('http://localhost:3000/executar', { method:
+            // 'POST', mode: 'no-cors', body: JSON.stringify({...}) })`
+            // e disparar comandos sem interação do usuário.
+            //
+            // Mesma regra do /shutdown: Origin vazia (curl do
+            // install.sh --uninstall, único consumidor legítimo
+            // programático) OU Origin same-origin (o próprio FAP).
+            // Navegador de aba maliciosa envia Origin de outro host
+            // → bloqueado.
+            var originExec = req.headers.origin || '';
+            var originExecOk = !originExec ||
+            /^https?:\/\/(127\.0\.0\.1|localhost)(:\d+)?$/.test(originExec);
+            if (!originExecOk) {
+                console.warn('[FAP] /executar bloqueado — Origin suspeita:', originExec);
+                res.writeHead(403, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({
+                    success: false,
+                    output: 'Origin não autorizada'
+                }));
+                return;
+            }
+
             try {
                 const { comando, idComando } = JSON.parse(body);
 
@@ -3219,7 +3317,7 @@ server.listen(PORT, HOST, () => {
     console.log(` 📡 SSE: Ativo (logs em tempo real, com buffer de replay)`);
     console.log(` 📁 Arquivos estáticos: Ativo (HTML, CSS, JS, ícone)`);
     console.log(` 🌐 i18n: Ativo (locales em /locales/<lang>.json)`);
-    console.log(` 📄 Páginas: index.html, guiado.html + 14 sessões dinâmicas`);
+    console.log(` 📄 Páginas: index.html, guiado.html + 13 sessões dinâmicas`);
     console.log(` 📝 Changelog: /changelog (lê CHANGELOG.md)`);
     console.log(` 🔧 Comandos SEM autenticação: rpm -q, uname -r, gtk-launch, flatpak, systemctl --user, etc`);
     console.log(` 🔧 idComandos sem auth: atualizar-fap, desinstalar-fap (com SUDO_ASKPASS)`);

@@ -782,11 +782,10 @@ function _registrarAbrirEmMassa() {
         textoFallback: '🚀 Abrir ArtCraft Launcher',
         onclick: 'abrirArtCraftLauncher()'
     });
-    _registrarAbrir('instalar-rustdesk', {
-        textoKey: 'sessoes.aplicativos.btn_abrir_rustdesk',
-        textoFallback: '🚀 Abrir RustDesk',
-        onclick: 'abrirRustDesk()'
-    });
+    // RustDesk é registrado pelo loop de `_registrarAbrirEmMassa`
+    // (via APPS_URL_RPM), com `onclick: "abrirAppGenerico('instalar-rustdesk')"`.
+    // Comportamento idêntico ao antigo `abrirRustDesk()` (que chamava
+    // `abrirFerramentaExterna('rustdesk', ...)` via APPS_URL_RPM).
     _registrarAbrir('instalar-remmina', {
         textoKey: 'sessoes.aplicativos.btn_abrir_remmina',
         textoFallback: '🚀 Abrir Remmina',
@@ -809,7 +808,11 @@ function _registrarAbrirEmMassa() {
 // ============================================================
 
 var _CMD_ABRIR_DNF = {
-    'instalar-thunderbird': 'gtk-launch thunderbird',
+    // `instalar-firefox` e `instalar-thunderbird` foram removidos:
+    // `_ABRIR_REGISTRY` é deletado no topo (Firefox/Thunderbird abrem
+    // pelo menu do sistema, sem sentido no FAP), então
+    // `abrirAppGenerico` nunca é chamado para esses ids — as
+    // entradas eram dead code.
     'instalar-okular':      'okular',
     'instalar-kate':        'kate',
     'instalar-foliate':     'gtk-launch com.github.johnfactotum.Foliate',
@@ -823,8 +826,7 @@ var _CMD_ABRIR_DNF = {
     'instalar-avidemux':    'gtk-launch org.avidemux.Avidemux',
     'instalar-ardour':      'ardour8',
     'instalar-lmms':        'lmms',
-    'instalar-chromium':    'chromium-browser',
-    'instalar-firefox':     'firefox'
+    'instalar-chromium':    'chromium-browser'
 };
 
 var _CMD_ABRIR_RPM_REPO = {
@@ -874,6 +876,13 @@ function abrirAppGenerico(idInstall) {
 }
 
 _registrarAbrirEmMassa();
+
+// Firefox e Thunderbird são "apps do dia a dia" — o usuário já os
+// abre pelo menu do sistema. Mostrar "Abrir Firefox" no FAP é
+// redundante (abre uma nova janela a cada clique). Removemos as
+// entradas para que fiquem em "instalado-sem-abrir" (cinza + lixeira).
+delete _ABRIR_REGISTRY['instalar-firefox'];
+delete _ABRIR_REGISTRY['instalar-thunderbird'];
 
 // ============================================================
 // REGISTRO DE APPS REMOVÍVEIS
@@ -1056,7 +1065,7 @@ async function instalarFlatpak(idComando) {
     var nomeAcao = _t(chaveI18n, info.fallback);
 
     await executarComandoGenerico(idComando, comando, nomeAcao, function() {
-        aplicarEstadoInstalavel(idComando, _derivarIdAbrir(idComando));
+        aplicarEstadoInstalavel(idComando, null);
     });
 }
 
@@ -1075,7 +1084,7 @@ async function instalarDnf(idComando) {
     var nomeAcao = _t(chaveI18n, info.fallback);
 
     await executarComandoGenerico(idComando, comando, nomeAcao, function() {
-        aplicarEstadoInstalavel(idComando, _derivarIdAbrir(idComando));
+        aplicarEstadoInstalavel(idComando, null);
     });
 }
 
@@ -1094,7 +1103,7 @@ async function instalarRpmRepo(idComando) {
     var nomeAcao = _t(chaveI18n, info.fallback);
 
     await executarComandoGenerico(idComando, comando, nomeAcao, function() {
-        aplicarEstadoInstalavel(idComando, _derivarIdAbrir(idComando));
+        aplicarEstadoInstalavel(idComando, null);
     });
 }
 
@@ -1146,8 +1155,10 @@ async function instalarUrlRpm(idComando) {
                 logBox.appendChild(err);
                 var hint = document.createElement('div');
                 hint.className = 'log-line info';
+                // Converte `https://api.github.com/repos/<owner>/<repo>/releases/latest`
+                // em `https://github.com/<owner>/<repo>/releases/latest` (HTML para o usuário).
                 hint.textContent = '   Verifique manualmente: ' +
-                    info.apiUrl.replace('/repos/', '/').replace('/releases/latest', '/releases/latest');
+                    info.apiUrl.replace('https://api.github.com/repos/', 'https://github.com/');
                 logBox.appendChild(hint);
                 logBox.scrollTop = logBox.scrollHeight;
             }
@@ -1180,7 +1191,7 @@ async function instalarUrlRpm(idComando) {
     var nomeAcao = _t(chaveI18n, info.fallback);
 
     await executarComandoGenerico(idComando, comando, nomeAcao, function() {
-        aplicarEstadoInstalavel(idComando, _derivarIdAbrir(idComando));
+        aplicarEstadoInstalavel(idComando, null);
     });
 }
 
@@ -1194,7 +1205,7 @@ async function instalarLightworks() {
         'https://cdn.lwks.com/releases/latest/lightworks_linux_rpm.rpm';
     var nomeAcao = _t('sessoes.aplicativos.btn_lightworks', '🎞️ Lightworks');
     await executarComandoGenerico('instalar-lightworks', comando, nomeAcao,
-        function() { aplicarEstadoInstalavel('instalar-lightworks', 'abrir-lightworks'); });
+        function() { aplicarEstadoInstalavel('instalar-lightworks', null); });
 }
 
 function abrirLightworks() {
@@ -1269,7 +1280,9 @@ async function instalarRcloneManager() {
         // Estado 2: Instalar → Abrir + lixeira. A lixeira executa
         // o `comandoRemocao` completo (pacotes + atalhos + ícones
         // + caches), mas preserva `~/.config/rclone/`.
-        aplicarEstadoInstalavel('instalar-rclone-manager', 'abrir-rclone-manager');
+        // "Abrir X" vem do `_ABRIR_REGISTRY` (registrado na IIFE
+        // da sessão) — 2º argumento `null`.
+        aplicarEstadoInstalavel('instalar-rclone-manager', null);
     });
 }
 
@@ -1465,7 +1478,7 @@ async function instalarArtCraftLauncher() {
         comando,
         _t('sessoes.aplicativos.btn_artcraft_launcher', '🎨 Instalar ArtCraft Launcher'),
         function() {
-            aplicarEstadoInstalavel('instalar-artcraft-launcher', 'abrir-artcraft-launcher');
+            aplicarEstadoInstalavel('instalar-artcraft-launcher', null);
         }
     );
 }
@@ -1478,16 +1491,16 @@ function abrirArtCraftLauncher() {
 // FERRAMENTAS DE ACESSO REMOTO
 // ============================================================
 
-function abrirRustDesk() {
-    abrirFerramentaExterna('rustdesk', 'instalar-rustdesk', 'RustDesk');
-}
+// (removido) `abrirRustDesk` só era referenciada pelo registro
+// explícito de `_registrarAbrir('instalar-rustdesk', ...)` acima.
+// Agora `abrirAppGenerico('instalar-rustdesk')` faz o mesmo caminho.
 
 async function executarRemmina() {
     var idComando = 'instalar-remmina';
     var comando = 'sudo dnf install -y remmina remmina-plugins-rdp remmina-plugins-vnc';
     await executarComandoGenerico(idComando, comando,
         _t('sessoes.aplicativos.btn_remmina', '🖥️ Remmina'),
-        function() { aplicarEstadoInstalavel(idComando, _derivarIdAbrir(idComando)); });
+        function() { aplicarEstadoInstalavel(idComando, null); });
 }
 
 function abrirRemmina() {
@@ -1499,7 +1512,7 @@ async function executarGnomeConnections() {
     var comando = 'sudo dnf install -y gnome-connections';
     await executarComandoGenerico(idComando, comando,
         _t('sessoes.aplicativos.btn_gnome_connections', '🖥️ GNOME Connections'),
-        function() { aplicarEstadoInstalavel(idComando, _derivarIdAbrir(idComando)); });
+        function() { aplicarEstadoInstalavel(idComando, null); });
 }
 
 function abrirGnomeConnections() {
@@ -1511,7 +1524,7 @@ async function executarKrdc() {
     var comando = 'sudo dnf install -y krdc';
     await executarComandoGenerico(idComando, comando,
         _t('sessoes.aplicativos.btn_krdc', '🖥️ KRDC'),
-        function() { aplicarEstadoInstalavel(idComando, _derivarIdAbrir(idComando)); });
+        function() { aplicarEstadoInstalavel(idComando, null); });
 }
 
 function abrirKrdc() {

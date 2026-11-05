@@ -387,9 +387,15 @@ async function carregarChangelog() {
         if (data && data.corpo) {
             container.innerHTML = data.corpo;
         } else {
+            // `versaoAtual` é populado por `carregarVersaoServidor()`
+            // (assíncrono). Se o fetch de `/info` ainda não terminou
+            // quando o fallback renderiza, `versaoAtual` é
+            // `undefined` e o texto mostra "vundefined". Fallback
+            // explícito cobre esse caso.
+            var versaoExibida = versaoAtual || 'desconhecida';
             container.innerHTML = '<p style="color: var(--text-muted); font-size: 0.9rem;">' +
                 'ℹ️ Nenhuma entrada de changelog encontrada para a versão <strong>v' +
-                versaoAtual + '</strong>.</p>';
+                versaoExibida + '</strong>.</p>';
         }
     } catch (e) {
         container.innerHTML = '<p style="color: var(--text-muted); font-size: 0.9rem;">' +

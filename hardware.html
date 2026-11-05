@@ -198,6 +198,9 @@ NVIDIA
 ⚠️ O driver proprietário da NVIDIA exige que o parâmetro <code>nvidia-drm.modeset=1</code> esteja ativo para o Wayland funcionar corretamente. O RPM Fusion (Sessão 1) é pré-requisito. Após instalar o driver, o computador precisa ser reiniciado.
 </div>
 
+<!-- Painel de Secure Boot — preenchido por _renderizarPainelSecureBoot -->
+<div id="nvidia-secureboot-panel" style="margin-bottom: 1rem;"></div>
+
 <div class="aviso-caixa" id="nvidia-aviso-legado" style="display: none; border-color: #ef4444; color: #ef4444;">
 <strong>⚠️ Driver proprietário indisponível para sua GPU</strong><br>
 A série detectada para sua GPU (<span id="nvidia-serie-legado">—</span>) exige o servidor gráfico <strong>Xorg</strong>, mas o Fedora 44+ não oferece mais Xorg de forma oficial — apenas Wayland. Por isso o FAP <strong>não instala</strong> drivers das séries 470xx ou 390xx. Continue usando o driver <code>nouveau</code> (código aberto, já incluído no Fedora).
@@ -797,7 +800,7 @@ async function executarCoreCtrl() {
     var comando = 'sudo dnf install -y corectrl';
     await executarComandoGenerico(idComando, comando,
         _t('sessoes.hardware.btn_corectrl', '📦 Instalar CoreCtrl'),
-        function() { aplicarEstadoInstalavel('corectrl-install', 'abrir-corectrl'); });
+        function() { aplicarEstadoInstalavel('corectrl-install', null); });
 }
 
 function abrirCoreCtrl() {
@@ -809,7 +812,7 @@ async function executarLACT() {
     var comando = 'sudo dnf copr enable ilyaz/LACT -y && sudo dnf install -y lact && sudo systemctl enable --now lactd';
     await executarComandoGenerico(idComando, comando,
         _t('sessoes.hardware.btn_lact', '📦 Instalar LACT'),
-        function() { aplicarEstadoInstalavel('lact-install', 'abrir-lact'); });
+        function() { aplicarEstadoInstalavel('lact-install', null); });
 }
 
 function abrirLACT() {
@@ -885,27 +888,48 @@ function _escapeHTMLNvidia(s) {
     });
 }
 
+// ============================================================
+// DETECÇÃO DE SÉRIE NVIDIA (fallback quando nvidia-detect falha)
+// ============================================================
+//
+// O endpoint `/hardware-scan` já roda `nvidia-detect` (fonte
+// primária) quando o RPM Fusion nonfree está ativo, e devolve
+// `packages: ['akmod-nvidia-XXX']`. Quando `nvidia-detect` NÃO
+// está disponível, o mapa default (`akmod-nvidia`) é devolvido.
+//
+// Esta função cobre o segundo caso (fallback por regex). A
+// regex é IDÊNTICA à do bash em `executarNvidiaDriver` — se
+// uma for atualizada, a outra PRECISA ser atualizada junto
+// (mesmo regex, mesma ordem de verificação).
+//
+// Mapeamento:
+//   Fermi  (GTX 4xx/5xx, Quadro 4-7xxx, Tesla 20xx)  → 390xx
+//   Maxwell/Pascal/Volta (Titan*, GTX 745/750, MX*, 8xxM, 9xx,
+//     10xx, Quadro M/P, Tesla M/P)                    → 580xx
+//   Kepler (GTX 6xx/7xx exceto 745/750, Quadro K, Tesla K) → 470xx
+//   Turing+ (16xx, 20xx, 30xx, 40xx, 50xx)            → akmod-nvidia
 function _detectarSerieNvidia(modelo) {
-    if (/\bgeforce\s+(gtx?\s*)?[45]\d{2}\b/i.test(modelo) ||
-        /\bquadro\s+[45]\d{3}\b/i.test(modelo) ||
-        /\btesla\s+(20|m?4)\d{2}\b/i.test(modelo)) {
+    var m = String(modelo || '').toLowerCase();
+    if (/geforce (gtx? )?[45][0-9]{2}|quadro [4-7][0-9]{3}|tesla 20[0-9]{2}/.test(m)) {
         return { pkg: 'akmod-nvidia-390xx', serie: '390xx (Fermi)' };
     }
-    if (/\bgtx\s*(745|75[0-9])\b/i.test(modelo) ||
-        /\bmx\s*\d{3}\b/i.test(modelo)) {
-        return { pkg: 'akmod-nvidia-580xx', serie: '580xx (Maxwell/Pascal)' };
+    if (/titan|gtx (745|750)|mx[0-9]{3}|gtx 8[0-9]{2}m|gtx 9[0-9]{2}|geforce (gtx? )?10[0-9]{2}|quadro [mp]|tesla [mp]/.test(m)) {
+        return { pkg: 'akmod-nvidia-580xx', serie: '580xx (Maxwell/Pascal/Volta)' };
     }
-    if (/\bgeforce\s+(gtx?\s*)?[67]\d{2}\b/i.test(modelo) ||
-        /\bquadro\s+k[\s\d]/i.test(modelo) ||
-        /\btesla\s+k[\s\d]/i.test(modelo)) {
+    if (/geforce (gtx? )?[67][0-9]{2}|quadro k|tesla k/.test(m)) {
         return { pkg: 'akmod-nvidia-470xx', serie: '470xx (Kepler)' };
     }
-    if (/\bgeforce\s+(gtx?\s*)?(9|10)\d{2}\b/i.test(modelo) ||
-        /\bquadro\s+[mp][\s\d]/i.test(modelo) ||
-        /\btesla\s+[mp][\s\d]/i.test(modelo)) {
-        return { pkg: 'akmod-nvidia-580xx', serie: '580xx (Maxwell/Pascal)' };
-    }
     return { pkg: 'akmod-nvidia', serie: '595+ (Turing ou mais recente)' };
+}
+
+// Deriva a série a partir do nome do pacote devolvido por
+// `nvidia-detect` (via /hardware-scan). Usado quando o backend
+// já identificou a série exata.
+function _serieAPartirDePkg(pkg) {
+    if (/akmod-nvidia-580xx/.test(pkg)) return '580xx (Maxwell/Pascal/Volta)';
+    if (/akmod-nvidia-470xx/.test(pkg)) return '470xx (Kepler)';
+    if (/akmod-nvidia-390xx/.test(pkg)) return '390xx (Fermi)';
+    return '595+ (Turing ou mais recente)';
 }
 
 async function _detectarGpuPorVendor(vendorIds) {
@@ -941,6 +965,27 @@ async function _detectarGpuNvidia() {
     }
     var gpu = info.gpus[0];
     var modelo = (gpu.name || 'GPU NVIDIA').trim();
+
+    // Preferência 1: pacote exato devolvido por `nvidia-detect`
+    // via /hardware-scan. O endpoint só devolve uma série
+    // específica (com sufixo `-XXX`) quando o `nvidia-detect`
+    // rodou e identificou o modelo — nesse caso, é a fonte mais
+    // confiável (NVIDIA's own tool).
+    var pkgDoScan = (Array.isArray(gpu.packages) && gpu.packages[0]) ? gpu.packages[0] : '';
+    if (pkgDoScan && pkgDoScan.indexOf('akmod-nvidia-') === 0) {
+        return {
+            detected: true,
+            rpmfusion: info.rpmfusion,
+            modelo: modelo,
+            pkg: pkgDoScan,
+            serie: _serieAPartirDePkg(pkgDoScan)
+        };
+    }
+
+    // Preferência 2: regex local (fallback). Usado quando
+    // `nvidia-detect` não está disponível ou não conseguiu
+    // identificar (devolveu o default `akmod-nvidia`). A regex
+    // é IDÊNTICA à do bash em `executarNvidiaDriver`.
     var serie = _detectarSerieNvidia(modelo);
     return {
         detected: true,
@@ -980,6 +1025,11 @@ function _renderizarPanelNvidia(info) {
           '</div>';
 
     panel.className = 'bloco-info';
+    // Mostra o pacote EXATO que será instalado (mesmo que o bash
+    // venha a usar, porque ambos leem `nvidia-detect` ou usam a
+    // mesma regex). `info.pkg` vem de `_detectarGpuNvidia`, que
+    // prefere `nvidia-detect` (via /hardware-scan).
+    var pkgExibido = info.pkg || 'akmod-nvidia';
     panel.innerHTML =
         '<strong>' + _t('sessoes.hardware.nvidia_panel_titulo',
             '🔍 Hardware detectado') + '</strong>' +
@@ -987,9 +1037,7 @@ function _renderizarPanelNvidia(info) {
         '<li><span class="label">' + _t('sessoes.hardware.nvidia_panel_label_gpu',
             'GPU') + '</span><span class="valor">' + _escapeHTMLNvidia(info.modelo) + '</span></li>' +
         '<li><span class="label">' + _t('sessoes.hardware.nvidia_panel_label_driver',
-            'Driver recomendado') + '</span><span class="valor"><code>' + _escapeHTMLNvidia(info.pkg) + '</code></span></li>' +
-        '<li><span class="label">' + _t('sessoes.hardware.nvidia_panel_label_serie',
-            'Série') + '</span><span class="valor">' + _escapeHTMLNvidia(info.serie) + '</span></li>' +
+            'Driver recomendado') + '</span><span class="valor"><code>' + _escapeHTMLNvidia(pkgExibido) + '</code></span></li>' +
         '</ul>' +
         rpmfusionAviso;
 }
@@ -1071,6 +1119,28 @@ function _aplicarEstadoNvidia(info) {
         return;
     }
 
+    // GPU presente mas Secure Boot ativo e chave ausente: bloqueia
+    // a instalação até o usuário preparar a chave. O painel de
+    // Secure Boot (acima) explica os passos.
+    if (!installFeito) {
+        var btnInstall = document.getElementById('btn-nvidia-driver-install');
+        if (btnInstall) {
+            _detectarSecureBootNvidia().then(function (sb) {
+                if (sb !== 'enabled') return;
+                var chaveLocal = false;
+                try { chaveLocal = SystemState.arquivoPresente('/etc/pki/akmods/certs/public_key.der'); } catch (e) {}
+                if (!chaveLocal) {
+                    btnInstall.disabled = true;
+                    btnInstall.style.opacity = '0.5';
+                    btnInstall.style.cursor = 'not-allowed';
+                    btnInstall.title = _t('sessoes.hardware.nvidia_secureboot_bloqueio',
+                        'Secure Boot está ativo e a chave do akmods não foi preparada. ' +
+                        'Use o botão "Preparar Secure Boot" acima antes de instalar o driver.');
+                }
+            });
+        }
+    }
+
     // GPU NVIDIA presente: reabilita os botões que foram desabilitados
     // pela ausência de GPU. NÃO toca no `nvidia-driver-install` (ele
     // é gerenciado por `aplicarEstadoToggle`, que respeita
@@ -1085,11 +1155,159 @@ function _aplicarEstadoNvidia(info) {
     });
 }
 
+// ============================================================
+// SECURE BOOT — detecção e guia de enrollment MOK
+// ============================================================
+//
+// Com Secure Boot ativo, o módulo akmod-nvidia é compilado
+// localmente e assinado com uma chave gerada pelo akmods. Essa
+// chave PRECISA ser importada para o firmware (MOK) ANTES de
+// instalar o driver — senão o kernel recusa o módulo no boot e
+// o sistema cai no nouveau (ou tela preta).
+//
+// Fluxo (conforme RPM Fusion Secure Boot Howto):
+//   1. dnf install kmodtool akmods mokutil openssl
+//   2. kmodgenca -a            (gera /etc/pki/akmods/certs/public_key.der)
+//   3. mokutil --import <der>  (define senha de enrollment)
+//   4. reboot                  (MOK Management aparece no boot)
+//   5. "Enroll MOK" → senha   (chave fica gravada no firmware)
+//
+// O FAP automatiza 1 e 2. O passo 3 exige senha interativa (o
+// mokutil lê do TTY, não do stdin) e o passo 4-5 exige reboot +
+// interação no firmware — o FAP NÃO tenta automatizar isso. Em
+// vez disso, mostra o comando exato e explica o que vai acontecer.
+
+var _secureBootNvidiaCache = null;
+
+async function _detectarSecureBootNvidia() {
+    if (_secureBootNvidiaCache !== null) return _secureBootNvidiaCache;
+    try {
+        var r = await fetch(API_URL + '/hardware-scan', { cache: 'no-store' });
+        if (!r.ok) return 'unknown';
+        var data = await r.json();
+        _secureBootNvidiaCache = (data && data.secure_boot) ? data.secure_boot : 'unknown';
+        return _secureBootNvidiaCache;
+    } catch (e) {
+        return 'unknown';
+    }
+}
+
+async function _prepararSecureBootNvidia() {
+    var idComando = 'nvidia-secureboot-prepare';
+    // Instala as ferramentas e gera a chave. O `kmodgenca -a`
+    // recusa sobrescrever uma chave existente — o `|| true` evita
+    // falha no fluxo de re-execução (usuário já preparou antes).
+    var comando =
+        'sudo dnf install -y kmodtool akmods mokutil openssl kernel-devel-matched kernel-headers && ' +
+        'sudo kmodgenca -a 2>&1 || true';
+    await executarComandoGenerico(idComando, comando,
+        _t('sessoes.hardware.nvidia_secureboot_preparar', '🔐 Preparar Secure Boot'),
+        async function() {
+            _secureBootNvidiaCache = null; // invalida cache
+            await _atualizarSecaoNvidia();
+            _avisarReboot(_t('sessoes.hardware.nvidia_secureboot_titulo', 'Preparação do Secure Boot'));
+        });
+}
+
+function _renderizarPainelSecureBoot(container, estado) {
+    if (!container) return;
+    if (estado === 'disabled') { container.innerHTML = ''; return; }
+    if (estado === 'unknown') {
+        container.innerHTML = '<div class="aviso-caixa">⚠️ ' +
+            _escapeHTMLNvidia(_t('sessoes.hardware.nvidia_secureboot_indeterminado',
+                'Não foi possível determinar o estado do Secure Boot. Se você sabe que ele está ativo, siga o passo a passo abaixo antes de instalar o driver.')) +
+            '</div>';
+        return;
+    }
+
+    // enabled
+    var jaPreparado = false;
+    try {
+        jaPreparado = SystemState.arquivoPresente('/etc/pki/akmods/certs/public_key.der');
+    } catch (e) { /* ignore */ }
+
+    var html = '';
+    html += '<div class="aviso-caixa" style="border-color: #f59e0b; color: #f59e0b;">';
+    html += '<strong>🔐 ' + _escapeHTMLNvidia(_t('sessoes.hardware.nvidia_secureboot_titulo',
+        'Secure Boot está ativo')) + '</strong><br>';
+    html += _escapeHTMLNvidia(_t('sessoes.hardware.nvidia_secureboot_desc',
+        'Com Secure Boot ativo, o driver NVIDIA precisa ser assinado com uma chave que o firmware reconheça. ' +
+        'Sem isso, o módulo não carrega e o sistema continua no nouveau (ou tela preta). ' +
+        'O processo abaixo NÃO desativa o Secure Boot — apenas registra a chave do FAP.'));
+    html += '</div>';
+
+    if (!jaPreparado) {
+        html += '<div class="bloco-info" style="border-left-color: #f59e0b;">';
+        html += '<strong>' + _escapeHTMLNvidia(_t('sessoes.hardware.nvidia_secureboot_passo1',
+            'Passo 1 — preparar a chave')) + '</strong>';
+        html += '<p style="margin: 0.4rem 0 0.75rem 0; font-size: 0.85rem; color: var(--text-muted);">' +
+            _escapeHTMLNvidia(_t('sessoes.hardware.nvidia_secureboot_passo1_desc',
+                'Instala as ferramentas do akmods e gera a chave local em /etc/pki/akmods/certs/. ' +
+                'Não altera o firmware ainda — o enrollment vem no passo 2.')) + '</p>';
+        html += '<div class="botoes-flex">';
+        html += '<button class="btn-executar" onclick="executarPrepararSecureBootNvidia()" ' +
+            'data-comando="nvidia-secureboot-prepare" ' +
+            'data-logbox="log-sessao-hardware" ' +
+            'id="btn-nvidia-secureboot-prepare">';
+        html += '🔐 ' + _escapeHTMLNvidia(_t('sessoes.hardware.nvidia_secureboot_preparar',
+            'Preparar Secure Boot'));
+        html += '</button></div></div>';
+    } else {
+        html += '<div class="aviso-sucesso" style="border-color: #34d399; color: #34d399;">✅ ' +
+            _escapeHTMLNvidia(_t('sessoes.hardware.nvidia_secureboot_chave_ok',
+                'Chave do akmods já foi gerada. Falta o enrollment no firmware (passo 2).')) +
+            '</div>';
+    }
+
+    html += '<div class="bloco-info" style="border-left-color: #60a5fa;">';
+    html += '<strong>' + _escapeHTMLNvidia(_t('sessoes.hardware.nvidia_secureboot_passo2',
+        'Passo 2 — importar a chave para o firmware')) + '</strong>';
+    html += '<p style="margin: 0.4rem 0 0.5rem 0; font-size: 0.85rem; color: var(--text-muted);">' +
+        _escapeHTMLNvidia(_t('sessoes.hardware.nvidia_secureboot_passo2_desc',
+            'Abra o terminal e rode o comando abaixo. Ele vai pedir uma senha (use algo simples, ex.: 0000) — ' +
+            'essa senha será digitada novamente na tela azul do MOK no próximo boot. ' +
+            'O FAP não automatiza este passo porque o mokutil exige um terminal interativo.')) + '</p>';
+    html += '<code class="fap-popover-code" style="display: block; margin: 0.5rem 0;">' +
+        'sudo mokutil --import /etc/pki/akmods/certs/public_key.der</code>';
+    html += '</div>';
+
+    html += '<div class="bloco-info" style="border-left-color: #a855f7;">';
+    html += '<strong>' + _escapeHTMLNvidia(_t('sessoes.hardware.nvidia_secureboot_passo3',
+        'Passo 3 — reiniciar e fazer o enrollment')) + '</strong>';
+    html += '<p style="margin: 0.4rem 0 0 0; font-size: 0.85rem; color: var(--text-muted);">' +
+        _escapeHTMLNvidia(_t('sessoes.hardware.nvidia_secureboot_passo3_desc',
+            'Reinicie o computador. Na tela azul do MOK Management, escolha "Enroll MOK" → "Continue" → "Yes", ' +
+            'digite a senha que você definiu no passo 2 e finalize. ATENÇÃO: o teclado do MOK é sempre QWERTY, ' +
+            'mesmo que o seu layout seja ABNT2. Depois disso, volte ao FAP e clique em "Instalar Driver NVIDIA".')) +
+        '</p></div>';
+
+    container.innerHTML = html;
+}
+
+async function executarPrepararSecureBootNvidia() {
+    await _prepararSecureBootNvidia();
+}
+
+// ============================================================
+// PAINEL DE HARDWARE NVIDIA (original + Secure Boot)
+// ============================================================
+
 async function _atualizarSecaoNvidia() {
     var info = await _detectarGpuNvidia();
     _renderizarPanelNvidia(info);
     _aplicarEstadoNvidia(info);
     _mostrarAvisoX11Nvidia(info);
+
+    // Secure Boot: só faz sentido quando há GPU NVIDIA detectada.
+    var painelSb = document.getElementById('nvidia-secureboot-panel');
+    if (painelSb) {
+        if (info.detected) {
+            var estadoSb = await _detectarSecureBootNvidia();
+            _renderizarPainelSecureBoot(painelSb, estadoSb);
+        } else {
+            painelSb.innerHTML = '';
+        }
+    }
 }
 
 // ============================================================
@@ -1273,6 +1491,41 @@ async function executarNvidiaDriver() {
         return;
     }
 
+    if (/470xx|390xx/.test(info.pkg || '')) {
+        alert(_t('sessoes.hardware.nvidia_serie_legado_desabilitado',
+            'A série ' + info.serie + ' requer Xorg, que o Fedora não suporta mais oficialmente. ' +
+            'Nada foi instalado.'));
+        return;
+    }
+
+    // Se Secure Boot estiver ativo, avisa se a chave ainda não foi
+    // preparada. O enrollment MOK é o único passo que o usuário
+    // precisa fazer manualmente — mas se ele já fez antes (em uma
+    // instalação anterior), a chave persiste no firmware e o
+    // driver carrega normalmente. Só bloqueia se a chave local não
+    // existir (primeira vez).
+    var secureBoot = await _detectarSecureBootNvidia();
+    if (secureBoot === 'enabled') {
+        var chaveLocal = false;
+        try { chaveLocal = SystemState.arquivoPresente('/etc/pki/akmods/certs/public_key.der'); } catch (e) {}
+        if (!chaveLocal) {
+            var continuar = confirm(_t('sessoes.hardware.nvidia_secureboot_confirmar',
+                '⚠️ O Secure Boot está ativo e a chave do akmods ainda não foi gerada.\n\n' +
+                'O driver será instalado, mas NÃO vai carregar até você fazer o enrollment ' +
+                'da chave no firmware (passo 2 do painel de Secure Boot).\n\n' +
+                'Recomendamos clicar em "Preparar Secure Boot" primeiro, reiniciar e fazer o ' +
+                'enrollment antes de instalar o driver.\n\n' +
+                'Instalar mesmo assim?'));
+            if (!continuar) return;
+        }
+    }
+
+    // Pacotes por série. `kernel-devel-matched` e `kernel-headers`
+    // são pré-requisito do akmods para compilar o módulo no kernel
+    // atual (documentação oficial NVIDIA). `xorg-x11-drv-nvidia-<serie>-cuda`
+    // é o userspace CUDA/NVENC/NVDEC correspondente — sem ele,
+    // `nvidia-smi` não funciona e o encoding por hardware fica
+    // indisponível.
     var comando =
         'GPU_MODEL=$(lspci 2>/dev/null | grep -iE "nvidia.*(vga|3d|display)" | head -1); ' +
         'if [ -z "$GPU_MODEL" ]; then ' +
@@ -1280,6 +1533,8 @@ async function executarNvidiaDriver() {
         '  exit 1; ' +
         'fi; ' +
         'echo "🔍 GPU NVIDIA detectada: $GPU_MODEL"; ' +
+        // Pré-requisitos de compilação (documentação NVIDIA + RPM Fusion)
+        'sudo dnf install -y kernel-devel-matched kernel-headers kmodtool akmods || true; ' +
         'GPU_PKG=""; SERIE=""; ' +
         'if command -v nvidia-detect > /dev/null 2>&1; then ' +
         '  echo "🔎 Consultando nvidia-detect (fonte primária)..."; ' +
@@ -1289,26 +1544,52 @@ async function executarNvidiaDriver() {
         'fi; ' +
         'if [ -z "$GPU_PKG" ]; then ' +
         '  echo "⚠️ nvidia-detect indisponível ou inconclusivo — usando heurística."; ' +
-        '  if echo "$GPU_MODEL" | grep -qiE "geforce (gtx? )?[45][0-9]{2}|quadro [45][0-9]{3}|tesla (20|m?4)[0-9]{2}"; then GPU_PKG="akmod-nvidia-390xx"; SERIE="390xx (Fermi)"; ' +
-        '  elif echo "$GPU_MODEL" | grep -qiE "gtx (745|75[0-9])|mx[0-9]{3}"; then GPU_PKG="akmod-nvidia-580xx"; SERIE="580xx (Maxwell/Pascal)"; ' +
-        '  elif echo "$GPU_MODEL" | grep -qiE "geforce (gtx? )?[67][0-9]{2}|quadro k[0-9 ]|tesla k[0-9 ]"; then GPU_PKG="akmod-nvidia-470xx"; SERIE="470xx (Kepler)"; ' +
-        '  elif echo "$GPU_MODEL" | grep -qiE "geforce (gtx? )?(9|10)[0-9]{2}|quadro [mp][0-9 ]|tesla [mp][0-9 ]"; then GPU_PKG="akmod-nvidia-580xx"; SERIE="580xx (Maxwell/Pascal)"; ' +
+        '  M=$(echo "$GPU_MODEL" | tr "[:upper:]" "[:lower:]"); ' +
+        '  if echo "$M" | grep -qE "geforce (gtx? )?[45][0-9]{2}|quadro [4-7][0-9]{3}|tesla 20[0-9]{2}"; then GPU_PKG="akmod-nvidia-390xx"; SERIE="390xx (Fermi)"; ' +
+        '  elif echo "$M" | grep -qE "titan|gtx (745|750)|mx[0-9]{3}|gtx 8[0-9]{2}m|gtx 9[0-9]{2}|geforce (gtx? )?10[0-9]{2}|quadro [mp]|tesla [mp]"; then GPU_PKG="akmod-nvidia-580xx"; SERIE="580xx (Maxwell/Pascal/Volta)"; ' +
+        '  elif echo "$M" | grep -qE "geforce (gtx? )?[67][0-9]{2}|quadro k|tesla k"; then GPU_PKG="akmod-nvidia-470xx"; SERIE="470xx (Kepler)"; ' +
         '  else GPU_PKG="akmod-nvidia"; SERIE="595+ (Turing ou mais recente)"; fi; ' +
         'fi; ' +
         'echo "📦 Série de driver selecionada: $SERIE"; ' +
+        'if [ "$GPU_PKG" = "akmod-nvidia-470xx" ] || [ "$GPU_PKG" = "akmod-nvidia-390xx" ]; then ' +
+        '  echo ""; ' +
+        '  echo "❌ Driver proprietário INDISPONÍVEL para sua GPU ($SERIE)."; ' +
+        '  echo "Motivo: a série $SERIE requer Xorg, que o Fedora 44+ não oferece mais."; ' +
+        '  echo "Nada foi instalado. Seu driver atual (nouveau) continua funcionando."; ' +
+        '  exit 1; ' +
+        'fi; ' +
         'if [ "$GPU_PKG" = "akmod-nvidia" ]; then ' +
         '  sudo dnf install -y "$GPU_PKG" xorg-x11-drv-nvidia-cuda xorg-x11-drv-nvidia-cuda-libs; ' +
+        'elif [ "$GPU_PKG" = "akmod-nvidia-580xx" ]; then ' +
+        '  sudo dnf install -y "$GPU_PKG" xorg-x11-drv-nvidia-580xx-cuda xorg-x11-drv-nvidia-580xx-cuda-libs; ' +
         'else ' +
         '  sudo dnf install -y "$GPU_PKG"; ' +
+        'fi; ' +
+        // DNF5 (Fedora 41+): marca o pacote como "user installed" para
+        // que `dnf autoremove` não remova o driver. `dnf mark user`
+        // é DNF5; em DNF4 o equivalente é `dnf mark install`.
+        'if command -v dnf5 > /dev/null 2>&1; then ' +
+        '  sudo dnf mark user "$GPU_PKG" 2>/dev/null || true; ' +
+        'else ' +
+        '  sudo dnf mark install "$GPU_PKG" 2>/dev/null || true; ' +
+        'fi; ' +
+        // Verificação pós-instalação: o módulo só carrega no próximo
+        // boot, mas se o akmod compilou com sucesso, `modinfo nvidia`
+        // já encontra o .ko. Avisa se não encontrou (provável falha
+        // de compilação — kernel headers ausentes, akmods sem chave
+        // quando Secure Boot está ligado e o enrollment não foi feito).
+        'echo ""; ' +
+        'if modinfo nvidia > /dev/null 2>&1; then ' +
+        '  echo "✅ Módulo nvidia compilado com sucesso (carrega no próximo boot)."; ' +
+        'else ' +
+        '  echo "⚠️ Módulo nvidia NÃO foi encontrado em /lib/modules/$(uname -r)/."; ' +
+        '  echo "   Causas comuns: (a) kernel-devel desatualizado — reinicie e tente de novo;"; ' +
+        '  echo "   (b) Secure Boot ativo e a chave do akmods ainda não foi enrolled no firmware."; ' +
         'fi';
 
-        await executarComandoGenerico(idComando, comando,
+    await executarComandoGenerico(idComando, comando,
         _t('sessoes.hardware.btn_nvidia_driver', '📦 Instalar Driver NVIDIA'),
         function() {
-            // Limpa o marker de `nvidia-driver-remove` (se o usuário
-            // tinha revertido antes e está reinstalando). Sem isso,
-            // o `.progresso.json` acumularia entradas órfãs e o
-            // progresso do driver ficaria inconsistente.
             desmarcarComoExecutado('nvidia-driver-remove').catch(function(e) {
                 console.warn('[nvidia] Erro ao limpar marker -remove:', e);
             }).then(function() {
@@ -1359,6 +1640,17 @@ async function executarNvidiaModeset() {
     await executarComandoGenerico(idComando, comando,
         _t('sessoes.hardware.btn_modeset_on', '⚙️ Ativar modesetting'),
         function() {
+            // `aplicarEstadoToggle` é a fonte ÚNICA de verdade do
+            // estado visual. Sem esta chamada, o revert ("Desativar
+            // modesetting") só aparecia após reload — porque
+            // `restaurarBotaoAposExecucao` procura `.btn-reverter`
+            // (que não existe aqui; os botões usam
+            // `btn-executar vermelho`). Espelha o que
+            // `executarOverclockAMD` já faz. `false` no 4º
+            // argumento: `nvidia-modeset-on` não está registrado em
+            // `APPS_REMOVIVEIS`, então `appJaInstaladoNoSistema`
+            // sempre retorna false.
+            aplicarEstadoToggle('nvidia-modeset-on', 'nvidia-modeset-off', true, false);
             _avisarReboot(_t('sessoes.hardware.nvidia_modeset_titulo', 'Modesetting (NVIDIA)'));
         });
 }
@@ -1541,6 +1833,9 @@ async function restaurarEstadoSessao() {
     // Detecção por vendor
     await _atualizarSecaoAmd();
     await _atualizarSecaoIntel();
+    // Invalida o cache de Secure Boot: o usuário pode ter rodado
+    // `kmodgenca` em outra aba/terminal desde a última consulta.
+    _secureBootNvidiaCache = null;
     await _atualizarSecaoNvidia();
 
     // Painel ffmpeg

@@ -175,6 +175,24 @@ check-basico:
 		if (faltando.length) { console.error('  ERRO: chaves i18n faltando:'); faltando.slice(0, 30).forEach(x => console.error('    ' + x)); if (faltando.length > 30) console.error('    ... e mais ' + (faltando.length - 30)); process.exit(1); } \
 		console.log('  OK: ' + chavesUsadas.size + ' chaves i18n presentes em en+es'); \
 	"
+	@echo "==> Checando _meta.lang dos locales..."
+	@node -e " \
+		const fs = require('fs'); \
+		const path = require('path'); \
+		let falhas = 0; \
+		for (const lang of ['en', 'es']) { \
+			const arq = 'locales/' + lang + '.json'; \
+			const dados = JSON.parse(fs.readFileSync(arq, 'utf8')); \
+			const real = dados._meta && dados._meta.lang; \
+			if (real !== lang) { \
+				console.error('  ERRO: ' + arq + ' tem _meta.lang=' + real + ', esperado=' + lang); \
+				falhas++; \
+			} else { \
+				console.log('  OK: ' + arq + ' (_meta.lang=' + lang + ')'); \
+			} \
+		} \
+		if (falhas > 0) process.exit(1); \
+	"
 	@echo ""
 	@echo "✅ Todos os checks básicos passaram."
 

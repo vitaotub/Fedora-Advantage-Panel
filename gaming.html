@@ -742,6 +742,44 @@ registrarAppRemovivel('ntsync-install', {
 
 async function executarSteam() {
     const idComando = 'steam-install';
+
+    // Steam depende do RPM Fusion Nonfree. O check precisa cobrir
+    // TRÊS pontos:
+    //
+    //   1. CACHE FRESCO. `SystemState.carregar()` (sem `true`) usa
+    //      o cache local (TTL 60s do server + cache do cliente).
+    //      Se o usuário desativou o RPM Fusion e clicou em "Steam"
+    //      antes do cache expirar, o check veria o estado antigo
+    //      (ativo) e não avisaria. Forçamos refresh.
+    //
+    //   2. BASE + UPDATES. O `setopt rpmfusion-nonfree.enabled=0`
+    //      desativa só o repo base; o `rpmfusion-nonfree-updates`
+    //      (onde o pacote `steam` mais recente vive) continua
+    //      ativo e o `dnf install steam` funciona por lá. O aviso
+    //      só deve aparecer quando NENHUM dos dois está ativo.
+    //
+    //   3. SUBREPOS IRRELEVANTES. `-tainted` e `-nvidia-driver`
+    //      não fornecem `steam` — não entram no check.
+    var semRpmfusion = false;
+    try {
+        if (typeof SystemState !== 'undefined') {
+            SystemState.invalidar();
+            await SystemState.carregar(true);
+            semRpmfusion = !SystemState.repoAtivo('rpmfusion-nonfree') &&
+                           !SystemState.repoAtivo('rpmfusion-nonfree-updates');
+        }
+    } catch (e) { /* segue — deixa o dnf dar o erro real */ }
+
+    if (semRpmfusion) {
+        var msg = _t('sessoes.gaming.steam_sem_rpmfusion',
+            '⚠️ O RPM Fusion Nonfree não está ativo.\n\n' +
+            'O Steam depende do RPM Fusion para instalar. ' +
+            'Ative-o na sessão "Primeiros Passos" antes de continuar.\n\n' +
+            'Tentar instalar mesmo assim? (se o RPM Fusion estiver ' +
+            'indisponível, a instalação vai falhar com erro de dependência.)');
+        if (!confirm(msg)) return;
+    }
+
     const comando = 'sudo dnf install -y steam';
     await executarComandoGenerico(idComando, comando,
         _t('sessoes.gaming.btn_steam', '🎮 Steam'),

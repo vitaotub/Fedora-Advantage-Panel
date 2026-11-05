@@ -2,7 +2,7 @@
 
 **🌐 Idioma:** [Português (BR)](README.md) | [English](README.en.md) | Español
 
-![Versión](https://img.shields.io/badge/Versi%C3%B3n-v1.4.6--11042026-orange?style=flat-square)
+![Versión](https://img.shields.io/badge/Versi%C3%B3n-v1.4.7--11052026-orange?style=flat-square)
 ![Fedora](https://img.shields.io/badge/Fedora-44%20%7C%2045-294172?style=flat-square&logo=fedora)
 ![Licencia](https://img.shields.io/badge/Licencia-GPL--3.0-green?style=flat-square)
 ![Idiomas](https://img.shields.io/badge/Idiomas-PT--BR%20%7C%20EN%20%7C%20ES-3c67e3?style=flat-square)
@@ -69,9 +69,10 @@ bash <(curl -s https://raw.githubusercontent.com/vitaotub/Fedora-Advantage-Panel
 ```bash
 fap              # inicia FAP
 fap-compat       # modo compatibilidad (GPUs antiguas, VMs)
-fap --update     # actualiza (o haz clic en el badge dentro de FAP)
-fap --uninstall  # desinstala
 ```
+
+Para **actualizar**: haz clic en el **badge de actualización** (esquina superior de la pantalla de inicio) o usa el botón **"🔄 Actualizar FAP"** en la sesión **Acerca de FAP**.
+Para **desinstalar**: usa el botón **"🗑️ Desinstalar FAP"** en la sesión **Acerca de FAP**.
 
 Las actualizaciones se aplican **sobre la instalación existente** — el progreso, el tema y el idioma se conservan.
 
@@ -101,7 +102,10 @@ Las actualizaciones se aplican **sobre la instalación existente** — el progre
 - **Detección de preexistencia.** Apps instaladas antes de FAP aparecen como "Abrir" desde el inicio.
 - **Ítems críticos protegidos.** Controladores propietarios, códecs, CUPS, Samba, virtualización: si existían antes, la papelera no aparece.
 - **Backup antes de sobrescribir.** Los presets de GameMode + MangoHud hacen backup de los archivos del usuario antes de aplicar.
-- **Autenticación vía `pkexec`.** Diálogo de contraseña nativo.
+- **Autenticación vía `pkexec`.** Diálogo de contraseña nativo. El script a ejecutar se registra en el log **antes** de que pkexec abra — ves lo que autorizas.
+- **Auditoría en archivo.** Cada `pkexec` deja rastro en `/tmp/fap-audit-*.log` (eliminado en 7 días).
+- **Protección contra CSRF local.** El endpoint `/executar` rechaza peticiones con `Origin` de otro host. Una página maliciosa no puede disparar comandos en el FAP vía `fetch(..., { mode: 'no-cors' })`.
+- **Consciente de Secure Boot.** Al instalar el driver NVIDIA con Secure Boot activo, el FAP guía al usuario por el enrollment MOK (kmodgenca + mokutil) antes de instalar — sin eso, el módulo no cargaría.
 - **Contenedor WebKitGTK nativo.** Interfaz propia, sin depender de Firefox/Chromium.
 - **`install.sh` se niega a ejecutarse como root.** Instala en `~/.local/share` y usa `sudo` solo donde hace falta.
 

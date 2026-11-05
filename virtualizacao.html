@@ -222,7 +222,7 @@ async function executarQemuKvm() {
         'sudo usermod -aG libvirt $USER';
     await executarComandoGenerico(idComando, comando,
         _t('sessoes.virtualizacao.btn_qemu', '📦 Instalar QEMU/KVM'),
-        function() { aplicarEstadoInstalavel(idComando, 'abrir-virt-manager'); });
+        function() { aplicarEstadoInstalavel(idComando, null); });
 }
 
 async function executarVirtualBox() {
@@ -230,7 +230,7 @@ async function executarVirtualBox() {
     var comando = 'sudo dnf install -y akmod-VirtualBox VirtualBox';
     await executarComandoGenerico(idComando, comando,
         _t('sessoes.virtualizacao.btn_virtualbox', '📦 Instalar VirtualBox'),
-        function() { aplicarEstadoInstalavel(idComando, 'abrir-virtualbox'); });
+        function() { aplicarEstadoInstalavel(idComando, null); });
 }
 
 async function executarGnomeBoxes() {
@@ -238,7 +238,7 @@ async function executarGnomeBoxes() {
     var comando = 'sudo dnf install -y gnome-boxes';
     await executarComandoGenerico(idComando, comando,
         _t('sessoes.virtualizacao.btn_boxes', '📦 Instalar GNOME Boxes'),
-        function() { aplicarEstadoInstalavel(idComando, 'abrir-gnome-boxes'); });
+        function() { aplicarEstadoInstalavel(idComando, null); });
 }
 
 // ------------------------------------------------------------

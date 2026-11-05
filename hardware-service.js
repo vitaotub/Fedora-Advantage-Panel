@@ -98,8 +98,20 @@ async function _driverKernelEmUso(pciAddress) {
 }
 
 async function _nvidiaDetect() {
-    // nvidia-detect só existe se o RPM Fusion nonfree já estiver ativo.
-    // Retorna o nome do pacote sugerido ou null.
+    // `nvidia-detect` está no RPM Fusion nonfree (não no Fedora
+    // padrão). NÃO tentamos instalá-lo daqui: o `install.sh` roda
+    // antes da Sessão 1 (RPM Fusion pode não estar ativo) e o
+    // `sudo -n` falha silenciosamente em quase todo sistema (sem
+    // sudo NOPASSWD), adicionando latência a cada /hardware-scan.
+    //
+    // Usa o `nvidia-detect` APENAS se já estiver instalado (o
+    // usuário pode ter ativado RPM Fusion nonfree manualmente, ou
+    // ter instalado via outros guias). Caso contrário, devolve
+    // `null` e o fallback por regex no frontend cobre 100% dos
+    // casos comuns.
+    var check = await _exec('command -v nvidia-detect > /dev/null 2>&1');
+    if (!check.ok) return null;
+
     var r = await _exec('nvidia-detect 2>/dev/null');
     if (!r.ok) return null;
     var match = r.stdout.match(/akmod-nvidia[-\w]*/);

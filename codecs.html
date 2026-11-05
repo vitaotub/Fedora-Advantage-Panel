@@ -208,23 +208,32 @@ registrarAppRemovivel('extras-tainted', {
 
 registrarAppRemovivel('fontes-ms-all', {
     tipo: 'dnf',
-    pacotes: ['cabextract', 'fontconfig'],
+    // `cabextract` é o único pacote que o FAP instala cujo nome não
+    // está presente em toda instalação Fedora (curl e fontconfig
+    // sempre existem com ambiente gráfico). Usá-lo como marcador
+    // evita o falso positivo que deixava o botão "Já estava ativo"
+    // desabilitado em sistemas limpos.
+    pacotes: ['cabextract'],
     nome: 'Fontes Microsoft',
-    // NÃO usar ignorarPreExistente aqui: `fontconfig` é pacote base
-    // do Fedora e sempre existe. A detecção correta é via
-    // `permitirRemocaoPreExistente: false` + motivoBloqueio — que
-    // mostra "Já estava ativo" e evita que a lixeira tente remover
-    // `fontconfig` (que arrastaria dezenas de dependências).
+    // Remoção explícita: apaga só as fontes Microsoft + o pacote
+    // cabextract instalado pelo FAP. Nunca toca em `fontconfig`
+    // (que arrastaria dezenas de dependências e quebraria apps GUI).
+    // O `|| true` no final ignora falha do `dnf remove` — se
+    // cabextract tiver dependentes externos, ele permanece e o
+    // botão continua "instalado"; o usuário remove manualmente.
+    comandoRemocao:
+        'sudo rm -rf /usr/share/fonts/microsoft; ' +
+        'sudo fc-cache -f -v; ' +
+        'sudo dnf remove -y cabextract 2>/dev/null || true',
     confirmMsg: '⚠️ Remover as fontes Microsoft?\n\n' +
                 'Documentos em LibreOffice/OnlyOffice podem quebrar a formatação ' +
                 'até que as fontes sejam reinstaladas.\n\n' +
                 'Continuar?',
     permitirRemocaoPreExistente: false,
-    motivoBloqueio: 'As fontes Microsoft já estavam instaladas antes do FAP. ' +
-                    'A remoção via FAP é BLOQUEADA porque o pacote inclui ' +
-                    '`fontconfig` (base do Fedora) — removê-lo arrasta dezenas ' +
-                    'de dependências e pode quebrar aplicativos GUI. ' +
-                    'Para remover apenas as fontes, apague manualmente:\n\n' +
+    motivoBloqueio: 'O pacote `cabextract` já estava instalado antes do FAP. ' +
+                    'A remoção via FAP é BLOQUEADA para não remover um pacote ' +
+                    'que o usuário pode usar para outros fins. ' +
+                    'Para remover apenas as fontes Microsoft, apague manualmente:\n\n' +
                     '  sudo rm -rf /usr/share/fonts/microsoft\n' +
                     '  sudo fc-cache -f -v'
 });
@@ -293,7 +302,10 @@ async function executarCodecs() {
 
 async function executarExtrasTainted() {
     const idComando = 'extras-tainted';
-    const comando = 'sudo dnf install rpmfusion-free-release-tainted -y && sudo dnf install rpmfusion-nonfree-release-tainted -y && sudo dnf install libdvdcss -y';
+    const comando = 'set -e; ' +
+    'sudo dnf install rpmfusion-free-release-tainted -y && ' +
+    'sudo dnf install rpmfusion-nonfree-release-tainted -y && ' +
+    'sudo dnf install libdvdcss -y';
     await executarComandoGenerico(idComando, comando,
         _t('sessoes.codecs.btn_instalar_extras', '📦 Instalar Extras'));
 }

@@ -1892,10 +1892,13 @@ function _tVarsUpgrade(chave, fallback, vars) {
 
 async function _carregarUpgradeStatus(forcar) {
     // Se já sabemos que o usuário está no alvo, nem tenta fetch.
+    // `current_version: '45'` alinha com o IIFE de boot (que também
+    // usa '45' como placeholder). `'?'` faria `_renderizarAreaUpgrade`
+    // cair em `_renderUpgradeJaAtual` mostrando "Você está no Fedora ?.".
     if (_upgradeFinalizadoNoCliente()) {
         return _upgradeStatusCache || {
             status: 'no_upgrade_needed',
-            current_version: '?',
+            current_version: '45',
             target_version: '45'
         };
     }
@@ -1959,6 +1962,9 @@ function _renderizarAreaUpgrade(data) {
             break;
         case 'waiting_rpmfusion':
             html = _renderUpgradeAguardando(data, 'rpmfusion');
+            break;
+        case 'check_failed':
+            html = _renderUpgradeCheckFailed(data);
             break;
         case 'outdated_current':
             html = _renderUpgradeOutdated(data);
@@ -2320,6 +2326,16 @@ function _renderUpgradeOutdated(data) {
     return html;
 }
 
+function _renderUpgradeCheckFailed(data) {
+    return (
+        '<div class="aviso-caixa" style="border-color: var(--warning-border); color: var(--warning-soft);">' +
+        '⚠️ <strong>Não foi possível verificar o estado do sistema</strong><br>' +
+        'A checagem de atualizações pendentes falhou (rede instável ou repositório temporariamente indisponível). ' +
+        'Tente novamente em alguns minutos. Enquanto isso, o upgrade permanece bloqueado por segurança.' +
+        '</div>'
+    );
+}
+
 function _renderUpgradeSemEspaco(data) {
     return (
         '<div class="aviso-caixa" style="border-color: var(--danger); color: var(--danger);">' +
@@ -2623,8 +2639,32 @@ async function executarUpgradeReboot() {
         '  sudo dnf -y system-upgrade reboot; ' +
         'fi';
 
-    await executarComandoGenerico(idComando, comando,
-        _tUpgrade('upgrade_log_reiniciando', '🔄 Reiniciando para aplicar upgrade'));
+// Reboot mata o node — não dá para esperar `end`. Envia o POST e
+// retorna. A UI mostra "⏳ Reiniciando..." até a máquina desligar.
+var logBox = _getLogBox(idComando);
+if (logBox) {
+    logBox.style.display = 'block';
+    _separadorLog(logBox, _tUpgrade('upgrade_log_reiniciando', '🔄 Reiniciando para aplicar upgrade'));
+    var linha = document.createElement('div');
+    linha.className = 'log-line info';
+    linha.textContent = '🔄 Enviando comando de reboot. O computador será reiniciado em instantes...';
+    logBox.appendChild(linha);
+    logBox.scrollTop = logBox.scrollHeight;
+}
+try {
+    await fetch(API_URL + '/executar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ comando: comando, idComando: idComando })
+    });
+} catch (e) {
+    if (logBox) {
+        var err = document.createElement('div');
+        err.className = 'log-line error';
+        err.textContent = '❌ Erro ao disparar reboot: ' + e.message;
+        logBox.appendChild(err);
+    }
+}
 }
 
 async function executarUpgradeCancelar() {
@@ -2654,7 +2694,8 @@ async function executarUpgradeCancelar() {
         async function() {
             var novoStatus = await _carregarUpgradeStatus(true);
             _renderizarAreaUpgrade(novoStatus);
-        });
+        },
+        false, 30000);  // cancelar é rápido — 30s bastam
 }
 
 // ============================================================

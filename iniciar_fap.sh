@@ -620,11 +620,16 @@ verificar_sudo() {
 }
 
 verificar_fedora() {
-    if [ -f /etc/fedora-release ]; then
-        local version=$(cat /etc/fedora-release | grep -oP '[0-9]+' | head -1)
-        log_info "🖥️ Fedora $version detectado"
+    if [ -f /etc/os-release ]; then
+        . /etc/os-release
+        if [ "$ID" = "fedora" ]; then
+            log_info "🖥️ Fedora $VERSION_ID detectado"
+        else
+            log_warning "Sistema não identificado como Fedora (detectado: ${ID:-desconhecido})"
+            log_warning "Este aplicativo foi desenvolvido para Fedora Linux"
+        fi
     else
-        log_warning "Sistema não identificado como Fedora"
+        log_warning "Arquivo /etc/os-release não encontrado — sistema não identificado"
         log_warning "Este aplicativo foi desenvolvido para Fedora Linux"
     fi
 }
