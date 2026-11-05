@@ -1086,7 +1086,11 @@
             "upgrade_pos_fixfiles_btn": "🛡️ Programar Relabel",
             "upgrade_pos_rescue_titulo": "🛟 Regenerar Rescue Kernel",
             "upgrade_pos_rescue_desc": "Instala el paquete dracut-config-rescue, que habilita la regeneración automática del rescue kernel en la próxima actualización de kernel. El rescue kernel actual no se elimina — el reemplazo ocurre cuando se instala un nuevo kernel.",
-            "upgrade_pos_rescue_btn": "🛟 Instalar dracut-config-rescue"
+            "upgrade_pos_rescue_btn": "🛟 Instalar dracut-config-rescue",
+            "upgrade_pos_concluido_titulo": "Acciones post-actualización completadas.",
+            "upgrade_pos_concluido_desc": "Marcaste que ya ejecutaste todo. Esta área no volverá a aparecer. Para deshacer, usa \"Restablecer progreso\" en la sesión Acerca de FAP.",
+            "upgrade_pos_checkbox_label": "Ya migré a Fedora 45 y ya ejecuté todos los botones post-actualización. Estos botones ya no son necesarios.",
+            "upgrade_pos_checkbox_aviso": "Al marcar esta casilla, confirmas que ya actualizaste y que no necesitas los botones extra. Esta área no volverá a aparecer (a menos que restablezcas el progreso de FAP)."
         },
 
         "estado-fedora": {
