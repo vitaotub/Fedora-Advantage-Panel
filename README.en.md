@@ -2,7 +2,7 @@
 
 **🌐 Language:** [Português (BR)](README.md) | English | [Español](README.es.md)
 
-![Version](https://img.shields.io/badge/Version-v1.4.5--11042026-orange?style=flat-square)
+![Version](https://img.shields.io/badge/Version-v1.4.6--11042026-orange?style=flat-square)
 ![Fedora](https://img.shields.io/badge/Fedora-44%20%7C%2045-294172?style=flat-square&logo=fedora)
 ![License](https://img.shields.io/badge/License-GPL--3.0-green?style=flat-square)
 ![Languages](https://img.shields.io/badge/Languages-PT--BR%20%7C%20EN%20%7C%20ES-3c67e3?style=flat-square)
@@ -122,7 +122,7 @@ Updates are applied **on top of the existing installation** — no need to unins
 
 The **"Fedora Upgrade"** area detects when Fedora 45 is available (GA + RPM Fusion published) and unlocks the download button. After the download, it shows the **"Reboot now and upgrade"** button and a notice to return to the session after the reboot.
 
-When FAP detects that the user is on Fedora 45 **and** upgraded through it, the area switches to **post-upgrade actions recommended by the official Fedora documentation**:
+When FAP detects that the user is on Fedora 45, the area switches to **post-upgrade actions recommended by the official Fedora documentation**:
 
 - **🧹 Post-Upgrade Cleanup** (safe): `remove-retired-packages`, `dnf remove --duplicates`, `dnf autoremove`, `dnf clean all`, `clean-rpm-gpg-pubkey`.
 - **⚙️ Merge Configuration Files** (safe): `rpmconf -a`.
@@ -130,7 +130,7 @@ When FAP detects that the user is on Fedora 45 **and** upgraded through it, the 
 - **🛡️ SELinux Relabel** (advanced, yellow warning): `fixfiles -B onboot` — schedules a relabel for the next boot; may take long.
 - **🛟 Regenerate Rescue Kernel** (optional): installs `dracut-config-rescue`; regeneration happens on the next kernel update.
 
-Each button is **one-way** (no trash/revert), with state persisted in `.progresso.json`.
+Each button is **one-way** (no trash/revert), with state persisted in `.progresso.json`. At the end, a **checkbox "I already migrated to Fedora 45 and already ran all post-upgrade buttons"** hides the entire area — the marker lives in `.progresso.json` and only comes back with "Reset progress" in session 13.
 
 ## 🛡️ Security and transparency
 

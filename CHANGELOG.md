@@ -13,59 +13,82 @@ que exibe a seção da versão atual dentro do FAP, na sessão **Sobre o FAP**.
 
 ---
 
-## v1.4.5-11042026
+## v1.4.6-11042026
 
-Correção da detecção de download do DNF5 e adição das ações
-recomendadas pós-upgrade do Fedora 44 → 45.
+Rodada de correções na área de upgrade do Fedora 44 → 45, baseada em
+testes reais em hardware. Corrige o reboot que travava pedindo
+confirmação `[y/N]:`, a limpeza pós-upgrade que travava no
+`remove-retired-packages`, e adiciona um checkbox para o usuário
+esconder a área de upgrade permanentemente após concluir tudo.
 
 ### 🐛 Corrigido
 
-- **`server.js` → `_verificarDownloadConcluido`** — o FAP procurava o
-  download do system-upgrade em `/var/lib/dnf/system-upgrade` (DNF4) e
-  `/var/lib/dnf5/offline` (caminho errado). O DNF5 (padrão no Fedora 44+)
-  armazena a transação offline em `/usr/lib/sysimage/libdnf5/offline`.
-  Resultado: o estado `downloaded` nunca era detectado, e o botão
-  "Reiniciar agora e atualizar" não aparecia após o download. Agora
-  verifica o caminho correto do DNF5 primeiro, com fallback para DNF4.
+- **`ajustes-manutencao.html` → `executarUpgradeReboot`** — o comando
+  `dnf5 offline reboot` **não tem flag `-y`** e **pede confirmação**
+  (`Is this ok [y/N]:`) quando roda sem TTY. Como o `pkexec` executa o
+  script sem TTY, o comando ficava parado esperando um `s` que nunca
+  chegava, e o reboot não acontecia. Trocado para
+  `dnf5 system-upgrade reboot -y`, que é compatível com o DNF4 e
+  **aceita `-y`** para pular a confirmação. O `echo s |` (que chegou a
+  ser tentado na v1.4.5) não funciona porque o `dnf5` lê a confirmação
+  do terminal, não do stdin do script.
+- **`ajustes-manutencao.html` → `executarUpgradeCancelar`** — mesma
+  lógica. Trocado `dnf5 offline clean` por `dnf5 system-upgrade clean -y`.
+- **`ajustes-manutencao.html` → `executarPosLimpeza`** — o
+  `remove-retired-packages` e o `clean-rpm-gpg-pubkey` são
+  **interativos** (perguntam `Is this ok [y/N]:` antes de remover).
+  Como o `pkexec` roda sem TTY, o comando travava no meio. Adicionado
+  `yes |` no início dos dois, que alimenta `y\n` infinitamente e cobre
+  todas as confirmações. O `yes` recebe SIGPIPE quando o script
+  termina, sem travar.
+- **`ajustes-manutencao.html` → `executarUpgradeReboot`** — faltava o
+  `}` de fechamento da função, causando `SyntaxError: Unexpected end
+  of script` no `eval.call(win, ...)` do `guiado.html`. Isso fazia
+  **toda a sessão 11 parar de carregar** (as funções seguintes,
+  incluindo `executarUpgradeCancelar` e as `executarPos*`, nunca eram
+  definidas).
+- **`ajustes-manutencao.html` → IIFE final** — quando
+  `_upgradeFinalizadoNoCliente()` era `true` (usuário já está no
+  Fedora 45+), mostrava uma mensagem estática **e retornava ANTES**
+  de chamar `_renderizarAreaUpgrade`. Com isso, os botões de
+  pós-upgrade **nunca apareciam**, mesmo quando o marcador
+  `upgrade-f45-download` estava setado. Agora monta um `data`
+  sintético com `status: 'no_upgrade_needed'` e passa para
+  `_renderizarAreaUpgrade`, que decide entre os botões e a mensagem
+  estática.
+- **`ajustes-manutencao.html` → `case 'no_upgrade_needed'`** —
+  removida a condição `isExecutado('upgrade-f45-download')` que
+  **impedia os botões de aparecerem** quando o marcador se perdia
+  (reset de progresso, troca de diretório, SSE perdido no download).
+  Agora os botões aparecem sempre que o usuário está no Fedora 45.
+  As ações pós-upgrade são genéricas e úteis mesmo para quem
+  atualizou por fora.
 
 ### ✨ Adicionado
 
-- **Aviso pós-download** — após o download terminar, a área de upgrade
-  mostra um aviso: "Após reiniciar e concluir o upgrade, volte a esta
-  sessão para os próximos passos (ações recomendadas pós-upgrade)."
-- **Ações pós-upgrade** — quando o FAP detecta que o usuário está no
-  Fedora 45 **e** fez o upgrade pelo FAP (marcador `upgrade-f45-download`
-  executado), a área de upgrade substitui a mensagem estática por 5
-  botões de ações recomendadas pela documentação oficial do Fedora:
-  - **🧹 Limpeza Pós-Upgrade** (seguro): `remove-retired-packages`,
-    `dnf remove --duplicates`, `dnf autoremove`, `dnf clean all`,
-    `clean-rpm-gpg-pubkey`.
-  - **⚙️ Mesclar Configurações** (seguro): `rpmconf -a`.
-  - **🔄 Distro-Sync** (avançado, aviso vermelho): `dnf distro-sync`.
-  - **🛡️ Relabel SELinux** (avançado, aviso amarelo): `fixfiles -B onboot`.
-  - **🛟 Regenerar Rescue Kernel** (opcional): instala
-    `dracut-config-rescue` (a regeneração acontece no próximo kernel
-    update, conforme doc oficial).
-- **`locales/en.json`** e **`locales/es.json`** — ~15 chaves para os
-  textos dos botões de pós-upgrade.
+- **Checkbox "ações pós-upgrade concluídas"** — no final do bloco de
+  pós-upgrade, um checkbox com label + descrição explicativa. Ao
+  marcar, chama `marcarComoExecutado('pos-upgrade-concluido')` e a
+  área inteira vira uma mensagem estática ("Ações pós-upgrade
+  concluídas"). O marcador fica no `.progresso.json` e **só volta
+  atrás com "Resetar progresso"** na sessão 13.
+- **Novo idComando `pos-upgrade-concluido`** em
+  `SESSOES.ajustes-manutencao.comandos`, com `sempreClicavel: true`.
+  Isso mantém o ID no `.progresso.json` (sem ele, o
+  `_limparIdsOrfaos` removeria na próxima limpeza) e **não conta no
+  progresso** da sessão 11.
+- **Funções `_plugarListenersPosUpgrade` e
+  `_marcarPosUpgradeConcluido`** em `ajustes-manutencao.html`.
+- **~4 chaves novas** em `locales/en.json` e `locales/es.json`:
+  `upgrade_pos_concluido_titulo`, `upgrade_pos_concluido_desc`,
+  `upgrade_pos_checkbox_label`, `upgrade_pos_checkbox_aviso`.
 
 ### 🔄 Alterado
 
-- **`package.json`** — versão `1.4.5-11042026`.
-- **`CHANGELOG.md`** — seção da v1.4.5.
-
-### 🧪 Não testado
-
-- **`rpmconf -a` em modo não-interativo** — a doc oficial recomenda
-  `rpmconf -a` para aceitar as ações padrão. Se o comando travar
-  esperando input no FAP (sem TTY), será necessário ajustar para
-  `yes | rpmconf -a` ou similar. Testar em hardware real.
-- **`fixfiles -B onboot`** — o tempo de relabel varia com o tamanho
-  do disco. Testar em hardware real para confirmar que não trava o
-  boot.
-- **Ações pós-upgrade em Fedora 45 real** — o fluxo completo
-  (`upgrade → reboot → Fedora 45 → botões de pós-upgrade`) foi
-  validado conceitualmente. Falta testar em hardware real.
+- **`package.json`** — versão `1.4.6-11042026`.
+- **`README.md` / `README.en.md` / `README.es.md`** — badge de versão.
+- **`BRIEFING.md`** — versão atual + histórico + regras novas
+  descobertas na v1.4.6.
 
 ### 🧪 Requisito
 

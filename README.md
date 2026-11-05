@@ -2,7 +2,7 @@
 
 **🌐 Idioma:** Português (BR) | [English](README.en.md) | [Español](README.es.md)
 
-![Versão](https://img.shields.io/badge/Vers%C3%A3o-v1.4.5--11042026-orange?style=flat-square)
+![Versão](https://img.shields.io/badge/Vers%C3%A3o-v1.4.6--11042026-orange?style=flat-square)
 ![Fedora](https://img.shields.io/badge/Fedora-44%20%7C%2045-294172?style=flat-square&logo=fedora)
 ![Licença](https://img.shields.io/badge/Licen%C3%A7a-GPL--3.0-green?style=flat-square)
 ![Idiomas](https://img.shields.io/badge/Idiomas-PT--BR%20%7C%20EN%20%7C%20ES-3c67e3?style=flat-square)
@@ -122,7 +122,7 @@ Atualizações são feitas **em cima da instalação existente** — não precis
 
 A área **"Upgrade do Fedora"** detecta quando o Fedora 45 está disponível (GA + RPM Fusion publicados) e libera o botão de download. Após o download, mostra o botão **"Reiniciar agora e atualizar"** e um aviso para retornar à sessão após o reboot.
 
-Quando o FAP detecta que o usuário está no Fedora 45 **e** fez o upgrade por ele, a área muda para **ações pós-upgrade recomendadas pela documentação oficial do Fedora**:
+Quando o FAP detecta que o usuário está no Fedora 45, a área muda para **ações pós-upgrade recomendadas pela documentação oficial do Fedora**:
 
 - **🧹 Limpeza Pós-Upgrade** (seguro): `remove-retired-packages`, `dnf remove --duplicates`, `dnf autoremove`, `dnf clean all`, `clean-rpm-gpg-pubkey`.
 - **⚙️ Mesclar Configurações** (seguro): `rpmconf -a`.
@@ -130,7 +130,7 @@ Quando o FAP detecta que o usuário está no Fedora 45 **e** fez o upgrade por e
 - **🛡️ Relabel SELinux** (avançado, aviso amarelo): `fixfiles -B onboot` — agenda relabel para o próximo boot; pode demorar.
 - **🛟 Regenerar Rescue Kernel** (opcional): instala `dracut-config-rescue`; a regeneração acontece no próximo kernel update.
 
-Cada botão é **one-way** (sem lixeira/revert), com estado persistido no `.progresso.json`.
+Cada botão é **one-way** (sem lixeira/revert), com estado persistido no `.progresso.json`. No final, um **checkbox "Eu já migrei para o Fedora 45 e já executei todos os botões pós-upgrade"** esconde a área inteira — o marcador fica no `.progresso.json` e só volta com "Resetar progresso" na sessão 13.
 
 ## 🛡️ Segurança e transparência
 

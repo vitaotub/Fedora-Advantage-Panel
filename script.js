@@ -1261,7 +1261,20 @@ var SESSOES = [
             sempreClicavel: true,
             textoConcluido: '✅ Padrão restaurado',
             textoConcluidoKey: 'sessoes.ajustes-manutencao.texto_concluido_grub_restaurar'
-        }
+        },
+        // Marcador de "ações pós-upgrade concluídas". Não tem botão
+        // no DOM — é um flag puro. O checkbox da área de upgrade
+        // chama `marcarComoExecutado('pos-upgrade-concluido')`, e o
+        // `_renderUpgradePosUpgrade` consulta `isExecutado` para
+        // decidir entre mostrar os botões ou a mensagem estática.
+        //
+        // `sempreClicavel: true` para NÃO contar no progresso da
+        // sessão 11 (que fica 0/15) e NÃO entrar no bloqueio entre
+        // sessões. O ID precisa estar aqui para o
+        // `_limparIdsOrfaos` (que filtra IDs fora de `SESSOES`)
+        // não remover o marcador do `.progresso.json` na próxima
+        // limpeza.
+        'pos-upgrade-concluido': { sempreClicavel: true }
     }
 },
 {

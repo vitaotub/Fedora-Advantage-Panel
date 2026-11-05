@@ -1980,6 +1980,9 @@ function _renderizarAreaUpgrade(data) {
     if (data.status === 'ready') {
         _plugarListenersUpgradePronto();
     }
+    if (data.status === 'no_upgrade_needed') {
+        _plugarListenersPosUpgrade();
+    }
 }
 
 // ============================================================
@@ -1994,6 +1997,23 @@ function _renderizarAreaUpgrade(data) {
 //
 // Ordem: seguro → avançado. Os avançados têm avisos coloridos.
 function _renderUpgradePosUpgrade(data) {
+    // Se o usuário já marcou o checkbox "ações pós-upgrade
+    // concluídas", a área inteira vira uma mensagem estática.
+    // Sem os 5 botões, sem o checkbox. O marcador fica no
+    // `.progresso.json` e só volta atrás com "Resetar progresso"
+    // na sessão 13.
+    if (isExecutado('pos-upgrade-concluido')) {
+        return (
+            '<div class="aviso-sucesso">✅ <strong>' +
+            _tUpgrade('upgrade_pos_concluido_titulo',
+                'Ações pós-upgrade concluídas.') +
+            '</strong><br>' +
+            _tUpgrade('upgrade_pos_concluido_desc',
+                'Você marcou que já executou tudo. Esta área não voltará a aparecer. Para desfazer, use "Resetar progresso" na sessão Sobre o FAP.') +
+            '</div>'
+        );
+    }
+
     var html = '';
 
     html += '<div class="aviso-sucesso">✅ <strong>' +
@@ -2104,7 +2124,69 @@ function _renderUpgradePosUpgrade(data) {
         '<span class="percentage" id="progress-percent-pos-upgrade-rescue">0%</span></div></div>';
     html += '</div>';
 
+    // ---------- Bloco 6: checkbox "concluído" ----------
+    //
+    // Marca a área inteira como concluída. Ao marcar, chama
+    // `marcarComoExecutado('pos-upgrade-concluido')` — o marcador
+    // fica no `.progresso.json`. Na próxima renderização, o guard
+    // no topo do `_renderUpgradePosUpgrade` esconde tudo.
+    //
+    // Os dois avisos (label + descrição) são redundantes de
+    // propósito: o usuário precisa ter certeza do que está
+    // fazendo, porque a ação esconde uma área inteira do FAP.
+    html += '<div class="aviso-caixa" style="margin-top: 1.5rem; border-left: 4px solid var(--success);">';
+    html += '<label style="display: flex; align-items: flex-start; gap: 0.5rem; cursor: pointer; font-size: 0.95rem;">';
+    html += '<input type="checkbox" id="pos-upgrade-concluido-checkbox" style="margin-top: 0.25rem;">';
+    html += '<span>' +
+        _tUpgrade('upgrade_pos_checkbox_label',
+            'Eu já migrei para o Fedora 45 e já executei todos os botões pós-upgrade. Estes botões não são mais necessários.') +
+        '</span></label>';
+    html += '<p style="margin: 0.75rem 0 0 1.5rem; font-size: 0.85rem; color: var(--text-muted);">' +
+        _tUpgrade('upgrade_pos_checkbox_aviso',
+            'Ao marcar esta caixa de seleção, você confirma que já fez o upgrade e não precisa mais dos botões extras. Esta área não voltará a aparecer (a não ser que você resete o progresso do FAP).') +
+        '</p>';
+    html += '</div>';
+
     return html;
+}
+
+// ============================================================
+// PÓS-UPGRADE — handlers do checkbox "concluído"
+// ============================================================
+//
+// Pluga o `change` do checkbox depois que o HTML é injetado
+// via `innerHTML` (mesmo padrão do `_plugarListenersUpgradePronto`).
+// Sem isso, o listener não seria anexado.
+function _plugarListenersPosUpgrade() {
+    var checkbox = document.getElementById('pos-upgrade-concluido-checkbox');
+    if (!checkbox || checkbox.hasAttribute('data-listener-ready')) return;
+    checkbox.setAttribute('data-listener-ready', '1');
+
+    checkbox.addEventListener('change', function() {
+        if (!this.checked) return;
+        _marcarPosUpgradeConcluido();
+    });
+}
+
+// Marca 'pos-upgrade-concluido' no `.progresso.json` e
+// re-renderiza a área. O guard no topo do
+// `_renderUpgradePosUpgrade` detecta o marcador e mostra só a
+// mensagem estática ("Ações pós-upgrade concluídas").
+async function _marcarPosUpgradeConcluido() {
+    try {
+        await marcarComoExecutado('pos-upgrade-concluido');
+    } catch (e) {
+        console.warn('[pos-upgrade] Erro ao salvar marcador:', e);
+    }
+    // Re-renderiza a área com o estado atual. O `_upgradeStatusCache`
+    // já tem `status: 'no_upgrade_needed'` e `current_version: '45'`,
+    // então o `case` correto é acionado e o guard do
+    // `_renderUpgradePosUpgrade` faz o resto.
+    _renderizarAreaUpgrade(_upgradeStatusCache || {
+        status: 'no_upgrade_needed',
+        current_version: '45',
+        target_version: '45'
+    });
 }
 
 function _renderUpgradeJaAtual(data) {
@@ -2581,13 +2663,25 @@ async function executarUpgradeCancelar() {
 
 async function executarPosLimpeza() {
     var idComando = 'pos-upgrade-limpeza';
+
+    // `remove-retired-packages` e `clean-rpm-gpg-pubkey` são
+    // INTERATIVOS: eles listam o que vão remover e perguntam
+    // `Is this ok [y/N]:` antes de continuar. Como o `pkexec`
+    // roda o script sem TTY, eles ficam parados esperando a
+    // confirmação que nunca chega — o botão "trava" no log.
+    //
+    // `yes |` alimenta `y\n` infinitamente no stdin. Cobre todas
+    // as perguntas dos dois scripts (e dos `dnf` internos que eles
+    // chamam). O `yes` recebe SIGPIPE quando o script termina, sem
+    // travar.
     var comando =
         'sudo dnf install -y remove-retired-packages clean-rpm-gpg-pubkey && ' +
-        'remove-retired-packages && ' +
+        'yes | remove-retired-packages && ' +
         'sudo dnf remove --duplicates -y && ' +
         'sudo dnf autoremove -y && ' +
         'sudo dnf clean all && ' +
-        'sudo clean-rpm-gpg-pubkey';
+        'yes | sudo clean-rpm-gpg-pubkey';
+
     await executarComandoGenerico(idComando, comando,
         _t('sessoes.ajustes-manutencao.upgrade_pos_limpeza_btn', '🧹 Executar Limpeza'),
         function() { aplicarEstadoPosUpgrade(idComando); });
