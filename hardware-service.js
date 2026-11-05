@@ -119,11 +119,23 @@ async function _nvidiaDetect() {
 }
 
 async function _checkSecureBoot() {
-    var r = await _exec('mokutil --sb-state 2>/dev/null');
-    if (!r.ok) return 'unknown';
-    var out = r.stdout.toLowerCase();
-    if (out.includes('enabled')) return 'enabled';
-    if (out.includes('disabled')) return 'disabled';
+    // `2>&1` (não `2>/dev/null`): em BIOS legacy, o `mokutil`
+    // escreve "EFI variables are not supported on this system"
+    // em STDERR e sai com código != 0. Redirecionando STDERR para
+    // STDOUT, o texto chega em `r.stdout` e podemos distinguir
+    // "BIOS legacy" (não se aplica) de "mokutil ausente"
+    // (`bash: command not found`) ou outro erro.
+    var r = await _exec('mokutil --sb-state 2>&1');
+    var out = (r.stdout || '').toLowerCase();
+
+    if (out.indexOf('efi variables are not supported') !== -1) {
+        return 'not_efi';
+    }
+    if (out.indexOf('command not found') !== -1 || out.trim() === '') {
+        return 'unknown';
+    }
+    if (out.indexOf('enabled') !== -1) return 'enabled';
+    if (out.indexOf('disabled') !== -1) return 'disabled';
     return 'unknown';
 }
 

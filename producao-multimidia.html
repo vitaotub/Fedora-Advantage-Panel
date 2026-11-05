@@ -32,6 +32,10 @@
 ⚠️ A câmera virtual exige que o Secure Boot esteja configurado corretamente ou desativado.
 </div>
 
+<!-- Secure Boot: a câmera virtual do OBS usa `akmod-v4l2loopback`,
+     que compila módulo. Badge aponta para a Sessão 12 (fonte única). -->
+<div id="secureboot-badge-producao"></div>
+
 <p data-i18n="sessoes.producao-multimidia.obs_desc">Instale o OBS Studio para gravação/streaming e ative a câmera virtual para chamadas de vídeo.</p>
 
 <div class="dashboard-grid" style="margin-top: 1rem; grid-template-columns: 1fr 1fr;">
@@ -248,6 +252,15 @@ function restaurarEstadoSessao() {
     aplicarEstadoInstalavel('instalar-obs-studio', null);
     aplicarEstadoInstalavel('instalar-easyeffects', null);
     aplicarEstadoInstalavel('obs-cam', null);
+
+    // Secure Boot: a câmera virtual do OBS usa `akmod-v4l2loopback`,
+    // que compila módulo. Badge aponta para a Sessão 12.
+    var badge = document.getElementById('secureboot-badge-producao');
+    if (badge) {
+        _detectarSecureBoot().then(function(estado) {
+            _renderizarBadgeSecureBoot(badge, estado, 'a câmera virtual do OBS');
+        }).catch(function() { /* silencioso */ });
+    }
 }
 
 // ============================================================

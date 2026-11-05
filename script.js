@@ -1386,6 +1386,201 @@ function _sessaoDoComando(idComando) {
 }
 
 // ============================================================
+// SECURE BOOT (GLOBAL — v1.4.8)
+// ============================================================
+//
+// O `akmods` compila módulos localmente e assina com uma chave
+// gerada por `kmodgenca`. Essa chave PRECISA ser importada para o
+// firmware (MOK) ANTES de instalar qualquer `akmod-*` — senão o
+// kernel recusa o módulo no boot e o sistema cai no fallback.
+//
+// Pacotes do FAP que passam pelo `akmods`:
+//   • akmod-nvidia              (Sessão 3 — NVIDIA)
+//   • akmod-VirtualBox          (Sessão 9 — Virtualização)
+//   • akmod-wl / akmod-r8168    (Sessão 4 — Dispositivos)
+//   • xpadneo (via DKMS)        (Sessão 4 — Dispositivos)
+//   • akmod-v4l2loopback        (Sessão 5 — Câmera virtual OBS)
+//
+// Um ÚNICO enrollment cobre todos (a chave é a mesma). Por isso o
+// painel completo (3 passos) vive em UMA sessão (Estado do Fedora,
+// Sessão 12) e as outras mostram um badge compacto apontando para
+// lá — evita duplicação de texto e mantém a fonte única.
+//
+// O bloco NVIDIA (Sessão 3) também mostra o painel completo (é o
+// caso mais crítico), mas usa as MESMAS funções daqui.
+
+var _secureBootCache = null;
+
+async function _detectarSecureBoot() {
+    if (_secureBootCache !== null) return _secureBootCache;
+    try {
+        var r = await fetch(API_URL + '/hardware-scan', { cache: 'no-store' });
+        if (!r.ok) return 'unknown';
+        var data = await r.json();
+        _secureBootCache = (data && data.secure_boot) ? data.secure_boot : 'unknown';
+        return _secureBootCache;
+    } catch (e) {
+        return 'unknown';
+    }
+}
+
+async function _prepararSecureBoot() {
+    // Mantém o idComando `nvidia-secureboot-prepare` por compatibilidade
+    // com o `.progresso.json` (o botão é o mesmo, aparece na Sessão 3
+    // e na 12). O nome "nvidia" no id é histórico — o comando prepara
+    // a chave do akmods, que cobre todos os `akmod-*`.
+    var idComando = 'nvidia-secureboot-prepare';
+    var comando =
+    'sudo dnf install -y kmodtool akmods mokutil openssl kernel-devel-matched kernel-headers && ' +
+    'sudo kmodgenca -a 2>&1 || true';
+    await executarComandoGenerico(idComando, comando,
+                                  _t('seguranca.secureboot_preparar_btn', '🔐 Preparar Secure Boot'),
+                                  async function() {
+                                      _secureBootCache = null;
+                                      _invalidarContadorSessoes();
+                                      _atualizarProgressoGlobal();
+                                      if (typeof mostrarToast === 'function') {
+                                          mostrarToast(_t('seguranca.secureboot_preparado_ok',
+                                                          '✅ Chave do akmods gerada. Falta o enrollment no firmware (passo 2).'),
+                                                       'success', 8000);
+                                      }
+                                  });
+}
+
+function executarPrepararSecureBoot() {
+    return _prepararSecureBoot();
+}
+
+function _renderizarPainelSecureBoot(container, estado) {
+    if (!container) return;
+
+    if (estado === 'disabled') {
+        container.innerHTML = '<div class="aviso-sucesso">✅ ' +
+        _t('seguranca.secureboot_desabilitado',
+           'Secure Boot está desabilitado. Você pode instalar qualquer <code>akmod-*</code> sem enrollment.') +
+        '</div>';
+        return;
+    }
+    if (estado === 'not_efi') {
+        // BIOS legacy (não-UEFI): Secure Boot não existe, então
+        // enrollment não se aplica. Distinto de `'unknown'`
+        // (mokutil ausente/quebrado), que exige investigação.
+        container.innerHTML = '<div class="aviso-sucesso">✅ ' +
+        _t('seguranca.secureboot_nao_aplica',
+           'Secure Boot não se aplica — o sistema está em BIOS legacy (não-UEFI). Nenhum enrollment é necessário; os <code>akmod-*</code> carregam normalmente.') +
+        '</div>';
+        return;
+    }
+    if (estado === 'unknown') {
+        container.innerHTML = '<div class="aviso-caixa">⚠️ ' +
+        _t('seguranca.secureboot_indeterminado',
+           'Não foi possível determinar o estado do Secure Boot. Se você sabe que ele está ativo, siga o passo a passo abaixo antes de instalar qualquer <code>akmod-*</code>.') +
+        '</div>';
+        return;
+    }
+
+    // estado === 'enabled'
+    var chaveLocal = false;
+    try { chaveLocal = SystemState.arquivoPresente('/etc/pki/akmods/certs/public_key.der'); } catch (e) {}
+
+    var html = '';
+    html += '<div class="aviso-caixa" style="border-color: #f59e0b; color: #f59e0b;">';
+    html += '<strong>🔐 ' + _t('seguranca.secureboot_titulo',
+                               'Secure Boot está ativo') + '</strong><br>';
+                               html += _t('seguranca.secureboot_desc',
+                                          'Vários pacotes do FAP compilam módulos de kernel localmente pelo <code>akmods</code> (driver NVIDIA, VirtualBox, Broadcom, Realtek, xpadneo, câmera virtual do OBS). Todos são assinados com a MESMA chave, gerada por <code>kmodgenca</code>. Essa chave precisa ser enrolled no firmware ANTES de instalar qualquer um deles — sem isso, o módulo não carrega no boot. O processo abaixo NÃO desativa o Secure Boot; apenas registra a chave.');
+                               html += '</div>';
+
+                               if (!chaveLocal) {
+                                   html += '<div class="bloco-info" style="border-left-color: #f59e0b;">';
+                                   html += '<strong>' + _t('seguranca.secureboot_passo1',
+                                                           'Passo 1 — preparar a chave') + '</strong>';
+                                                           html += '<p style="margin: 0.4rem 0 0.75rem 0; font-size: 0.85rem; color: var(--text-muted);">' +
+                                                           _t('seguranca.secureboot_passo1_desc',
+                                                              'Instala as ferramentas do <code>akmods</code> e gera a chave local em <code>/etc/pki/akmods/certs/</code>. Não altera o firmware ainda — o enrollment vem no passo 2.') + '</p>';
+                                                              html += '<div class="botoes-flex">';
+                                                              html += '<button class="btn-executar" onclick="executarPrepararSecureBoot()" ' +
+                                                              'id="btn-secureboot-prepare">';
+                                                              html += '🔐 ' + _t('seguranca.secureboot_preparar_btn',
+                                                                                 'Preparar Secure Boot');
+                                                              html += '</button></div></div>';
+                               } else {
+                                   html += '<div class="aviso-sucesso" style="border-color: #34d399; color: #34d399;">✅ ' +
+                                   _t('seguranca.secureboot_chave_ok',
+                                      'A chave do akmods já foi gerada. Falta o enrollment no firmware (passo 2).') +
+                                   '</div>';
+                               }
+
+                               html += '<div class="bloco-info" style="border-left-color: #60a5fa;">';
+                               html += '<strong>' + _t('seguranca.secureboot_passo2',
+                                                       'Passo 2 — importar a chave para o firmware') + '</strong>';
+                                                       html += '<p style="margin: 0.4rem 0 0.5rem 0; font-size: 0.85rem; color: var(--text-muted);">' +
+                                                       _t('seguranca.secureboot_passo2_desc',
+                                                          'Abra o terminal e rode o comando abaixo. Ele vai pedir uma senha (use algo simples, ex.: 0000) — essa senha será digitada novamente na tela azul do MOK no próximo boot. O FAP não automatiza este passo porque o mokutil exige um terminal interativo.') + '</p>';
+                                                          html += '<code class="fap-popover-code" style="display: block; margin: 0.5rem 0;">' +
+                                                          'sudo mokutil --import /etc/pki/akmods/certs/public_key.der</code>';
+                                                          html += '</div>';
+
+                                                          html += '<div class="bloco-info" style="border-left-color: #a855f7;">';
+                                                          html += '<strong>' + _t('seguranca.secureboot_passo3',
+                                                                                  'Passo 3 — reiniciar e fazer o enrollment') + '</strong>';
+                                                                                  html += '<p style="margin: 0.4rem 0 0 0; font-size: 0.85rem; color: var(--text-muted);">' +
+                                                                                  _t('seguranca.secureboot_passo3_desc',
+                                                                                     'Reinicie o computador. Na tela azul do MOK Management, escolha "Enroll MOK" → "Continue" → "Yes", digite a senha que você definiu no passo 2 e finalize. ATENÇÃO: o teclado do MOK é sempre QWERTY, mesmo que o seu layout seja ABNT2. Depois disso, você pode instalar qualquer <code>akmod-*</code> normalmente.') +
+                                                                                  '</p></div>';
+
+                                                                                  container.innerHTML = html;
+}
+
+function _renderizarBadgeSecureBoot(container, estado, contexto) {
+    if (!container) return;
+    // Sem Secure Boot, sem detecção ou BIOS legacy: não incomoda.
+    // `'not_efi'` = BIOS legacy, nunca precisa de enrollment —
+    // mesmo tratamento de `'disabled'`.
+    if (estado === 'disabled' || estado === 'unknown' || estado === 'not_efi') {
+        container.innerHTML = '';
+        return;
+    }
+
+    var chaveLocal = false;
+    try { chaveLocal = SystemState.arquivoPresente('/etc/pki/akmods/certs/public_key.der'); } catch (e) {}
+
+    if (chaveLocal) {
+        // Chave já gerada — badge verde apontando para o enrollment.
+        container.innerHTML =
+        '<div class="aviso-sucesso" style="margin: 0 0 1rem 0; font-size: 0.85rem;">✅ ' +
+        _t('seguranca.secureboot_badge_ok',
+           'Secure Boot ativo — chave do akmods já preparada. Se ainda não fez o enrollment, complete em <strong>Estado do Fedora</strong>.') +
+        ' <a href="?session=estado-fedora" style="color: inherit; font-weight: bold; text-decoration: underline;">→</a>' +
+        '</div>';
+        return;
+    }
+
+    // Chave ausente — badge vermelho com link para o passo a passo.
+    var ctxNome = contexto || 'akmod-*';
+    container.innerHTML =
+    '<div class="aviso-caixa" style="margin: 0 0 1rem 0; font-size: 0.85rem; border-color: #ef4444; color: #ef4444;">' +
+    '<strong>🔐 ' + _t('seguranca.secureboot_badge_titulo',
+                       'Secure Boot ativo — enrollment necessário') + '</strong><br>' +
+                       _tVars('seguranca.secureboot_badge_desc',
+                              'Antes de instalar {ctx}, prepare a chave do akmods e faça o enrollment no firmware. Sem isso, o módulo não carrega no próximo boot.',
+                              { ctx: ctxNome }) +
+                       ' <a href="?session=estado-fedora" style="color: inherit; font-weight: bold; text-decoration: underline;">' +
+                       _t('seguranca.secureboot_badge_link', 'Abrir passo a passo') +
+                       '</a>' +
+                       '</div>';
+}
+
+// Invalida o cache de Secure Boot quando o idioma muda (os textos
+// do painel são renderizados em PT no primeiro render; o i18n
+// re-aplica via `I18N.aplicarTraducoes` só no load, e o painel é
+// HTML dinâmico — então trocamos o cache para forçar re-render
+// na próxima abertura).
+document.addEventListener('i18n-pronto', function() {
+    _secureBootCache = null;
+});
+
+// ============================================================
 // FILTRO DE COMANDOS POR HARDWARE PRESENTE (item #16)
 // ============================================================
 //
@@ -4157,6 +4352,11 @@ async function _refreshEstadoSessao() {
     }
     try {
         SystemState.invalidar();
+        // Invalida também o cache de Secure Boot: o usuário pode ter
+        // preparado a chave em outro terminal, ou o enrollment pode
+        // ter acontecido em outro reboot. `_secureBootCache` é um
+        // dos poucos caches que não dependem de `SystemState`.
+        _secureBootCache = null;
         await SystemState.carregar();
         if (typeof restaurarEstadoSessao === 'function') {
             try { restaurarEstadoSessao(); } catch (e) {}

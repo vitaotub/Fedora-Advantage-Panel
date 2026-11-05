@@ -18,6 +18,10 @@
 <span data-i18n="sessoes.virtualizacao.descricao">Ferramentas para executar máquinas virtuais no Fedora. Cada opção atende um perfil diferente de uso — QEMU/KVM é a stack nativa (mais performática), VirtualBox oferece uma interface familiar para quem vem do Windows, e GNOME Boxes simplifica a experiência para iniciantes.</span>
 </div>
 
+<!-- Secure Boot: VirtualBox usa `akmod-VirtualBox`, que precisa de
+     enrollment MOK com Secure Boot ativo. Badge aponta para a Sessão 12. -->
+<div id="secureboot-badge-virtualizacao"></div>
+
 <!-- Acórdeão único — Máquinas Virtuais -->
 <details class="acordeao">
 <summary data-i18n="sessoes.virtualizacao.acordeao_titulo">🖥️ Máquinas Virtuais</summary>
@@ -273,6 +277,15 @@ function restaurarEstadoSessao() {
     aplicarEstadoInstalavel('qemu-kvm-install', null);
     aplicarEstadoInstalavel('virtualbox-install', null);
     aplicarEstadoInstalavel('gnome-boxes-install', null);
+
+    // Secure Boot: VirtualBox compila `akmod-VirtualBox` via
+    // `akmods`, então precisa de enrollment MOK com SB ativo.
+    var badge = document.getElementById('secureboot-badge-virtualizacao');
+    if (badge) {
+        _detectarSecureBoot().then(function(estado) {
+            _renderizarBadgeSecureBoot(badge, estado, 'VirtualBox');
+        }).catch(function() { /* silencioso */ });
+    }
 }
 
 // ------------------------------------------------------------

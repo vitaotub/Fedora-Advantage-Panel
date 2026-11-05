@@ -108,6 +108,11 @@ ACORDEÃO 3: DRIVERS DA COMUNIDADE (COPR)
 • Se você não sabe se precisa, use primeiro a <strong>detecção automática</strong> no acórdão acima — ela identifica o modelo exato.
 </div>
 
+<!-- Secure Boot: Broadcom (`akmod-wl`), Realtek (`akmod-r8168`) e
+     xpadneo (via DKMS) compilam módulos localmente. Badge aponta
+     para a Sessão 12. -->
+<div id="secureboot-badge-dispositivos"></div>
+
 <!-- Razer (OpenRazer / Polychromatic) -->
 <div class="bloco-comando">
 <div class="comando-info">
@@ -979,6 +984,17 @@ async function restaurarEstadoSessao() {
     aplicarEstadoItemCompleto(
         null, 'driver-broadcom-wl-install', 'driver-broadcom-wl-remove',
         broadcomSemRepo);
+
+    // Secure Boot: Broadcom (`akmod-wl`), Realtek (`akmod-r8168`) e
+    // xpadneo (DKMS) compilam módulos localmente. Com Secure Boot
+    // ativo, o módulo assinado pelo akmods precisa de enrollment
+    // MOK, senão não carrega.
+    var badge = document.getElementById('secureboot-badge-dispositivos');
+    if (badge) {
+        _detectarSecureBoot().then(function(estado) {
+            _renderizarBadgeSecureBoot(badge, estado, 'Broadcom, Realtek ou xpadneo');
+        }).catch(function() { /* silencioso */ });
+    }
 }
 
 // ============================================================

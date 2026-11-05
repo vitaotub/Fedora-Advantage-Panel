@@ -1125,7 +1125,7 @@ function _aplicarEstadoNvidia(info) {
     if (!installFeito) {
         var btnInstall = document.getElementById('btn-nvidia-driver-install');
         if (btnInstall) {
-            _detectarSecureBootNvidia().then(function (sb) {
+            _detectarSecureBoot().then(function (sb) {
                 if (sb !== 'enabled') return;
                 var chaveLocal = false;
                 try { chaveLocal = SystemState.arquivoPresente('/etc/pki/akmods/certs/public_key.der'); } catch (e) {}
@@ -1156,141 +1156,15 @@ function _aplicarEstadoNvidia(info) {
 }
 
 // ============================================================
-// SECURE BOOT — detecção e guia de enrollment MOK
-// ============================================================
-//
-// Com Secure Boot ativo, o módulo akmod-nvidia é compilado
-// localmente e assinado com uma chave gerada pelo akmods. Essa
-// chave PRECISA ser importada para o firmware (MOK) ANTES de
-// instalar o driver — senão o kernel recusa o módulo no boot e
-// o sistema cai no nouveau (ou tela preta).
-//
-// Fluxo (conforme RPM Fusion Secure Boot Howto):
-//   1. dnf install kmodtool akmods mokutil openssl
-//   2. kmodgenca -a            (gera /etc/pki/akmods/certs/public_key.der)
-//   3. mokutil --import <der>  (define senha de enrollment)
-//   4. reboot                  (MOK Management aparece no boot)
-//   5. "Enroll MOK" → senha   (chave fica gravada no firmware)
-//
-// O FAP automatiza 1 e 2. O passo 3 exige senha interativa (o
-// mokutil lê do TTY, não do stdin) e o passo 4-5 exige reboot +
-// interação no firmware — o FAP NÃO tenta automatizar isso. Em
-// vez disso, mostra o comando exato e explica o que vai acontecer.
-
-var _secureBootNvidiaCache = null;
-
-async function _detectarSecureBootNvidia() {
-    if (_secureBootNvidiaCache !== null) return _secureBootNvidiaCache;
-    try {
-        var r = await fetch(API_URL + '/hardware-scan', { cache: 'no-store' });
-        if (!r.ok) return 'unknown';
-        var data = await r.json();
-        _secureBootNvidiaCache = (data && data.secure_boot) ? data.secure_boot : 'unknown';
-        return _secureBootNvidiaCache;
-    } catch (e) {
-        return 'unknown';
-    }
-}
-
-async function _prepararSecureBootNvidia() {
-    var idComando = 'nvidia-secureboot-prepare';
-    // Instala as ferramentas e gera a chave. O `kmodgenca -a`
-    // recusa sobrescrever uma chave existente — o `|| true` evita
-    // falha no fluxo de re-execução (usuário já preparou antes).
-    var comando =
-        'sudo dnf install -y kmodtool akmods mokutil openssl kernel-devel-matched kernel-headers && ' +
-        'sudo kmodgenca -a 2>&1 || true';
-    await executarComandoGenerico(idComando, comando,
-        _t('sessoes.hardware.nvidia_secureboot_preparar', '🔐 Preparar Secure Boot'),
-        async function() {
-            _secureBootNvidiaCache = null; // invalida cache
-            await _atualizarSecaoNvidia();
-            _avisarReboot(_t('sessoes.hardware.nvidia_secureboot_titulo', 'Preparação do Secure Boot'));
-        });
-}
-
-function _renderizarPainelSecureBoot(container, estado) {
-    if (!container) return;
-    if (estado === 'disabled') { container.innerHTML = ''; return; }
-    if (estado === 'unknown') {
-        container.innerHTML = '<div class="aviso-caixa">⚠️ ' +
-            _escapeHTMLNvidia(_t('sessoes.hardware.nvidia_secureboot_indeterminado',
-                'Não foi possível determinar o estado do Secure Boot. Se você sabe que ele está ativo, siga o passo a passo abaixo antes de instalar o driver.')) +
-            '</div>';
-        return;
-    }
-
-    // enabled
-    var jaPreparado = false;
-    try {
-        jaPreparado = SystemState.arquivoPresente('/etc/pki/akmods/certs/public_key.der');
-    } catch (e) { /* ignore */ }
-
-    var html = '';
-    html += '<div class="aviso-caixa" style="border-color: #f59e0b; color: #f59e0b;">';
-    html += '<strong>🔐 ' + _escapeHTMLNvidia(_t('sessoes.hardware.nvidia_secureboot_titulo',
-        'Secure Boot está ativo')) + '</strong><br>';
-    html += _escapeHTMLNvidia(_t('sessoes.hardware.nvidia_secureboot_desc',
-        'Com Secure Boot ativo, o driver NVIDIA precisa ser assinado com uma chave que o firmware reconheça. ' +
-        'Sem isso, o módulo não carrega e o sistema continua no nouveau (ou tela preta). ' +
-        'O processo abaixo NÃO desativa o Secure Boot — apenas registra a chave do FAP.'));
-    html += '</div>';
-
-    if (!jaPreparado) {
-        html += '<div class="bloco-info" style="border-left-color: #f59e0b;">';
-        html += '<strong>' + _escapeHTMLNvidia(_t('sessoes.hardware.nvidia_secureboot_passo1',
-            'Passo 1 — preparar a chave')) + '</strong>';
-        html += '<p style="margin: 0.4rem 0 0.75rem 0; font-size: 0.85rem; color: var(--text-muted);">' +
-            _escapeHTMLNvidia(_t('sessoes.hardware.nvidia_secureboot_passo1_desc',
-                'Instala as ferramentas do akmods e gera a chave local em /etc/pki/akmods/certs/. ' +
-                'Não altera o firmware ainda — o enrollment vem no passo 2.')) + '</p>';
-        html += '<div class="botoes-flex">';
-        html += '<button class="btn-executar" onclick="executarPrepararSecureBootNvidia()" ' +
-            'data-comando="nvidia-secureboot-prepare" ' +
-            'data-logbox="log-sessao-hardware" ' +
-            'id="btn-nvidia-secureboot-prepare">';
-        html += '🔐 ' + _escapeHTMLNvidia(_t('sessoes.hardware.nvidia_secureboot_preparar',
-            'Preparar Secure Boot'));
-        html += '</button></div></div>';
-    } else {
-        html += '<div class="aviso-sucesso" style="border-color: #34d399; color: #34d399;">✅ ' +
-            _escapeHTMLNvidia(_t('sessoes.hardware.nvidia_secureboot_chave_ok',
-                'Chave do akmods já foi gerada. Falta o enrollment no firmware (passo 2).')) +
-            '</div>';
-    }
-
-    html += '<div class="bloco-info" style="border-left-color: #60a5fa;">';
-    html += '<strong>' + _escapeHTMLNvidia(_t('sessoes.hardware.nvidia_secureboot_passo2',
-        'Passo 2 — importar a chave para o firmware')) + '</strong>';
-    html += '<p style="margin: 0.4rem 0 0.5rem 0; font-size: 0.85rem; color: var(--text-muted);">' +
-        _escapeHTMLNvidia(_t('sessoes.hardware.nvidia_secureboot_passo2_desc',
-            'Abra o terminal e rode o comando abaixo. Ele vai pedir uma senha (use algo simples, ex.: 0000) — ' +
-            'essa senha será digitada novamente na tela azul do MOK no próximo boot. ' +
-            'O FAP não automatiza este passo porque o mokutil exige um terminal interativo.')) + '</p>';
-    html += '<code class="fap-popover-code" style="display: block; margin: 0.5rem 0;">' +
-        'sudo mokutil --import /etc/pki/akmods/certs/public_key.der</code>';
-    html += '</div>';
-
-    html += '<div class="bloco-info" style="border-left-color: #a855f7;">';
-    html += '<strong>' + _escapeHTMLNvidia(_t('sessoes.hardware.nvidia_secureboot_passo3',
-        'Passo 3 — reiniciar e fazer o enrollment')) + '</strong>';
-    html += '<p style="margin: 0.4rem 0 0 0; font-size: 0.85rem; color: var(--text-muted);">' +
-        _escapeHTMLNvidia(_t('sessoes.hardware.nvidia_secureboot_passo3_desc',
-            'Reinicie o computador. Na tela azul do MOK Management, escolha "Enroll MOK" → "Continue" → "Yes", ' +
-            'digite a senha que você definiu no passo 2 e finalize. ATENÇÃO: o teclado do MOK é sempre QWERTY, ' +
-            'mesmo que o seu layout seja ABNT2. Depois disso, volte ao FAP e clique em "Instalar Driver NVIDIA".')) +
-        '</p></div>';
-
-    container.innerHTML = html;
-}
-
-async function executarPrepararSecureBootNvidia() {
-    await _prepararSecureBootNvidia();
-}
-
-// ============================================================
 // PAINEL DE HARDWARE NVIDIA (original + Secure Boot)
 // ============================================================
+//
+// Desde a v1.4.8, as funções de Secure Boot vivem em `script.js`
+// como genéricas (`_detectarSecureBoot`, `_prepararSecureBoot`,
+// `_renderizarPainelSecureBoot`, `executarPrepararSecureBoot`,
+// `_renderizarBadgeSecureBoot`). O bloco NVIDIA usa as MESMAS
+// funções — zero duplicação de texto. O painel completo também
+// aparece na Sessão 12 (Estado do Fedora), que é a fonte única.
 
 async function _atualizarSecaoNvidia() {
     var info = await _detectarGpuNvidia();
@@ -1299,10 +1173,11 @@ async function _atualizarSecaoNvidia() {
     _mostrarAvisoX11Nvidia(info);
 
     // Secure Boot: só faz sentido quando há GPU NVIDIA detectada.
+    // Usa as funções globais de `script.js`.
     var painelSb = document.getElementById('nvidia-secureboot-panel');
     if (painelSb) {
         if (info.detected) {
-            var estadoSb = await _detectarSecureBootNvidia();
+            var estadoSb = await _detectarSecureBoot();
             _renderizarPainelSecureBoot(painelSb, estadoSb);
         } else {
             painelSb.innerHTML = '';
@@ -1504,7 +1379,7 @@ async function executarNvidiaDriver() {
     // instalação anterior), a chave persiste no firmware e o
     // driver carrega normalmente. Só bloqueia se a chave local não
     // existir (primeira vez).
-    var secureBoot = await _detectarSecureBootNvidia();
+    var secureBoot = await _detectarSecureBoot();
     if (secureBoot === 'enabled') {
         var chaveLocal = false;
         try { chaveLocal = SystemState.arquivoPresente('/etc/pki/akmods/certs/public_key.der'); } catch (e) {}
@@ -1833,9 +1708,10 @@ async function restaurarEstadoSessao() {
     // Detecção por vendor
     await _atualizarSecaoAmd();
     await _atualizarSecaoIntel();
-    // Invalida o cache de Secure Boot: o usuário pode ter rodado
-    // `kmodgenca` em outra aba/terminal desde a última consulta.
-    _secureBootNvidiaCache = null;
+    // Invalida o cache de Secure Boot (agora global em `script.js`):
+    // o usuário pode ter rodado `kmodgenca` em outra aba/terminal
+    // desde a última consulta.
+    _secureBootCache = null;
     await _atualizarSecaoNvidia();
 
     // Painel ffmpeg

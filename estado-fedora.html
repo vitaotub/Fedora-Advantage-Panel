@@ -33,10 +33,10 @@ VERSÃO DO FEDORA
 <div class="bloco-comando">
 <div class="comando-info">
 <h3 data-i18n="sessoes.estado-fedora.versao_h3">Verificação de compatibilidade</h3>
-<p data-i18n="sessoes.estado-fedora.versao_desc">O FAP é desenvolvido e testado no Fedora 44. Se você está numa versão diferente, alguns comandos podem se comportar de forma inesperada (pacotes renomeados, repositórios alterados, sintaxe nova). Esta verificação avisa quando isso acontece.</p>
+<p data-i18n="sessoes.estado-fedora.versao_desc">O FAP é desenvolvido e testado no Fedora 44 e no Fedora 45. Se você está numa versão diferente, alguns comandos podem se comportar de forma inesperada (pacotes renomeados, repositórios alterados, sintaxe nova). Esta verificação avisa quando isso acontece.</p>
 
 <div class="info-extra" data-i18n-html="sessoes.estado-fedora.versao_info">
-ℹ️ <strong>Versões suportadas:</strong> Fedora 43, 44 e 45. Versões mais antigas (42 e anteriores) ou mais novas (46+) podem exigir ajustes manuais. O FAP continua funcionando, mas você pode precisar adaptar algum comando específico.
+ℹ️ <strong>Versões suportadas:</strong> Fedora 44 e 45. Versões mais antigas (43 e anteriores) ou mais novas (46+) podem exigir ajustes manuais. O FAP continua funcionando, mas você pode precisar adaptar algum comando específico.
 </div>
 
 <div class="grupo-botoes" style="margin-bottom: 1rem;">
@@ -86,6 +86,29 @@ data-i18n="sessoes.estado-fedora.btn_verificar_atomic">
 
 <div id="diag-atomic-resultado" style="display: none; margin-top: 1rem;"></div>
 </div>
+</div>
+
+</div>
+</details>
+
+<!-- ============================================================
+SECURE BOOT
+============================================================
+Painel completo (3 passos). É a FONTE ÚNICA do texto — cobre os
+6 `akmod-*` do FAP (NVIDIA, VirtualBox, Broadcom, Realtek,
+xpadneo, v4l2loopback). As outras sessões mostram um badge
+compacto apontando para cá.
+-->
+<details class="acordeao">
+<summary data-i18n="sessoes.estado-fedora.secureboot_titulo">🔐 Secure Boot</summary>
+<div class="acordeao-conteudo">
+
+<div class="sessao-descricao" data-i18n-html="sessoes.estado-fedora.secureboot_desc">
+O Secure Boot ativo exige que módulos de kernel compilados localmente sejam assinados com uma chave que o firmware reconheça. Vários pacotes do FAP compilam módulos pelo <code>akmods</code> (NVIDIA, VirtualBox, Broadcom, Realtek, xpadneo, câmera virtual do OBS) — todos assinados com a MESMA chave, gerada por <code>kmodgenca</code>. Um único enrollment cobre todos.
+</div>
+
+<div id="secureboot-painel-global" style="margin-top: 1rem;">
+<span style="color: var(--text-muted);">⏳ Detectando estado do Secure Boot...</span>
 </div>
 
 </div>
@@ -443,11 +466,11 @@ var statusClass = 'aviso-caixa';
 var statusTexto = '';
 
 if (versaoNumero != null) {
-if (versaoNumero >= 43 && versaoNumero <= 45) {
+if (versaoNumero >= 44 && versaoNumero <= 45) {
 statusClass = 'aviso-sucesso';
-statusTexto = _t('sessoes.estado-fedora.versao_suportada', '✅ Versão suportada. O FAP foi desenvolvido e testado nesta faixa.');
-} else if (versaoNumero < 43) {
-statusTexto = _t('sessoes.estado-fedora.versao_antiga', '⚠️ Versão antiga (< 43). Alguns comandos podem falhar. Considere atualizar o Fedora.');
+statusTexto = _t('sessoes.estado-fedora.versao_suportada', '✅ Versão suportada. O FAP foi desenvolvido e testado no Fedora 44 e no Fedora 45.');
+} else if (versaoNumero < 44) {
+statusTexto = _t('sessoes.estado-fedora.versao_antiga', '⚠️ Versão antiga (< 44). Alguns comandos podem falhar. Considere atualizar o Fedora.');
 } else {
 statusTexto = _t('sessoes.estado-fedora.versao_nova', '⚠️ Versão muito nova (> 45). Pode haver mudanças não testadas. Se encontrar problemas, reporte.');
 }
@@ -459,7 +482,7 @@ html =
 '<li><span class="label">' + _t('sessoes.estado-fedora.label_distribuicao', 'Distribuição') + '</span><span class="valor">' + _escapeHTML(fedora) + '</span></li>' +
 '<li><span class="label">' + _t('sessoes.estado-fedora.label_versao', 'Versão') + '</span><span class="valor">' + (versaoNumero || '—') + '</span></li>' +
 '<li><span class="label">' + _t('sessoes.estado-fedora.label_kernel', 'Kernel') + '</span><span class="valor">' + _escapeHTML(kernel || '—') + '</span></li>' +
-'<li><span class="label">' + _t('sessoes.estado-fedora.label_suporte_fap', 'Suporte do FAP') + '</span><span class="valor">43 — 45</span></li>' +
+'<li><span class="label">' + _t('sessoes.estado-fedora.label_suporte_fap', 'Suporte do FAP') + '</span><span class="valor">44 — 45</span></li>' +
 '</ul>';
 }
 
@@ -689,6 +712,19 @@ function restaurarEstadoSessao() {
 // apontaria para um `<button>` que não existe mais no DOM.
 aplicarEstadoInstalavel('selinux-setroubleshoot-install', null);
 aplicarEstadoInstalavel('selinux-gui-install', null);
+
+// Painel completo de Secure Boot (fonte única). Renderiza
+// assíncrono — `_detectarSecureBoot` consulta `/hardware-scan`.
+var painelSb = document.getElementById('secureboot-painel-global');
+if (painelSb) {
+    _detectarSecureBoot().then(function(estado) {
+        _renderizarPainelSecureBoot(painelSb, estado);
+    }).catch(function() {
+        painelSb.innerHTML = '<div class="aviso-caixa">⚠️ ' +
+            _t('seguranca.secureboot_indeterminado',
+                'Não foi possível determinar o estado do Secure Boot.') + '</div>';
+    });
+}
 
 // Botões de leitura: sempre clicáveis (sem estado visual).
 ['fedora-version-check', 'atomic-check', 'selinux-status-check', 'selinux-troubleshoot'].forEach(function(id) {
