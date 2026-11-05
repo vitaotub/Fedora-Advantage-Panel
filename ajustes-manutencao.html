@@ -2653,19 +2653,32 @@ function aplicarEstadoPosUpgrade(idComando) {
     // bloquear o resto da sessão.
     setTimeout(async function() {
         // Se o upgrade já foi finalizado (usuário está no Fedora
-        // 45+), mostra mensagem estática — SEM fetch e SEM
-        // subprocesso. Isso é o que o usuário pediu: "todas as
-        // coisas que acontecem nesta área simplesmente são
-        // interrompidas permanentemente".
+        // 45+), monta um `data` sintético com
+        // `status: 'no_upgrade_needed'` e deixa o
+        // `_renderizarAreaUpgrade` decidir entre:
+        //   • `_renderUpgradePosUpgrade` (se o upgrade foi feito
+        //     pelo FAP — `isExecutado('upgrade-f45-download')`)
+        //   • `_renderUpgradeJaAtual` (senão)
+        //
+        // Antes, o curto-circuito mostrava uma mensagem estática
+        // ("Você já está no Fedora 45...") e IMPEDIA os botões de
+        // pós-upgrade de aparecer, mesmo quando o usuário tinha
+        // feito o download pelo FAP. Bug reportado na v1.4.5.
+        //
+        // O `_renderizarAreaUpgrade` já tem o `case
+        // 'no_upgrade_needed'` que faz a decisão correta:
+        //   if (String(data.current_version) === '45' &&
+        //       isExecutado('upgrade-f45-download')) {
+        //       html = _renderUpgradePosUpgrade(data);
+        //   } else {
+        //       html = _renderUpgradeJaAtual(data);
+        //   }
         if (_upgradeFinalizadoNoCliente()) {
-            var container = document.getElementById('upgrade-fedora-conteudo');
-            if (container) {
-                container.innerHTML =
-                    '<div class="aviso-sucesso">✅ <strong>' +
-                    'Você já está no Fedora 45 (ou superior).</strong><br>' +
-                    'A área de upgrade não é mais aplicável e não realiza mais verificações.' +
-                    '</div>';
-            }
+            _renderizarAreaUpgrade({
+                status: 'no_upgrade_needed',
+                current_version: '45',
+                target_version: '45'
+            });
             return;
         }
 
