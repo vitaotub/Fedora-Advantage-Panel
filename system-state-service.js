@@ -325,12 +325,40 @@ async function _detectarArquivosConfig() {
         '/etc/sysctl.d/99-fap-tcp-bbr.conf',
         home + '/.config/environment.d/99-fap-nvidia-vaapi.conf',
         home + '/.config/MangoHud/MangoHud.conf',
-        home + '/.config/gamemode.ini'
+        home + '/.config/gamemode.ini',
+        // v1.4.8: chave gerada por `kmodgenca` (Sessão 12 → "Preparar
+        // Secure Boot"). O `_aplicarEstadoNvidia` usa
+        // `SystemState.arquivoPresente('/etc/pki/akmods/certs/public_key.der')`
+        // para decidir se o botão "Instalar Driver NVIDIA" fica
+        // habilitado. Sem esta entrada, o backend NUNCA reporta o
+        // arquivo — o botão fica desabilitado mesmo com a chave
+        // preparada, e o usuário não consegue instalar o driver.
+        //
+        // O arquivo é um symlink para `fedora_<id>_<hash>.der`,
+        // criado pelo `kmodgenca -a`. O `test -f` do bash segue o
+        // symlink e retorna OK.
+        '/etc/pki/akmods/certs/public_key.der'
     ];
 
     // `test -f a -o -f b` não escala bem; rodamos em paralelo.
+    //
+    // Para arquivos em diretórios restritos (ex.:
+    // `/etc/pki/akmods/certs/public_key.der` é `root:akmods 0750`),
+    // o `test -f` como usuário comum falha com "Permissão negada"
+    // mesmo o arquivo existindo — o usuário não está no grupo
+    // `akmods`, então não pode atravessar o diretório.
+    //
+    // Tentamos primeiro `sudo -n` (rápido, sem senha, funciona se
+    // o usuário tem NOPASSWD — caso do grupo `wheel` no Fedora
+    // padrão). Se falhar, caímos no `test -f` sem sudo (funciona
+    // para arquivos em `~/.config/` e `/etc/sysctl.d/`, que são
+    // legíveis pelo usuário).
+    //
+    // O `sudo -n` NUNCA abre diálogo (por isso o `-n`): se pedir
+    // senha, falha imediato, e o fallback `test -f` cobre. Sem o
+    // `-n`, um `sudo` sem TTY travaria.
     var resultados = await Promise.all(arquivos.map(function(arq) {
-        return _exec('[ -f "' + arq + '" ] && echo "yes" 2>/dev/null');
+        return _exec('(sudo -n test -f "' + arq + '" 2>/dev/null || test -f "' + arq + '" 2>/dev/null) && echo "yes"');
     }));
 
     var presentes = [];

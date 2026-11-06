@@ -715,6 +715,28 @@ aplicarEstadoInstalavel('selinux-gui-install', null);
 
 // Painel completo de Secure Boot (fonte única). Renderiza
 // assíncrono — `_detectarSecureBoot` consulta `/hardware-scan`.
+// Painel completo de Secure Boot (fonte única). Renderiza
+// assíncrono — `_detectarSecureBoot` consulta `/hardware-scan`.
+//
+// O botão "Preparar Secure Boot" gerado por
+// `_renderizarPainelSecureBoot` aponta para
+// `data-logbox="log-sessao-hardware"` (id da Sessão 3). Na
+// Sessão 12 esse log NÃO existe se a Sessão 3 nunca foi aberta —
+// e o `_getLogBox` retornaria null (botão silencioso). Criamos
+// um `log-sessao-hardware` oculto para o `_getLogBox` sempre
+// resolver. O SSE do `executarComandoGenerico` escreve no
+// logBox retornado (o oculto), então o usuário NÃO vê o log em
+// tempo real na Sessão 12 — mas o toast verde do `onSucesso`
+// confirma o resultado (o comando é rápido, ~30s). Se o usuário
+// abrir a Sessão 3, o mesmo botão passa a logar visivelmente lá.
+if (!document.getElementById('log-sessao-hardware')) {
+    var logOculto = document.createElement('div');
+    logOculto.id = 'log-sessao-hardware';
+    logOculto.className = 'terminal-log sessao-compartilhado';
+    logOculto.style.display = 'none';
+    logOculto.setAttribute('aria-hidden', 'true');
+    document.body.appendChild(logOculto);
+}
 var painelSb = document.getElementById('secureboot-painel-global');
 if (painelSb) {
     _detectarSecureBoot().then(function(estado) {

@@ -894,14 +894,13 @@ var SESSOES = [
             textoConcluido: '✅ Driver Nvidia removido',
             textoConcluidoKey: 'sessoes.hardware.texto_concluido_nvidia_driver_remove'
         },
-        'nvidia-modeset-on': {
-            textoConcluido: '✅ Modesetting ativado',
-            textoConcluidoKey: 'sessoes.hardware.texto_concluido_modeset_on'
-        },
-        'nvidia-modeset-off': {
-            textoConcluido: '✅ Modesetting desativado',
-            textoConcluidoKey: 'sessoes.hardware.texto_concluido_modeset_off'
-        },
+        // `nvidia-modeset-on` / `nvidia-modeset-off` removidos na
+        // v1.4.9. O RPM Fusion HowTo desaconselha explicitamente
+        // `nvidia-drm.modeset=1` no Fedora atual (conflita com o
+        // simpledrm do kernel e causa tela congelada em Wayland).
+        // O driver do RPM Fusion já configura o KMS por padrão.
+        // O `_limparIdsOrfaos` remove os IDs do `.progresso.json`
+        // na próxima limpeza.
         'nvidia-vaapi-install': {
             textoConcluido: '✅ Tradutor VA-API instalado',
             textoConcluidoKey: 'sessoes.hardware.texto_concluido_nvidia_vaapi'
@@ -1432,13 +1431,55 @@ async function _prepararSecureBoot() {
     var idComando = 'nvidia-secureboot-prepare';
     var comando =
     'sudo dnf install -y kmodtool akmods mokutil openssl kernel-devel-matched kernel-headers && ' +
-    'sudo kmodgenca -a 2>&1 || true';
+    'sudo kmodgenca -a 2>&1 || true; ' +
+    // ============================================================
+    // PERMISSÃO DO DIRETÓRIO (v1.4.8, rodada 2)
+    // ============================================================
+    //
+    // `kmodgenca -a` cria `/etc/pki/akmods/certs/` como
+    // `root:akmods 0750` — o usuário comum NÃO tem permissão
+    // de atravessar o diretório (nem `o+x`), então o
+    // `test -f public_key.der` no `_detectarArquivosConfig`
+    // retorna "Permissão negada" e o `SystemState` nunca vê
+    // o arquivo. Resultado: o botão "Instalar Driver NVIDIA"
+    // fica desabilitado em qualquer máquina com Secure Boot,
+    // e o usuário não consegue instalar o driver.
+    //
+    // A correção roda DENTRO do mesmo pkexec do "Preparar
+    // Secure Boot" (já autorizado pelo usuário para o
+    // `dnf install`). Não pede senha de novo, não depende
+    // de `sudo -n` (que falha em `wheel` sem NOPASSWD), não
+    // depende de `usermod -aG akmods` (que exigiria
+    // logout/login).
+    //
+    // `o+rx` no diretório e `o+r` no arquivo: a chave é
+    // PÚBLICA (não é segredo — é a metade pública do par
+    // usado para assinar módulos). Dar `o+r` não expõe
+    // nada sensível. `o+rx` no diretório permite atravessar
+    // (necessário para o `test -f`).
+    //
+    // `chmod -R` NÃO é usado: o diretório pode ter outros
+    // arquivos (chaves antigas, privadas) — só o
+    // `public_key.der` (symlink para `fedora_<id>_<hash>.der`)
+    // precisa ser legível. O `|| true` garante que o
+    // `onSucesso` rode mesmo se o `chmod` falhar (improvável
+    // com pkexec, mas defensivo).
+    'sudo chmod o+rx /etc/pki/akmods/certs/ 2>/dev/null || true; ' +
+    'sudo chmod o+r /etc/pki/akmods/certs/public_key.der 2>/dev/null || true';
     await executarComandoGenerico(idComando, comando,
                                   _t('seguranca.secureboot_preparar_btn', '🔐 Preparar Secure Boot'),
                                   async function() {
                                       _secureBootCache = null;
                                       _invalidarContadorSessoes();
                                       _atualizarProgressoGlobal();
+                                      // Invalida o SystemState para forçar re-leitura do
+                                      // `public_key.der` (agora legível). Sem isso, o
+                                      // `_aplicarEstadoNvidia` continua vendo cache stale
+                                      // e mantém o botão desabilitado.
+                                      try {
+                                          SystemState.invalidar();
+                                          await SystemState.carregar(true);
+                                      } catch (e) { /* ignore */ }
                                       if (typeof mostrarToast === 'function') {
                                           mostrarToast(_t('seguranca.secureboot_preparado_ok',
                                                           '✅ Chave do akmods gerada. Falta o enrollment no firmware (passo 2).'),
@@ -1499,8 +1540,22 @@ function _renderizarPainelSecureBoot(container, estado) {
                                                            _t('seguranca.secureboot_passo1_desc',
                                                               'Instala as ferramentas do <code>akmods</code> e gera a chave local em <code>/etc/pki/akmods/certs/</code>. Não altera o firmware ainda — o enrollment vem no passo 2.') + '</p>';
                                                               html += '<div class="botoes-flex">';
+                                                              // `data-comando` + `data-logbox` são OBRIGATÓRIOS: sem eles,
+                                                              // `_getLogBox('nvidia-secureboot-prepare')` retorna null e
+                                                              // `executarComandoGenerico` sai silenciosamente no
+                                                              // `if (!logBox) return;` — o clique no botão não faz nada
+                                                              // (sem log, sem pkexec, sem toast).
+                                                              //
+                                                              // O `id` bate com o botão gerado pela Sessão 3 (NVIDIA):
+                                                              // os dois apontam para o mesmo `log-sessao-hardware`. Na
+                                                              // Sessão 12 (Estado do Fedora), o `restaurarEstadoSessao`
+                                                              // cria um `log-sessao-hardware` oculto se não existir
+                                                              // (bloco 2 abaixo), garantindo que o `_getLogBox` sempre
+                                                              // ache o log.
                                                               html += '<button class="btn-executar" onclick="executarPrepararSecureBoot()" ' +
-                                                              'id="btn-secureboot-prepare">';
+                                                              'data-comando="nvidia-secureboot-prepare" ' +
+                                                              'data-logbox="log-sessao-hardware" ' +
+                                                              'id="btn-nvidia-secureboot-prepare">';
                                                               html += '🔐 ' + _t('seguranca.secureboot_preparar_btn',
                                                                                  'Preparar Secure Boot');
                                                               html += '</button></div></div>';
@@ -1545,28 +1600,37 @@ function _renderizarBadgeSecureBoot(container, estado, contexto) {
     var chaveLocal = false;
     try { chaveLocal = SystemState.arquivoPresente('/etc/pki/akmods/certs/public_key.der'); } catch (e) {}
 
+    // Nome traduzido da Sessão 12 (fonte única do painel de Secure
+    // Boot). Usado no badge e no link para o usuário saber
+    // exatamente para onde vai. Se o nome da sessão mudar no
+    // futuro (renomear `sessoes.estado-fedora.nome`), o badge
+    // acompanha automaticamente.
+    var nomeSessaoSb = _t('sessoes.estado-fedora.nome', 'Estado do Fedora');
+
     if (chaveLocal) {
         // Chave já gerada — badge verde apontando para o enrollment.
         container.innerHTML =
         '<div class="aviso-sucesso" style="margin: 0 0 1rem 0; font-size: 0.85rem;">✅ ' +
-        _t('seguranca.secureboot_badge_ok',
-           'Secure Boot ativo — chave do akmods já preparada. Se ainda não fez o enrollment, complete em <strong>Estado do Fedora</strong>.') +
+        _tVars('seguranca.secureboot_badge_ok',
+               'Secure Boot ativo — chave do akmods já preparada. Se ainda não fez o enrollment, complete em <strong>{sessao}</strong>.',
+               { sessao: nomeSessaoSb }) +
         ' <a href="?session=estado-fedora" style="color: inherit; font-weight: bold; text-decoration: underline;">→</a>' +
         '</div>';
-        return;
+    return;
     }
 
-    // Chave ausente — badge vermelho com link para o passo a passo.
+    // Chave ausente — badge vermelho com link explícito para a
+    // sessão onde o passo a passo está.
     var ctxNome = contexto || 'akmod-*';
     container.innerHTML =
     '<div class="aviso-caixa" style="margin: 0 0 1rem 0; font-size: 0.85rem; border-color: #ef4444; color: #ef4444;">' +
     '<strong>🔐 ' + _t('seguranca.secureboot_badge_titulo',
                        'Secure Boot ativo — enrollment necessário') + '</strong><br>' +
                        _tVars('seguranca.secureboot_badge_desc',
-                              'Antes de instalar {ctx}, prepare a chave do akmods e faça o enrollment no firmware. Sem isso, o módulo não carrega no próximo boot.',
-                              { ctx: ctxNome }) +
+                              'Antes de instalar {ctx}, prepare a chave do akmods e faça o enrollment no firmware. Sem isso, o módulo não carrega no próximo boot. O passo a passo completo está em <strong>{sessao}</strong> → <strong>Secure Boot</strong>.',
+                              { ctx: ctxNome, sessao: nomeSessaoSb }) +
                        ' <a href="?session=estado-fedora" style="color: inherit; font-weight: bold; text-decoration: underline;">' +
-                       _t('seguranca.secureboot_badge_link', 'Abrir passo a passo') +
+                       _tVars('seguranca.secureboot_badge_link', 'Abrir {sessao}', { sessao: nomeSessaoSb }) +
                        '</a>' +
                        '</div>';
 }
@@ -1603,8 +1667,8 @@ var _MAPA_HARDWARE_DEPENDENTE = {
     'lact-install':             ['1002', '1022'],
     'nvidia-driver-install':    ['10de'],
     'nvidia-driver-remove':     ['10de'],
-    'nvidia-modeset-on':        ['10de'],
-    'nvidia-modeset-off':       ['10de'],
+    // `nvidia-modeset-on` / `nvidia-modeset-off` removidos na v1.4.9
+    // junto com o botão (não fazem mais parte do fluxo NVIDIA).
     'nvidia-vaapi-install':     ['10de'],
     'nvidia-vaapi-utils':       ['10de'],
     'nvidia-vaapi-env':         ['10de'],
@@ -4363,6 +4427,24 @@ async function _refreshEstadoSessao() {
         }
         await _sincronizarEstadoFlatpaks();
         _renderizarBadgesFixas();
+
+        // Re-renderiza a Sessão 3 (Hardware) se ela estiver aberta:
+        // o `_aplicarEstadoNvidia` depende do `SystemState` para
+        // decidir se o botão de instalar NVIDIA fica habilitado.
+        // Sem esta chamada, o refresh popula o cache mas o botão
+        // continua com o estado visual antigo (desabilitado) até o
+        // usuário trocar de sessão e voltar.
+        //
+        // `typeof` guard: em Sessão 1, 2, etc., `_atualizarSecaoNvidia`
+        // não existe (é definida no `<script>` do `hardware.html`).
+        if (typeof _atualizarSecaoNvidia === 'function') {
+            try {
+                await _atualizarSecaoNvidia();
+            } catch (e) {
+                console.warn('[refresh] _atualizarSecaoNvidia falhou:', e);
+            }
+        }
+
         if (btn) {
             btn.classList.remove('girando');
             btn.classList.add('sucesso');

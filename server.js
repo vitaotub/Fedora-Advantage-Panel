@@ -2671,6 +2671,63 @@ const server = http.createServer((req, res) => {
     }
 
     // ----------------------------------------------------------
+    // /check-package-available — instalado OU disponível em repo?
+    // ----------------------------------------------------------
+    //
+    // Diferente de `/check-package` (que só diz "instalado sim/não"),
+    // este endpoint diz "instalado / disponível / não disponível".
+    // Usado pelo `executarNvidiaDriver` (v1.4.9) para decidir se
+    // `akmod-nvidia-open` existe no RPM Fusion ANTES de tentar
+    // instalar — caso contrário, o `dnf install` falha com erro
+    // de "package not found" e deixa o sistema em estado ambíguo.
+    //
+    // Fontes:
+    //   • `rpm -q <pkg>` → instalado?
+    //   • `dnf list --all <pkg>` → disponível em algum repo?
+    //
+    // `dnf list --all` cobre tanto instalados quanto disponíveis;
+    // a distinção vem do `rpm -q` primeiro. Roda em ~2s.
+    if (req.method === 'GET' && url === '/check-package-available') {
+        var pkgCheck = query.get('pkg');
+        if (!pkgCheck || !/^[a-zA-Z0-9._-]+$/.test(pkgCheck)) {
+            res.writeHead(400, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: 'pkg inválido' }));
+            return;
+        }
+
+        var scriptAvail =
+        'if rpm -q "' + pkgCheck + '" >/dev/null 2>&1; then ' +
+        '  echo "status=installed"; ' +
+        'elif dnf list --all --quiet "' + pkgCheck + '" 2>/dev/null | grep -q "^' + pkgCheck + '"; then ' +
+        '  echo "status=available"; ' +
+        'else ' +
+        '  echo "status=not_available"; ' +
+        'fi';
+
+    _execReadOnly(scriptAvail, 15000).then(function(stdout) {
+        var raw = _parseChaveValor(stdout);
+        res.writeHead(200, {
+            'Content-Type': 'application/json',
+            'Cache-Control': 'no-cache, no-store, must-revalidate'
+        });
+        res.end(JSON.stringify({
+            installed: raw.status === 'installed',
+            available: raw.status === 'available',
+            pkg: pkgCheck
+        }));
+    }).catch(function(e) {
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({
+            installed: false,
+            available: false,
+            pkg: pkgCheck,
+            error: e.message
+        }));
+    });
+    return;
+    }
+
+    // ----------------------------------------------------------
     // /flatpak-installed — lista de app-ids Flatpak instalados
     // ----------------------------------------------------------
     //
