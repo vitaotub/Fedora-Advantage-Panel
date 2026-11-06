@@ -20,9 +20,9 @@
         "secureboot_indeterminado": "No se pudo determinar el estado de Secure Boot. Si sabes que está activo, sigue los pasos de abajo antes de instalar cualquier <code>akmod-*</code>.",
         "secureboot_chave_ok": "La clave de akmods ya fue generada. Falta el enrollment en el firmware (paso 2).",
         "secureboot_badge_titulo": "Secure Boot está activo — enrollment necesario",
-        "secureboot_badge_desc": "Antes de instalar {ctx}, prepara la clave de akmods y haz el enrollment en el firmware. Sin eso, el módulo no carga en el próximo arranque.",
-        "secureboot_badge_link": "Abrir paso a paso",
-        "secureboot_badge_ok": "Secure Boot está activo — clave de akmods ya preparada. Si aún no hiciste el enrollment, complétalo en <strong>Estado de Fedora</strong>."
+        "secureboot_badge_desc": "Antes de instalar {ctx}, prepara la clave de akmods y haz el enrollment en el firmware. Sin eso, el módulo no carga en el próximo arranque. El paso a paso completo está en <strong>{sessao}</strong> → <strong>Secure Boot</strong>.",
+        "secureboot_badge_link": "Abrir {sessao}",
+        "secureboot_badge_ok": "Secure Boot está activo — clave de akmods ya preparada. Si aún no hiciste el enrollment, complétalo en <strong>{sessao}</strong>."
     },
 
     "comum": {
@@ -246,8 +246,16 @@
             "nvidia_panel_instalado_sem_gpu": "Como el controlador está marcado como instalado pero no se detectó ninguna GPU NVIDIA, usa el botón <strong>Volver a nouveau</strong> abajo para limpiar el sistema.",
             "nvidia_panel_titulo": "🔍 Hardware detectado",
             "nvidia_panel_label_gpu": "GPU",
+            "nvidia_panel_label_geracao": "Generación",
             "nvidia_panel_label_driver": "Controlador recomendado",
             "nvidia_panel_label_serie": "Serie",
+            "nvidia_aviso_espera": "⚠️ ATENCIÓN — lee antes de continuar:\n\n1. La compilación del driver puede tardar de 2 a 10 minutos.\n2. NO CIERRES el FAP durante el proceso.\n3. NO REINICIES el equipo hasta que el FAP avise.\n\nEl FAP te avisará cuando sea seguro reiniciar (o, si algo sale mal, revierte la instalación automáticamente).\n\n¿Continuar?",
+            "nvidia_install_ok": "✅ ¡Driver NVIDIA compilado! Ya puedes reiniciar el equipo.",
+            "nvidia_install_ok_toast": "¡Driver compilado! Puedes reiniciar el equipo.",
+            "nvidia_driver_indisponivel": "Tu GPU ({modelo}) requiere el driver \"{pkg}\", que aún NO está disponible en RPM Fusion para tu versión de Fedora.\n\nEl FAP NO instalará el driver propietario tradicional — es incompatible con tu tarjeta y puede dejar el sistema sin interfaz gráfica.\n\nVerifica de nuevo en unos días o consulta la documentación de RPM Fusion.",
+            "nvidia_driver_indisponivel_curto": "El driver \"{pkg}\" aún no está disponible en RPM Fusion. Tu GPU ({modelo}) no es compatible con el driver propietario tradicional.",
+            "nvidia_driver_indisponivel_panel": "Tu GPU (<strong>{modelo}</strong>) requiere el driver <code>{pkg}</code>, que <strong>aún NO está disponible</strong> en RPM Fusion para tu versión de Fedora. El FAP <strong>no instalará</strong> el driver propietario tradicional — es incompatible con tu tarjeta y puede dejar el sistema sin interfaz gráfica. Verifica de nuevo en unos días o consulta la documentación de RPM Fusion.",
+            "nvidia_serie_legado_bloqueada": "La serie <strong>{nome}</strong> requiere el servidor gráfico <strong>Xorg</strong>, que Fedora 44+ ya no soporta oficialmente. El driver propietario <strong>no está disponible</strong> para esta tarjeta. Sigue usando <code>nouveau</code> (código abierto, ya incluido en Fedora).",
             "nvidia_panel_rpmfusion_aviso": "⚠️ <strong>RPM Fusion Nonfree no está activo.</strong> Actívalo en la sesión <strong>Primeros Pasos</strong> antes de instalar el controlador.",
             "nvidia_secureboot_titulo": "Secure Boot está activo",
             "nvidia_secureboot_desc": "Con Secure Boot activo, el driver NVIDIA debe estar firmado con una clave que el firmware reconozca. Sin eso, el módulo no carga y el sistema sigue en nouveau (o pantalla negra). El proceso de abajo NO desactiva Secure Boot — solo registra la clave del FAP.",
@@ -261,7 +269,7 @@
             "nvidia_secureboot_passo3_desc": "Reinicia el equipo. En la pantalla azul del MOK Management, elige \"Enroll MOK\" → \"Continue\" → \"Yes\", escribe la contraseña del paso 2 y finaliza. ATENCIÓN: el teclado del MOK es siempre QWERTY, aunque tu distribución sea otra. Después vuelve al FAP y haz clic en \"Instalar Driver NVIDIA\".",
             "nvidia_secureboot_indeterminado": "No se pudo determinar el estado de Secure Boot. Si sabes que está activo, sigue los pasos de abajo antes de instalar el driver.",
             "nvidia_secureboot_confirmar": "⚠️ Secure Boot está activo y la clave de akmods aún no fue generada.\n\nEl driver se instalará, pero no cargará hasta que hagas el enrollment de la clave en el firmware (paso 2 del panel de Secure Boot).\n\nRecomendamos hacer clic en \"Preparar Secure Boot\" primero, reiniciar y hacer el enrollment antes de instalar el driver.\n\n¿Instalar de todos modos?",
-            "nvidia_secureboot_bloqueio": "Secure Boot está activo y la clave de akmods no fue preparada. Usa el botón \"Preparar Secure Boot\" de arriba antes de instalar el driver.",
+            "nvidia_secureboot_bloqueio": "Secure Boot está activo y la clave de akmods no fue preparada. Usa el botón \"Preparar Secure Boot\" en {sessao} antes de instalar el driver.",
             "texto_concluido_nvidia_driver": "✅ Controlador NVIDIA instalado",
             "texto_concluido_nvidia_driver_remove": "✅ Controlador NVIDIA eliminado",
             "nvidia_modeset_titulo": "NVIDIA Modesetting (Wayland)",
