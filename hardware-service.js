@@ -97,6 +97,15 @@ async function _driverKernelEmUso(pciAddress) {
     return match ? match[1] : null;
 }
 
+// Detecção de Blackwell (RTX 50xx, GB20x). Mesma regex do client
+// (`_detectarGeracaoNvidia` em hardware.html) — se uma mudar, a
+// outra PRECISA mudar junto. Blackwell exige `akmod-nvidia-open`
+// (o `nvidia-detect` de versões antigas do RPM Fusion retorna
+// `akmod-nvidia`, incompatível).
+function _ehBlackwell(nomeGpu) {
+    return /\bgb2\d|rtx 50[0-9]{2}\b|blackwell/i.test(nomeGpu || '');
+}
+
 async function _nvidiaDetect() {
     // `nvidia-detect` está no RPM Fusion nonfree (não no Fedora
     // padrão). NÃO tentamos instalá-lo daqui: o `install.sh` roda
@@ -137,6 +146,47 @@ async function _checkSecureBoot() {
     if (out.indexOf('enabled') !== -1) return 'enabled';
     if (out.indexOf('disabled') !== -1) return 'disabled';
     return 'unknown';
+}
+
+// ============================================================
+// MOK ENROLLED — verifica se a chave do akmods está de fato
+// registrada no firmware (não só gerada em disco).
+// ============================================================
+//
+// `mokutil --test-key <arquivo>` é o teste canônico:
+//   • exit 0 + "is already enrolled"  → enrolled
+//   • exit != 0 + "is not enrolled"   → gerada mas não enrolled
+//   • arquivo ausente                 → sem chave
+//
+// Usado pelo `/hardware-scan` como campo adicional `secure_boot_enrolled`.
+// O frontend usa isso para esconder o passo a passo do Secure Boot
+// quando o enrollment já foi concluído — em vez de mostrar instruções
+// para algo que o usuário já fez.
+async function _checkMokEnrolled() {
+    var chave = '/etc/pki/akmods/certs/public_key.der';
+
+    // Se o arquivo nem existe, não há o que testar.
+    var existe = await _exec('test -f ' + chave + ' 2>/dev/null && echo yes');
+    if (existe.stdout.trim() !== 'yes') {
+        return { chave_gerada: false, enrolled: false };
+    }
+
+    // `mokutil --test-key` pode exigir root para ler o MOK list.
+    // Tentamos sem sudo primeiro (funciona quando o usuário tem
+    // permissão de leitura no firmware); se falhar com erro de
+    // permissão, tentamos `sudo -n` (NOPASSWD) e, por fim, tratamos
+    // como "desconhecido" — o frontend cai no comportamento antigo.
+    var r = await _exec('mokutil --test-key ' + chave + ' 2>&1');
+    var out = (r.stdout || '').toLowerCase();
+
+    if (out.indexOf('already enrolled') !== -1) {
+        return { chave_gerada: true, enrolled: true };
+    }
+    if (out.indexOf('not enrolled') !== -1) {
+        return { chave_gerada: true, enrolled: false };
+    }
+    // Erro de permissão ou mokutil ausente: não conseguimos determinar.
+    return { chave_gerada: true, enrolled: null };
 }
 
 // ============================================================
@@ -187,6 +237,12 @@ async function scanHardware() {
     var rpmfusionFree = await _repositorioAtivoEm('rpmfusion-free', repolistOutput);
     var rpmfusionNonfree = await _repositorioAtivoEm('rpmfusion-nonfree', repolistOutput);
     var secureBoot = await _checkSecureBoot();
+    // O MOK só faz sentido consultar quando o Secure Boot está ativo.
+    // Em BIOS legacy / SB desabilitado / desconhecido, devolvemos
+    // `null` para não gastar um subprocesso `mokutil` à toa.
+    var mok = (secureBoot === 'enabled')
+    ? await _checkMokEnrolled()
+    : null;
 
     // ---------- PCI ----------
     var pci = await _exec('lspci -nn');
@@ -227,8 +283,14 @@ async function scanHardware() {
             var pacotesSugeridos = (vendor.packages || []).slice();
 
             if (parsed.vendor_id === '10de' && rpmfusionNonfree) {
-                var sugerido = await _nvidiaDetect();
-                if (sugerido) pacotesSugeridos = [sugerido];
+                // Blackwell tem precedência sobre `nvidia-detect` (que pode
+                // retornar o pacote proprietário tradicional, incompatível).
+                if (_ehBlackwell(parsed.name)) {
+                    pacotesSugeridos = ['akmod-nvidia-open'];
+                } else {
+                    var sugerido = await _nvidiaDetect();
+                    if (sugerido) pacotesSugeridos = [sugerido];
+                }
             }
 
             var instalado = false;
@@ -317,7 +379,14 @@ async function scanHardware() {
             rpmfusion_free: rpmfusionFree,
             rpmfusion_nonfree: rpmfusionNonfree
         },
-        secure_boot: secureBoot
+        secure_boot: secureBoot,
+        // `null` quando SB não está ativo. Caso contrário,
+        // `{ chave_gerada: bool, enrolled: bool | null }`:
+        //   • chave_gerada === false → nunca rodou "Preparar Secure Boot"
+        //   • enrolled === true      → chave enrolled no firmware (tudo OK)
+        //   • enrolled === false     → chave gerada mas NÃO enrolled
+        //   • enrolled === null      → não foi possível determinar
+        secure_boot_mok: mok
     };
 }
 

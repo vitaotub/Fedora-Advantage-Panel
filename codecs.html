@@ -307,7 +307,8 @@ async function executarExtrasTainted() {
     'sudo dnf install rpmfusion-nonfree-release-tainted -y && ' +
     'sudo dnf install libdvdcss -y';
     await executarComandoGenerico(idComando, comando,
-        _t('sessoes.codecs.btn_instalar_extras', '📦 Instalar Extras'));
+        _t('sessoes.codecs.btn_instalar_extras', '📦 Instalar Extras'),
+        function() { aplicarEstadoInstalavel(idComando, null); });
 }
 
 // ------------------------------------------------------------
@@ -316,9 +317,16 @@ async function executarExtrasTainted() {
 
 async function executarFontesMS() {
     const idComando = 'fontes-ms-all';
-    const comando = 'sudo dnf install -y curl cabextract fontconfig && curl -L https://downloads.sourceforge.net/project/mscorefonts2/rpms/msttcore-fonts-installer-2.6-1.noarch.rpm -o /tmp/msfonts.rpm && rpm2cpio /tmp/msfonts.rpm | cpio -idmv -D /tmp/ && sudo mkdir -p /usr/share/fonts/microsoft && sudo mv /tmp/usr/share/fonts/msttcore/* /usr/share/fonts/microsoft/ && sudo fc-cache -f -v && rm -rf /tmp/msfonts.rpm /tmp/usr';
+    // `fontconfig` removido da lista de instalação: já é dependência
+    // do GTK (o FAP roda em GTK3 + WebKitGTK), então está sempre
+    // presente em ambiente gráfico. Instalá-lo de novo era no-op
+    // (~0.5s de latência desnecessária no `dnf`). `curl` mantido
+    // por segurança (variantes mínimas do Fedora podem não trazer
+    // por padrão).
+    const comando = 'sudo dnf install -y curl cabextract && curl -L https://downloads.sourceforge.net/project/mscorefonts2/rpms/msttcore-fonts-installer-2.6-1.noarch.rpm -o /tmp/msfonts.rpm && rpm2cpio /tmp/msfonts.rpm | cpio -idmv -D /tmp/ && sudo mkdir -p /usr/share/fonts/microsoft && sudo mv /tmp/usr/share/fonts/msttcore/* /usr/share/fonts/microsoft/ && sudo fc-cache -f -v && rm -rf /tmp/msfonts.rpm /tmp/usr';
     await executarComandoGenerico(idComando, comando,
-        _t('sessoes.codecs.btn_instalar_fontes', '📦 Instalar Fontes MS'));
+        _t('sessoes.codecs.btn_instalar_fontes', '📦 Instalar Fontes MS'),
+        function() { aplicarEstadoInstalavel(idComando, null); });
 }
 
 // ============================================================

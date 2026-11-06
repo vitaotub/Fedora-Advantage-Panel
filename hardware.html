@@ -273,10 +273,10 @@ data-i18n="sessoes.hardware.btn_abrir_nvidia_settings">
 <div class="comando-info">
 <h3 data-i18n="sessoes.hardware.nvidia_vaapi_titulo">Aceleração de Vídeo por Hardware (VA-API via NVIDIA)</h3>
 <p data-i18n-html="sessoes.hardware.nvidia_vaapi_desc">
-O driver proprietário da NVIDIA não expõe VA-API nativamente — ele usa a API concorrente VDPAU. O pacote <code>nvidia-vaapi-driver</code> é uma camada de tradução: recebe as chamadas VA-API dos aplicativos (Firefox, Chrome, VLC, etc.) e as converte para o chip NVDEC da NVIDIA. Sem ele, a aceleração de vídeo no navegador não funciona.
+O driver proprietário da NVIDIA não expõe VA-API nativamente — ele usa a API concorrente VDPAU. O pacote <code>libva-nvidia-driver</code> é uma camada de tradução: recebe as chamadas VA-API dos aplicativos (Firefox, Chrome, VLC, etc.) e as converte para o chip NVDEC da NVIDIA. Sem ele, a aceleração de vídeo no navegador não funciona.
 </p>
 <div class="info-extra" data-i18n-html="sessoes.hardware.nvidia_vaapi_info">
-ℹ️ <strong>O que é instalado:</strong> <code>nvidia-vaapi-driver</code> (o tradutor), <code>libva-utils</code> (contém o <code>vainfo</code>), <code>vdpauinfo</code> (verificador VDPAU) e <code>gstreamer1-vaapi</code> (integração com GStreamer).
+ℹ️ <strong>O que é instalado:</strong> <code>libva-nvidia-driver</code> (o tradutor), <code>libva-utils</code> (contém o <code>vainfo</code>), <code>vdpauinfo</code> (verificador VDPAU) e <code>gstreamer1-vaapi</code> (integração com GStreamer).
 </div>
 <div class="grupo-botoes">
 <button class="btn-executar"
@@ -322,7 +322,7 @@ data-i18n="sessoes.hardware.btn_nvidia_vaapi_utils">
 <div class="comando-info">
 <h3 data-i18n="sessoes.hardware.nvidia_vaapi_env_titulo">Configurar Variáveis de Ambiente (VA-API)</h3>
 <p data-i18n-html="sessoes.hardware.nvidia_vaapi_env_desc">
-Cria o arquivo <code>~/.config/environment.d/99-fap-nvidia-vaapi.conf</code> com as variáveis necessárias para o <code>nvidia-vaapi-driver</code> funcionar: <code>NVD_BACKEND=direct</code>, <code>LIBVA_DRIVER_NAME=nvidia</code> e <code>MOZ_DISABLE_RDD_SANDBOX=1</code>. O arquivo é do <strong>seu usuário</strong> (não do sistema) — pode ser removido a qualquer momento clicando em "Reverter".
+Cria o arquivo <code>~/.config/environment.d/99-fap-nvidia-vaapi.conf</code> com as variáveis necessárias para o <code>libva-nvidia-driver</code> funcionar: <code>NVD_BACKEND=direct</code>, <code>LIBVA_DRIVER_NAME=nvidia</code> e <code>MOZ_DISABLE_RDD_SANDBOX=1</code>. O arquivo é do <strong>seu usuário</strong> (não do sistema) — pode ser removido a qualquer momento clicando em "Reverter".
 </p>
 <div class="info-extra" data-i18n-html="sessoes.hardware.nvidia_vaapi_env_info">
 ℹ️ <strong>Sobre a reversão:</strong> o botão "Reverter" apaga apenas o arquivo <code>99-fap-nvidia-vaapi.conf</code>. Seus outros arquivos em <code>~/.config/environment.d/</code> não são tocados. O efeito só é aplicado após logout/login.
@@ -993,12 +993,34 @@ function _detectarGeracaoNvidia(modelo) {
     };
 }
 
+// Cache local do /hardware-scan. A sessão Hardware chama
+// `_detectarGpuPorVendor` 3x (AMD/Intel/NVIDIA) + `_detectarSecureBoot`
+// 1x no boot. Sem cache, são 4 scans completos (lspci+lsusb+rpm+dnf+mokutil)
+// a cada abertura — 4–8s de latência. O TTL curto (5s) cobre o boot
+// da sessão sem mascarar mudanças feitas fora do FAP.
+// `_refreshEstadoSessao` (global) invalida este cache.
+var _hardwareScanCache = { dados: null, ts: 0 };
+var _HARDWARE_SCAN_TTL_MS = 5000;
+
+function _invalidarHardwareScanCache() {
+    _hardwareScanCache = { dados: null, ts: 0 };
+}
+
+async function _fetchHardwareScan() {
+    var agora = Date.now();
+    if (_hardwareScanCache.dados && (agora - _hardwareScanCache.ts) < _HARDWARE_SCAN_TTL_MS) {
+        return _hardwareScanCache.dados;
+    }
+    var r = await fetch(API_URL + '/hardware-scan', { cache: 'no-store' });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    var data = await r.json();
+    _hardwareScanCache = { dados: data, ts: agora };
+    return data;
+}
+
 async function _detectarGpuPorVendor(vendorIds) {
     try {
-        var r = await fetch(API_URL + '/hardware-scan', { cache: 'no-store' });
-        if (!r.ok) return { detected: false, rpmfusion: false };
-        var data = await r.json();
-
+        var data = await _fetchHardwareScan();
         var rpmfusionOk = !!(data.repos && data.repos.rpmfusion_nonfree);
         var gpus = (data.devices || []).filter(function(d) {
             if (d.category !== 'gpu') return false;
@@ -1097,21 +1119,18 @@ function _mostrarAvisoX11Nvidia(info) {
     var serieEl = document.getElementById('nvidia-serie-legado');
     if (!painel) return;
 
-    var serie = info.serie || '';
-    var isLegado = /470xx|390xx/.test(serie);
-
-    if (isLegado && info.detected) {
+    // v1.5.0 (auditoria): `info.serie` é o NOME da geração
+    // ('Kepler', 'Fermi'), não o pacote (470xx/390xx). A regex
+    // antiga nunca casava. A fonte da verdade é `info.geracao.bloqueado`,
+    // que já é usada por `_aplicarEstadoNvidia` para desabilitar o
+    // botão. Aqui só tornamos o painel vermelho visível.
+    if (info.detected && info.geracao && info.geracao.bloqueado) {
         painel.style.display = 'block';
-        if (serieEl) serieEl.textContent = serie;
+        if (serieEl) serieEl.textContent = info.geracao.nome;
 
-        var btn = document.getElementById('btn-nvidia-driver-install');
-        if (btn) {
-            btn.disabled = true;
-            btn.style.opacity = '0.5';
-            btn.style.cursor = 'not-allowed';
-            btn.title = _t('sessoes.hardware.nvidia_serie_legado_desabilitado',
-                'Série ' + serie + ' requer Xorg, que o Fedora não suporta mais oficialmente.');
-        }
+        // O bloqueio do botão já é feito por `_aplicarEstadoNvidia`.
+        // Não duplicamos aqui para manter uma única fonte de verdade
+        // (evita que os dois caminhos divergam em tooltip/estado).
     } else {
         painel.style.display = 'none';
     }
@@ -1128,16 +1147,24 @@ async function _renderizarPanelDriverStatus(info) {
 
     // Bloqueio por geração (Kepler/Fermi exigem Xorg)
     if (info.geracao.bloqueado) {
-        panel.innerHTML =
+            panel.innerHTML =
             '<div class="aviso-caixa" style="border-color: #ef4444; color: #ef4444;">' +
-            '❌ ' + _t('sessoes.hardware.nvidia_serie_legado_bloqueada',
-                'Série <strong>' + info.geracao.nome + '</strong> requer o servidor gráfico <strong>Xorg</strong>, que o Fedora 44+ não oferece mais oficialmente. O driver proprietário <strong>não está disponível</strong> para esta placa. Continue usando o <code>nouveau</code> (código aberto, já incluído no Fedora).') +
+            '❌ ' + _tVars('sessoes.hardware.nvidia_serie_legado_bloqueada',
+                'Série <strong>{nome}</strong> requer o servidor gráfico <strong>Xorg</strong>, que o Fedora 44+ não oferece mais oficialmente. O driver proprietário <strong>não está disponível</strong> para esta placa. Continue usando o <code>nouveau</code> (código aberto, já incluído no Fedora).',
+                { nome: info.geracao.nome }) +
             '</div>';
         return;
     }
 
-    // Bloqueio por driver indisponível no repo (ex.: Blackwell sem -open)
-    if (info.geracao.precisaOpen) {
+    // Bloqueio por driver indisponível no repo (ex.: Blackwell sem -open).
+    //
+    // Só faz sentido consultar o repo quando o driver AINDA NÃO foi
+    // instalado. Se `isExecutado('nvidia-driver-install')` é `true`,
+    // `_aplicarEstadoNvidia` já está no modo "revert" (botão de
+    // instalar virou "Reverter pro nouveau") e o painel de bloqueio
+    // é irrelevante — além de gastar ~2s de `dnf list --all` numa
+    // consulta que não muda o comportamento visível.
+    if (info.geracao.precisaOpen && !isExecutado('nvidia-driver-install')) {
         var disp = await _verificarDriverNvidiaDisponivel(info.geracao);
         if (!disp.disponivel) {
             panel.innerHTML =
@@ -1215,9 +1242,9 @@ async function _aplicarEstadoNvidia(info) {
                 btnInstall2.disabled = true;
                 btnInstall2.style.opacity = '0.5';
                 btnInstall2.style.cursor = 'not-allowed';
-                btnInstall2.title = _t('sessoes.hardware.nvidia_driver_indisponivel_curto',
-                    'O driver "' + info.geracao.pkg + '" ainda não está disponível no RPM Fusion. ' +
-                    'Sua GPU (' + info.modelo + ') não é compatível com o driver proprietário tradicional.');
+                btnInstall2.title = _tVars('sessoes.hardware.nvidia_driver_indisponivel_curto',
+                    'O driver "{pkg}" ainda não está disponível no RPM Fusion. Sua GPU ({modelo}) não é compatível com o driver proprietário tradicional.',
+                    { pkg: info.geracao.pkg, modelo: info.modelo });
             }
             return;
         }
@@ -1598,7 +1625,7 @@ async function executarNvidiaDriver() {
         '    sudo dnf mark user ' + pkg + ' 2>/dev/null || true; ' +
         '    exit 0; ' +
         '  fi; ' +
-        '  if ! pgrep -x akmods >/dev/null 2>&1 && ! pgrep -x akmodsbuild >/dev/null 2>&1; then ' +
+        '  if ! pgrep -f "/usr/sbin/akmods" >/dev/null 2>&1; then ' +
         '    sleep 10; ' +
         '    if modinfo nvidia >/dev/null 2>&1; then ' +
         '      echo "✅ Módulo nvidia compilado com sucesso!"; ' +
@@ -1626,6 +1653,7 @@ async function executarNvidiaDriver() {
     await executarComandoGenerico(idComando, comando,
         _t('sessoes.hardware.btn_nvidia_driver', '📦 Instalar Driver NVIDIA'),
         function() {
+            _invalidarHardwareScanCache();
             desmarcarComoExecutado('nvidia-driver-remove').catch(function(e) {
                 console.warn('[nvidia] Erro ao limpar marker -remove:', e);
             }).then(function() {
@@ -1671,6 +1699,7 @@ async function executarNvidiaDriverRemove() {
     await executarComandoGenerico(idComando, comando,
         _t('sessoes.hardware.btn_nvidia_reverter', '↩️ Reverter pro nouveau'),
         function() {
+            _invalidarHardwareScanCache();
             desmarcarComoExecutado('nvidia-driver-install').then(function() {
                 _atualizarSecaoNvidia();
             }).catch(function() {
@@ -1692,7 +1721,12 @@ function abrirNvidiaSettings() {
 
 async function executarNvidiaVaapiInstall() {
     var idComando = 'nvidia-vaapi-install';
-    var comando = 'sudo dnf install -y nvidia-vaapi-driver';
+    // Fedora 44/45: o pacote foi renomeado de `nvidia-vaapi-driver`
+    // (nome antigo) para `libva-nvidia-driver` (nome atual nos repos
+    // oficiais do Fedora). O binário e o backend NVDEC são os mesmos —
+    // só o nome do pacote mudou. Instalar o nome antigo falha com
+    // "No match for argument".
+    var comando = 'sudo dnf install -y libva-nvidia-driver';
     await executarComandoGenerico(idComando, comando,
         _t('sessoes.hardware.btn_nvidia_vaapi', '📦 Instalar Tradutor VA-API'),
         function() { aplicarEstadoOneShot('nvidia-vaapi-install'); });

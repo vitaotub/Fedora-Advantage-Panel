@@ -145,13 +145,12 @@
     }
 
     function salvarNoCache(lang, dados) {
-        // Não grava se a versão ainda é desconhecida — a chave seria
-        // `..._unknown` e seria descartada em seguida pelo
-        // `_limparCachesAntigos`. Gravar e apagar é I/O inútil.
-        if (!window.FAP_VERSION_UI18N) return;
         try {
+            // Grava sempre (mesmo sem versão) para cache funcionar no boot.
+            // A versão entra como prefixo quando conhecida; _limparCachesAntigos
+            // remove chaves antigas no evento 'fap-versao-pronta'.
             localStorage.setItem(_chaveCache(lang), JSON.stringify(dados));
-        } catch (e) { /* quota cheia ou localStorage desabilitado */ }
+        } catch (e) { }
     }
 
     function carregarDoServidor(lang) {

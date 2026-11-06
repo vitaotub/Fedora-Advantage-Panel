@@ -1904,7 +1904,10 @@ async function _carregarUpgradeStatus(forcar) {
     }
     try {
         var url = API_URL + '/fedora-upgrade-status' + (forcar ? '?refresh=1' : '');
-        var r = await fetch(url, { cache: 'no-store' });
+        var r = await fetch(url, {
+        cache: 'no-store',
+        signal: _sinalTimeout(35000)
+        });
         if (!r.ok) return null;
         var data = await r.json();
         _upgradeStatusCache = data;
@@ -2038,12 +2041,13 @@ function _renderUpgradePosUpgrade(data) {
         'Remove pacotes que não existem mais no Fedora 45 (retired packages), versões duplicadas de pacotes, dependências órfãs e chaves GPG antigas. Também limpa o cache do DNF. É seguro e recomendado.') + '</p>';
     html += '<div class="botoes-flex">';
     var limpezaFeita = isExecutado('pos-upgrade-limpeza');
-    html += '<button class="btn-executar" id="btn-pos-limpeza" ' +
+    html += '<button class="btn-executar" id="btn-pos-upgrade-limpeza" ' +
         'data-comando="pos-upgrade-limpeza" ' +
         'data-logbox="log-sessao-ajustes-manutencao" ' +
+        'data-texto-original="' + _tUpgrade('upgrade_pos_limpeza_btn', '🧹 Executar Limpeza') + '" ' +
         (limpezaFeita ? 'disabled style="background-color:#4b5563;cursor:default;opacity:1;" ' : '') +
         'onclick="executarPosLimpeza()">' +
-        (limpezaFeita ? '✅ Concluído' : '🧹 Executar Limpeza') +
+        (limpezaFeita ? getTextoAposExecucao('pos-upgrade-limpeza') : _tUpgrade('upgrade_pos_limpeza_btn', '🧹 Executar Limpeza')) +
         '</button>';
     html += '</div></div>';
     html += '<div class="progress-container" id="progress-pos-upgrade-limpeza">' +
@@ -2058,12 +2062,16 @@ function _renderUpgradePosUpgrade(data) {
     html += '<h3>' + _tUpgrade('upgrade_pos_rpmconf_titulo', '⚙️ Mesclar Configurações') + '</h3>';
     html += '<p>' + _tUpgrade('upgrade_pos_rpmconf_desc',
         'Instala o rpmconf e mescla os arquivos de configuração que foram modificados durante o upgrade. Aceita as ações padrão (-a). Arquivos não mesclados ficam como .rpmnew/.rpmsave para revisão manual posterior.') + '</p>';
+    var rpmconfFeito = isExecutado('pos-upgrade-rpmconf');
     html += '<div class="botoes-flex">';
-    html += '<button class="btn-executar" id="btn-pos-rpmconf" ' +
-        'data-comando="pos-upgrade-rpmconf" ' +
-        'data-logbox="log-sessao-ajustes-manutencao" ' +
-        'onclick="executarPosRpmconf()">' +
-        '⚙️ Mesclar Configurações</button>';
+    html += '<button class="btn-executar" id="btn-pos-upgrade-rpmconf" ' +
+    'data-comando="pos-upgrade-rpmconf" ' +
+    'data-logbox="log-sessao-ajustes-manutencao" ' +
+    'data-texto-original="' + _tUpgrade('upgrade_pos_rpmconf_btn', '⚙️ Mesclar Configurações') + '" ' +
+    (rpmconfFeito ? 'disabled style="background-color:#4b5563;cursor:default;opacity:1;" ' : '') +
+    'onclick="executarPosRpmconf()">' +
+    (rpmconfFeito ? getTextoAposExecucao('pos-upgrade-rpmconf') : _tUpgrade('upgrade_pos_rpmconf_btn', '⚙️ Mesclar Configurações')) +
+    '</button>';
     html += '</div></div>';
     html += '<div class="progress-container" id="progress-pos-upgrade-rpmconf">' +
         '<div class="progress-bar"><div class="progress-fill" id="progress-fill-pos-upgrade-rpmconf"></div></div>' +
@@ -2078,12 +2086,16 @@ function _renderUpgradePosUpgrade(data) {
     html += '<div class="aviso-caixa" style="border-color: var(--danger); color: var(--danger);">' +
         '⚠️ ' + _tUpgrade('upgrade_pos_distrosync_aviso',
             'Este comando alinha todos os pacotes com os repositórios do Fedora 45. Pode REMOVER pacotes de COPRs que ainda não têm versão para o Fedora 45. Verifique os avisos de terceiros antes de rodar. Use apenas se houver problemas de dependência.') + '</div>';
+    var distrosyncFeito = isExecutado('pos-upgrade-distrosync');
     html += '<div class="botoes-flex">';
-    html += '<button class="btn-executar vermelho" id="btn-pos-distrosync" ' +
-        'data-comando="pos-upgrade-distrosync" ' +
-        'data-logbox="log-sessao-ajustes-manutencao" ' +
-        'onclick="executarPosDistroSync()">' +
-        '🔄 Distro-Sync</button>';
+    html += '<button class="btn-executar vermelho" id="btn-pos-upgrade-distrosync" ' +
+    'data-comando="pos-upgrade-distrosync" ' +
+    'data-logbox="log-sessao-ajustes-manutencao" ' +
+    'data-texto-original="' + _tUpgrade('upgrade_pos_distrosync_btn', '🔄 Distro-Sync') + '" ' +
+    (distrosyncFeito ? 'disabled style="background-color:#4b5563;cursor:default;opacity:1;" ' : '') +
+    'onclick="executarPosDistroSync()">' +
+    (distrosyncFeito ? getTextoAposExecucao('pos-upgrade-distrosync') : _tUpgrade('upgrade_pos_distrosync_btn', '🔄 Distro-Sync')) +
+    '</button>';
     html += '</div></div>';
     html += '<div class="progress-container" id="progress-pos-upgrade-distrosync">' +
         '<div class="progress-bar"><div class="progress-fill" id="progress-fill-pos-upgrade-distrosync"></div></div>' +
@@ -2098,12 +2110,16 @@ function _renderUpgradePosUpgrade(data) {
     html += '<div class="aviso-caixa" style="border-color: var(--warning-border); color: var(--warning-soft);">' +
         '⚠️ ' + _tUpgrade('upgrade_pos_fixfiles_aviso',
             'Agenda um relabel completo do SELinux para o próximo boot. Pode demorar de 10 a 60 minutos dependendo do tamanho do disco. NÃO desligue o computador durante o relabel. Use apenas se houver avisos de SELinux após o upgrade.') + '</div>';
+    var fixfilesFeito = isExecutado('pos-upgrade-fixfiles');
     html += '<div class="botoes-flex">';
-    html += '<button class="btn-executar" id="btn-pos-fixfiles" ' +
-        'data-comando="pos-upgrade-fixfiles" ' +
-        'data-logbox="log-sessao-ajustes-manutencao" ' +
-        'onclick="executarPosFixfiles()">' +
-        '🛡️ Agendar Relabel</button>';
+    html += '<button class="btn-executar" id="btn-pos-upgrade-fixfiles" ' +
+    'data-comando="pos-upgrade-fixfiles" ' +
+    'data-logbox="log-sessao-ajustes-manutencao" ' +
+    'data-texto-original="' + _tUpgrade('upgrade_pos_fixfiles_btn', '🛡️ Agendar Relabel') + '" ' +
+    (fixfilesFeito ? 'disabled style="background-color:#4b5563;cursor:default;opacity:1;" ' : '') +
+    'onclick="executarPosFixfiles()">' +
+    (fixfilesFeito ? getTextoAposExecucao('pos-upgrade-fixfiles') : _tUpgrade('upgrade_pos_fixfiles_btn', '🛡️ Agendar Relabel')) +
+    '</button>';
     html += '</div></div>';
     html += '<div class="progress-container" id="progress-pos-upgrade-fixfiles">' +
         '<div class="progress-bar"><div class="progress-fill" id="progress-fill-pos-upgrade-fixfiles"></div></div>' +
@@ -2117,12 +2133,16 @@ function _renderUpgradePosUpgrade(data) {
     html += '<h3>' + _tUpgrade('upgrade_pos_rescue_titulo', '🛟 Regenerar Rescue Kernel') + '</h3>';
     html += '<p>' + _tUpgrade('upgrade_pos_rescue_desc',
         'Instala o pacote dracut-config-rescue, que habilita a regeneração automática do rescue kernel no próximo kernel update. O rescue kernel atual não é removido — a substituição acontece quando um novo kernel for instalado.') + '</p>';
+    var rescueFeito = isExecutado('pos-upgrade-rescue');
     html += '<div class="botoes-flex">';
-    html += '<button class="btn-executar" id="btn-pos-rescue" ' +
-        'data-comando="pos-upgrade-rescue" ' +
-        'data-logbox="log-sessao-ajustes-manutencao" ' +
-        'onclick="executarPosRescue()">' +
-        '🛟 Instalar dracut-config-rescue</button>';
+    html += '<button class="btn-executar" id="btn-pos-upgrade-rescue" ' +
+    'data-comando="pos-upgrade-rescue" ' +
+    'data-logbox="log-sessao-ajustes-manutencao" ' +
+    'data-texto-original="' + _tUpgrade('upgrade_pos_rescue_btn', '🛟 Instalar dracut-config-rescue') + '" ' +
+    (rescueFeito ? 'disabled style="background-color:#4b5563;cursor:default;opacity:1;" ' : '') +
+    'onclick="executarPosRescue()">' +
+    (rescueFeito ? getTextoAposExecucao('pos-upgrade-rescue') : _tUpgrade('upgrade_pos_rescue_btn', '🛟 Instalar dracut-config-rescue')) +
+    '</button>';
     html += '</div></div>';
     html += '<div class="progress-container" id="progress-pos-upgrade-rescue">' +
         '<div class="progress-bar"><div class="progress-fill" id="progress-fill-pos-upgrade-rescue"></div></div>' +
@@ -2329,9 +2349,10 @@ function _renderUpgradeOutdated(data) {
 function _renderUpgradeCheckFailed(data) {
     return (
         '<div class="aviso-caixa" style="border-color: var(--warning-border); color: var(--warning-soft);">' +
-        '⚠️ <strong>Não foi possível verificar o estado do sistema</strong><br>' +
-        'A checagem de atualizações pendentes falhou (rede instável ou repositório temporariamente indisponível). ' +
-        'Tente novamente em alguns minutos. Enquanto isso, o upgrade permanece bloqueado por segurança.' +
+        '⚠️ <strong>' + _tUpgrade('upgrade_check_failed_titulo',
+            'Não foi possível verificar o estado do sistema') + '</strong><br>' +
+        _tUpgrade('upgrade_check_failed_desc',
+            'A checagem de atualizações pendentes falhou (rede instável ou repositório temporariamente indisponível). Tente novamente em alguns minutos. Enquanto isso, o upgrade permanece bloqueado por segurança.') +
         '</div>'
     );
 }
@@ -2478,7 +2499,7 @@ function _renderUpgradePronto(data) {
     // não conflitar com o `idComando` (`upgrade-f45-download`) usado
     // na lógica de progresso.
     html += '<div class="botoes-flex" style="margin-top: 1rem;">';
-    html += '<button class="btn-executar" id="btn-upgrade-baixar" ' +
+    html += '<button class="btn-executar" id="btn-upgrade-f45-download" ' +
         'data-comando="upgrade-f45-download" ' +
         'data-logbox="log-sessao-ajustes-manutencao" ' +
         'disabled onclick="executarUpgradeDownload()" ' +
@@ -2500,7 +2521,7 @@ function _renderUpgradePronto(data) {
 
 function _plugarListenersUpgradePronto() {
     var checkbox = document.getElementById('upgrade-confirmar-riscos');
-    var btn = document.getElementById('btn-upgrade-baixar');
+    var btn = document.getElementById('btn-upgrade-f45-download');
     if (!checkbox || !btn) return;
 
     checkbox.addEventListener('change', function() {
@@ -2550,13 +2571,13 @@ function _renderUpgradeBaixado(data) {
     // "Cancelar upgrade") passa pelo `confirm()`, mas o comando
     // nunca é executado — nem aparece no log.
     html += '<div class="botoes-flex" style="margin-top: 1.5rem;">';
-    html += '<button class="btn-executar" id="btn-upgrade-reboot" ' +
+    html += '<button class="btn-executar" id="btn-upgrade-f45-reboot" ' +
         'data-comando="upgrade-f45-reboot" ' +
         'data-logbox="log-sessao-ajustes-manutencao" ' +
         'onclick="executarUpgradeReboot()">' +
         '🔄 ' + _tUpgrade('upgrade_btn_reboot', 'Reiniciar agora e atualizar') +
         '</button>';
-    html += '<button class="btn-executar vermelho" id="btn-upgrade-cancelar" ' +
+    html += '<button class="btn-executar vermelho" id="btn-upgrade-f45-cancelar" ' +
         'data-comando="upgrade-f45-cancelar" ' +
         'data-logbox="log-sessao-ajustes-manutencao" ' +
         'onclick="executarUpgradeCancelar()">' +
@@ -2761,13 +2782,14 @@ async function executarPosRescue() {
 }
 
 // Aplica o estado visual do botão após execução: cinza, desabilitado,
-// texto "✅ concluído". Sem lixeira, sem revert — são one-way.
-// O estado persiste via `.progresso.json` (marcarComoExecutado é
-// chamado pelo `executarComandoGenerico` no sucesso).
+// texto específico do `textoConcluidoKey`. Sem lixeira, sem revert —
+// são one-way. O estado persiste via `.progresso.json`
+// (marcarComoExecutado é chamado pelo `executarComandoGenerico` no
+// sucesso).
 function aplicarEstadoPosUpgrade(idComando) {
-    var btn = document.getElementById('btn-pos-' + idComando.replace('pos-upgrade-', ''));
+    var btn = document.getElementById('btn-pos-upgrade-' + idComando.replace('pos-upgrade-', ''));
     if (!btn) return;
-    btn.textContent = _t('comum.btn_concluido', '✅ Concluído');
+    btn.textContent = getTextoAposExecucao(idComando);
     btn.style.backgroundColor = '#4b5563';
     btn.style.cursor = 'default';
     btn.disabled = true;

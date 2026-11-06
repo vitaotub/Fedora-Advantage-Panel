@@ -133,7 +133,7 @@ check-basico:
 		if (!mapaMatch) { console.error('  ERRO: não achei _MAPA_ORIGEM em script.js'); process.exit(1); } \
 		const mapaSet = new Set(); \
 		mapaMatch[1].replace(/'([^']+)':\s*'[^']+'/g, (_, k) => mapaSet.add(k)); \
-		const sessoes = fs.readdirSync('.').filter(f => /^[a-z][a-z0-9-]*\.html$$/.test(f) && f !== 'template-sessao.html'); \
+		const sessoes = fs.readdirSync('.').filter(f => /^[a-z][a-z0-9-]*\.html$$/.test(f)); \
 		const faltando = []; \
 		for (const arq of sessoes) { \
 			const html = fs.readFileSync(arq, 'utf8'); \
@@ -150,7 +150,7 @@ check-basico:
 		const path = require('path'); \
 		const locales = ['en', 'es'].map(l => ({ nome: l, dados: JSON.parse(fs.readFileSync('locales/' + l + '.json', 'utf8')) })); \
 		const scriptJs = fs.readFileSync('script.js', 'utf8'); \
-		const sessoes = fs.readdirSync('.').filter(f => /^[a-z][a-z0-9-]*\.html$$/.test(f) && f !== 'template-sessao.html'); \
+		const sessoes = fs.readdirSync('.').filter(f => /^[a-z][a-z0-9-]*\.html$$/.test(f)); \
 		const chavesUsadas = new Set(); \
 		const isChaveValida = k => /^[a-zA-Z][a-zA-Z0-9_.-]*$$/.test(k) && !/[._]$$/.test(k); \
 		const addChave = k => { if (isChaveValida(k)) chavesUsadas.add(k); }; \

@@ -275,9 +275,9 @@ abre o instalador da comunidade; ele é quem vai pedir o arquivo <code>.exe</cod
 <div class="botoes-flex" style="margin-top: 1rem;">
 <button class="btn-executar"
 onclick="abrirInstaladorAffinity()"
-data-comando="instalar-affinity"
+data-comando="abrir-affinity"
 data-logbox="log-sessao-aplicativos"
-id="btn-instalar-affinity"
+id="btn-abrir-affinity"
 data-i18n="sessoes.aplicativos.btn_abrir_instalador">
 🎨 Abrir Instalador da Affinity
 </button>
@@ -1128,7 +1128,10 @@ async function instalarUrlRpm(idComando) {
             logBox.scrollTop = logBox.scrollHeight;
         }
         try {
-            var r = await fetch(info.apiUrl, { cache: 'no-store' });
+            var r = await fetch(info.apiUrl, {
+                cache: 'no-store',
+                signal: (typeof _sinalTimeout === 'function') ? _sinalTimeout(10000) : undefined
+            });
             if (r.ok) {
                 var data = await r.json();
                 var assets = Array.isArray(data.assets) ? data.assets : [];
@@ -1234,7 +1237,10 @@ async function instalarRcloneManager() {
     try {
         var r = await fetch(
             'https://api.github.com/repos/Zarestia-Dev/rclone-manager/releases/latest',
-            { cache: 'no-store' }
+            {
+                cache: 'no-store',
+                signal: (typeof _sinalTimeout === 'function') ? _sinalTimeout(10000) : undefined
+            }
         );
         if (r.ok) {
             var data = await r.json();
@@ -1313,9 +1319,14 @@ function abrirGitHubAffinity() {
 }
 
 async function abrirInstaladorAffinity() {
-    const idComando = 'instalar-affinity';
+    // `abrir-affinity` (não `instalar-affinity`): este botão só
+    // ABRE o instalador externo do AffinityOnLinux — não instala
+    // nada via FAP. O prefixo `instalar-` era semanticamente
+    // impreciso (e o check #36 do Makefile exige `_MAPA_ORIGEM`
+    // para todo `instalar-*`, o que não se aplica aqui).
+    const idComando = 'abrir-affinity';
     const logBox = _getLogBox(idComando);
-    const btn = document.getElementById('btn-instalar-affinity');
+    const btn = document.getElementById('btn-abrir-affinity');
 
     if (btn) {
         btn.disabled = true;
@@ -1421,7 +1432,10 @@ async function instalarArtCraftLauncher() {
     try {
         var r = await fetch(
             'https://api.github.com/repos/storytold/craft-launcher/releases/latest',
-            { cache: 'no-store' }
+            {
+                cache: 'no-store',
+                signal: (typeof _sinalTimeout === 'function') ? _sinalTimeout(10000) : undefined
+            }
         );
         if (r.ok) {
             var data = await r.json();

@@ -107,7 +107,6 @@ const COMANDOS_SEM_AUTENTICACAO = [
 'setsid -f lact',
 'setsid -f rclone-manager',
 'setsid -f steam',
-'setsid -f heroic',
 'setsid -f rustdesk',
 'setsid -f keepassxc',
 'setsid -f firefox',
@@ -203,11 +202,10 @@ const IDS_SEM_AUTENTICACAO = new Set([
 const PADROES_UPDATE_WHITELIST = [
     /^bash <\(curl -s https:\/\/raw\.githubusercontent\.com\/vitaotub\/Fedora-Advantage-Panel\/main\/install\.sh\) --update$/,
     /^setsid -f bash -c 'bash <\(curl -s https:\/\/raw\.githubusercontent\.com\/vitaotub\/Fedora-Advantage-Panel\/main\/install\.sh\) --uninstall -y'$/,
-    /^setsid -f bash -c 'bash <\(curl -s https:\/\/raw\.githubusercontent\.com\/vitaotub\/Fedora-Advantage-Panel\/main\/install\.sh\) --uninstall -y'$/,
     // nvidia-vaapi-env: escreve arquivo de env do usuário (sem sudo)
     /^mkdir -p ~\/\.config\/environment\.d && tee ~\/\.config\/environment\.d\/99-fap-nvidia-vaapi\.conf <<'FAPEOF'[\s\S]*FAPEOF$/,
-// nvidia-vaapi-env-remove: remove arquivo de env do usuário (sem sudo)
-/^rm -f ~\/\.config\/environment\.d\/99-fap-nvidia-vaapi\.conf$/
+    // nvidia-vaapi-env-remove: remove arquivo de env do usuário (sem sudo)
+    /^rm -f ~\/\.config\/environment\.d\/99-fap-nvidia-vaapi\.conf$/
 ];
 
 function _idSemAuthValido(idComando, comando) {
@@ -863,8 +861,11 @@ async function _verificarCanalRpmFusion(versao) {
 }
 
 async function _detectarVersaoAtualFedora() {
-    var out = await _execReadOnly('cat /etc/fedora-release 2>/dev/null', 3000);
-    var match = out.match(/(\d+)/);
+    var out = await _execReadOnly(
+        '. /etc/os-release 2>/dev/null && [ "$ID" = "fedora" ] && echo "$VERSION_ID"',
+        3000
+    );
+    var match = out.match(/^(\d+)/m);
     return match ? match[1] : null;
 }
 
@@ -880,7 +881,7 @@ async function _detectarAtomic() {
 async function _verificarAtualizacoesPendentes() {
     var check = await _execReadOnly(
         'dnf check-update --quiet > /dev/null 2>&1; echo "exit=$?"',
-        20000
+        30000
     );
     var m = check.match(/exit=(\d+)/);
     var codigo = m ? parseInt(m[1], 10) : -1;
@@ -941,7 +942,7 @@ return out.trim() === 'yes';
 
 async function _detectarComponentesTerceiros() {
     var script = [
-        'rpm -q akmod-nvidia 2>/dev/null | grep -q "^akmod-nvidia" && echo "nvidia=1" || echo "nvidia=0"',
+        '(rpm -q akmod-nvidia >/dev/null 2>&1 || rpm -q akmod-nvidia-open >/dev/null 2>&1) && echo "nvidia=1" || echo "nvidia=0"',
         'rpm -q akmod-wl 2>/dev/null | grep -q "^akmod-wl" && echo "broadcom=1" || echo "broadcom=0"',
         '[ -f /etc/yum.repos.d/hardware:razer.repo ] && echo "razer=1" || echo "razer=0"',
         'rpm -q xpadneo 2>/dev/null | grep -q "^xpadneo" && echo "xpadneo=1" || echo "xpadneo=0"',

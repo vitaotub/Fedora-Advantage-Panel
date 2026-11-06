@@ -1071,24 +1071,13 @@ function restaurarEstadoSessao() {
     // NTSYNC: Estado 2 (sem GUI, então só "✅ instalado" + lixeira).
     aplicarEstadoInstalavel('ntsync-install', null);
 
-    // gamemode-presets-apply: one-shot (bloqueia após execução).
-    var btnPresets = document.getElementById('btn-gamemode-presets-apply');
-    if (btnPresets) {
-        if (isExecutado('gamemode-presets-apply')) {
-            btnPresets.textContent = getTextoAposExecucao('gamemode-presets-apply');
-            btnPresets.style.backgroundColor = '#4b5563';
-            btnPresets.style.cursor = 'default';
-            btnPresets.disabled = true;
-            btnPresets.style.opacity = '1';
-        } else {
-            // `_textoOriginalTraduzido` respeita o idioma corrente.
-            btnPresets.textContent = _textoOriginalTraduzido(btnPresets) || btnPresets.textContent;
-            btnPresets.style.backgroundColor = '';
-            btnPresets.style.cursor = 'pointer';
-            btnPresets.disabled = false;
-            btnPresets.style.opacity = '1';
-        }
-    }
+    // gamemode-presets-apply: Estado 2 (instalar → cinza + lixeira).
+    // O `comandoRemocao` registrado em `registrarAppRemovivel`
+    // restaura MangoHud.conf / gamemode.ini do `.fap-backup` (se
+    // existia antes) ou apaga (se o FAP criou). Antes, o bloco manual
+    // setava texto/cor sem chamar `aplicarEstadoInstalavel` — a
+    // lixeira nunca aparecia e o `comandoRemocao` era dead code.
+    aplicarEstadoInstalavel('gamemode-presets-apply', null);
 }
 
 (function() {

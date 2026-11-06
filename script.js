@@ -123,7 +123,10 @@ async function verificarAtualizacoes() {
         // minuto no cache HTTP.
         var url = 'https://api.github.com/repos/' + GITHUB_REPO +
         '/releases/latest?_=' + agora;
-        var resp = await fetch(url, { cache: 'no-store' });
+        var resp = await fetch(url, {
+            cache: 'no-store',
+            signal: _sinalTimeout(10000)
+        });
         if (!resp.ok) {
             console.warn('[Atualização] GitHub retornou HTTP', resp.status);
             return null;
@@ -147,7 +150,10 @@ async function verificarAtualizacoesForcado() {
     try {
         var url = 'https://api.github.com/repos/' + GITHUB_REPO +
         '/releases/latest?_=' + Date.now();
-        var resp = await fetch(url, { cache: 'no-store' });
+        var resp = await fetch(url, {
+            cache: 'no-store',
+            signal: _sinalTimeout(10000)
+        });
         if (!resp.ok) return null;
         var data = await resp.json();
         var tag = data.tag_name || '';
@@ -209,6 +215,19 @@ function temAtualizacao(versaoLocal, versaoRemota) {
 // ============================================================
 
 var _atualizacaoEmAndamento = false;
+
+// Helper: devolve um AbortSignal com timeout, ou undefined se o
+// WebKitGTK for antigo (sem `AbortSignal.timeout`). Nesse caso,
+// o fetch roda sem timeout (comportamento idêntico ao anterior).
+function _sinalTimeout(ms) {
+    try {
+        if (typeof AbortSignal !== 'undefined' &&
+            typeof AbortSignal.timeout === 'function') {
+            return AbortSignal.timeout(ms);
+            }
+    } catch (e) { /* ignore */ }
+    return undefined;
+}
 
 async function _dispararAtualizacaoFAP() {
     if (_atualizacaoEmAndamento) {
@@ -1068,7 +1087,10 @@ var SESSOES = [
         'instalar-vivaldi': { textoConcluido: '✅ Vivaldi instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_vivaldi' },
         'instalar-edge': { textoConcluido: '✅ Microsoft Edge instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_edge' },
 
-        'instalar-affinity': { sempreClicavel: true },
+        // `abrir-affinity` (não `instalar-affinity`): só abre o instalador
+        // externo do AffinityOnLinux. Não tem `_MAPA_ORIGEM` (não instala
+        // nada via FAP) nem `registrarAppRemovivel` (nada a remover).
+        'abrir-affinity': { sempreClicavel: true },
         'instalar-remmina': { textoConcluido: '✅ Remmina instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_remmina' },
         'instalar-gnome-connections': { textoConcluido: '✅ GNOME Connections instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_gnome_connections' },
         'instalar-krdc': { textoConcluido: '✅ KRDC instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_krdc' },
@@ -1281,7 +1303,48 @@ var SESSOES = [
         // `_limparIdsOrfaos` (que filtra IDs fora de `SESSOES`)
         // não remover o marcador do `.progresso.json` na próxima
         // limpeza.
-        'pos-upgrade-concluido': { sempreClicavel: true }
+        'pos-upgrade-limpeza': {
+            textoConcluido: '✅ Limpeza pós-upgrade feita',
+            textoConcluidoKey: 'sessoes.ajustes-manutencao.upgrade_pos_limpeza_concluido'
+        },
+        'pos-upgrade-rpmconf': {
+            textoConcluido: '✅ Configurações mescladas',
+            textoConcluidoKey: 'sessoes.ajustes-manutencao.upgrade_pos_rpmconf_concluido'
+        },
+        'pos-upgrade-distrosync': {
+            textoConcluido: '✅ Distro-sync feito',
+            textoConcluidoKey: 'sessoes.ajustes-manutencao.upgrade_pos_distrosync_concluido'
+        },
+        'pos-upgrade-fixfiles': {
+            textoConcluido: '✅ Relabel SELinux agendado',
+            textoConcluidoKey: 'sessoes.ajustes-manutencao.upgrade_pos_fixfiles_concluido'
+        },
+        'pos-upgrade-rescue': {
+            textoConcluido: '✅ dracut-config-rescue instalado',
+            textoConcluidoKey: 'sessoes.ajustes-manutencao.upgrade_pos_rescue_concluido'
+        },
+        'pos-upgrade-concluido': { sempreClicavel: true },
+
+        // IDs do fluxo de download/reboot/cancel do upgrade.
+        // Não têm `isExecutado` consultado pela UI (o estado é
+        // derivado de `/fedora-upgrade-status` no client + do
+        // `_upgradeConcluidoPermanente` no server), mas o
+        // `salvarProgresso` do server os grava em `.progresso.json`
+        // quando o comando termina com sucesso. Sem registrá-los
+        // aqui, `_limparIdsOrfaos` os remove a cada ~5s — churn
+        // desnecessário no arquivo.
+        //
+        // `sempreClicavel: true` mantém o mesmo padrão de
+        // `nvidia-secureboot-prepare` e evita que contem no
+        // progresso da sessão. Também melhora `_deveBloquearNavegacao`:
+        // `_sessaoDoComando('upgrade-f45-download')` passa a
+        // retornar `'ajustes-manutencao'`, então o bloqueio de
+        // navegação durante o download é acionado pelo caminho
+        // primário (via `_comandoDnfRodando`), não só pelo fallback
+        // que verifica `progress-container` visível.
+        'upgrade-f45-download': { sempreClicavel: true },
+        'upgrade-f45-reboot': { sempreClicavel: true },
+        'upgrade-f45-cancelar': { sempreClicavel: true }
     }
 },
 {
@@ -1293,6 +1356,13 @@ var SESSOES = [
         'atomic-check': { sempreClicavel: true },
         'selinux-status-check': { sempreClicavel: true },
         'selinux-troubleshoot': { sempreClicavel: true },
+        // `_prepararSecureBoot` é chamado tanto pela Sessão 3 (NVIDIA)
+        // quanto pela Sessão 12 (Estado do Fedora). Registrado aqui
+        // para o `_limparIdsOrfaos` não remover o marcador do
+        // `.progresso.json` na próxima limpeza. `sempreClicavel: true`
+        // porque é uma operação de preparação única (não afeta o
+        // progresso da sessão 12).
+        'nvidia-secureboot-prepare': { sempreClicavel: true },
         'selinux-setroubleshoot-install': {
             textoConcluido: '✅ setroubleshoot instalado',
             textoConcluidoKey: 'sessoes.estado-fedora.texto_concluido_setroubleshoot'
@@ -1409,6 +1479,7 @@ function _sessaoDoComando(idComando) {
 // caso mais crítico), mas usa as MESMAS funções daqui.
 
 var _secureBootCache = null;
+var _secureBootMokCache = null;
 
 async function _detectarSecureBoot() {
     if (_secureBootCache !== null) return _secureBootCache;
@@ -1417,10 +1488,20 @@ async function _detectarSecureBoot() {
         if (!r.ok) return 'unknown';
         var data = await r.json();
         _secureBootCache = (data && data.secure_boot) ? data.secure_boot : 'unknown';
+        // `secure_boot_mok` é opcional (backend antigo não devolve).
+        // Quando presente, `{ chave_gerada, enrolled }`:
+        //   • enrolled === true  → chave gerada E enrolled no firmware
+        //   • enrolled === false → chave gerada mas NÃO enrolled
+        //   • enrolled === null  → não foi possível determinar
+        _secureBootMokCache = (data && data.secure_boot_mok) ? data.secure_boot_mok : null;
         return _secureBootCache;
     } catch (e) {
         return 'unknown';
     }
+}
+
+function _mokEnrolled() {
+    return _secureBootMokCache && _secureBootMokCache.enrolled === true;
 }
 
 async function _prepararSecureBoot() {
@@ -1430,7 +1511,7 @@ async function _prepararSecureBoot() {
     // a chave do akmods, que cobre todos os `akmod-*`.
     var idComando = 'nvidia-secureboot-prepare';
     var comando =
-    'sudo dnf install -y kmodtool akmods mokutil openssl kernel-devel-matched kernel-headers && ' +
+    'sudo dnf install -y kmodtool akmods mokutil openssl kernel-devel-matched kernel-headers || exit 1; ' +
     'sudo kmodgenca -a 2>&1 || true; ' +
     // ============================================================
     // PERMISSÃO DO DIRETÓRIO (v1.4.8, rodada 2)
@@ -1470,6 +1551,12 @@ async function _prepararSecureBoot() {
                                   _t('seguranca.secureboot_preparar_btn', '🔐 Preparar Secure Boot'),
                                   async function() {
                                       _secureBootCache = null;
+                                      // Invalida o MOK cache também: a chave
+                                      // acabou de ser gerada, então
+                                      // `_mokEnrolled()` deve voltar a
+                                      // consultar o backend (que agora vê a
+                                      // chave em disco mas `enrolled: false`).
+                                      _secureBootMokCache = null;
                                       _invalidarContadorSessoes();
                                       _atualizarProgressoGlobal();
                                       // Invalida o SystemState para forçar re-leitura do
@@ -1523,6 +1610,24 @@ function _renderizarPainelSecureBoot(container, estado) {
     // estado === 'enabled'
     var chaveLocal = false;
     try { chaveLocal = SystemState.arquivoPresente('/etc/pki/akmods/certs/public_key.der'); } catch (e) {}
+    var mokEnrolled = _mokEnrolled();
+
+    // ============================================================
+    // ESTADO FINAL: Secure Boot ativo + chave gerada + enrolled.
+    // ============================================================
+    //
+    // Quando o enrollment já foi concluído, NÃO faz sentido mostrar
+    // o passo a passo (passos 1–3) nem o botão "Preparar Secure
+    // Boot". O usuário já fez tudo. Mostramos um banner verde de
+    // confirmação e encerramos o painel.
+    if (mokEnrolled) {
+        container.innerHTML =
+        '<div class="aviso-sucesso" style="border-color: #34d399; color: #34d399;">✅ ' +
+        _t('seguranca.secureboot_configurado_ok',
+           'Secure Boot está ativo e a chave do akmods já está <strong>enrolled no firmware</strong>. Os módulos assinados pelo FAP (NVIDIA, VirtualBox, Broadcom, Realtek, xpadneo, câmera virtual do OBS) carregam normalmente no boot. Nenhuma ação adicional é necessária.') +
+        '</div>';
+        return;
+    }
 
     var html = '';
     html += '<div class="aviso-caixa" style="border-color: #f59e0b; color: #f59e0b;">';
@@ -1599,6 +1704,15 @@ function _renderizarBadgeSecureBoot(container, estado, contexto) {
 
     var chaveLocal = false;
     try { chaveLocal = SystemState.arquivoPresente('/etc/pki/akmods/certs/public_key.der'); } catch (e) {}
+    var mokEnrolled = _mokEnrolled();
+
+    // Enrollment concluído: nada a fazer, nada a mostrar. O badge
+    // some — o Secure Boot está configurado corretamente e os
+    // módulos do akmods carregam sem intervenção.
+    if (mokEnrolled) {
+        container.innerHTML = '';
+        return;
+    }
 
     // Nome traduzido da Sessão 12 (fonte única do painel de Secure
     // Boot). Usado no badge e no link para o usuário saber
@@ -1606,6 +1720,21 @@ function _renderizarBadgeSecureBoot(container, estado, contexto) {
     // futuro (renomear `sessoes.estado-fedora.nome`), o badge
     // acompanha automaticamente.
     var nomeSessaoSb = _t('sessoes.estado-fedora.nome', 'Estado do Fedora');
+
+    // O `contexto` recebido dos call sites é sempre uma descrição
+    // em PT-BR (ex.: 'o driver NVIDIA', 'a câmera virtual do OBS',
+    // 'Broadcom, Realtek ou xpadneo'). Traduzimos aqui antes de
+    // interpolar em `{ctx}` — caso contrário, em EN/ES o badge
+    // mostraria palavras em português ("Before installing o driver
+    // NVIDIA..."). O `_t` cai no fallback (a própria string) em
+    // PT-BR, então o comportamento em PT-BR não muda.
+    var _CTX_I18N = {
+        'o driver NVIDIA': _t('seguranca.secureboot_ctx_nvidia', 'o driver NVIDIA'),
+        'a câmera virtual do OBS': _t('seguranca.secureboot_ctx_obs', 'a câmera virtual do OBS'),
+        'Broadcom, Realtek ou xpadneo': _t('seguranca.secureboot_ctx_perifericos', 'Broadcom, Realtek ou xpadneo'),
+        'VirtualBox': 'VirtualBox'
+    };
+    var ctxTraduzido = _CTX_I18N[contexto] || contexto;
 
     if (chaveLocal) {
         // Chave já gerada — badge verde apontando para o enrollment.
@@ -1621,16 +1750,13 @@ function _renderizarBadgeSecureBoot(container, estado, contexto) {
 
     // Chave ausente — badge vermelho com link explícito para a
     // sessão onde o passo a passo está.
-    var ctxNome = contexto || 'akmod-*';
     container.innerHTML =
     '<div class="aviso-caixa" style="margin: 0 0 1rem 0; font-size: 0.85rem; border-color: #ef4444; color: #ef4444;">' +
     '<strong>🔐 ' + _t('seguranca.secureboot_badge_titulo',
                        'Secure Boot ativo — enrollment necessário') + '</strong><br>' +
                        _tVars('seguranca.secureboot_badge_desc',
                               'Antes de instalar {ctx}, prepare a chave do akmods e faça o enrollment no firmware. Sem isso, o módulo não carrega no próximo boot. O passo a passo completo está em <strong>{sessao}</strong> → <strong>Secure Boot</strong>.',
-                              { ctx: ctxNome, sessao: nomeSessaoSb }) +
-                       ' <a href="?session=estado-fedora" style="color: inherit; font-weight: bold; text-decoration: underline;">' +
-                       _tVars('seguranca.secureboot_badge_link', 'Abrir {sessao}', { sessao: nomeSessaoSb }) +
+                              { ctx: ctxTraduzido, sessao: nomeSessaoSb }) +
                        '</a>' +
                        '</div>';
 }
@@ -2141,6 +2267,27 @@ async function _sincronizarEstadoFlatpaks() {
         await SystemState.carregar();
 
         // ============================================================
+        // GUARD DE ESTADO CONFIÁVEL (v1.5.0, auditoria)
+        // ============================================================
+        //
+        // Se `SystemState.carregar` falhou (rede caiu, /system-state
+        // retornou erro), `_dados` fica `null` no `catch`. O
+        // `cacheIdade()` devolve `Infinity`, que NÃO é `< 10s`, então
+        // o guard de cache fresco abaixo NÃO pula. O loop então vê
+        // `flatpakInstalado()` = false para todos, e desmarca em
+        // massa tudo que o usuário instalou via FAP.
+        //
+        // Guard: se `bruto()` é null/vazio (sem `flatpaks_installed`),
+        // NÃO sincroniza. Só quando os dados são confiáveis.
+        var bruto = (typeof SystemState.bruto === 'function')
+        ? SystemState.bruto()
+        : null;
+        if (!bruto || !Array.isArray(bruto.flatpaks_installed)) {
+            console.log('[Flatpak] sync pulado: SystemState indisponível');
+            return;
+        }
+
+        // ============================================================
         // GUARD DE CACHE FRESCO (v1.4.3)
         // ============================================================
         //
@@ -2154,12 +2301,12 @@ async function _sincronizarEstadoFlatpaks() {
         // Só sincronizamos quando o cache tem >= 10s, o que dá
         // tempo para o `flatpak list` refletir o novo estado.
         var idadeCache = (typeof SystemState.cacheIdade === 'function')
-            ? SystemState.cacheIdade()
-            : 0;
+        ? SystemState.cacheIdade()
+        : 0;
 
         if (idadeCache < 10 * 1000) {
             console.log('[Flatpak] sync pulado: cache recente (' +
-                Math.round(idadeCache / 1000) + 's < 10s)');
+            Math.round(idadeCache / 1000) + 's < 10s)');
             return;
         }
 
@@ -3170,15 +3317,13 @@ var _MAPA_MOTIVO_BLOQUEIO = {
     'vulkan-amd':               'mitigacao.vulkan_amd',
     'vaapi-amd':                'mitigacao.vaapi_amd',
     'nvidia-driver-install':    'mitigacao.nvidia_driver_install',
-    'nvidia-vaapi-install':     'mitigacao.nvidia_vaapi',
     'intel-media-install':      'mitigacao.intel_media_install',
     'libva-intel-install':      'mitigacao.libva_intel',
     'cups-install':             'mitigacao.cups_install',
     'samba-install':            'mitigacao.samba_install',
     'qemu-kvm-install':         'mitigacao.qemu_kvm_install',
     'virtualbox-install':       'mitigacao.virtualbox_install',
-    'gnome-boxes-install':      'mitigacao.gnome_boxes_install',
-    'realtime-setup':           'mitigacao.realtime_setup'
+    'gnome-boxes-install':      'mitigacao.gnome_boxes_install'
 };
 
 function _traduzirMotivoBloqueio(idInstall, info) {
@@ -3830,7 +3975,7 @@ var _MAPA_ORIGEM = {
     'corectrl-install': 'fedora',
     'lact-install': 'comunidade',
     'nvidia-driver-install': 'rpmfusion',
-    'nvidia-vaapi-install': 'rpmfusion',
+    'nvidia-vaapi-install': 'fedora',
     'nvidia-vaapi-utils': 'fedora',
     'intel-media-install': 'fedora',
     'libva-intel-install': 'fedora',
@@ -3911,8 +4056,10 @@ var _MAPA_ORIGEM = {
     'instalar-gear-lever': 'flathub',
     'instalar-packet': 'flathub',
 
-    // ---- Sessão 6 - Comunidade ----
-    'instalar-affinity': 'comunidade',
+    // `instalar-affinity` não tem origem mapeada: o botão só ABRE o
+    // instalador externo do AffinityOnLinux (projeto de terceiros),
+    // não instala nada via FAP. Um badge "Community" ali era
+    // semanticamente impreciso.
 
     // ---- Sessão 7 ----
     'cups-install': 'fedora',
@@ -4077,7 +4224,13 @@ function _renderizarBadgeOrigem(idInstall) {
     var btn = document.getElementById('btn-' + idInstall);
     if (!btn) return;
 
-    var wrapper = _garantirWrapperFlatpak(btn);
+    // Só adiciona o badge se o botão já estiver dentro de um
+    // `.btn-flatpak-wrapper` (criado pelo HTML da sessão para apps
+    // instaláveis). NÃO criamos wrapper aqui — `_mostrarLixeira`
+    // é quem cria (via `_garantirWrapperFlatpak`) quando a lixeira
+    // é necessária, evitando shift de layout em botões de sistema
+    // (drivers, pacotes) que não foram desenhados com badge.
+    var wrapper = btn.closest('.btn-flatpak-wrapper');
     if (!wrapper) return;
 
     // Cria o badge apenas UMA vez (listeners não precisam ser
@@ -4418,9 +4571,20 @@ async function _refreshEstadoSessao() {
         SystemState.invalidar();
         // Invalida também o cache de Secure Boot: o usuário pode ter
         // preparado a chave em outro terminal, ou o enrollment pode
-        // ter acontecido em outro reboot. `_secureBootCache` é um
-        // dos poucos caches que não dependem de `SystemState`.
+        // ter acontecido em outro reboot. `_secureBootCache` e
+        // `_secureBootMokCache` são os únicos caches que não dependem
+        // de `SystemState` — sem zerar os dois, o painel de Secure
+        // Boot continua "sem saber" que o enrollment foi concluído.
         _secureBootCache = null;
+        _secureBootMokCache = null;
+        // Invalida o cache de `/hardware-scan` da Sessão 3 (TTL 5s).
+        // Sem isso, clicar em "Refresh" e abrir Hardware dentro de 5s
+        // mostra dados velhos de detecção de GPU/secure boot.
+        // `typeof` guard: a função é definida no `<script>` do
+        // `hardware.html`, então não existe em outras sessões.
+        if (typeof _invalidarHardwareScanCache === 'function') {
+            try { _invalidarHardwareScanCache(); } catch (e) { /* ignore */ }
+        }
         await SystemState.carregar();
         if (typeof restaurarEstadoSessao === 'function') {
             try { restaurarEstadoSessao(); } catch (e) {}
@@ -4846,10 +5010,14 @@ function _aplicarFiltroSessao(termo) {
     var visiveis = 0;
 
     // 1. Blocos de comando (sessões codecs, hardware, ajustes, etc.)
+    //    NÃO conta o bloco se ele contém `.launcher-item` — os
+    //    launchers são contados individualmente no passo 2. Antes,
+    //    um bloco com 3 launchers visíveis contava como "1 (bloco)
+    //    + 3 (itens) = 4" no banner.
     container.querySelectorAll('.bloco-comando').forEach(function(bloco) {
         var casa = _casaElemento(bloco);
         bloco.style.display = casa ? '' : 'none';
-        if (casa) visiveis++;
+        if (casa && !bloco.querySelector('.launcher-item')) visiveis++;
     });
 
         // 2. Launcher items (sessões aplicativos, gaming). Cada item é
@@ -4923,19 +5091,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     _renderizarCardStatus();
 
-    try {
-        var params = new URLSearchParams(window.location.search);
-        var sessaoAlvo = params.get('session');
-        if (sessaoAlvo && typeof SESSOES_PRINCIPAIS !== 'undefined' &&
-            SESSOES_PRINCIPAIS.indexOf(sessaoAlvo) !== -1) {
-            setTimeout(function() {
-                if (typeof irParaSessao === 'function') {
-                    var idx = SESSOES_PRINCIPAIS.indexOf(sessaoAlvo);
-                    if (idx !== -1) irParaSessao(idx);
-                }
-            }, 500);
-            }
-    } catch (e) { /* ignore */ }
+// (bloco removido — guiado.html já cuida do ?session= em irParaSessaoInicial)
 
     if (typeof I18N !== 'undefined' && typeof I18N.criarSeletorIdioma === 'function') {
         setTimeout(function() { I18N.criarSeletorIdioma(); }, 50);

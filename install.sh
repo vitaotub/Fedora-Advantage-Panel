@@ -225,7 +225,6 @@ ARQUIVOS_PRINCIPAIS=(
 "iniciar_fap_compat.sh"
 "build-container.sh"
 "Makefile"
-"template-sessao.html"
 "CHANGELOG.md"
 )
 

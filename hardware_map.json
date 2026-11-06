@@ -7,14 +7,14 @@
 
     "pci_vendors": {
         "10de": {
-            "name": "NVIDIA Corporation",
-            "category": "gpu",
-            "detection": "nvidia-detect",
-            "packages": ["akmod-nvidia"],
-            "repo_required": "rpmfusion-nonfree",
-            "notes": "Requer RPM Fusion nonfree. O FAP tenta usar nvidia-detect para identificar a geração exata e sugerir o pacote correto (akmod-nvidia, akmod-nvidia-470xx ou akmod-nvidia-390xx).",
-            "notesKey": "sessoes.dispositivos-perifericos.notes.nvidia"
-        },
+    "name": "NVIDIA Corporation",
+    "category": "gpu",
+    "detection": "regex + nvidia-detect (fallback)",
+    "packages": ["akmod-nvidia"],
+    "repo_required": "rpmfusion-nonfree",
+    "notes": "Requer RPM Fusion nonfree. O FAP detecta a geração por regex: Blackwell (RTX 50xx) usa akmod-nvidia-open; Turing/Ada/Ampere usam akmod-nvidia; Maxwell/Pascal/Volta usam akmod-nvidia-580xx; Kepler/Fermi são bloqueados (exigem Xorg, que o Fedora 44+ não suporta). nvidia-detect só é usado como fallback para GPUs não-Blackwell.",
+    "notesKey": "sessoes.dispositivos-perifericos.notes.nvidia"
+},
         "1002": {
             "name": "AMD/ATI",
             "category": "gpu",
