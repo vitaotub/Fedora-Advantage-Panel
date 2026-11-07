@@ -432,7 +432,7 @@ migrar_esquema_antigo() {
 }
 
 # ============================================================
-# MATAR SERVIDOR FAP ANTIGO (helper compartilhado)
+# MATAR SERVIDOR FAP ANTIGO (helper compartilhado — v1.5.2)
 # ============================================================
 #
 # Usado em 3 lugares que tinham o MESMO padrão `pgrep -f "node
@@ -450,21 +450,35 @@ migrar_esquema_antigo() {
 #   2. `$INSTALL_DIR/.fap.pid` — escrito por `iniciar_fap.sh`.
 # Validação: `ps -p <pid> -o cmd=` deve conter "node" + "server.js"
 # (defensivo — evita matar processo alheio que pegou a porta).
+#
+# Também mata os containers (fap-container e fof-container) antes
+# do node. O SIGTERM do node NÃO propaga para o container — são
+# processos separados, iniciados pelo `iniciar_fap.sh`/`iniciar_fof.sh`.
+# Sem isso, o container fica órfão quando o node morre por SIGTERM.
 _mat_atras_servidor_fap() {
     local pid=""
     if command -v lsof > /dev/null 2>&1; then
-        pid=$(lsof -t -i:3000 2>/dev/null | head -1)
+        pid=$(lsof -t -i:3000 2>/dev/null | head -1 || true)
     fi
     if [ -z "$pid" ] && [ -f "$INSTALL_DIR/.fap.pid" ]; then
-        pid=$(cat "$INSTALL_DIR/.fap.pid" 2>/dev/null)
+        pid=$(cat "$INSTALL_DIR/.fap.pid" 2>/dev/null || true)
+    fi
+
+    # Mata o container antes do node (fap-container OU fof-container,
+    # esse último durante migração FOF→FAP). pkill com padrão largo
+    # cobre os dois. `|| true` porque o container pode já ter fechado.
+    if command -v pkill > /dev/null 2>&1; then
+        pkill -f "fap-container.*--url http://localhost:3000" 2>/dev/null || true
+        pkill -f "fof-container.*--url http://localhost:3000" 2>/dev/null || true
     fi
 
     if [ -z "$pid" ] || ! kill -0 "$pid" 2>/dev/null; then
+        rm -f "$INSTALL_DIR/.fap.pid" 2>/dev/null || true
         return 0
     fi
 
     local cmd
-    cmd=$(ps -p "$pid" -o cmd= 2>/dev/null)
+    cmd=$(ps -p "$pid" -o cmd= 2>/dev/null || true)
     case "$cmd" in
         *node*server.js*)
             print_info "🔄 Encerrando o servidor antigo em 3 segundos (PID: $pid)..."
@@ -475,7 +489,7 @@ _mat_atras_servidor_fap() {
             print_info "PID $pid não é o servidor FAP — não vou encerrar."
             ;;
     esac
-    rm -f "$INSTALL_DIR/.fap.pid"
+    rm -f "$INSTALL_DIR/.fap.pid" 2>/dev/null || true
 }
 
 # ============================================================
@@ -541,14 +555,11 @@ _migrar_via_update() {
     echo ""
 
     # Encerra o servidor antigo (node server.js) que ainda está
-    # rodando com o código do FOF. O `pkill` agora é CIRÚRGICO:
-    # casa apenas o server.js dentro do $OLD_INSTALL_DIR ou do
-    # $INSTALL_DIR do FAP — outros projetos Node do usuário não
-    # são tocados.
-    #
-    # Sem esse cuidado, `pkill -f "node server.js"` mataria TODOS
-    # os processos node do usuário que tivessem "server.js" na
-    # linha de comando (projetos próprios, dev servers, etc.).
+    # rodando com o código do FOF. O `_matar_servidor_fap_antigo()`
+    # detecta via `lsof -t -i:3000` (não depende do path, que está
+    # ausente do cmdline) e mata node + container. Antes, o
+    # `pgrep -f "node .*/(fedora-only-fans|fedora-advantage-panel)/server\.js"`
+    # nunca casava (cmdline = `node server.js`) e o FOF sobrevivia.
     _mat_atras_servidor_fap
 }
 
@@ -1189,45 +1200,18 @@ kbuildsycoca6 --noincremental 2>/dev/null || kbuildsycoca5 --noincremental 2>/de
 # ENCERRA O FAP (o container precisa fechar depois da remoção)
 # ============================================================
 #
-# Como o `--uninstall` roda desacoplado do node (setsid -f), o
-# node continua rodando mesmo depois que o `$INSTALL_DIR` foi
-# removido. O container fica aberto apontando para um servidor
-# que não existe mais. Matamos o node do FAP (cirurgicamente, só
-# o do `$INSTALL_DIR` original) e o container fecha sozinho.
+# O bloco original usava `pgrep -f "node .*$INSTALL_DIR/server\.js"`,
+# que nunca casa (o cmdline é só `node server.js`). O `/shutdown`
+# do server.js é quem mata o container + node. Como o node pode
+# já ter morrido (ou o user fechou manualmente), o `/shutdown` é
+# a primeira tentativa e o `_matar_servidor_fap_antigo` é o
+# fallback (v1.5.2).
 #
-# O caminho original precisa ser capturado ANTES do `rm -rf`, então
-# usamos uma variável separada que não é afetada pela remoção.
-local fap_install_dir_original="$INSTALL_DIR"
-
-if pgrep -f "node .*${fap_install_dir_original}/server\.js" > /dev/null 2>&1; then
-    print_info "🔄 Encerrando o servidor do FAP..."
-    pkill -TERM -f "node .*${fap_install_dir_original}/server\.js" 2>/dev/null || true
-    sleep 1
-    pkill -KILL -f "node .*${fap_install_dir_original}/server\.js" 2>/dev/null || true
-fi
-
-# ============================================================
-# ENCERRAR O SERVIDOR E O CONTAINER (se estiverem rodando)
-# ============================================================
-#
-# Após remover os arquivos, o `node server.js` ainda está vivo
-# em memória (só perdeu o arquivo no disco). O container
-# (fap-container) também continua aberto. Sem encerrar os dois,
-# o terminal do iniciar_fap.sh fica pendurado até o usuário
-# fechar a janela manualmente.
-#
-# O server.js tem um endpoint `/shutdown` que:
-#   1. mata o fap-container (janela fecha)
-#   2. mata as árvores de processos filhos
-#   3. fecha SSEs
-#   4. sai
-#
-# Quando o container fecha, o iniciar_fap.sh (que está com
-# `wait` no container) percebe, mata o node (que já está saindo)
-# e fecha o terminal.
-#
-# Só chamamos se o node estiver respondendo (curl rápido).
-# Se o node já morreu, curl falha em <1s, e não há nada a fazer.
+# ORDEM IMPORTA: o `/shutdown` PRIMEIRO, porque ele mata o container
+# (via pkill) e o node (via `_encerrarGraciosamente`) na ordem certa.
+# Se o `_matar_servidor_fap_antigo` rodasse primeiro, ele mataria só
+# o node (SIGTERM), o container ficaria órfão, e o `/shutdown`
+# falharia (node morto).
 print_step "Encerrando servidor e container..."
 if curl -s --max-time 2 -X POST http://127.0.0.1:3000/shutdown > /dev/null 2>&1; then
     print_success "Servidor e container encerrados"
@@ -1235,7 +1219,8 @@ if curl -s --max-time 2 -X POST http://127.0.0.1:3000/shutdown > /dev/null 2>&1;
     # terminal do iniciar_fap.sh fechar junto.
     sleep 1
 else
-    print_info "Servidor já estava encerrado"
+    print_info "Servidor já estava encerrado — limpando processos remanescentes"
+    _mat_atras_servidor_fap
 fi
 
 # ============================================================
@@ -1361,7 +1346,7 @@ criar_atalhos
 print_success "✅ FAP atualizado para a versão mais recente!"
 
 # ============================================================
-# ENCERRA O SERVIDOR ANTIGO APÓS A ATUALIZAÇÃO
+# ENCERRA O SERVIDOR ANTIGO APÓS A ATUALIZAÇÃO (v1.5.2)
 # ============================================================
 #
 # O processo `node server.js` carrega FAP_VERSION uma única vez, no
@@ -1370,59 +1355,18 @@ print_success "✅ FAP atualizado para a versão mais recente!"
 # disponível" continua aparecendo, mesmo com o FAP já atualizado
 # no disco.
 #
-# Solução: encerrar o servidor antigo automaticamente ao fim do
-# update. O usuário só precisa reabrir o FAP com `fap`, e o novo
-# servidor sobe com a versão nova.
+# Pior: o `hardware-service.js` antigo continua em memória. Quando
+# a v1.5.0 introduziu o campo `secure_boot_mok` no `/hardware-scan`,
+# o cliente novo lia o campo mas falava com o servidor antigo, que
+# não o devolvia. Sintoma reportado pelo testador: badge
+# "enrollment necessário" com o MOK já enrolled; só sumia com
+# uninstall+reinstall (que reinicia o servidor com o código novo).
 #
-# O `pkill` é CIRÚRGICO: casa apenas o server.js dentro do
-# $INSTALL_DIR do FAP. Sem isso, `pkill -f "node server.js"`
-# mataria TODOS os processos node do usuário que tivessem
-# "server.js" na linha de comando (projetos próprios, dev
-# servers, etc.).
-
-# Encerra o servidor antigo. A versão anterior usava
-# `pgrep -f "node .*$INSTALL_DIR/server\.js"`, mas o processo real
-# é `node server.js` (cwd = $INSTALL_DIR) — o path completo NÃO
-# aparece no cmdline, então o `pgrep` nunca casava e o `pkill`
-# correspondente era dead code.
-#
-# Sintoma: o servidor antigo continuava rodando após o update. O
-# container reaberto carregava o `script.js`/`index.html` NOVOS do
-# disco, mas as requisições iam para o SERVIDOR antigo (com o
-# `hardware-service.js` antigo em memória). Quando a v1.5.0
-# introduziu o campo `secure_boot_mok` no `/hardware-scan`, o
-# cliente novo não o encontrava no servidor antigo e mostrava
-# "MOK não enrolled" por engano.
-#
-# Solução em 2 camadas:
-#   1. `lsof -t -i:3000` — PID escutando na porta (mais confiável).
-#   2. `$INSTALL_DIR/.fap.pid` — escrito por `iniciar_fap.sh`.
-# Validação: `ps -p <pid> -o cmd=` deve conter "node" + "server.js"
-# (evita matar processo alheio que pegou a porta 3000 — raro, mas
-# defensivo).
-OLD_PID=""
-if command -v lsof > /dev/null 2>&1; then
-    OLD_PID=$(lsof -t -i:3000 2>/dev/null)
-fi
-if [ -z "$OLD_PID" ] && [ -f "$INSTALL_DIR/.fap.pid" ]; then
-    OLD_PID=$(cat "$INSTALL_DIR/.fap.pid" 2>/dev/null)
-fi
-
-if [ -n "$OLD_PID" ] && kill -0 "$OLD_PID" 2>/dev/null; then
-    OLD_CMD=$(ps -p "$OLD_PID" -o cmd= 2>/dev/null | head -c 200)
-    case "$OLD_CMD" in
-        *node*server.js*)
-            print_info "🔄 Encerrando o servidor antigo em 3 segundos (PID: $OLD_PID)..."
-            print_info "💡 Reabra o FAP com o comando 'fap' para usar a versão nova."
-
-            nohup bash -c "sleep 3 && kill $OLD_PID 2>/dev/null; sleep 1; kill -9 $OLD_PID 2>/dev/null" > /dev/null 2>&1 &
-            ;;
-        *)
-            print_info "PID $OLD_PID não é o servidor FAP — não vou encerrar."
-            ;;
-    esac
-fi
-rm -f "$INSTALL_DIR/.fap.pid"
+# O bloco anterior usava `pgrep -f "node .*$INSTALL_DIR/server\.js"`,
+# que **nunca casa** (cmdline = `node server.js`, sem o path).
+# O `_matar_servidor_fap_antigo()` detecta via `lsof -t -i:3000`
+# (fallback em `.fap.pid`) e mata node + container.
+_mat_atras_servidor_fap
 }
 
 mostrar_ajuda() {
