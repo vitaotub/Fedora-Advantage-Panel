@@ -1648,6 +1648,40 @@ function _renderizarPainelSecureBoot(container, estado) {
     }
 
     var html = '';
+
+    // ============================================================
+    // VERIFICAÇÃO INDETERMINADA: chave existe, mas o mokutil não
+    // confirmou o enrollment (D-Bus transitório, permissão negada
+    // em efivars, mokutil ausente). Mostra banner amarelo + botão
+    // "Verificar novamente" ANTES do passo-a-passo.
+    //
+    // O `_checkMokEnrolled` (backend) retorna `enrolled: null` para
+    // "não consegui determinar" — NÃO confundir com `enrolled: false`
+    // ("definitivamente não enrolled"). A UI tem que tratar os dois
+    // casos de forma diferente, senão uma falha transitória vira
+    // "enrollment necessário" (falso positivo que assustou o usuário
+    // na 3ª rodada de testes).
+    // ============================================================
+    var mokIndeterminado = chaveLocal &&
+                           _secureBootMokCache &&
+                           _secureBootMokCache.enrolled === null;
+    if (mokIndeterminado) {
+        html += '<div class="aviso-caixa" style="border-color: #f59e0b; color: #f59e0b; margin-bottom: 1rem;">';
+        html += '<strong>⚠️ Não foi possível verificar se a chave do akmods está enrolled no firmware.</strong><br>';
+        html += '<span style="font-size: 0.85rem;">O arquivo <code>/etc/pki/akmods/certs/public_key.der</code> existe, mas o <code>mokutil --test-key</code> não retornou um resultado conclusivo. ';
+        html += 'Isso pode acontecer por uma falha transitória (D-Bus, efivars). ';
+        html += 'Se você já fez o enrollment, pode ignorar este aviso. ';
+        html += 'Caso contrário, siga os passos abaixo.</span>';
+        if (_secureBootMokCache.erro) {
+            html += '<div style="margin-top: 0.5rem; font-size: 0.75rem; color: var(--text-muted);">Detalhe: <code>' +
+                _escapeHTML(_secureBootMokCache.erro) + '</code></div>';
+        }
+        html += '<div class="botoes-flex" style="margin-top: 0.75rem;">';
+        html += '<button class="btn-executar" onclick="(typeof _refreshEstadoSessao === \'function\') && _refreshEstadoSessao()">🔄 Verificar novamente</button>';
+        html += '</div>';
+        html += '</div>';
+    }
+
     html += '<div class="aviso-caixa" style="border-color: #f59e0b; color: #f59e0b;">';
     html += '<strong>🔐 ' + _t('seguranca.secureboot_titulo',
                                'Secure Boot está ativo') + '</strong><br>';
