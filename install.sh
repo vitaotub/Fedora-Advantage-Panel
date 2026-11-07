@@ -456,20 +456,54 @@ migrar_esquema_antigo() {
 # processos separados, iniciados pelo `iniciar_fap.sh`/`iniciar_fof.sh`.
 # Sem isso, o container fica órfão quando o node morre por SIGTERM.
 _mat_atras_servidor_fap() {
-    local pid=""
-    if command -v lsof > /dev/null 2>&1; then
-        pid=$(lsof -t -i:3000 2>/dev/null | head -1 || true)
-    fi
-    if [ -z "$pid" ] && [ -f "$INSTALL_DIR/.fap.pid" ]; then
-        pid=$(cat "$INSTALL_DIR/.fap.pid" 2>/dev/null || true)
-    fi
-
-    # Mata o container antes do node (fap-container OU fof-container,
-    # esse último durante migração FOF→FAP). pkill com padrão largo
-    # cobre os dois. `|| true` porque o container pode já ter fechado.
+    # ============================================================
+    # ORDEM CORRETA: container primeiro, node depois
+    # ============================================================
+    #
+    # O `pkill` do container PRIMEIRO tem DUAS funções:
+    #   1. Faz o cliente SSE desconectar antes do node, evitando
+    #      que o `_encerrarGraciosamente` do node fique 3s
+    #      esperando conexões SSE fecharem.
+    #   2. **Elimina a possibilidade de `lsof` devolver o PID do
+    #      container** (ver `-sTCP:LISTEN` abaixo).
+    #
+    # O `|| true` cobre o caso de o container já ter fechado
+    # (o usuário pode ter fechado manualmente antes do update).
     if command -v pkill > /dev/null 2>&1; then
         pkill -f "fap-container.*--url http://localhost:3000" 2>/dev/null || true
         pkill -f "fof-container.*--url http://localhost:3000" 2>/dev/null || true
+    fi
+
+    # ============================================================
+    # `-sTCP:LISTEN` — FILTRA SÓ O SERVIDOR
+    # ============================================================
+    #
+    # `lsof -i:3000` sem filtro retorna servidor (LISTEN) E
+    # clientes (ESTABLISHED). O `fap-container` tem conexões
+    # abertas com o node, então o `lsof -i:3000 | head -1` podia
+    # retornar o PID do CONTAINER — não do node.
+    #
+    # Sintoma (bug v1.5.2, reportado em teste real fgc/RTX 5060):
+    # o `case *node*server.js*` não casava, e o node sobrevivia ao
+    # `--update`. Cliente novo (v1.5.1) lia `secure_boot_mok` do
+    # `/hardware-scan`, mas falava com o servidor antigo (v1.4.9
+    # sem o campo) → badge "enrollment necessário" falso positivo.
+    #
+    # `-sTCP:LISTEN` casa apenas sockets em estado LISTEN (o
+    # servidor HTTP), nunca ESTABLISHED (clientes). Também evita
+    # matar por engano algum processo que tenha conexão na porta
+    # 3000 mas não seja o node.
+    local pid=""
+    if command -v lsof > /dev/null 2>&1; then
+        pid=$(lsof -t -i:3000 -sTCP:LISTEN 2>/dev/null | head -1 || true)
+    fi
+
+    # Fallback: `.fap.pid` escrito por `iniciar_fap.sh`. Útil em
+    # sistemas sem `lsof`, ou se o node morreu entre o `lsof` e o
+    # `kill -0` abaixo. O arquivo guarda o PID do node (não do
+    # container), então não corre o risco do `-sTCP:LISTEN` original.
+    if [ -z "$pid" ] && [ -f "$INSTALL_DIR/.fap.pid" ]; then
+        pid=$(cat "$INSTALL_DIR/.fap.pid" 2>/dev/null || true)
     fi
 
     if [ -z "$pid" ] || ! kill -0 "$pid" 2>/dev/null; then
