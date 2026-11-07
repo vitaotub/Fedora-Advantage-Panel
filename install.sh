@@ -432,6 +432,53 @@ migrar_esquema_antigo() {
 }
 
 # ============================================================
+# MATAR SERVIDOR FAP ANTIGO (helper compartilhado)
+# ============================================================
+#
+# Usado em 3 lugares que tinham o MESMO padrão `pgrep -f "node
+# .*$INSTALL_DIR/server\.js"` — padrão que **nunca casa**, porque
+# o processo real é `node server.js` (cwd = $INSTALL_DIR, mas o
+# path completo NÃO aparece no cmdline). Sintoma: o servidor
+# antigo sobrevivia ao `--update`; o cliente novo carregava do
+# disco, mas as requisições iam para o servidor antigo — mistura
+# de versões. Sintoma reportado pelo testador (v1.5.2): badge
+# "enrollment necessário" com o MOK já enrolled; só sumia com
+# uninstall+reinstall.
+#
+# Detecção em 2 camadas:
+#   1. `lsof -t -i:3000` — PID escutando na porta (mais confiável).
+#   2. `$INSTALL_DIR/.fap.pid` — escrito por `iniciar_fap.sh`.
+# Validação: `ps -p <pid> -o cmd=` deve conter "node" + "server.js"
+# (defensivo — evita matar processo alheio que pegou a porta).
+_mat_atras_servidor_fap() {
+    local pid=""
+    if command -v lsof > /dev/null 2>&1; then
+        pid=$(lsof -t -i:3000 2>/dev/null | head -1)
+    fi
+    if [ -z "$pid" ] && [ -f "$INSTALL_DIR/.fap.pid" ]; then
+        pid=$(cat "$INSTALL_DIR/.fap.pid" 2>/dev/null)
+    fi
+
+    if [ -z "$pid" ] || ! kill -0 "$pid" 2>/dev/null; then
+        return 0
+    fi
+
+    local cmd
+    cmd=$(ps -p "$pid" -o cmd= 2>/dev/null)
+    case "$cmd" in
+        *node*server.js*)
+            print_info "🔄 Encerrando o servidor antigo em 3 segundos (PID: $pid)..."
+            print_info "💡 Reabra o FAP com o comando 'fap' para usar a versão nova."
+            nohup bash -c "sleep 3 && kill $pid 2>/dev/null; sleep 1; kill -9 $pid 2>/dev/null" > /dev/null 2>&1 &
+            ;;
+        *)
+            print_info "PID $pid não é o servidor FAP — não vou encerrar."
+            ;;
+    esac
+    rm -f "$INSTALL_DIR/.fap.pid"
+}
+
+# ============================================================
 # MIGRAÇÃO VIA --update (FOF antigo → FAP)
 # ============================================================
 #
@@ -502,11 +549,7 @@ _migrar_via_update() {
     # Sem esse cuidado, `pkill -f "node server.js"` mataria TODOS
     # os processos node do usuário que tivessem "server.js" na
     # linha de comando (projetos próprios, dev servers, etc.).
-    if pgrep -f "node .*/(fedora-only-fans|fedora-advantage-panel)/server\.js" > /dev/null 2>&1; then
-        print_info "🔄 Encerrando o servidor antigo em 3 segundos..."
-        print_info "   A janela do FOF vai fechar automaticamente."
-        nohup bash -c 'sleep 3 && pkill -f "node .*/(fedora-only-fans|fedora-advantage-panel)/server\.js" 2>/dev/null' > /dev/null 2>&1 &
-    fi
+    _mat_atras_servidor_fap
 }
 
 verificar_arquivos_instalados() {
