@@ -127,6 +127,7 @@
             "btn_atualizar": "🔄 Update Fedora",
             "log_iniciando": "🚀 Starting update...",
             "aviso_reboot_necessario": "Restart your computer to apply the updates.",
+            "aviso_reboot_nao_verificado": "Could not check if a reboot is needed. Check in the terminal: <code>dnf needs-restarting -r</code>",
 
             "repositorios_titulo": "📦 Fedora Repositories",
 
