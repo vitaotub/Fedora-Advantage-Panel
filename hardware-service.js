@@ -168,25 +168,41 @@ async function _checkMokEnrolled() {
     // Se o arquivo nem existe, não há o que testar.
     var existe = await _exec('test -f ' + chave + ' 2>/dev/null && echo yes');
     if (existe.stdout.trim() !== 'yes') {
-        return { chave_gerada: false, enrolled: false };
+        return { chave_gerada: false, enrolled: false, erro: null };
     }
 
-    // `mokutil --test-key` pode exigir root para ler o MOK list.
-    // Tentamos sem sudo primeiro (funciona quando o usuário tem
-    // permissão de leitura no firmware); se falhar com erro de
-    // permissão, tentamos `sudo -n` (NOPASSWD) e, por fim, tratamos
-    // como "desconhecido" — o frontend cai no comportamento antigo.
-    var r = await _exec('mokutil --test-key ' + chave + ' 2>&1');
-    var out = (r.stdout || '').toLowerCase();
+    // Interpreta a saída do mokutil. true = enrolled, false =
+    // explicitamente não enrolled, null = não deu para concluir.
+    function _interpretar(saida) {
+        var out = (saida || '').toLowerCase();
+        if (out.indexOf('already enrolled') !== -1) return true;
+        if (out.indexOf('not enrolled') !== -1) return false;
+        return null;
+    }
 
-    if (out.indexOf('already enrolled') !== -1) {
-        return { chave_gerada: true, enrolled: true };
-    }
-    if (out.indexOf('not enrolled') !== -1) {
-        return { chave_gerada: true, enrolled: false };
-    }
-    // Erro de permissão ou mokutil ausente: não conseguimos determinar.
-    return { chave_gerada: true, enrolled: null };
+    // Tentativa 1: sem sudo. `mokutil --test-key` lê o efivar
+    // MokListRT, que normalmente é 0444 (world-readable). Funciona
+    // na maioria dos sistemas, mas pode falhar em firmwares que
+    // restringem o acesso (ou em D-Bus transitório).
+    var r1 = await _exec('mokutil --test-key ' + chave + ' 2>&1', 10000);
+    var res1 = _interpretar(r1.stdout);
+    if (res1 === true)  return { chave_gerada: true, enrolled: true,  erro: null };
+    if (res1 === false) return { chave_gerada: true, enrolled: false, erro: null };
+
+    // Tentativa 2: com `sudo -n` (rápido se NOPASSWD não estiver
+    // configurado — não trava, apenas falha). Cobre casos onde o
+    // efivar exige root, ou o keyctl interno do mokutil precisa
+    // de CAP_SYS_ADMIN.
+    var r2 = await _exec('sudo -n mokutil --test-key ' + chave + ' 2>&1', 10000);
+    var res2 = _interpretar(r2.stdout);
+    if (res2 === true)  return { chave_gerada: true, enrolled: true,  erro: null };
+    if (res2 === false) return { chave_gerada: true, enrolled: false, erro: null };
+
+    // Ambas falharam. Reporta o motivo (tentativa 1, mais comum
+    // — permissão negada no efivar) para o frontend exibir.
+    var motivo = (r1.stdout || r2.stdout || '').slice(0, 200).trim()
+                 || 'mokutil --test-key falhou sem saída';
+    return { chave_gerada: true, enrolled: null, erro: motivo };
 }
 
 // ============================================================
