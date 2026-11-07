@@ -375,19 +375,20 @@ function _atualizarVisibilidadeTerra() {
     // era ignorado — o que fazia o botão "Ativar Terra Extras"
     // nunca aparecer para quem já tinha o Terra ativo antes.
     //
-    // `SystemState` pode não estar carregado ainda (é assíncrono).
-    // Nesse caso, cai no `isExecutado` (comportamento antigo,
-    // seguro) e a próxima chamada pega o estado real.
-    var terraAtivoPorFora = false;
-    var extrasAtivoPorFora = false;
-    try {
-        terraAtivoPorFora = SystemState.repoAtivo('terra');
-        extrasAtivoPorFora =
-            SystemState.repoAtivo('terra-extras') ||
-            SystemState.repoAtivo('terra-mesa') ||
-            SystemState.repoAtivo('terra-nvidia') ||
-            SystemState.repoAtivo('terra-multimedia');
-    } catch (e) { /* SystemState indisponível — cai no isExecutado */ }
+    // `SystemState` já está populado ANTES desta chamada:
+    //   • restaurarEstadoSessao → await SystemState.carregar()
+    //   • onSucesso de install/remove → aguardarConclusaoEEntao já
+    //     rodou carregar(true)
+    // Portanto, `repoAtivo` devolve o estado real (ou `false` se o
+    // repo não existe — nunca lança). Sem try/catch defensivo, que
+    // nunca dispararia mesmo em cache frio (repoAtivo usa _lista()
+    // que devolve []).
+    var terraAtivoPorFora = SystemState.repoAtivo('terra');
+    var extrasAtivoPorFora =
+        SystemState.repoAtivo('terra-extras') ||
+        SystemState.repoAtivo('terra-mesa') ||
+        SystemState.repoAtivo('terra-nvidia') ||
+        SystemState.repoAtivo('terra-multimedia');
 
     var terraAtivo = isExecutado('terra-repo') || terraAtivoPorFora;
     var extrasAtivo = isExecutado('terra-extras-install') || extrasAtivoPorFora;

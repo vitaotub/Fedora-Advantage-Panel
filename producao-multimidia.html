@@ -155,7 +155,13 @@ registrarAppRemovivel('instalar-easyeffects', {
 
 registrarAppRemovivel('obs-cam', {
     tipo: 'dnf',
-    pacotes: ['akmod-v4l2loopback', 'kmod-v4l2loopback', 'v4l-utils'],
+    // `kmod-v4l2loopback` NÃO é instalado pelo FAP (só o
+    // `akmod-v4l2loopback`, que recompila sozinho a cada kernel
+    // novo). Se o usuário o tiver instalado por fora, o `akmod-`
+    // já cobre a detecção de pré-existência — não precisa estar
+    // na lista de remoção. `v4l-utils` é o pacote de diagnóstico
+    // (`v4l2-ctl`) que o FAP instala junto.
+    pacotes: ['akmod-v4l2loopback', 'v4l-utils'],
     nome: 'Câmera Virtual do OBS'
 });
 

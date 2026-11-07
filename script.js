@@ -554,14 +554,14 @@ var SystemState = (function() {
 
         bruto: function() { return _dados; },
 
-        // Idade do cache em ms (v1.4.3). Usado pelo auto-reset para
-        // distinguir "cache velho" (esperar) de "cache fresco" (confiar).
-        // Se `_dados` é `null` (nunca carregou), retorna `Infinity`.
-        // O `_ts` é setado no `_carregar()` quando o fetch resolve.
-        cacheIdade: function() {
-            if (!_dados || !_dadosTs) return Infinity;
-            return Date.now() - _dadosTs;
-        },
+                   // Idade do cache em ms (v1.4.3). Usado pelo auto-reset para
+                   // distinguir "cache velho" (esperar) de "cache fresco" (confiar).
+                   // Se `_dados` é `null` (nunca carregou), retorna `Infinity`.
+                   // O `_ts` é setado no `_carregar()` quando o fetch resolve.
+                   cacheIdade: function() {
+                       if (!_dados || !_dadosTs) return Infinity;
+                       return Date.now() - _dadosTs;
+                   },
 
                    invalidar: function() {
                        _dados = null;
@@ -654,32 +654,32 @@ function _estaRealmenteInstalado(idComando) {
     if (!bruto || !Array.isArray(bruto.packages_installed) ||
         !Array.isArray(bruto.flatpaks_installed)) {
         return true;
-    }
+        }
 
-    if (info.modo === 'desfazerTudo') {
-        if (Array.isArray(info.pacotes)) {
-            for (var i = 0; i < info.pacotes.length; i++) {
-                if (SystemState.pacoteInstalado(info.pacotes[i])) return true;
+        if (info.modo === 'desfazerTudo') {
+            if (Array.isArray(info.pacotes)) {
+                for (var i = 0; i < info.pacotes.length; i++) {
+                    if (SystemState.pacoteInstalado(info.pacotes[i])) return true;
+                }
             }
+            return false;
         }
-        return false;
-    }
-    if (info.tipo === 'flatpak' && info.appId) {
-        return SystemState.flatpakInstalado(info.appId);
-    }
-    // `info.pacotes.length > 0` é obrigatório: `gamemode-presets-apply`
-    // registra `pacotes: []` (são arquivos em ~/.config/, não
-    // pacotes). Sem o length check, o loop era no-op e retornava
-    // `false` — o auto-reset disparava e o botão voltava para
-    // "Aplicar Presets" após cada reload da sessão.
-    if (info.tipo === 'dnf' && Array.isArray(info.pacotes) && info.pacotes.length > 0) {
-        for (var j = 0; j < info.pacotes.length; j++) {
-            if (SystemState.pacoteInstalado(info.pacotes[j])) return true;
+        if (info.tipo === 'flatpak' && info.appId) {
+            return SystemState.flatpakInstalado(info.appId);
         }
-        return false;
-    }
-    // Tipo desconhecido ou sem pacotes: assume instalado.
-    return true;
+        // `info.pacotes.length > 0` é obrigatório: `gamemode-presets-apply`
+        // registra `pacotes: []` (são arquivos em ~/.config/, não
+        // pacotes). Sem o length check, o loop era no-op e retornava
+        // `false` — o auto-reset disparava e o botão voltava para
+        // "Aplicar Presets" após cada reload da sessão.
+        if (info.tipo === 'dnf' && Array.isArray(info.pacotes) && info.pacotes.length > 0) {
+            for (var j = 0; j < info.pacotes.length; j++) {
+                if (SystemState.pacoteInstalado(info.pacotes[j])) return true;
+            }
+            return false;
+        }
+        // Tipo desconhecido ou sem pacotes: assume instalado.
+        return true;
 }
 
 // ============================================================
@@ -1375,24 +1375,24 @@ var SESSOES = [
 },
 {
     id: 'sobre-fap',
-        nome: 'Sobre o FAP',
-        nomeKey: 'sessoes.sobre-fap.nome',
-        // Sessão informativa: aparece na sidebar, mas NÃO conta no
-        // progresso global. Sem isso, mostrava `0/1` para sempre (o
-        // único passo é "desinstalar", que ninguém faz enquanto usa).
-        informativa: true,
-        comandos: {
-            'atualizar-fap': {
-                sempreClicavel: true,
-                textoConcluido: '✅ FAP atualizado',
-                textoConcluidoKey: 'sessoes.sobre-fap.texto_concluido_fap_atualizar'
-            },
-            'desinstalar-fap': {
-                textoConcluido: '✅ FAP desinstalado',
-                textoConcluidoKey: 'sessoes.sobre-fap.texto_concluido_fap_desinstalar'
-            }
+    nome: 'Sobre o FAP',
+    nomeKey: 'sessoes.sobre-fap.nome',
+    // Sessão informativa: aparece na sidebar, mas NÃO conta no
+    // progresso global. Sem isso, mostrava `0/1` para sempre (o
+    // único passo é "desinstalar", que ninguém faz enquanto usa).
+    informativa: true,
+    comandos: {
+        'atualizar-fap': {
+            sempreClicavel: true,
+            textoConcluido: '✅ FAP atualizado',
+            textoConcluidoKey: 'sessoes.sobre-fap.texto_concluido_fap_atualizar'
+        },
+        'desinstalar-fap': {
+            textoConcluido: '✅ FAP desinstalado',
+            textoConcluidoKey: 'sessoes.sobre-fap.texto_concluido_fap_desinstalar'
         }
     }
+}
 ];
 
 var SESSOES_PRINCIPAIS = SESSOES.map(function(s) { return s.id; });
@@ -1480,6 +1480,24 @@ function _sessaoDoComando(idComando) {
 
 var _secureBootCache = null;
 var _secureBootMokCache = null;
+
+// Cache dos contextos traduzidos para o badge de Secure Boot. Os
+// call sites passam strings PT-BR hardcoded; traduzimos UMA vez e
+// reusamos entre badges (Sessões 3/4/5/9/12 chamam no boot). O cache
+// é invalidado no `i18n-pronto` (troca de idioma).
+var _secureBootCtxI18nCache = null;
+
+function _secureBootCtxTraduzido(contexto) {
+    if (!_secureBootCtxI18nCache) {
+        _secureBootCtxI18nCache = {
+            'o driver NVIDIA': _t('seguranca.secureboot_ctx_nvidia', 'o driver NVIDIA'),
+            'a câmera virtual do OBS': _t('seguranca.secureboot_ctx_obs', 'a câmera virtual do OBS'),
+            'Broadcom, Realtek ou xpadneo': _t('seguranca.secureboot_ctx_perifericos', 'Broadcom, Realtek ou xpadneo'),
+            'VirtualBox': 'VirtualBox'
+        };
+    }
+    return _secureBootCtxI18nCache[contexto] || contexto;
+}
 
 async function _detectarSecureBoot() {
     if (_secureBootCache !== null) return _secureBootCache;
@@ -1723,18 +1741,9 @@ function _renderizarBadgeSecureBoot(container, estado, contexto) {
 
     // O `contexto` recebido dos call sites é sempre uma descrição
     // em PT-BR (ex.: 'o driver NVIDIA', 'a câmera virtual do OBS',
-    // 'Broadcom, Realtek ou xpadneo'). Traduzimos aqui antes de
-    // interpolar em `{ctx}` — caso contrário, em EN/ES o badge
-    // mostraria palavras em português ("Before installing o driver
-    // NVIDIA..."). O `_t` cai no fallback (a própria string) em
-    // PT-BR, então o comportamento em PT-BR não muda.
-    var _CTX_I18N = {
-        'o driver NVIDIA': _t('seguranca.secureboot_ctx_nvidia', 'o driver NVIDIA'),
-        'a câmera virtual do OBS': _t('seguranca.secureboot_ctx_obs', 'a câmera virtual do OBS'),
-        'Broadcom, Realtek ou xpadneo': _t('seguranca.secureboot_ctx_perifericos', 'Broadcom, Realtek ou xpadneo'),
-        'VirtualBox': 'VirtualBox'
-    };
-    var ctxTraduzido = _CTX_I18N[contexto] || contexto;
+    // 'Broadcom, Realtek ou xpadneo'). Traduzimos via helper com
+    // cache (populado na primeira chamada, reusado entre badges).
+    var ctxTraduzido = _secureBootCtxTraduzido(contexto);
 
     if (chaveLocal) {
         // Chave já gerada — badge verde apontando para o enrollment.
@@ -1748,8 +1757,9 @@ function _renderizarBadgeSecureBoot(container, estado, contexto) {
     return;
     }
 
-    // Chave ausente — badge vermelho com link explícito para a
-    // sessão onde o passo a passo está.
+    // Chave ausente — badge vermelho apontando para a sessão onde o
+    // passo a passo completo está. O link real é o item da sidebar
+    // (Sessão 12); o badge só informa e direciona.
     container.innerHTML =
     '<div class="aviso-caixa" style="margin: 0 0 1rem 0; font-size: 0.85rem; border-color: #ef4444; color: #ef4444;">' +
     '<strong>🔐 ' + _t('seguranca.secureboot_badge_titulo',
@@ -1757,7 +1767,6 @@ function _renderizarBadgeSecureBoot(container, estado, contexto) {
                        _tVars('seguranca.secureboot_badge_desc',
                               'Antes de instalar {ctx}, prepare a chave do akmods e faça o enrollment no firmware. Sem isso, o módulo não carrega no próximo boot. O passo a passo completo está em <strong>{sessao}</strong> → <strong>Secure Boot</strong>.',
                               { ctx: ctxTraduzido, sessao: nomeSessaoSb }) +
-                       '</a>' +
                        '</div>';
 }
 
@@ -1765,9 +1774,11 @@ function _renderizarBadgeSecureBoot(container, estado, contexto) {
 // do painel são renderizados em PT no primeiro render; o i18n
 // re-aplica via `I18N.aplicarTraducoes` só no load, e o painel é
 // HTML dinâmico — então trocamos o cache para forçar re-render
-// na próxima abertura).
+// na próxima abertura). Invalida também o cache de contextos
+// traduzidos (`_secureBootCtxI18nCache`), que depende do idioma.
 document.addEventListener('i18n-pronto', function() {
     _secureBootCache = null;
+    _secureBootCtxI18nCache = null;
 });
 
 // ============================================================
@@ -2606,85 +2617,85 @@ function aplicarEstadoToggle(idInstall, idRevert, esconderRevertSeNaoFeito, preE
         preExistente = false;
         }
 
-    // `_textoOriginalTraduzido` resolve para `_t(data-i18n, fallback)`
-    // — mesma escolha feita por `restaurarBotaoAposExecucao` (que já
-    // era language-aware). Antes, ler direto de `data-texto-original`
-    // fazia o botão voltar em PT-BR quando `aplicarEstadoToggle` era
-    // chamado em runtime (ex.: `_atualizarSecaoNvidia` após reverter
-    // o driver) — o `aplicarTraducoes` só roda no load.
-    var textoOriginalInstall = _textoOriginalTraduzido(installBtn) || installBtn.textContent;
-    var textoOriginalRevert = _textoOriginalTraduzido(revertBtn) || revertBtn.textContent;
-    var corOriginalInstall = _corOriginalDoBotao(installBtn);
+        // `_textoOriginalTraduzido` resolve para `_t(data-i18n, fallback)`
+        // — mesma escolha feita por `restaurarBotaoAposExecucao` (que já
+        // era language-aware). Antes, ler direto de `data-texto-original`
+        // fazia o botão voltar em PT-BR quando `aplicarEstadoToggle` era
+        // chamado em runtime (ex.: `_atualizarSecaoNvidia` após reverter
+        // o driver) — o `aplicarTraducoes` só roda no load.
+        var textoOriginalInstall = _textoOriginalTraduzido(installBtn) || installBtn.textContent;
+        var textoOriginalRevert = _textoOriginalTraduzido(revertBtn) || revertBtn.textContent;
+        var corOriginalInstall = _corOriginalDoBotao(installBtn);
 
-    var efetivamenteFeito = installFeito || preExistente;
+        var efetivamenteFeito = installFeito || preExistente;
 
-    installBtn.title = '';
+        installBtn.title = '';
 
-    // #20 — Toggles respeitam `permitirRemocaoPreExistente: false`.
-    // Item já estava ativo antes do FAP e o registro pede bloqueio:
-    // o "revert" fica desabilitado com o motivoBloqueio. Toggles
-    // SEM essa flag (ex.: realtime-setup, dual-boot-time) mantêm
-    // o comportamento atual (revert livre).
-    var infoCmdBloq = APPS_REMOVIVEIS[idInstall];
-    if (preExistente && !installFeito && infoCmdBloq &&
-        infoCmdBloq.permitirRemocaoPreExistente === false) {
-        installBtn.textContent = _t('comum.ja_estava_ativo', '✅ Já estava ativo');
-    installBtn.title = _traduzirMotivoBloqueio(idInstall, infoCmdBloq);
-    installBtn.style.backgroundColor = '#4b5563';
-    installBtn.style.cursor = 'not-allowed';
-    installBtn.disabled = true;
-    installBtn.style.opacity = '0.7';
-
-    revertBtn.textContent = _textoOriginalTraduzido(revertBtn) || revertBtn.textContent;
-    revertBtn.style.backgroundColor = '';
-    revertBtn.style.cursor = 'not-allowed';
-    revertBtn.disabled = true;
-    revertBtn.style.opacity = '0.5';
-    revertBtn.title = _traduzirMotivoBloqueio(idInstall, infoCmdBloq);
-    if (esconderRevertSeNaoFeito) {
-        revertBtn.style.display = 'none';
-    } else {
-        revertBtn.style.display = '';
-    }
-    return;
-        }
-
-        if (efetivamenteFeito) {
-        if (preExistente && !installFeito) {
-            installBtn.title = _t('comum.tooltip_preexistente_recurso',
-                                  'Este recurso já estava ativo antes do FAP. O FAP não foi o responsável pela configuração, mas está tratando como ativo normalmente.');
-        }
-        installBtn.textContent = getTextoAposExecucao(idInstall);
+        // #20 — Toggles respeitam `permitirRemocaoPreExistente: false`.
+        // Item já estava ativo antes do FAP e o registro pede bloqueio:
+        // o "revert" fica desabilitado com o motivoBloqueio. Toggles
+        // SEM essa flag (ex.: realtime-setup, dual-boot-time) mantêm
+        // o comportamento atual (revert livre).
+        var infoCmdBloq = APPS_REMOVIVEIS[idInstall];
+        if (preExistente && !installFeito && infoCmdBloq &&
+            infoCmdBloq.permitirRemocaoPreExistente === false) {
+            installBtn.textContent = _t('comum.ja_estava_ativo', '✅ Já estava ativo');
+        installBtn.title = _traduzirMotivoBloqueio(idInstall, infoCmdBloq);
         installBtn.style.backgroundColor = '#4b5563';
-        installBtn.style.cursor = 'default';
+        installBtn.style.cursor = 'not-allowed';
         installBtn.disabled = true;
-        installBtn.style.opacity = '1';
+        installBtn.style.opacity = '0.7';
 
-        revertBtn.textContent = textoOriginalRevert;
-        revertBtn.style.backgroundColor = '';
-        revertBtn.style.cursor = 'pointer';
-        revertBtn.disabled = false;
-        revertBtn.style.opacity = '1';
-        revertBtn.style.display = '';
-    } else {
-        installBtn.textContent = textoOriginalInstall;
-        installBtn.style.backgroundColor = corOriginalInstall || '';
-        installBtn.style.cursor = 'pointer';
-        installBtn.disabled = false;
-        installBtn.style.opacity = '1';
-
-        revertBtn.textContent = textoOriginalRevert;
+        revertBtn.textContent = _textoOriginalTraduzido(revertBtn) || revertBtn.textContent;
         revertBtn.style.backgroundColor = '';
         revertBtn.style.cursor = 'not-allowed';
         revertBtn.disabled = true;
         revertBtn.style.opacity = '0.5';
-
+        revertBtn.title = _traduzirMotivoBloqueio(idInstall, infoCmdBloq);
         if (esconderRevertSeNaoFeito) {
             revertBtn.style.display = 'none';
         } else {
             revertBtn.style.display = '';
         }
-    }
+        return;
+            }
+
+            if (efetivamenteFeito) {
+                if (preExistente && !installFeito) {
+                    installBtn.title = _t('comum.tooltip_preexistente_recurso',
+                                          'Este recurso já estava ativo antes do FAP. O FAP não foi o responsável pela configuração, mas está tratando como ativo normalmente.');
+                }
+                installBtn.textContent = getTextoAposExecucao(idInstall);
+                installBtn.style.backgroundColor = '#4b5563';
+                installBtn.style.cursor = 'default';
+                installBtn.disabled = true;
+                installBtn.style.opacity = '1';
+
+                revertBtn.textContent = textoOriginalRevert;
+                revertBtn.style.backgroundColor = '';
+                revertBtn.style.cursor = 'pointer';
+                revertBtn.disabled = false;
+                revertBtn.style.opacity = '1';
+                revertBtn.style.display = '';
+            } else {
+                installBtn.textContent = textoOriginalInstall;
+                installBtn.style.backgroundColor = corOriginalInstall || '';
+                installBtn.style.cursor = 'pointer';
+                installBtn.disabled = false;
+                installBtn.style.opacity = '1';
+
+                revertBtn.textContent = textoOriginalRevert;
+                revertBtn.style.backgroundColor = '';
+                revertBtn.style.cursor = 'not-allowed';
+                revertBtn.disabled = true;
+                revertBtn.style.opacity = '0.5';
+
+                if (esconderRevertSeNaoFeito) {
+                    revertBtn.style.display = 'none';
+                } else {
+                    revertBtn.style.display = '';
+                }
+            }
 }
 
 function restaurarBotaoAposExecucao(idComando, sucesso) {
@@ -3333,23 +3344,12 @@ function _traduzirMotivoBloqueio(idInstall, info) {
     return chave ? _t(chave, fallback) : fallback;
 }
 
-// ============================================================
-// ESCONDER BOTÃO "ABRIR" APÓS REMOÇÃO
-// ============================================================
-
-function esconderBotoesAbrirDe(idInstall) {
-    var btn = document.getElementById('btn-' + idInstall);
-    if (!btn) return;
-
-    var wrapper = btn.closest('.btn-flatpak-wrapper');
-    var container = wrapper ? wrapper.parentElement : btn.parentElement;
-    if (!container) return;
-
-    var botoes = container.querySelectorAll('.btn-executar.verde[data-comando^="abrir-"]');
-    botoes.forEach(function(b) {
-        b.style.display = 'none';
-    });
-}
+// (removida v1.5.1) `esconderBotoesAbrirDe` era dead code — os
+// botões verdes estáticos `[data-comando^="abrir-"]` não existem
+// mais no HTML desde a Rodada 2B. O "Abrir X" é renderizado pelo
+// próprio `aplicarEstadoInstalavel` (via `_ABRIR_REGISTRY`), que
+// esconde o botão verde legado quando ele ainda existe em HTMLs
+// não migrados. Nenhum call site restante.
 
 // ============================================================
 // HELPER GLOBAL — SUBSTITUIÇÃO "INSTALAR" → "ABRIR"
@@ -3683,7 +3683,12 @@ async function _executarRemocaoApp(idComando) {
         idRemocao = idComando + '-revert';
     } else if (info.tipo === 'dnf') {
         var pacotes = info.pacotes.join(' ');
-        comando = 'sudo dnf remove -y ' + pacotes;
+        // `--skip-broken` (v1.5.1): faz o `dnf remove` ignorar
+        // pacotes da lista que não estão instalados. Sem isso,
+        // um item como `kmod-v4l2loopback` (que o FAP não instala,
+        // só o `akmod-`) derruba o comando com "No match for
+        // argument" e o botão não volta para "Instalar".
+        comando = 'sudo dnf remove -y --skip-broken ' + pacotes;
 
         if (Array.isArray(info.reposRemover) && info.reposRemover.length > 0) {
             var repos = info.reposRemover.join(' ');
@@ -3802,12 +3807,10 @@ async function _executarRemocaoApp(idComando) {
 // de apps é feita por `_executarRemocaoApp` via lixeira ou
 // `comandoRemocao` custom.
 
-function mostrarBotaoDesinstalar(idComando) {
-    const btnReverter = document.getElementById('btn-reverter-' + idComando);
-    if (btnReverter) {
-        btnReverter.disabled = false;
-    }
-}
+// (removida v1.5.1) `mostrarBotaoDesinstalar` era dead code — o id
+// `btn-reverter-<idComando>` nunca existiu no DOM desde a Rodada 2B.
+// O fluxo real de "reverter" é o `aplicarEstadoToggle` /
+// `aplicarEstadoInstalavel`, que manipula o próprio botão de instalar.
 
 async function aguardarConclusaoEEntao(idComando, onSucesso, timeoutMs) {
     var sucesso = await aguardarConclusaoReal(idComando, timeoutMs || 1800000);
@@ -4947,14 +4950,25 @@ function _construirIndiceBusca() {
     return _indicePromessa;
 }
 
-// Verifica se o termo normalizado bate como **prefixo de palavra**
-// em haystackNorm. Evita falsos positivos do tipo "plex" casando
-// dentro de "complexo", "duplex", "perplexo", etc.
+// Verifica se o termo normalizado casa com alguma palavra do
+// haystack. Regra:
+//   • termo de 1–3 chars  → precisa ser IGUAL à palavra (evita
+//     "obs" casando "obsessão" e "gta" casando "gtag")
+//   • termo de 4+ chars   → precisa ser PREFIXO da palavra
+//     (permite "mango" → "MangoHud", "fire" → "Firefox",
+//      "steam" → "steamdeck")
 //
 // Aceita termo multi-palavra: cada palavra do termo precisa casar
-// como PREFIXO de alguma palavra do haystack. Ex.: `"obs studio"`
-// casa `"obs studio"` (ordem irrelevante), mas `"obs studio extra"`
-// NÃO casa `"obs studio"` (extra não bate).
+// com alguma palavra do haystack. Ex.: "obs studio" casa, mas
+// "obs studio extra" NÃO casa (extra não bate).
+//
+// (v1.5.1 — auditoria) Antes esta função usava prefixo puro para
+// TODOS os termos, o que casava "obs" com "obsessão" e "gta" com
+// "gtag". O teste do briefing ("obs" → 1 resultado, sem falso
+// positivo em "obsessão") passava por sorte — a palavra "obsessão"
+// não estava no conteúdo atual. A heurística de "≥ 4 chars =
+// prefixo, < 4 chars = exato" preserva buscas parciais úteis
+// (mango, fire, steam) sem os falsos positivos.
 function _contemPalavra(haystackNorm, termoNorm) {
     if (!haystackNorm || !termoNorm) return false;
 
@@ -4966,11 +4980,15 @@ function _contemPalavra(haystackNorm, termoNorm) {
 
     for (var i = 0; i < palavrasTermo.length; i++) {
         var termo = palavrasTermo[i];
+        var exigeExato = termo.length < 4;
         var casou = false;
+
         for (var j = 0; j < palavrasHay.length; j++) {
-            if (palavrasHay[j].indexOf(termo) === 0) {
-                casou = true;
-                break;
+            var palavra = palavrasHay[j];
+            if (exigeExato) {
+                if (palavra === termo) { casou = true; break; }
+            } else {
+                if (palavra.indexOf(termo) === 0) { casou = true; break; }
             }
         }
         if (!casou) return false;
@@ -5113,7 +5131,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     _renderizarCardStatus();
 
-// (bloco removido — guiado.html já cuida do ?session= em irParaSessaoInicial)
+    // (bloco removido — guiado.html já cuida do ?session= em irParaSessaoInicial)
 
     if (typeof I18N !== 'undefined' && typeof I18N.criarSeletorIdioma === 'function') {
         setTimeout(function() { I18N.criarSeletorIdioma(); }, 50);
@@ -5160,7 +5178,7 @@ document.addEventListener('sessao-carregada', function(e) {
 
     // Se a sessão carregada é 'aplicativos', inicializa os filtros
     if (e && e.detail && e.detail.sessao === 'aplicativos') {
-        setTimeout(_inicializarFiltrosApps, 300);
+        setTimeout(_inicializarFiltrosApp, 300);
     }
 });
 
