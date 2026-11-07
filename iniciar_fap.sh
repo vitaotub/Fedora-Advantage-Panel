@@ -1169,11 +1169,19 @@ cleanup() {
     # com o diretório do FAP para ser cirúrgico. Tentamos SIGTERM
     # primeiro (para dar chance ao handler do node), depois SIGKILL.
     if pgrep -f "node .*$DIR/server\.js" > /dev/null 2>&1; then
-        pkill -TERM -f "node .*$DIR/server\.js" 2>/dev/null || true
-        sleep 0.5
-        pkill -KILL -f "node .*$DIR/server\.js" 2>/dev/null || true
-        log_success "Processos node órfãos do FAP encerrados"
-    fi
+    pkill -TERM -f "node .*$DIR/server\.js" 2>/dev/null || true
+    sleep 0.5
+    pkill -KILL -f "node .*$DIR/server\.js" 2>/dev/null || true
+    log_success "Processos node órfãos do FAP encerrados"
+fi
+
+# Mata o container WebKit se ainda estiver vivo (evita janela órfã
+# mostrando a página antiga após o servidor morrer).
+if command -v pkill > /dev/null 2>&1; then
+    pkill -TERM -f "fap-container.*--url http://localhost:3000" 2>/dev/null || true
+    sleep 0.5
+    pkill -KILL -f "fap-container.*--url http://localhost:3000" 2>/dev/null || true
+fi
 
     # Libera a porta 3000 caso o node tenha ficado preso em algum
     # estado intermediário (raro, mas possível em crash).

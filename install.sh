@@ -252,7 +252,24 @@ local arquivos_para_permissoes=(
 "iniciar_fap_compat.sh"
 "fap-container"
 "build-container.sh"
+"install.sh"
 )
+# Inclui qualquer outro .sh na raiz (defensivo — se novos scripts
+# forem adicionados no futuro, já entram automaticamente).
+local outros_sh
+for outros_sh in "$INSTALL_DIR"/*.sh; do
+    [ -f "$outros_sh" ] || continue
+    local nome
+    nome="$(basename "$outros_sh")"
+    # Evita duplicata (já está no array acima)
+    local ja_tem=0
+    for arquivo in "${arquivos_para_permissoes[@]}"; do
+        if [ "$arquivo" = "$nome" ]; then ja_tem=1; break; fi
+    done
+    if [ "$ja_tem" = "0" ]; then
+        arquivos_para_permissoes+=("$nome")
+    fi
+done
 
 for arquivo in "${arquivos_para_permissoes[@]}"; do
 if [ -f "$INSTALL_DIR/$arquivo" ]; then
@@ -470,9 +487,16 @@ _mat_atras_servidor_fap() {
     # O `|| true` cobre o caso de o container já ter fechado
     # (o usuário pode ter fechado manualmente antes do update).
     if command -v pkill > /dev/null 2>&1; then
-        pkill -f "fap-container.*--url http://localhost:3000" 2>/dev/null || true
-        pkill -f "fof-container.*--url http://localhost:3000" 2>/dev/null || true
-    fi
+    # SIGTERM primeiro (fecha graciosamente)
+    pkill -f "fap-container.*--url http://localhost:3000" 2>/dev/null || true
+    pkill -f "fof-container.*--url http://localhost:3000" 2>/dev/null || true
+    # Se o container não morrer em 2s, força com SIGKILL. Sem isso,
+    # o WebKit pode ficar vivo mostrando a página antiga — e o badge
+    # de atualização permanece mesmo após o servidor novo subir.
+    sleep 2
+    pkill -9 -f "fap-container.*--url http://localhost:3000" 2>/dev/null || true
+    pkill -9 -f "fof-container.*--url http://localhost:3000" 2>/dev/null || true
+fi
 
     # ============================================================
     # `-sTCP:LISTEN` — FILTRA SÓ O SERVIDOR
@@ -1327,20 +1351,51 @@ cd "$INSTALL_DIR"
 # Se não houver FOF, a função é no-op (só faz o scan e retorna).
 migrar_esquema_antigo
 
-# git stash push -m é o substituto moderno do git stash save (que foi
-# deprecado no Git 2.13+, 2017). O -m define a mensagem, preservando o
-# comportamento do save.
-git stash push -m "Backup automático antes da atualização" 2>/dev/null || true
+# ============================================================
+# RESET ATÔMICO PARA origin/main (v1.5.4)
+# ============================================================
+#
+# A versão anterior fazia:
+#
+#   git stash push  → guarda mudanças locais
+#   git pull --ff-only → puxa do remoto
+#   git stash pop || true → reaplica as mudanças locais, ENGOLINDO
+#                            conflito (o `|| true`)
+#
+# O `git stash pop` com conflito deixa marcadores `<<<<<<<` /
+# `=======` / `>>>>>>>` nos arquivos que mudaram nas duas pontas.
+# O `install.sh` "termina com sucesso", mas o `package.json`
+# fica inválido (2 seções `"version"` — 1 de cada lado), e o
+# `node server.js` aborta no `shouldUseESLoader` com
+# `ERR_INVALID_PACKAGE_CONFIG` ANTES mesmo de rodar o
+# `try/catch` do `require('./package.json')`.
+#
+# Sintoma em teste real (fgc/RTX 5060, update v1.5.0 → v1.5.3):
+# "aguardando servidor iniciar" + janela fecha em 15s +
+# `git status` mostra `UU package.json` + `grep '"version"'`
+# retorna 2 linhas.
+#
+# Correção: `git fetch` + `git reset --hard origin/main` é
+# ATÔMICO — restaura o working tree e o index ao estado exato
+# do remoto, sem merge, sem conflito, sem stash. As mudanças
+# locais NÃO COMMITADAS são descartadas (o que já era o
+# comportamento efetivo — o `stash pop` só aplicava se não
+# conflitasse).
+#
+# O `git stash drop` remove a entrada `stash@{0}` que o
+# `stash push` eventualmente tenha criado antes (defensivo).
+# O `git clean -fd` remove arquivos untracked (fap-container
+# stale, se existir) que poderiam interferir.
+git fetch origin main 2>&1 || true
 
-# --ff-only usa o upstream configurado (origin/main por padrão) e
-# recusa merge commits. Se o upstream não estiver setado, falha
-# com mensagem clara em vez de instalar uma versão quebrada.
-if ! git pull --ff-only; then
-print_error "Falha ao atualizar"
-exit 1
-fi
+# --ff-only descartado — usamos reset --hard, que é idempotente
+# e não falha se o branch local tiver divergido.
+git reset --hard origin/main
 
-git stash pop 2>/dev/null || true
+# Limpa stash antigo (do push acima ou de tentativas anteriores)
+# para não acumular entradas órfãs. `stash list` pode ser vazio.
+git stash drop 2>/dev/null || true
+git clean -fd 2>/dev/null || true
 
 # Remove arquivos de sessões antigas que possam ter sobrado.
 # Roda DEPOIS do git pull, porque:

@@ -47,67 +47,35 @@ async function carregarVersaoServidor() {
             const data = await response.json();
             FAP_VERSION = data.version || FAP_VERSION;
             window.FAP_VERSION_UI18N = FAP_VERSION;
+
+            // ============================================================
+            // ATUALIZA A VERSÃO NO DOM (v1.5.4)
+            // ============================================================
+            //
+            // O `index.html` tem `<span class="fap-version">{versao}</span>`
+            // e o `i18n.js` NÃO substitui em PT-BR (retorna cedo em
+            // `aplicarTraducoes`). Resultado: em PT-BR, o usuário via
+            // "🚀 v{versao}" literal. Em EN/ES, o `i18n.js` substituía
+            // via `interpolar`, mas o valor de `FAP_VERSION` podia ainda
+            // não estar disponível no momento do `i18n-pronto`.
+            //
+            // Aqui, depois que o fetch de `/info` resolve, preenchemos
+            // TODOS os `.fap-version` do DOM com a versão correta. Isso
+            // cobre index.html e guiado.html (que também tem o span).
+            document.querySelectorAll('.fap-version').forEach(function(el) {
+                el.textContent = FAP_VERSION;
+            });
+
+            // Dispara o evento para quem quiser reagir (ex.: sobre-fap.html
+            // usa para atualizar o título do changelog e verificar
+            // atualização). Antes, o evento era ouvido mas nunca disparado.
+            document.dispatchEvent(new CustomEvent('fap-versao-pronta', {
+                detail: { versao: FAP_VERSION }
+            }));
         }
     } catch (e) {
         console.warn('[Versão] Não foi possível consultar /info:', e.message);
     }
-    // ============================================================
-    // BADGE FLUTUANTE (v1.5.3)
-    // ============================================================
-    //
-    // Antes (v1.5.2 e anteriores): badge era inserido DEPOIS do
-    // `<span class="fap-version">`, dentro do `.version-badge`
-    // (landing) ou do header (guided). `position: absolute` +
-    // `top: -8px; right: -8px` relativo ao `.version-badge` —
-    // colado na versão, não flutuando no canto.
-    //
-    // Problema reportado em teste real (fgc/RTX 5060): na landing
-    // o badge aparecia só como um "traço" (sem `style.css`
-    // carregado, o `<button>` ficava com estilo nativo do
-    // WebKitGTK), e o usuário pedia um badge flutuante no canto.
-    //
-    // Agora: `document.body.appendChild(badge)` + `position:
-    // fixed; top: 16px; right: 16px` em `style.css`. Fica
-    // ancorado no viewport, visível em qualquer tela, até o
-    // usuário clicar e completar o update.
-    //
-    // `body.fap-tem-badge-atualizacao` empurra o `.header-controles`
-    // do `guiado.html` para a esquerda (senão o badge sobrepõe o
-    // botão "voltar"). Removida em `_dispararAtualizacaoFAP` no
-    // sucesso, junto com o próprio badge.
-    if (document.querySelector('.badge-atualizacao')) {
-        console.log('[Atualização] Badge já existe, pulando.');
-        return;
-    }
-
-    var badgeTxt = _t('comum.atualizacao_disponivel_titulo',
-                      'Nova versão disponível! Clique para atualizar.');
-
-    var badge = document.createElement('button');
-    badge.type = 'button';
-    badge.className = 'badge-atualizacao';
-    badge.title = badgeTxt;
-    badge.setAttribute('aria-label', badgeTxt);
-    badge.setAttribute('data-i18n-title', 'comum.atualizacao_disponivel_titulo');
-    badge.setAttribute('data-i18n-aria-label', 'comum.atualizacao_disponivel_titulo');
-
-    badge.innerHTML =
-    '<svg class="badge-atualizacao-icon" viewBox="0 0 24 24" aria-hidden="true">' +
-    '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>' +
-    '<polyline points="7 10 12 15 17 10"/>' +
-    '<line x1="12" y1="15" x2="12" y2="3"/>' +
-    '</svg>';
-
-    badge.addEventListener('click', function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        _dispararAtualizacaoFAP();
-    });
-
-    document.body.appendChild(badge);
-    document.body.classList.add('fap-tem-badge-atualizacao');
-
-    console.log('⬆️ Atualização disponível: ' + versaoLocal + ' → ' + versaoRemota);
 }
 
 // ============================================================
@@ -348,6 +316,14 @@ async function _dispararAtualizacaoFAP() {
             var badgeEl = document.querySelector('.badge-atualizacao');
             if (badgeEl) badgeEl.remove();
             document.body.classList.remove('fap-tem-badge-atualizacao');
+
+            // Limpa o cache de versão remota para forçar uma nova verificação
+            // no próximo boot. Sem isso, o cache pode conter a versão antiga
+            // e o badge pode reaparecer por engano.
+            try {
+                localStorage.removeItem(ULTIMA_VERIFICACAO_KEY);
+                localStorage.removeItem(VERSAO_REMOTA_KEY);
+            } catch (e) { /* ignore */ }
         } else if (sucesso === false) {
             mostrarToast(_t('comum.status_falha', '❌ Falha na execução'), 'error', 8000);
             if (btnSobre) {
@@ -426,12 +402,25 @@ async function _dispararAtualizacaoFAP() {
 }
 
 async function mostrarBadgeSeHouverAtualizacao() {
+    // Guard: se já existe um badge (flutuante ou legado), não cria
+    // outro. O `carregarVersaoServidor` não cria mais badge, mas
+    // essa função pode ser chamada múltiplas vezes (ex.: depois de
+    // `_refreshEstadoSessao`). O guard evita duplicata.
+    if (document.querySelector('.badge-atualizacao')) {
+        console.log('[Atualização] Badge já existe, pulando.');
+        return;
+    }
+
     var versaoRemota = await verificarAtualizacoes();
     if (!versaoRemota) return;
 
     var versaoLocal = FAP_VERSION || '?';
     if (!temAtualizacao(versaoLocal, versaoRemota)) return;
 
+    // Confirmação fresca: o cache de 12h pode estar obsoleto (a
+    // versão remota já foi atualizada para uma mais nova). Se a
+    // versão fresca NÃO for maior que a local, invalida o cache e
+    // não mostra o badge.
     var versaoRemotaFresca = await verificarAtualizacoesForcado();
     if (!versaoRemotaFresca || !temAtualizacao(versaoLocal, versaoRemotaFresca)) {
         try {
@@ -442,28 +431,48 @@ async function mostrarBadgeSeHouverAtualizacao() {
         return;
     }
 
-    document.querySelectorAll('.fap-version').forEach(function(el) {
-        var parent = el.parentElement;
-        if (!parent) return;
-        if (parent.querySelector('.badge-atualizacao')) return;
+    // ============================================================
+    // BADGE FLUTUANTE (v1.5.3)
+    // ============================================================
+    //
+    // Antes (v1.5.2 e anteriores): badge era inserido DEPOIS do
+    // `<span class="fap-version">`, dentro do `.version-badge`
+    // (landing) ou do header (guided). `position: absolute` +
+    // `top: -8px; right: -8px` relativo ao `.version-badge` —
+    // colado na versão, não flutuando no canto.
+    //
+    // Problema reportado em teste real (fgc/RTX 5060): na landing
+    // o badge aparecia só como um "traço" (sem `style.css`
+    // carregado, o `<button>` ficava com estilo nativo do
+    // WebKitGTK), e o usuário pedia um badge flutuante no canto.
+    //
+    // Agora: `document.body.appendChild(badge)` + `position:
+    // fixed; top: 16px; right: 16px` em `style.css`. Fica
+    // ancorado no viewport, visível em qualquer tela, até o
+    // usuário clicar e completar o update.
+    //
+    // `body.fap-tem-badge-atualizacao` empurra o `.header-controles`
+    // do `guiado.html` para a esquerda (senão o badge sobrepõe o
+    // botão "voltar"). Removida em `_dispararAtualizacaoFAP` no
+    // sucesso, junto com o próprio badge.
 
-        var badgeTxt = _t('comum.atualizacao_disponivel_titulo',
-                          'Nova versão disponível! Clique para atualizar.');
+    var badgeTxt = _t('comum.atualizacao_disponivel_titulo',
+                      'Nova versão disponível! Clique para atualizar.');
 
-        var badge = document.createElement('button');
-        badge.type = 'button';
-        badge.className = 'badge-atualizacao';
-        badge.title = badgeTxt;
-        badge.setAttribute('aria-label', badgeTxt);
-        badge.setAttribute('data-i18n-title', 'comum.atualizacao_disponivel_titulo');
-        badge.setAttribute('data-i18n-aria-label', 'comum.atualizacao_disponivel_titulo');
+    var badge = document.createElement('button');
+    badge.type = 'button';
+    badge.className = 'badge-atualizacao';
+    badge.title = badgeTxt;
+    badge.setAttribute('aria-label', badgeTxt);
+    badge.setAttribute('data-i18n-title', 'comum.atualizacao_disponivel_titulo');
+    badge.setAttribute('data-i18n-aria-label', 'comum.atualizacao_disponivel_titulo');
 
-        badge.innerHTML =
-        '<svg class="badge-atualizacao-icon" viewBox="0 0 24 24" aria-hidden="true">' +
-        '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>' +
-        '<polyline points="7 10 12 15 17 10"/>' +
-        '<line x1="12" y1="15" x2="12" y2="3"/>' +
-        '</svg>';
+    badge.innerHTML =
+    '<svg class="badge-atualizacao-icon" viewBox="0 0 24 24" aria-hidden="true">' +
+    '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>' +
+    '<polyline points="7 10 12 15 17 10"/>' +
+    '<line x1="12" y1="15" x2="12" y2="3"/>' +
+    '</svg>';
 
         badge.addEventListener('click', function(e) {
             e.preventDefault();
@@ -471,10 +480,10 @@ async function mostrarBadgeSeHouverAtualizacao() {
             _dispararAtualizacaoFAP();
         });
 
-        parent.insertBefore(badge, el.nextSibling);
-    });
+        document.body.appendChild(badge);
+        document.body.classList.add('fap-tem-badge-atualizacao');
 
-    console.log('⬆️ Atualização disponível: ' + versaoLocal + ' → ' + versaoRemota);
+        console.log('⬆️ Atualização disponível: ' + versaoLocal + ' → ' + versaoRemota);
 }
 
 window._dispararAtualizacaoFAP = _dispararAtualizacaoFAP;
@@ -1740,8 +1749,8 @@ function _renderizarPainelSecureBoot(container, estado) {
     // na 3ª rodada de testes).
     // ============================================================
     var mokIndeterminado = chaveLocal &&
-                           _secureBootMokCache &&
-                           _secureBootMokCache.enrolled === null;
+    _secureBootMokCache &&
+    _secureBootMokCache.enrolled === null;
     if (mokIndeterminado) {
         html += '<div class="aviso-caixa" style="border-color: #f59e0b; color: #f59e0b; margin-bottom: 1rem;">';
         html += '<strong>⚠️ Não foi possível verificar se a chave do akmods está enrolled no firmware.</strong><br>';
@@ -1751,7 +1760,7 @@ function _renderizarPainelSecureBoot(container, estado) {
         html += 'Caso contrário, siga os passos abaixo.</span>';
         if (_secureBootMokCache.erro) {
             html += '<div style="margin-top: 0.5rem; font-size: 0.75rem; color: var(--text-muted);">Detalhe: <code>' +
-                _escapeHTML(_secureBootMokCache.erro) + '</code></div>';
+            _escapeHTML(_secureBootMokCache.erro) + '</code></div>';
         }
         html += '<div class="botoes-flex" style="margin-top: 0.75rem;">';
         html += '<button class="btn-executar" onclick="(typeof _refreshEstadoSessao === \'function\') && _refreshEstadoSessao()">🔄 Verificar novamente</button>';
