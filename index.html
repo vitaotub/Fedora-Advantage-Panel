@@ -502,6 +502,20 @@ justify-content: center;
 }
 }
 </style>
+<!--
+    `style.css` PRECISA ser carregado aqui. Sem ele, os estilos
+    globais de `.badge-atualizacao`, `.fap-toast-container`,
+    `.fap-toast` e outros ficam ausentes na landing page — o
+    badge aparece como `<button>` nativo (o "traço" reportado em
+    teste real) e os toasts ficam sem estilo.
+
+    ORDEM IMPORTA: `<link>` ANTES do `<style>` inline. Ambos
+    definem `body`, `:root` e `.container`; como o inline é
+    carregado depois, ele vence nas propriedades em comum (o
+    `align-items: flex-start` e o `padding: 2rem 1rem` da landing
+    não são sobrescritos pelo `padding: 2rem` do `style.css`).
+-->
+<link rel="stylesheet" href="style.css">
 <script src="i18n.js"></script>
 <script src="script.js"></script>
 </head>
