@@ -2,7 +2,7 @@
 
 **🌐 Language:** [Português (BR)](README.md) | English | [Español](README.es.md)
 
-![Version](https://img.shields.io/badge/Version-v1.5.0--11062026-orange?style=flat-square)
+![Version](https://img.shields.io/badge/Version-v1.5.1--11062026-orange?style=flat-square)
 ![Fedora](https://img.shields.io/badge/Fedora-44%20%7C%2045-294172?style=flat-square&logo=fedora)
 ![License](https://img.shields.io/badge/License-GPL--3.0-green?style=flat-square)
 ![Languages](https://img.shields.io/badge/Languages-PT--BR%20%7C%20EN%20%7C%20ES-3c67e3?style=flat-square)
@@ -56,7 +56,7 @@ bash <(curl -s https://raw.githubusercontent.com/vitaotub/Fedora-Advantage-Panel
 ## 💡 What you get
 
 - **Multimedia ready** — full codecs, commercial DVD playback, Microsoft fonts, hardware video acceleration (VA-API on AMD, Intel and NVIDIA).
-- **Drivers that work** — automatic GPU detection, correct series by generation (including Blackwell / RTX 50xx), CoreCtrl / LACT, overclocking, `akmods` with guided MOK enrollment.
+- **Drivers that work** — automatic GPU detection, correct series by generation (from Fermi to Blackwell), CoreCtrl / LACT, overclocking, `akmods` with guided MOK enrollment.
 - **Network and peripherals** — Broadcom, Realtek, Xbox Wireless (xpadneo), Razer (OpenRazer), extra firmware, all with hardware detection.
 - **Gaming stack** — native Steam, Heroic, Lutris, Wine, Proton-GE (ProtonUp-Qt), GameMode, MangoHud, Gamescope, vkBasalt, NTSYNC, emulators (RetroArch, Dolphin, PCSX2, RPCS3, Duckstation).
 - **Production and office** — OBS Studio + virtual camera, EasyEffects, CUPS + Avahi, Samba, LocalSend, KeePassXC, Rclone Manager, ArtCraft Launcher.

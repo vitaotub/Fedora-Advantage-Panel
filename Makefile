@@ -193,6 +193,31 @@ check-basico:
 		} \
 		if (falhas > 0) process.exit(1); \
 	"
+	@echo "==> Checando sintaxe DNF5 em /check-package-available (v1.5.1)..."
+	@node -e " \
+		const fs = require('fs'); \
+		const src = fs.readFileSync('server.js', 'utf8'); \
+		const linhas = src.split('\\n'); \
+		const bad = []; \
+		for (let i = 0; i < linhas.length; i++) { \
+			const l = linhas[i].trim(); \
+			if (l.startsWith('//') || l.startsWith('*') || l.startsWith('/*')) continue; \
+			if (/dnf\\s+list\\s+--all\\b/.test(linhas[i])) { \
+				bad.push('linha ' + (i+1) + ': dnf list --all (flag removido no DNF5)'); \
+			} \
+			if (/--enablerepo\\s*=\\s*\\S*,\\S*/.test(linhas[i])) { \
+				bad.push('linha ' + (i+1) + ': --enablerepo com LISTA de repos (aborta se algum faltar)'); \
+			} \
+		} \
+		if (bad.length > 0) { \
+			console.error('  ERRO: server.js usa sintaxe incompatível com DNF5:'); \
+			bad.forEach(x => console.error('    - ' + x)); \
+			console.error('  Use: dnf repoquery --available (não dnf list --all)'); \
+			console.error('         e loop individual de --enablerepo (não lista)'); \
+			process.exit(1); \
+		} \
+		console.log('  OK: server.js compatível com DNF5 (sem --all, sem --enablerepo em lista)'); \
+	"
 	@echo ""
 	@echo "✅ Todos os checks básicos passaram."
 

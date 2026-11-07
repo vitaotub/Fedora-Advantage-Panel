@@ -2,7 +2,7 @@
 
 **🌐 Idioma:** Português (BR) | [English](README.en.md) | [Español](README.es.md)
 
-![Versão](https://img.shields.io/badge/Vers%C3%A3o-v1.5.0--11062026-orange?style=flat-square)
+![Versão](https://img.shields.io/badge/Vers%C3%A3o-v1.5.1--11062026-orange?style=flat-square)
 ![Fedora](https://img.shields.io/badge/Fedora-44%20%7C%2045-294172?style=flat-square&logo=fedora)
 ![Licença](https://img.shields.io/badge/Licen%C3%A7a-GPL--3.0-green?style=flat-square)
 ![Idiomas](https://img.shields.io/badge/Idiomas-PT--BR%20%7C%20EN%20%7C%20ES-3c67e3?style=flat-square)
@@ -56,7 +56,7 @@ bash <(curl -s https://raw.githubusercontent.com/vitaotub/Fedora-Advantage-Panel
 ## 💡 O que você ganha
 
 - **Multimídia pronta** — codecs completos, DVD comercial, fontes Microsoft, aceleração de vídeo por hardware (VA-API em AMD, Intel e NVIDIA).
-- **Drivers que funcionam** — detecção automática de GPU, série correta por geração (incluindo Blackwell / RTX 50xx), CoreCtrl / LACT, overclock, `akmods` com enrollment MOK guiado.
+- **Drivers que funcionam** — detecção automática de GPU, série correta por geração (do Fermi ao Blackwell), CoreCtrl / LACT, overclock, `akmods` com enrollment MOK guiado.
 - **Rede e periféricos** — Broadcom, Realtek, Xbox Wireless (xpadneo), Razer (OpenRazer), firmware adicional, tudo com detecção de hardware.
 - **Ambiente de jogos** — Steam nativo, Heroic, Lutris, Wine, Proton-GE (ProtonUp-Qt), GameMode, MangoHud, Gamescope, vkBasalt, NTSYNC, emuladores (RetroArch, Dolphin, PCSX2, RPCS3, Duckstation).
 - **Produção e escritório** — OBS Studio + câmera virtual, EasyEffects, CUPS + Avahi, Samba, LocalSend, KeePassXC, Rclone Manager, ArtCraft Launcher.

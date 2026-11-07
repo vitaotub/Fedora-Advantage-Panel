@@ -1166,7 +1166,9 @@ async function _renderizarPanelDriverStatus(info) {
     // consulta que não muda o comportamento visível.
     if (info.geracao.precisaOpen && !isExecutado('nvidia-driver-install')) {
         var disp = await _verificarDriverNvidiaDisponivel(info.geracao);
-        if (!disp.disponivel) {
+
+        if (disp.disponivel === false) {
+            // Pacote definitivamente NÃO existe no repo ativo.
             panel.innerHTML =
                 '<div class="aviso-caixa" style="border-color: #ef4444; color: #ef4444;">' +
                 '❌ ' + _tVars('sessoes.hardware.nvidia_driver_indisponivel_panel',
@@ -1176,6 +1178,23 @@ async function _renderizarPanelDriverStatus(info) {
                     { modelo: info.modelo, pkg: info.geracao.pkg }) +
                 '</div>';
             return;
+        }
+
+        if (disp.disponivel === null) {
+            // Não foi possível verificar (timeout, rede, dnf lock).
+            // Diferente de "não disponível" — mostra amarelo, não
+            // vermelho, e NÃO desabilita o botão. O `dnf install` real
+            // vai dar o erro claro se o pacote não existir.
+            panel.innerHTML =
+                '<div class="aviso-caixa" style="border-color: #f59e0b; color: #f59e0b;">' +
+                '⚠️ <strong>Não foi possível verificar a disponibilidade do driver <code>' +
+                _escapeHTMLNvidia(info.geracao.pkg) + '</code> no RPM Fusion.</strong><br>' +
+                '<span style="font-size: 0.85rem;">Motivo: ' + _escapeHTMLNvidia(disp.erro || 'desconhecido') +
+                '. O botão "Instalar Driver NVIDIA" continua habilitado — clique nele para tentar. ' +
+                'Se o pacote não existir, o <code>dnf install</code> mostrará o erro real no log.</span>' +
+                '</div>';
+            // Não retorna: deixa `_aplicarEstadoNvidia` decidir o estado
+            // do botão (que vai reabilitar, já que `disponivel !== false`).
         }
     }
 
@@ -1236,7 +1255,8 @@ async function _aplicarEstadoNvidia(info) {
     // Bloqueio 2: Blackwell sem `akmod-nvidia-open` no repo
     if (!installFeito && info.geracao.precisaOpen) {
         var disp = await _verificarDriverNvidiaDisponivel(info.geracao);
-        if (!disp.disponivel) {
+        if (disp.disponivel === false) {
+            // Pacote definitivamente ausente: desabilita.
             var btnInstall2 = document.getElementById('btn-nvidia-driver-install');
             if (btnInstall2) {
                 btnInstall2.disabled = true;
@@ -1248,6 +1268,10 @@ async function _aplicarEstadoNvidia(info) {
             }
             return;
         }
+        // `disp.disponivel === null` (erro de verificação): NÃO desabilita.
+        // O `executarNvidiaDriver` tem outro ponto de checagem que vai
+        // dar o alerta correto se o `dnf install` falhar. Deixar o botão
+        // habilitado é mais útil do que bloquear por erro transitório.
     }
 
     // Bloqueio 3: Secure Boot ativo sem chave preparada
@@ -1297,18 +1321,50 @@ async function _aplicarEstadoNvidia(info) {
 
 async function _verificarDriverNvidiaDisponivel(geracao) {
     var disp = await _verificarPacoteDisponivel(geracao.pkg);
-    if (disp.installed) return { disponivel: true, motivo: 'instalado' };
-    if (disp.available) return { disponivel: true, motivo: 'disponível no repo' };
-    return { disponivel: false, motivo: 'não está no repo' };
+    if (disp.installed) return { disponivel: true,  motivo: 'instalado',           erro: null };
+    if (disp.available) return { disponivel: true,  motivo: 'disponível no repo', erro: null };
+    if (disp.error)     return { disponivel: null,  motivo: 'verificação falhou',  erro: disp.error };
+    return { disponivel: false, motivo: 'não está no repo', erro: null };
 }
 
-async function _verificarPacoteDisponivel(pkg) {
+// Cache por pacote (TTL 60s). `_renderizarPanelDriverStatus` e
+// `_aplicarEstadoNvidia` chamam `_verificarDriverNvidiaDisponivel`
+// em sequência no mesmo boot — sem cache, são 2 requisições HTTP
+// idênticas. 60s alinha com o TTL do `system-state-service.js`.
+var _pacoteDisponivelCache = {};      // { pkg: { dados, ts } }
+var _PACOTE_DISPONIVEL_TTL_MS = 60000;
+
+async function _verificarPacoteDisponivel(pkg, forcarRefresh) {
+    var agora = Date.now();
+    var cached = _pacoteDisponivelCache[pkg];
+    if (!forcarRefresh && cached && (agora - cached.ts) < _PACOTE_DISPONIVEL_TTL_MS) {
+        return cached.dados;
+    }
+
     try {
-        var r = await fetch(API_URL + '/check-package-available?pkg=' + encodeURIComponent(pkg), { cache: 'no-store' });
-        if (!r.ok) return { installed: false, available: false };
-        return await r.json();
+        var url = API_URL + '/check-package-available?pkg=' + encodeURIComponent(pkg);
+        if (forcarRefresh) url += '&_=' + agora;
+        var r = await fetch(url, { cache: 'no-store' });
+
+        var dados;
+        if (!r.ok) {
+            dados = { installed: false, available: false, pkg: pkg, error: 'HTTP ' + r.status };
+        } else {
+            dados = await r.json();
+            if (!dados || typeof dados !== 'object') {
+                dados = { installed: false, available: false, pkg: pkg, error: 'resposta inválida' };
+            }
+        }
+
+        // Só cacheia resultado DEFINITIVO (sucesso ou "não existe").
+        // Erros transitórios NÃO entram no cache — a próxima chamada
+        // tenta de novo.
+        if (!dados.error) {
+            _pacoteDisponivelCache[pkg] = { dados: dados, ts: agora };
+        }
+        return dados;
     } catch (e) {
-        return { installed: false, available: false };
+        return { installed: false, available: false, pkg: pkg, error: e.message };
     }
 }
 
@@ -1549,15 +1605,35 @@ async function executarNvidiaDriver() {
         return;
     }
 
-    // Bloqueio 3: Blackwell sem `akmod-nvidia-open` no repo
-    if (geracao.precisaOpen) {
-        var disp = await _verificarDriverNvidiaDisponivel(geracao);
-        if (!disp.disponivel) {
-            alert(_tVars('sessoes.hardware.nvidia_driver_indisponivel',
-                'Sua GPU ({modelo}) requer o driver "{pkg}", que ainda NÃO está disponível no RPM Fusion para sua versão do Fedora.\n\n' +
-                'O FAP NÃO vai instalar o driver proprietário tradicional — ele é incompatível com sua placa e pode deixar o sistema sem interface gráfica.\n\n' +
+    // Bloqueio 3: driver (pkg) disponível ou instalado?
+    // Blackwell exige `akmod-nvidia-open`; outras gerações usam
+    // `akmod-nvidia` ou `akmod-nvidia-580xx`. O `available: false`
+    // só aborta se DEFINITIVAMENTE não existir. `null` (erro de
+    // verificação) deixa passar — o `dnf install` dará o erro real.
+    var dispPkg = await _verificarPacoteDisponivel(geracao.pkg, true);
+    if (dispPkg.installed === false && dispPkg.available === false) {
+        alert(_tVars('sessoes.hardware.nvidia_driver_indisponivel',
+            'Sua GPU ({modelo}) requer o driver "{pkg}", que ainda NÃO está disponível no RPM Fusion para sua versão do Fedora.\n\n' +
+            'O FAP NÃO vai instalar o driver proprietário tradicional — ele é incompatível com sua placa e pode deixar o sistema sem interface gráfica.\n\n' +
+            'Verifique novamente em alguns dias ou consulte a documentação do RPM Fusion.',
+            { modelo: info.modelo, pkg: geracao.pkg }));
+        await _atualizarSecaoNvidia();
+        return;
+    }
+
+    // Bloqueio 3b: pacote CUDA disponível?
+    // Cobre o caso de Maxwell/Pascal (`xorg-x11-drv-nvidia-580xx-cuda`)
+    // — se a série 580xx for removida do RPM Fusion em versões
+    // futuras, o FAP aborta ANTES do `dnf install` (evita rollback
+    // lento no meio da compilação).
+    if (geracao.cuda) {
+        var dispCuda = await _verificarPacoteDisponivel(geracao.cuda, true);
+        if (dispCuda.installed === false && dispCuda.available === false) {
+            alert(_tVars('sessoes.hardware.nvidia_cuda_indisponivel',
+                'O pacote CUDA "{cuda}" (necessário para o driver "{pkg}") não está disponível no RPM Fusion para sua versão do Fedora.\n\n' +
+                'Sem o CUDA, o driver instalaria, mas OBS, Kdenlive e encoding por hardware não funcionariam. O FAP não vai instalar o driver incompleto — nada foi feito.\n\n' +
                 'Verifique novamente em alguns dias ou consulte a documentação do RPM Fusion.',
-                { modelo: info.modelo, pkg: geracao.pkg }));
+                { cuda: geracao.cuda, pkg: geracao.pkg }));
             await _atualizarSecaoNvidia();
             return;
         }
@@ -1577,20 +1653,51 @@ async function executarNvidiaDriver() {
     }
 
     // Aviso: não feche o FAP / não reinicie
-    if (!confirm(_t('sessoes.hardware.nvidia_aviso_espera',
+    // Se a geração é "desconhecida" (fallback Turing+), adiciona um
+    // aviso extra explicando o risco. Cobre GPUs futuras (RTX 60xx)
+    // e placas antigas fora dos padrões das regex.
+    var msgConfirm = _t('sessoes.hardware.nvidia_aviso_espera',
         '⚠️ ATENÇÃO — leia antes de continuar:\n\n' +
         '1. A compilação do driver pode levar de 2 a 10 minutos.\n' +
         '2. NÃO FECHE o FAP durante o processo.\n' +
-        '3. NÃO REINICIE o computador até o FAP avisar.\n\n' +
+        '3. NÃO REINICIE o computador até o FAP avisar.\n' +
+        '4. Recomendado: NÃO USE o desktop durante a compilação (o KWin pode travar).\n\n' +
         'O FAP vai avisar quando for seguro reiniciar (ou, se algo der errado, ele reverte a instalação automaticamente).\n\n' +
-        'Continuar?'))) return;
+        'Continuar?');
+
+    if (geracao.tipo === 'desconhecida') {
+        msgConfirm = _t('sessoes.hardware.nvidia_aviso_geracao_desconhecida',
+            '⚠️ GPU NÃO RECONHECIDA nas gerações conhecidas do FAP.\n\n' +
+            'O FAP detectou uma GPU NVIDIA, mas o modelo não bate com as regex de nenhuma geração conhecida (Fermi a Blackwell). Vou tentar o driver moderno (akmod-nvidia, assume Turing+).\n\n' +
+            'RISCOS:\n' +
+            '• Se sua GPU for mais antiga (Kepler/Fermi), o driver compila mas o módulo recusa carregar → tela preta no próximo boot.\n' +
+            '• Se for futura (RTX 60xx), o driver pode ainda não suportar.\n\n' +
+            'RECUPERAÇÃO em caso de boot travado: adicione `nomodeset` no GRUB (edite a entrada, adicione ao final da linha `linux`, F10).\n\n' +
+            'Se o FAP detectar erro na compilação, ele reverte automaticamente. Se o sistema travar no boot, o rollback NÃO acontece (o módulo já foi carregado pelo udev) — use `nomodeset`.\n\n' +
+            'Continuar mesmo assim?') + '\n\n─────\n\n' + msgConfirm;
+    }
+
+    if (!confirm(msgConfirm)) return;
 
     var pkg = geracao.pkg;
     var cuda = geracao.cuda;
     var tipo = geracao.tipo;
 
-    // Comando: instala o driver correto, polling de compilação e
-    // reversão automática em caso de falha.
+    // ============================================================
+    // COMANDO BASH — sem polling, com akmods throttled
+    // ============================================================
+    //
+    // O `akmods` roda BLOQUEANTE com prioridade mínima. Isso
+    // elimina o polling de 15s e dá ao KWin a chance de respirar.
+    // Quando o `akmods` termina, o FAP checa `modinfo` uma vez e
+    // decide:
+    //   • Sucesso em X11: `depmod` + `modprobe` → driver ativa
+    //     em runtime, sem reboot.
+    //   • Sucesso em Wayland: NÃO carrega o `nvidia-drm` (evita
+    //     freeze do KWin por DRM handoff prematuro). Só avisa
+    //     "reboot necessário".
+    //   • Falha: rollback (remove `pkg` + `cuda`, `dracut -f`,
+    //     nouveau volta no próximo boot).
     var comando =
         // Detecta GPU (defesa em profundidade — pkexec roda como root)
         'LSPCI=$(command -v lspci 2>/dev/null || echo /usr/sbin/lspci); ' +
@@ -1600,55 +1707,79 @@ async function executarNvidiaDriver() {
         '  echo "❌ Nenhuma GPU NVIDIA detectada."; exit 1; ' +
         'fi; ' +
         'echo "🔍 GPU detectada: $GPU_MODEL"; ' +
-        // Pré-requisitos de compilação
+
+        // Habilita sub-repo NVIDIA (v1.5.1)
+        'echo "📦 Verificando sub-repositório RPM Fusion NVIDIA..."; ' +
+        'if ! dnf repolist --enabled 2>/dev/null | grep -q "rpmfusion-nonfree-nvidia-driver"; then ' +
+        '  echo "   Habilitando rpmfusion-nonfree-nvidia-driver (necessário para os akmod-nvidia-*)..."; ' +
+        '  sudo dnf config-manager setopt rpmfusion-nonfree-nvidia-driver.enabled=1 2>/dev/null || true; ' +
+        'fi; ' +
+
+        // Pré-requisitos
         'sudo dnf install -y kernel-devel-matched kernel-headers kmodtool akmods || true; ' +
-        // Se for Blackwell, remove akmod-nvidia (proprietário) se
-        // existir — conflita com akmod-nvidia-open.
+
+        // Blackwell: remove akmod-nvidia (proprietário) se existir
         (tipo === 'blackwell' ?
             'if rpm -q akmod-nvidia >/dev/null 2>&1; then ' +
             '  echo "🔄 Removendo akmod-nvidia (proprietário) para instalar o open..."; ' +
             '  sudo dnf remove -y akmod-nvidia 2>/dev/null || true; ' +
             'fi; ' : '') +
-        // Instala o driver
+
+        // Instala o pacote (NÃO compila ainda)
         'echo "📦 Instalando ' + pkg + ' + ' + cuda + '..."; ' +
         'sudo dnf install -y ' + pkg + ' ' + cuda + '; ' +
         'DNF_RC=$?; ' +
         'if [ $DNF_RC -ne 0 ]; then ' +
         '  echo "❌ dnf install falhou (código $DNF_RC)."; exit 1; ' +
         'fi; ' +
-        // Polling: até 40 × 15s = 10 min
-        'echo "⏳ Aguardando compilação do akmod (até 10 min)..."; ' +
-        'for i in $(seq 1 40); do ' +
-        '  sleep 15; ' +
-        '  if modinfo nvidia >/dev/null 2>&1; then ' +
-        '    echo "✅ Módulo nvidia compilado com sucesso!"; ' +
-        '    sudo dnf mark user ' + pkg + ' 2>/dev/null || true; ' +
-        '    exit 0; ' +
-        '  fi; ' +
-        '  if ! pgrep -f "/usr/sbin/akmods" >/dev/null 2>&1; then ' +
-        '    sleep 10; ' +
-        '    if modinfo nvidia >/dev/null 2>&1; then ' +
-        '      echo "✅ Módulo nvidia compilado com sucesso!"; ' +
-        '      sudo dnf mark user ' + pkg + ' 2>/dev/null || true; ' +
-        '      exit 0; ' +
-        '    fi; ' +
-        '    echo "❌ Compilação FALHOU (akmods não está rodando e modinfo falhou)."; ' +
-        '    echo "--- Log de falha do akmod ---"; ' +
-        '    cat /var/cache/akmods/nvidia*/*.failed.log 2>/dev/null | tail -20; ' +
-        '    echo "--- Revertendo instalação ---"; ' +
-        '    sudo dnf remove -y ' + pkg + ' ' + cuda + ' 2>/dev/null || true; ' +
-        '    sudo dracut -f 2>/dev/null || true; ' +
-        '    echo "✅ Driver revertido. O nouveau foi restaurado."; ' +
-        '    exit 1; ' +
-        '  fi; ' +
-        '  echo "   [iteração $i/40] modinfo ainda não funciona..."; ' +
-        'done; ' +
-        'echo "❌ Timeout (10 min) aguardando compilação."; ' +
-        'echo "--- Revertendo instalação ---"; ' +
-        'sudo dnf remove -y ' + pkg + ' ' + cuda + ' 2>/dev/null || true; ' +
-        'sudo dracut -f 2>/dev/null || true; ' +
-        'echo "✅ Driver revertido. O nouveau foi restaurado."; ' +
-        'exit 1';
+
+        // Pausa o akmods automático e compila com prioridade baixa
+        'echo "⏸️  Pausando akmods automático para compilar com prioridade baixa..."; ' +
+        'sudo systemctl stop "akmods@$(uname -r).service" 2>/dev/null || true; ' +
+        'sudo pkill -f "/usr/sbin/akmods" 2>/dev/null || true; ' +
+        'sleep 1; ' +
+        'echo "🔨 Compilando akmod com prioridade mínima (nice 19 / ionice 3)..."; ' +
+        'echo "   ⚠️  NÃO use o desktop durante a compilação (2-10 min)."; ' +
+        'sudo nice -n 19 ionice -c 3 /usr/sbin/akmods --force; ' +
+        'AKMODS_RC=$?; ' +
+
+        'if [ $AKMODS_RC -ne 0 ]; then ' +
+        '  echo "❌ akmods falhou (código $AKMODS_RC)."; ' +
+        '  echo "--- Log de falha do akmod ---"; ' +
+        '  cat /var/cache/akmods/nvidia*/*.failed.log 2>/dev/null | tail -20; ' +
+        '  echo "--- Revertendo instalação ---"; ' +
+        '  sudo dnf remove -y ' + pkg + ' ' + cuda + ' 2>/dev/null || true; ' +
+        '  sudo dracut -f 2>/dev/null || true; ' +
+        '  echo "✅ Driver revertido. O nouveau foi restaurado."; ' +
+        '  exit 1; ' +
+        'fi; ' +
+
+        // Verifica módulo após o akmods
+        'if ! modinfo nvidia >/dev/null 2>&1; then ' +
+        '  echo "❌ Módulo nvidia não encontrado após akmods (compilou mas não instalou)."; ' +
+        '  cat /var/cache/akmods/nvidia*/*.failed.log 2>/dev/null | tail -20; ' +
+        '  echo "--- Revertendo instalação ---"; ' +
+        '  sudo dnf remove -y ' + pkg + ' ' + cuda + ' 2>/dev/null || true; ' +
+        '  sudo dracut -f 2>/dev/null || true; ' +
+        '  exit 1; ' +
+        'fi; ' +
+
+        'echo "✅ Módulo nvidia compilado com sucesso!"; ' +
+        'sudo dnf mark user ' + pkg + ' 2>/dev/null || true; ' +
+
+        // depmod + modprobe condicional (sessão)
+        'SESSION_TYPE="${XDG_SESSION_TYPE:-tty}"; ' +
+        'echo "🖥️  Sessão detectada: $SESSION_TYPE"; ' +
+        'sudo depmod -a 2>/dev/null || true; ' +
+        'if [ "$SESSION_TYPE" = "x11" ]; then ' +
+        '  echo "🔧 Sessão X11: carregando módulo nvidia agora..."; ' +
+        '  sudo modprobe nvidia 2>/dev/null && echo "✅ Módulo carregado. nvidia-smi deve funcionar." || echo "⚠️  modprobe falhou — reboot necessário."; ' +
+        'else ' +
+        '  echo "⏸️  Sessão $SESSION_TYPE: NÃO carregando nvidia-drm em runtime (evita freeze do compositor)."; ' +
+        '  echo "🔄 Reinicie o computador para ativar o driver."; ' +
+        'fi; ' +
+
+        'exit 0';
 
     await executarComandoGenerico(idComando, comando,
         _t('sessoes.hardware.btn_nvidia_driver', '📦 Instalar Driver NVIDIA'),
@@ -1671,7 +1802,7 @@ async function executarNvidiaDriver() {
                 }
             });
         },
-        false, 900000); // 15 min de timeout (10 min de polling + 2-5 min de instalação)
+        false, 900000); // 15 min de timeout
 }
 
 async function executarNvidiaDriverRemove() {

@@ -285,6 +285,12 @@ print_success "Permissões reaplicadas com sucesso!"
 limpar_arquivos_antigos() {
 print_step "Removendo arquivos de versões anteriores..."
 
+# Arquivos que existiram em versões anteriores do FAP e foram
+# removidos/renomeados. Roda em --update, DEPOIS do git pull:
+# - Se o git já tiver removido, o `rm -f` é no-op.
+# - Se o git não detectou a remoção (arquivo commitado localmente
+#   e trazido de volta pelo `git stash pop` do install.sh), limpamos
+#   o resquício aqui.
 local antigos=(
 "00-boas-vindas.html"
 "01-restauracao.html"
@@ -304,6 +310,7 @@ local antigos=(
 "90-manutencao.html"
 "91-fof-manutencao.html"
 "sobre-fof.html"
+"template-sessao.html"
 "iniciar_fof.sh"
 "iniciar_fof_compat.sh"
 "src/fof-container.c"

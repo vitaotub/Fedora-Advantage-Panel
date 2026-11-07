@@ -2677,17 +2677,56 @@ const server = http.createServer((req, res) => {
     //
     // Diferente de `/check-package` (que só diz "instalado sim/não"),
     // este endpoint diz "instalado / disponível / não disponível".
-    // Usado pelo `executarNvidiaDriver` (v1.4.9) para decidir se
-    // `akmod-nvidia-open` existe no RPM Fusion ANTES de tentar
-    // instalar — caso contrário, o `dnf install` falha com erro
-    // de "package not found" e deixa o sistema em estado ambíguo.
+    // Usado pelo `executarNvidiaDriver` para decidir se
+    // `akmod-nvidia-open` (Blackwell) ou `akmod-nvidia-580xx`
+    // (Maxwell/Pascal) existem no RPM Fusion ANTES de tentar
+    // instalar — caso contrário, o `dnf install` falha com
+    // "package not found" e deixa o sistema em estado ambíguo.
     //
-    // Fontes:
-    //   • `rpm -q <pkg>` → instalado?
-    //   • `dnf list --all <pkg>` → disponível em algum repo?
+    // ============================================================
+    // TRÊS PROBLEMAS EMPILHADOS (corrigidos na v1.5.1)
+    // ============================================================
     //
-    // `dnf list --all` cobre tanto instalados quanto disponíveis;
-    // a distinção vem do `rpm -q` primeiro. Roda em ~2s.
+    //   1. DNF5 removeu `--all` do subcomando `list`. O comando
+    //      `dnf list --all --quiet <pkg>` erra imediatamente
+    //      ("Argumento desconhecido --all para o comando list"),
+    //      stdout vazio, e o `grep` nunca casa. O endpoint
+    //      retornava `not_available` para QUALQUER pacote, mesmo
+    //      os presentes nos repos ativos. Bloqueava a instalação
+    //      do driver NVIDIA em TODAS as gerações.
+    //
+    //   2. Pacotes NVIDIA vivem no sub-repositório
+    //      `rpmfusion-nonfree-nvidia-driver` (caminho
+    //      `nonfree/fedora/nvidia-driver/<ver>/x86_64/`), que
+    //      o RPM Fusion instala com `enabled=0` por padrão no
+    //      Fedora 44/45. Nenhum comando do dnf o encontra sem
+    //      `--enablerepo` explícito.
+    //
+    //   3. `--enablerepo` com LISTA de repos (`a,b,c`) aborta se
+    //      QUALQUER repo da lista não existir ("Nenhum repositório
+    //      correspondente para X"). O `rpmfusion-nonfree-tainted`
+    //      não vem na instalação padrão. Iterar um por um com
+    //      `|| true` cobre isso.
+    //
+    // Correção em 4 camadas (rápido → robusto → lento):
+    //
+    //   1. `rpm -q` — instalado? (instantâneo, sem repo access)
+    //   2. `dnf repoquery --available --quiet` — disponível nos
+    //      repos JÁ habilitados? Comando canônico do DNF5,
+    //      retorna um NEVRA por linha, sem cabeçalho, sem cor.
+    //      `head -1` limita a saída.
+    //   3. Loop de `--enablerepo` individual nos sub-repos NVIDIA
+    //      (otimista: o `executarNvidiaDriver` vai habilitá-los
+    //      durante o install, então a checagem deve ver o pacote).
+    //   4. `dnf --cacheonly list --available` — fallback final
+    //      sem rede, para o caso do `repoquery` falhar. O grep
+    //      cobre `pkg` e `pkg.arch` com regex ancorada, sem casar
+    //      `pkg-plus` como falso positivo.
+    //
+    // Timeout 60s (era 15s): `repoquery --available` em cache
+    // frio com RPM Fusion pode levar 30–45s. O `_execReadOnly`
+    // mata o GRUPO inteiro em timeout (detached: true), então não
+    // há risco de deixar `dnf` órfão segurando o lock do RPM.
     if (req.method === 'GET' && url === '/check-package-available') {
         var pkgCheck = query.get('pkg');
         if (!pkgCheck || !/^[a-zA-Z0-9._-]+$/.test(pkgCheck)) {
@@ -2696,36 +2735,64 @@ const server = http.createServer((req, res) => {
             return;
         }
 
-        var scriptAvail =
-        'if rpm -q "' + pkgCheck + '" >/dev/null 2>&1; then ' +
-        '  echo "status=installed"; ' +
-        'elif dnf list --all --quiet "' + pkgCheck + '" 2>/dev/null | grep -q "^' + pkgCheck + '"; then ' +
-        '  echo "status=available"; ' +
-        'else ' +
-        '  echo "status=not_available"; ' +
-        'fi';
+        var pkgEsc = pkgCheck.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
-    _execReadOnly(scriptAvail, 15000).then(function(stdout) {
-        var raw = _parseChaveValor(stdout);
-        res.writeHead(200, {
-            'Content-Type': 'application/json',
-            'Cache-Control': 'no-cache, no-store, must-revalidate'
+        var scriptAvail =
+        // --- 1. Instalado? ---
+        'if rpm -q "' + pkgCheck + '" >/dev/null 2>&1; then ' +
+        '  echo "status=installed"; exit 0; ' +
+        'fi; ' +
+
+        // --- 2. repoquery nos repos habilitados ---
+        'AVAIL=$(dnf repoquery --available --quiet "' + pkgCheck + '" 2>/dev/null | head -1); ' +
+        'if [ -n "$AVAIL" ]; then ' +
+        '  echo "status=available"; exit 0; ' +
+        'fi; ' +
+
+        // --- 3. Loop de --enablerepo individual ---
+        // Cada repo é consultado SEPARADAMENTE. Se o repo não
+        // existir (ex.: `-tainted` sem o pacote -release-tainted),
+        // o dnf falha naquele repo e o loop continua.
+        'for repo_nv in ' +
+        '  "rpmfusion-nonfree-nvidia-driver" ' +
+        '  "rpmfusion-nonfree" ' +
+        '  "rpmfusion-nonfree-tainted"; do ' +
+        '  AVAIL2=$(dnf --enablerepo="$repo_nv" repoquery --available --quiet "' + pkgCheck + '" 2>/dev/null | head -1); ' +
+        '  if [ -n "$AVAIL2" ]; then ' +
+        '    echo "status=available"; exit 0; ' +
+        '  fi; ' +
+        'done; ' +
+
+        // --- 4. Fallback: cache-only list (sem --all, sem --quiet) ---
+        'if dnf --cacheonly list --available "' + pkgCheck + '" 2>/dev/null ' +
+        '  | grep -qE "^' + pkgEsc + '(\\.[a-z0-9_]+)?[[:space:]]"; then ' +
+        '  echo "status=available"; exit 0; ' +
+        'fi; ' +
+
+        'echo "status=not_available"';
+
+        _execReadOnly(scriptAvail, 60000).then(function(stdout) {
+            var raw = _parseChaveValor(stdout);
+            res.writeHead(200, {
+                'Content-Type': 'application/json',
+                'Cache-Control': 'no-cache, no-store, must-revalidate'
+            });
+            res.end(JSON.stringify({
+                installed: raw.status === 'installed',
+                available: raw.status === 'available',
+                pkg: pkgCheck,
+                error: raw.status ? null : 'verificação não retornou status (timeout ou dnf indisponível)'
+            }));
+        }).catch(function(e) {
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({
+                installed: false,
+                available: false,
+                pkg: pkgCheck,
+                error: e.message
+            }));
         });
-        res.end(JSON.stringify({
-            installed: raw.status === 'installed',
-            available: raw.status === 'available',
-            pkg: pkgCheck
-        }));
-    }).catch(function(e) {
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({
-            installed: false,
-            available: false,
-            pkg: pkgCheck,
-            error: e.message
-        }));
-    });
-    return;
+        return;
     }
 
     // ----------------------------------------------------------
