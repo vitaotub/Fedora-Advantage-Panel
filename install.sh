@@ -1337,12 +1337,49 @@ print_success "✅ FAP atualizado para a versão mais recente!"
 # "server.js" na linha de comando (projetos próprios, dev
 # servers, etc.).
 
-if pgrep -f "node .*$INSTALL_DIR/server\.js" > /dev/null 2>&1; then
-print_info "🔄 Encerrando o servidor antigo em 3 segundos..."
-print_info "💡 Reabra o FAP com o comando 'fap' para usar a versão nova."
-
-nohup bash -c "sleep 3 && pkill -f 'node .*$INSTALL_DIR/server\.js' 2>/dev/null" > /dev/null 2>&1 &
+# Encerra o servidor antigo. A versão anterior usava
+# `pgrep -f "node .*$INSTALL_DIR/server\.js"`, mas o processo real
+# é `node server.js` (cwd = $INSTALL_DIR) — o path completo NÃO
+# aparece no cmdline, então o `pgrep` nunca casava e o `pkill`
+# correspondente era dead code.
+#
+# Sintoma: o servidor antigo continuava rodando após o update. O
+# container reaberto carregava o `script.js`/`index.html` NOVOS do
+# disco, mas as requisições iam para o SERVIDOR antigo (com o
+# `hardware-service.js` antigo em memória). Quando a v1.5.0
+# introduziu o campo `secure_boot_mok` no `/hardware-scan`, o
+# cliente novo não o encontrava no servidor antigo e mostrava
+# "MOK não enrolled" por engano.
+#
+# Solução em 2 camadas:
+#   1. `lsof -t -i:3000` — PID escutando na porta (mais confiável).
+#   2. `$INSTALL_DIR/.fap.pid` — escrito por `iniciar_fap.sh`.
+# Validação: `ps -p <pid> -o cmd=` deve conter "node" + "server.js"
+# (evita matar processo alheio que pegou a porta 3000 — raro, mas
+# defensivo).
+OLD_PID=""
+if command -v lsof > /dev/null 2>&1; then
+    OLD_PID=$(lsof -t -i:3000 2>/dev/null)
 fi
+if [ -z "$OLD_PID" ] && [ -f "$INSTALL_DIR/.fap.pid" ]; then
+    OLD_PID=$(cat "$INSTALL_DIR/.fap.pid" 2>/dev/null)
+fi
+
+if [ -n "$OLD_PID" ] && kill -0 "$OLD_PID" 2>/dev/null; then
+    OLD_CMD=$(ps -p "$OLD_PID" -o cmd= 2>/dev/null | head -c 200)
+    case "$OLD_CMD" in
+        *node*server.js*)
+            print_info "🔄 Encerrando o servidor antigo em 3 segundos (PID: $OLD_PID)..."
+            print_info "💡 Reabra o FAP com o comando 'fap' para usar a versão nova."
+
+            nohup bash -c "sleep 3 && kill $OLD_PID 2>/dev/null; sleep 1; kill -9 $OLD_PID 2>/dev/null" > /dev/null 2>&1 &
+            ;;
+        *)
+            print_info "PID $OLD_PID não é o servidor FAP — não vou encerrar."
+            ;;
+    esac
+fi
+rm -f "$INSTALL_DIR/.fap.pid"
 }
 
 mostrar_ajuda() {
