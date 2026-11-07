@@ -1105,6 +1105,7 @@
             "upgrade_baixado_desc": "Los paquetes de Fedora {alvo} se descargaron correctamente. Ahora decides cuándo reiniciar. La actualización real ocurre en el próximo arranque, antes de cualquier inicio de sesión. Tiempo estimado: 20 a 40 minutos.",
             "upgrade_baixado_aviso_titulo": "NO apagues la computadora durante el proceso de actualización.",
             "upgrade_baixado_aviso_desc": "Si necesitas cancelar la actualización, usa el botón \"Cancelar actualización\" abajo. Elimina la descarga y vuelve al estado inicial.",
+            "upgrade_baixado_aviso_voltar": "Después de reiniciar y completar la actualización, vuelve a esta sesión para los próximos pasos (acciones recomendadas post-actualización).",
             "upgrade_btn_reboot": "🔄 Reiniciar ahora y actualizar",
             "upgrade_btn_cancelar": "🗑️ Cancelar actualización",
             "upgrade_log_baixando": "📥 Descargando paquetes de Fedora {alvo}",

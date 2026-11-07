@@ -1105,6 +1105,7 @@
             "upgrade_baixado_desc": "The Fedora {alvo} packages were successfully downloaded. You now decide when to reboot. The actual upgrade happens on the next boot, before any login. Estimated time: 20 to 40 minutes.",
             "upgrade_baixado_aviso_titulo": "DO NOT shut down the computer during the upgrade process.",
             "upgrade_baixado_aviso_desc": "If you need to cancel the upgrade, use the \"Cancel upgrade\" button below. It deletes the download and returns to the initial state.",
+            "upgrade_baixado_aviso_voltar": "After rebooting and completing the upgrade, come back to this session for the next steps (recommended post-upgrade actions).",
             "upgrade_btn_reboot": "🔄 Reboot now and upgrade",
             "upgrade_btn_cancelar": "🗑️ Cancel upgrade",
             "upgrade_log_baixando": "📥 Downloading Fedora {alvo} packages",
