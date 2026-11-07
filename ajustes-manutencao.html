@@ -1961,10 +1961,8 @@ function _renderizarAreaUpgrade(data) {
             html = _renderUpgradeUnsupported(data);
             break;
         case 'waiting_ga':
-            html = _renderUpgradeAguardando(data, 'ga');
-            break;
         case 'waiting_rpmfusion':
-            html = _renderUpgradeAguardando(data, 'rpmfusion');
+            html = _renderUpgradeAguardando(data);
             break;
         case 'check_failed':
             html = _renderUpgradeCheckFailed(data);
@@ -2252,7 +2250,12 @@ function _renderUpgradeUnsupported(data) {
     );
 }
 
-function _renderUpgradeAguardando(data, motivo) {
+function _renderUpgradeAguardando(data) {
+    // `motivo` deriva de `data.status` (single source of truth).
+    // Antes era um parâmetro redundante — se um caller passasse
+    // valor diferente (typo, refactor futuro), a mensagem exibida
+    // seria a errada.
+    var motivo = (data && data.status === 'waiting_ga') ? 'ga' : 'rpmfusion';
     var fedoraOk = data.checks.fedora_ga.ok && data.checks.fedora_channel.ok;
     var rpmfusionOk = data.checks.rpmfusion_channel.ok;
 

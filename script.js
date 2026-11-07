@@ -3616,7 +3616,13 @@ async function _executarRemocaoApp(idComando) {
     if (typeof SystemState !== 'undefined') {
         try {
             SystemState.invalidar();
-            await SystemState.carregar();
+            // `true` força o server a invalidar o cache de 60s do
+            // `system-state-service.js`. Sem isso, uma remoção
+            // externa recente (fora do FAP) seria mascarada pelo
+            // cache do servidor, e o FAP tentaria remover algo
+            // que já não existe (ou bloquearia por falso-positivo
+            // de `instaladoNoSistema`).
+            await SystemState.carregar(true);
         } catch (e) { /* ignore */ }
     }
 
@@ -4944,16 +4950,32 @@ function _construirIndiceBusca() {
 // Verifica se o termo normalizado bate como **prefixo de palavra**
 // em haystackNorm. Evita falsos positivos do tipo "plex" casando
 // dentro de "complexo", "duplex", "perplexo", etc.
+//
+// Aceita termo multi-palavra: cada palavra do termo precisa casar
+// como PREFIXO de alguma palavra do haystack. Ex.: `"obs studio"`
+// casa `"obs studio"` (ordem irrelevante), mas `"obs studio extra"`
+// NÃO casa `"obs studio"` (extra não bate).
 function _contemPalavra(haystackNorm, termoNorm) {
     if (!haystackNorm || !termoNorm) return false;
-    // Tokens: letras/dígitos, tudo em minúsculas (já normalizado).
-    var palavras = haystackNorm.split(/[^a-z0-9]+/);
-    for (var i = 0; i < palavras.length; i++) {
-        if (palavras[i] && palavras[i].indexOf(termoNorm) === 0) {
-            return true;
+
+    var palavrasHay = haystackNorm.split(/[^a-z0-9]+/).filter(Boolean);
+    if (palavrasHay.length === 0) return false;
+
+    var palavrasTermo = termoNorm.split(/[^a-z0-9]+/).filter(Boolean);
+    if (palavrasTermo.length === 0) return false;
+
+    for (var i = 0; i < palavrasTermo.length; i++) {
+        var termo = palavrasTermo[i];
+        var casou = false;
+        for (var j = 0; j < palavrasHay.length; j++) {
+            if (palavrasHay[j].indexOf(termo) === 0) {
+                casou = true;
+                break;
+            }
         }
+        if (!casou) return false;
     }
-    return false;
+    return true;
 }
 
 function _buscar(termo) {

@@ -418,6 +418,14 @@ const sseBuffers = new Map();
 const SSE_BUFFER_MAX = 2000;
 const SSE_BUFFER_TTL_MS = 10000;
 
+// Âncora de `total` por idComando (v1.5.1 — cosmético).
+// Quando o `dnf` roda múltiplas operações em sequência (ex.:
+// `dnf install X && dnf remove Y`), o total muda de M para M'
+// e a barra pularia de 100% para 1%. Ancoramos no primeiro M
+// observado e ignoramos chunks com M diferente (operação
+// secundária). Limpo em `POST /executar`.
+const _progressoTotalAtual = new Map();
+
 // ============================================================
 // RASTREAMENTO DE PROCESSOS FILHOS
 // ============================================================
@@ -1324,7 +1332,7 @@ function adicionarClienteSSE(idComando, res) {
 // Não substitui o log normal — o texto do DNF continua indo pelo
 // canal "output". É um evento adicional e paralelo.
 
-function _detectarProgressoPacotes(texto) {
+function _detectarProgressoPacotes(texto, idComando) {
     if (!texto) return null;
     var matches = [];
     var re = /\[(\d+)\/(\d+)\]/g;
@@ -1340,6 +1348,21 @@ function _detectarProgressoPacotes(texto) {
 
     if (isNaN(atual) || isNaN(total) || total <= 0) return null;
     if (atual > total) return null;
+
+    // Ancora o `total` na primeira observação. Se o `dnf` emitir
+    // outra sequência `[N/M']` com M' diferente (ex.: sub-operação
+    // durante `%post`, ou `dnf` concatenado), ignoramos — a barra
+    // ficaria presa na operação principal, que é a que o usuário
+    // está acompanhando. A âncora é limpa em `POST /executar`
+    // (próxima execução começa do zero).
+    if (idComando) {
+        var ancorado = _progressoTotalAtual.get(idComando);
+        if (ancorado === undefined) {
+            _progressoTotalAtual.set(idComando, total);
+        } else if (ancorado !== total) {
+            return null;
+        }
+    }
 
     return { atual: atual, total: total };
 }
@@ -1492,7 +1515,7 @@ function executarComandoComStream(comandoFinal, idComando, isReversao, callback)
         }, (error, stdout, stderr) => {
             if (stdout) {
                 enviarLog(idComando, stdout, 'output');
-                var prog = _detectarProgressoPacotes(stdout);
+                var prog = _detectarProgressoPacotes(stdout, idComando);
                 if (prog) enviarProgresso(idComando, prog.atual, prog.total);
             }
             if (stderr) {
@@ -1550,7 +1573,7 @@ function executarComandoComStream(comandoFinal, idComando, isReversao, callback)
         const texto = data.toString();
         saidaCompleta += texto;
         enviarLog(idComando, texto, 'output');
-        var prog = _detectarProgressoPacotes(texto);
+        var prog = _detectarProgressoPacotes(texto, idComando);
         if (prog) enviarProgresso(idComando, prog.atual, prog.total);
     });
 
@@ -3267,6 +3290,10 @@ const server = http.createServer((req, res) => {
                 // idComando. Sem isso, um novo cliente SSE recebia o
                 // replay da rodada anterior antes dos logs da nova.
                 sseBuffers.delete(idComando);
+                // Limpa a âncora de progresso: a próxima execução
+                // começa do zero, e o primeiro `[N/M']` define o
+                // total correto (ver `_detectarProgressoPacotes`).
+                _progressoTotalAtual.delete(idComando);
 
                 procederComExecucao(comando, idComando, isReversao, res);
 

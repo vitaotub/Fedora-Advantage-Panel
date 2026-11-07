@@ -1193,8 +1193,12 @@ async function _renderizarPanelDriverStatus(info) {
                 '. O botão "Instalar Driver NVIDIA" continua habilitado — clique nele para tentar. ' +
                 'Se o pacote não existir, o <code>dnf install</code> mostrará o erro real no log.</span>' +
                 '</div>';
-            // Não retorna: deixa `_aplicarEstadoNvidia` decidir o estado
-            // do botão (que vai reabilitar, já que `disponivel !== false`).
+            // `return` obrigatório: sem ele, o `panel.innerHTML = ''`
+            // no final sobrescreve o painel amarelo (regressão v1.5.1).
+            // O estado do botão continua sendo decidido por
+            // `_aplicarEstadoNvidia` (que reabilita, já que
+            // `disponivel !== false`).
+            return;
         }
     }
 
@@ -1611,7 +1615,11 @@ async function executarNvidiaDriver() {
     // só aborta se DEFINITIVAMENTE não existir. `null` (erro de
     // verificação) deixa passar — o `dnf install` dará o erro real.
     var dispPkg = await _verificarPacoteDisponivel(geracao.pkg, true);
-    if (dispPkg.installed === false && dispPkg.available === false) {
+    // Bloqueia APENAS quando o pacote definitivamente não existe
+    // (`available: false` E `error: null`). Se a verificação falhou
+    // (`error` preenchido), deixa passar — o `dnf install` real dá
+    // o erro claro se o pacote não existir. Regra da v1.5.1.
+    if (dispPkg.installed === false && dispPkg.available === false && !dispPkg.error) {
         alert(_tVars('sessoes.hardware.nvidia_driver_indisponivel',
             'Sua GPU ({modelo}) requer o driver "{pkg}", que ainda NÃO está disponível no RPM Fusion para sua versão do Fedora.\n\n' +
             'O FAP NÃO vai instalar o driver proprietário tradicional — ele é incompatível com sua placa e pode deixar o sistema sem interface gráfica.\n\n' +
@@ -1628,7 +1636,9 @@ async function executarNvidiaDriver() {
     // lento no meio da compilação).
     if (geracao.cuda) {
         var dispCuda = await _verificarPacoteDisponivel(geracao.cuda, true);
-        if (dispCuda.installed === false && dispCuda.available === false) {
+        // Mesma regra do `pkg`: `error` preenchido = verificação
+        // falhou, deixa passar.
+        if (dispCuda.installed === false && dispCuda.available === false && !dispCuda.error) {
             alert(_tVars('sessoes.hardware.nvidia_cuda_indisponivel',
                 'O pacote CUDA "{cuda}" (necessário para o driver "{pkg}") não está disponível no RPM Fusion para sua versão do Fedora.\n\n' +
                 'Sem o CUDA, o driver instalaria, mas OBS, Kdenlive e encoding por hardware não funcionariam. O FAP não vai instalar o driver incompleto — nada foi feito.\n\n' +

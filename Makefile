@@ -144,7 +144,7 @@ check-basico:
 		if (faltando.length) { console.error('  ERRO: IDs sem _MAPA_ORIGEM:'); faltando.forEach(x => console.error('    ' + x)); process.exit(1); } \
 		console.log('  OK: todos os instalar-* têm origem mapeada'); \
 	"
-	@echo "==> Checando se data-i18n / _t() têm chave nos locales (#43)..."
+	@echo "==> Checando se data-i18n / _t() / _tUpgrade() têm chave nos locales (#43)..."
 	@node -e " \
 		const fs = require('fs'); \
 		const path = require('path'); \
@@ -154,12 +154,16 @@ check-basico:
 		const chavesUsadas = new Set(); \
 		const isChaveValida = k => /^[a-zA-Z][a-zA-Z0-9_.-]*$$/.test(k) && !/[._]$$/.test(k); \
 		const addChave = k => { if (isChaveValida(k)) chavesUsadas.add(k); }; \
+		const extrairDeTexto = (texto) => { \
+			texto.replace(/data-i18n(?:-html|-placeholder|-title|-aria-label)?=\"([^\"]+)\"/g, (_, k) => addChave(k)); \
+			texto.replace(/_t(?:Vars)?\(\s*'([a-zA-Z0-9_.-]+)'/g, (_, k) => addChave(k)); \
+			texto.replace(/_tVarsUpgrade\(\s*'([a-zA-Z0-9_.-]+)'/g, (_, k) => addChave('sessoes.ajustes-manutencao.' + k)); \
+			texto.replace(/_tUpgrade\(\s*'([a-zA-Z0-9_.-]+)'/g, (_, k) => addChave('sessoes.ajustes-manutencao.' + k)); \
+		}; \
 		for (const arq of sessoes) { \
-			const html = fs.readFileSync(arq, 'utf8'); \
-			html.replace(/data-i18n(?:-html|-placeholder|-title|-aria-label)?=\"([^\"]+)\"/g, (_, k) => addChave(k)); \
-			html.replace(/_t(?:Vars)?\(\s*'([a-zA-Z0-9_.-]+)'/g, (_, k) => addChave(k)); \
+			extrairDeTexto(fs.readFileSync(arq, 'utf8')); \
 		} \
-		scriptJs.replace(/_t(?:Vars)?\(\s*'([a-zA-Z0-9_.-]+)'/g, (_, k) => addChave(k)); \
+		extrairDeTexto(scriptJs); \
 		function buscarChave(obj, caminho) { \
 			const partes = caminho.split('.'); \
 			let atual = obj; \
