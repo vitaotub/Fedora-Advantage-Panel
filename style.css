@@ -1017,10 +1017,25 @@ body {
  * BADGE "ATUALIZAÇÃO DISPONÍVEL"
  * ============================================================ */
 
+/* ============================================================
+ * BADGE "ATUALIZAÇÃO DISPONÍVEL"
+ * ============================================================
+ *
+ * Flutuante no canto superior direito do viewport (não colado
+ * na versão do FAP). Fica visível em todas as telas — landing
+ * e guided — até o usuário clicar e completar o update.
+ *
+ * `position: fixed` (não `absolute`): o badge NÃO pertence a um
+ * ancestral com `position: relative`. Fica ancorado no viewport,
+ * independente do scroll, independente da página.
+ *
+ * `z-index: 99999` é o mesmo do `.fap-toast-container` — garante
+ * que o badge e os toasts fiquem acima de qualquer modal/overlay.
+ */
 .badge-atualizacao {
-    position: absolute;
-    top: -8px;
-    right: -8px;
+    position: fixed;
+    top: 16px;
+    right: 16px;
     width: 30px;
     height: 30px;
     border-radius: 50%;
@@ -1042,9 +1057,27 @@ body {
     box-shadow: 0 2px 8px rgba(245, 158, 11, 0.4);
     transition: transform 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
     animation: pulse-badge 2.5s infinite ease-in-out;
-    z-index: 10;
+    z-index: 99999;
     outline: none;
     text-decoration: none;
+}
+
+/* ============================================================
+ * BADGE FLUTUANTE — ESPAÇO PARA O HEADER EM `guiado.html`
+ * ============================================================
+ *
+ * No `guiado.html`, o header-direita (i18n + tema + refresh +
+ * voltar) ocupa o canto superior direito. Com o badge em
+ * `position: fixed; top: 16px; right: 16px`, ele sobreporia o
+ * botão "voltar" (rightmost, ~38×38). O padding-right de 56px
+ * empurra os controles para a esquerda, deixando 16px de gap.
+ *
+ * `body.fap-tem-badge-atualizacao` é setado por JS em
+ * `mostrarBadgeSeHouverAtualizacao` (script.js). Sem o badge,
+ * o padding-right é 0 (comportamento original).
+ */
+body.fap-tem-badge-atualizacao .header-controles {
+    padding-right: 56px;
 }
 
 .badge-atualizacao:hover {
