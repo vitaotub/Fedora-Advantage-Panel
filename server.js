@@ -2351,17 +2351,50 @@ const server = http.createServer((req, res) => {
     //
     // Read-only, sem autenticação. Mesmo padrão de `/kernel-atual`.
     if (req.method === 'GET' && url === '/reboot-needed') {
-        exec('dnf needs-restarting -r > /dev/null 2>&1; echo "exit=$?"',
-             { shell: '/bin/bash', timeout: 10000 },
+        // ============================================================
+        // STDOUT NÃO-SILENCIADO (v1.5.5)
+        // ============================================================
+        //
+        // Antes, o comando era `dnf needs-restarting -r > /dev/null
+        // 2>&1; echo "exit=$?"`. O `2>&1` no final só capturava o
+        // exit code. Se o próprio `dnf` falhasse (RPM DB lock,
+        // `dnf5-plugins` ausente, timeout), o código de saída seria
+        // != 0 e != 1, e o endpoint devolvia `{reboot: false}`
+        // silenciosamente — FALSO NEGATIVO (esconde o aviso quando
+        // na verdade não conseguiu verificar).
+        //
+        // Agora o stdout é preservado (para o `motivo`), e o JSON
+        // devolve `erro: true` quando o código não é 0 nem 1. O
+        // frontend usa isso para mostrar um aviso neutro em vez de
+        // esconder o banner.
+        //
+        // Timeout subiu de 10s → 15s: `dnf needs-restarting -r` em
+        // cache frio pode demorar 8–12s (lê o histórico do RPM +
+        // compara com o kernel em execução). O `_execReadOnly` mata
+        // o grupo (detached: true) em timeout, então não há risco
+        // de deixar `dnf` órfão.
+        exec('dnf needs-restarting -r 2>&1; echo "---EXIT=$?---"',
+             { shell: '/bin/bash', timeout: 15000 },
              (error, stdout) => {
-                 var m = (stdout || '').match(/exit=(\d+)/);
+                 var out = (stdout || '');
+                 var m = out.match(/---EXIT=(\d+)---/);
                  var codigo = m ? parseInt(m[1], 10) : -1;
                  var reboot = (codigo === 1);
+                 var erro = (codigo !== 0 && codigo !== 1);
+                 var motivo = erro
+                 ? 'dnf needs-restarting retornou código ' + codigo
+                 : null;
+
                  res.writeHead(200, {
                      'Content-Type': 'application/json',
                      'Cache-Control': 'no-cache, no-store, must-revalidate'
                  });
-                 res.end(JSON.stringify({ reboot: reboot }));
+                 res.end(JSON.stringify({
+                     reboot: reboot,
+                     erro: erro,
+                     code: codigo,
+                     motivo: motivo
+                 }));
              });
         return;
     }

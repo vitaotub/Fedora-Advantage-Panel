@@ -735,7 +735,50 @@ async function _verificarRebootNecessario() {
             return;
         }
         var data = await r.json();
-        aviso.style.display = data && data.reboot ? 'block' : 'none';
+
+        // ============================================================
+        // TRÊS ESTADOS (v1.5.5)
+        // ============================================================
+        //
+        //   1. `data.erro === true`   → verificação falhou (dnf
+        //      indisponível, RPM DB lock, timeout). Aviso neutro
+        //      com instrução para o usuário verificar manualmente.
+        //
+        //   2. `data.reboot === true` → reboot necessário. Aviso
+        //      amarelo com ícone de recarga.
+        //
+        //   3. `reboot === false`     → nada pendente. Banner
+        //      escondido (comportamento padrão).
+        //
+        // O `innerHTML` é reescrito em (1) e (2) porque o banner
+        // começa no HTML da sessão com o texto fixo "Reinicie o
+        // computador...". Reutilizar o mesmo elemento com textos
+        // diferentes evita duplicar o `id` no DOM.
+        if (data && data.erro === true) {
+            aviso.style.display = 'block';
+            aviso.className = 'aviso-caixa';
+            aviso.innerHTML =
+                '⚠️ <span data-i18n="sessoes.primeiros-passos.aviso_reboot_nao_verificado">' +
+                _t('sessoes.primeiros-passos.aviso_reboot_nao_verificado',
+                   'Não foi possível verificar se é necessário reiniciar. Verifique no terminal: dnf needs-restarting -r') +
+                '</span>';
+            return;
+        }
+
+        if (data && data.reboot === true) {
+            aviso.style.display = 'block';
+            aviso.className = 'aviso-caixa';
+            aviso.innerHTML =
+                '🔄 <span data-i18n="sessoes.primeiros-passos.aviso_reboot_necessario">' +
+                _t('sessoes.primeiros-passos.aviso_reboot_necessario',
+                   'Reinicie o computador para aplicar as atualizações.') +
+                '</span>';
+            return;
+        }
+
+        // Estado (3): sem pendências (ou reboot falso, ou sem erro
+        // reportado por backend antigo).
+        aviso.style.display = 'none';
     } catch (e) {
         aviso.style.display = 'none';
     }
