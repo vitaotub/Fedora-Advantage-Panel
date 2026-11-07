@@ -51,22 +51,63 @@ async function carregarVersaoServidor() {
     } catch (e) {
         console.warn('[Versão] Não foi possível consultar /info:', e.message);
     }
-    document.querySelectorAll('.fap-version').forEach(function(el) {
-        el.textContent = FAP_VERSION || '?';
-    });
-
-    if (typeof I18N !== 'undefined' && typeof I18N.aplicarTraducoes === 'function') {
-        var badges = document.querySelectorAll('[data-i18n-html="index.badge_versao"]');
-        if (badges.length > 0) {
-            I18N.aplicarTraducoes();
-        }
+    // ============================================================
+    // BADGE FLUTUANTE (v1.5.3)
+    // ============================================================
+    //
+    // Antes (v1.5.2 e anteriores): badge era inserido DEPOIS do
+    // `<span class="fap-version">`, dentro do `.version-badge`
+    // (landing) ou do header (guided). `position: absolute` +
+    // `top: -8px; right: -8px` relativo ao `.version-badge` —
+    // colado na versão, não flutuando no canto.
+    //
+    // Problema reportado em teste real (fgc/RTX 5060): na landing
+    // o badge aparecia só como um "traço" (sem `style.css`
+    // carregado, o `<button>` ficava com estilo nativo do
+    // WebKitGTK), e o usuário pedia um badge flutuante no canto.
+    //
+    // Agora: `document.body.appendChild(badge)` + `position:
+    // fixed; top: 16px; right: 16px` em `style.css`. Fica
+    // ancorado no viewport, visível em qualquer tela, até o
+    // usuário clicar e completar o update.
+    //
+    // `body.fap-tem-badge-atualizacao` empurra o `.header-controles`
+    // do `guiado.html` para a esquerda (senão o badge sobrepõe o
+    // botão "voltar"). Removida em `_dispararAtualizacaoFAP` no
+    // sucesso, junto com o próprio badge.
+    if (document.querySelector('.badge-atualizacao')) {
+        console.log('[Atualização] Badge já existe, pulando.');
+        return;
     }
 
-    document.dispatchEvent(new CustomEvent('fap-versao-pronta', {
-        detail: { versao: FAP_VERSION }
-    }));
+    var badgeTxt = _t('comum.atualizacao_disponivel_titulo',
+                      'Nova versão disponível! Clique para atualizar.');
 
-    console.log('🚀 Fedora Advantage Panel v' + (FAP_VERSION || '?') + ' - Script compartilhado carregado!');
+    var badge = document.createElement('button');
+    badge.type = 'button';
+    badge.className = 'badge-atualizacao';
+    badge.title = badgeTxt;
+    badge.setAttribute('aria-label', badgeTxt);
+    badge.setAttribute('data-i18n-title', 'comum.atualizacao_disponivel_titulo');
+    badge.setAttribute('data-i18n-aria-label', 'comum.atualizacao_disponivel_titulo');
+
+    badge.innerHTML =
+    '<svg class="badge-atualizacao-icon" viewBox="0 0 24 24" aria-hidden="true">' +
+    '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>' +
+    '<polyline points="7 10 12 15 17 10"/>' +
+    '<line x1="12" y1="15" x2="12" y2="3"/>' +
+    '</svg>';
+
+    badge.addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        _dispararAtualizacaoFAP();
+    });
+
+    document.body.appendChild(badge);
+    document.body.classList.add('fap-tem-badge-atualizacao');
+
+    console.log('⬆️ Atualização disponível: ' + versaoLocal + ' → ' + versaoRemota);
 }
 
 // ============================================================
@@ -256,6 +297,16 @@ async function _dispararAtualizacaoFAP() {
         btnSobre.style.cursor = 'not-allowed';
     }
 
+    // Desabilita também o badge flutuante (v1.5.3) para evitar
+    // duplo clique visual. O `_atualizacaoEmAndamento` já barra
+    // a nível lógico, mas o feedback visual é mais claro.
+    var badgeFlutuante = document.querySelector('.badge-atualizacao');
+    if (badgeFlutuante) {
+        badgeFlutuante.disabled = true;
+        badgeFlutuante.style.opacity = '0.5';
+        badgeFlutuante.style.cursor = 'not-allowed';
+    }
+
     mostrarToast(
         _t('comum.badge_atualizando', '🔄 Atualizando FAP...'),
                  'success', 8000
@@ -280,6 +331,23 @@ async function _dispararAtualizacaoFAP() {
             );
             // Botão permanece desabilitado: só faz sentido depois de
             // fechar e reabrir o FAP com a nova versão.
+
+            // ============================================================
+            // REMOVE O BADGE FLUTUANTE APÓS O UPDATE
+            // ============================================================
+            //
+            // O usuário pediu "até que o usuário clique e faça a
+            // atualização" — depois de atualizar, o badge não faz
+            // mais sentido (o próximo boot já é a versão nova).
+            //
+            // A remoção é IMEDIATA (não espera o `_matar_servidor_fap_antigo`
+            // do install.sh matar o node — o badge já cumpriu o papel).
+            // Se o WebKit já morreu (pkill do container no install.sh),
+            // este bloco não executa — mas o WebKit inteiro foi
+            // derrubado, então o badge "sumiu" de qualquer jeito.
+            var badgeEl = document.querySelector('.badge-atualizacao');
+            if (badgeEl) badgeEl.remove();
+            document.body.classList.remove('fap-tem-badge-atualizacao');
         } else if (sucesso === false) {
             mostrarToast(_t('comum.status_falha', '❌ Falha na execução'), 'error', 8000);
             if (btnSobre) {
@@ -287,6 +355,15 @@ async function _dispararAtualizacaoFAP() {
                 btnSobre.style.opacity = '1';
                 btnSobre.style.cursor = 'pointer';
                 btnSobre.textContent = btnSobreTextoOriginal;
+            }
+            // Reabilita o badge flutuante para o usuário poder tentar
+            // de novo (o `_atualizacaoEmAndamento` já foi resetado no
+            // topo do `_finalizar`).
+            var badgeErro = document.querySelector('.badge-atualizacao');
+            if (badgeErro) {
+                badgeErro.disabled = false;
+                badgeErro.style.opacity = '1';
+                badgeErro.style.cursor = 'pointer';
             }
         }
     }
