@@ -505,16 +505,29 @@ function _podeExecutar(idComando) {
 
 function _execReadOnly(comando, timeoutMs) {
     return new Promise(function(resolve) {
+        // ============================================================
+        // LIMPAR BASH_ENV/ENV (v1.5.6)
+        // ============================================================
+        //
+        // Mesmo problema do `_exec` do `hardware-service.js`. O
+        // `_execReadOnly` alimenta os endpoints `/system-info`,
+        // `/top-processes`, `/disk-usage`, `/journal-errors`,
+        // `/kernel-atual`, `/reboot-needed`, `/check-package`,
+        // `/check-package-available`, `/hardware-detect-atomic`,
+        // `/grub-info`. Se o `BASH_ENV` do usuário executa
+        // `fastfetch`/`neofetch`, o output aparece no JSON desses
+        // endpoints — o `_parseChaveValor` recebe linhas
+        // "fedora=..." no meio do fastfetch e pode casar por
+        // acidente.
+        var envLimpo = Object.assign({}, process.env, {
+            BASH_ENV: '',
+            ENV: ''
+        });
         exec(comando, {
             shell: '/bin/bash',
             timeout: timeoutMs || 5000,
             maxBuffer: 1024 * 1024 * 5,
-            env: process.env,
-            // `detached: true` faz o bash ser líder de sessão. Sem
-            // ele, quando o `timeout` do exec envia SIGTERM ao bash
-            // pai, os netos (`dnf repolist`, `lspci`) ficam órfãos
-            // segurando locks. Com o grupo isolado, o SO pode fazer
-            // cleanup depois mesmo que o Node morra abruptamente.
+            env: envLimpo,
             detached: true
         }, function(error, stdout, stderr) {
             if (error && !stdout) {
