@@ -20,11 +20,36 @@ const HARDWARE_MAP_PATH = path.join(__dirname, 'hardware_map.json');
 
 function _exec(cmd, timeoutMs) {
     return new Promise(function(resolve) {
+        // ============================================================
+        // LIMPAR BASH_ENV/ENV (v1.5.6)
+        // ============================================================
+        //
+        // `bash -c` NÃO carrega o `.bashrc` por padrão, MAS carrega
+        // o arquivo apontado por `$BASH_ENV` (se setado). Se o
+        // usuário configurou o `.bashrc` para rodar `fastfetch`/
+        // `neofetch` e o node herdou `BASH_ENV` do terminal, o
+        // `bash -c` do `_exec` executa o fastfetch — e o output
+        // vai parar no `stdout` do comando.
+        //
+        // Sintoma em hardware real (fgc, Fedora 45): o
+        // `_akmodCarregado` retornava o fastfetch inteiro como se
+        // fosse o nome do módulo. O banner "Chave local do akmods
+        // não está enrolled" mostrava o fastfetch colado no
+        // `{modulo}`.
+        //
+        // Limpar `BASH_ENV` e `ENV` força o `bash -c` a não
+        // carregar nada. O `PATH` (e outras variáveis) continua
+        // herdado do `process.env` — só o carregamento do
+        // `.bashrc` é suprimido.
+        var envLimpo = Object.assign({}, process.env, {
+            BASH_ENV: '',
+            ENV: ''
+        });
         exec(cmd, {
             shell: '/bin/bash',
             timeout: timeoutMs || 5000,
             maxBuffer: 5 * 1024 * 1024,
-            env: process.env
+            env: envLimpo
         }, function(error, stdout, stderr) {
             resolve({
                 ok: !error,
@@ -188,14 +213,30 @@ async function _akmodCarregado() {
         'nvidia', 'nvidia_drm', 'nvidia_modeset', 'nvidia_uvm',
         'vboxdrv', 'wl', 'r8168', 'xpadneo', 'v4l2loopback'
     ];
+    // Prefixo `MATCH:` no output do script. Mesmo que o `bash -c`
+    // carregue algum arquivo de inicialização (defesa em
+    // profundidade — o `_exec` já limpa `BASH_ENV`/`ENV`), só
+    // aceitamos a linha com o prefixo. O `fastfetch`/`neofetch`
+    // do usuário, se rodar, não tem esse prefixo e é ignorado.
     var script = 'for mod in ' + modulos.join(' ') + '; do ' +
-    '  if lsmod | awk \'{print $1}\' | grep -qx "$mod"; then ' +
-    '    echo "$mod"; break; ' +
-    '  fi; ' +
-    'done';
-        var r = await _exec(script, 3000);
-        var nome = (r.stdout || '').trim();
-        return nome ? { modulo: nome } : null;
+                 '  if lsmod | awk \'{print $1}\' | grep -qx "$mod"; then ' +
+                 '    echo "MATCH:$mod"; break; ' +
+                 '  fi; ' +
+                 'done';
+    var r = await _exec(script, 3000);
+    var linhas = (r.stdout || '').split('\n');
+    for (var i = 0; i < linhas.length; i++) {
+        var l = linhas[i].trim();
+        if (l.indexOf('MATCH:') === 0) {
+            var nome = l.substring('MATCH:'.length).trim();
+            // Confirma que o nome é um dos módulos esperados —
+            // evita injeção via output malformado.
+            if (modulos.indexOf(nome) !== -1) {
+                return { modulo: nome };
+            }
+        }
+    }
+    return null;
 }
 
 // ============================================================
