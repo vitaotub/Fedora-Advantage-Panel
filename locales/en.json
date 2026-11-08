@@ -26,7 +26,10 @@
         "secureboot_ctx_nvidia": "the NVIDIA driver",
         "secureboot_ctx_obs": "the OBS virtual camera",
         "secureboot_ctx_perifericos": "Broadcom, Realtek or xpadneo",
-        "secureboot_configurado_ok": "Secure Boot is enabled and the akmods key is <strong>enrolled in the firmware</strong>. Modules signed by FAP (NVIDIA, VirtualBox, Broadcom, Realtek, xpadneo, OBS virtual camera) load normally at boot. No further action is needed."
+        "secureboot_configurado_ok": "Secure Boot is enabled and the akmods key is <strong>enrolled in the firmware</strong>. Modules signed by FAP (NVIDIA, VirtualBox, Broadcom, Realtek, xpadneo, OBS virtual camera) load normally at boot. No further action is needed.",
+        "secureboot_akmod_carregado_titulo": "Local akmods key is not enrolled",
+        "secureboot_akmod_carregado_desc": "The module <code>{modulo}</code> is loaded and working, which means SOME akmods key is enrolled in the firmware. But the FAP's local key (<code>/etc/pki/akmods/certs/public_key.der</code>) is NOT enrolled. If you plan to install other akmods through FAP (VirtualBox, Broadcom, Realtek, xpadneo, OBS virtual camera), you need to enroll the local key in <strong>{sessao}</strong> → <strong>Secure Boot</strong>. If you'll stick with what you already have, you can ignore this warning.",
+        "secureboot_badge_akmod_carregado": "Module <code>{modulo}</code> is working, but the FAP's local key is not enrolled. If you plan to install other akmods through FAP, complete the enrollment in <strong>{sessao}</strong> → <strong>Secure Boot</strong>."
     },
 
     "comum": {

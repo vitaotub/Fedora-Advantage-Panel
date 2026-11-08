@@ -26,7 +26,10 @@
         "secureboot_ctx_nvidia": "el controlador NVIDIA",
         "secureboot_ctx_obs": "la cámara virtual de OBS",
         "secureboot_ctx_perifericos": "Broadcom, Realtek o xpadneo",
-        "secureboot_configurado_ok": "Secure Boot está activo y la clave de akmods ya está <strong>enrolled en el firmware</strong>. Los módulos firmados por FAP (NVIDIA, VirtualBox, Broadcom, Realtek, xpadneo, cámara virtual de OBS) cargan normalmente en el arranque. No se necesita ninguna acción adicional."
+        "secureboot_configurado_ok": "Secure Boot está activo y la clave de akmods ya está <strong>enrolled en el firmware</strong>. Los módulos firmados por FAP (NVIDIA, VirtualBox, Broadcom, Realtek, xpadneo, cámara virtual de OBS) cargan normalmente en el arranque. No se necesita ninguna acción adicional.",
+        "secureboot_akmod_carregado_titulo": "La clave local de akmods no está enrolled",
+        "secureboot_akmod_carregado_desc": "El módulo <code>{modulo}</code> está cargado y funcionando, lo que significa que ALGUNA clave akmods está enrolled en el firmware. Pero la clave local del FAP (<code>/etc/pki/akmods/certs/public_key.der</code>) NO está enrolled. Si vas a instalar otros akmods a través de FAP (VirtualBox, Broadcom, Realtek, xpadneo, cámara virtual de OBS), necesitas hacer el enrollment de la clave local en <strong>{sessao}</strong> → <strong>Secure Boot</strong>. Si vas a quedarte con lo que ya tienes, puedes ignorar este aviso.",
+        "secureboot_badge_akmod_carregado": "El módulo <code>{modulo}</code> está funcionando, pero la clave local del FAP no está enrolled. Si vas a instalar otros akmods a través de FAP, completa el enrollment en <strong>{sessao}</strong> → <strong>Secure Boot</strong>."
     },
 
     "comum": {
