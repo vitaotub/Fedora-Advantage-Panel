@@ -2,7 +2,7 @@
 
 **🌐 Idioma:** [Português (BR)](README.md) | [English](README.en.md) | Español
 
-![Versión](https://img.shields.io/badge/Versi%C3%B3n-v1.5.6--11072026-orange?style=flat-square)
+![Versión](https://img.shields.io/badge/Versi%C3%B3n-v1.5.7--11082026-orange?style=flat-square)
 ![Fedora](https://img.shields.io/badge/Fedora-44%20%7C%2045-294172?style=flat-square&logo=fedora)
 ![Licencia](https://img.shields.io/badge/Licencia-GPL--3.0-green?style=flat-square)
 ![Idiomas](https://img.shields.io/badge/Idiomas-PT--BR%20%7C%20EN%20%7C%20ES-3c67e3?style=flat-square)
@@ -75,13 +75,13 @@ bash <(curl -s https://raw.githubusercontent.com/vitaotub/Fedora-Advantage-Panel
 - **Autenticación vía `pkexec`.** Diálogo de contraseña nativo. El script a ejecutar se registra en el log **antes** de que pkexec abra — ves lo que autorizas.
 - **Auditoría en archivo.** Cada `pkexec` deja rastro en `/tmp/fap-audit-*.log` (eliminado en 7 días).
 - **Protección contra CSRF local.** `/executar` y `/shutdown` rechazan peticiones con `Origin` de otros hosts.
-- **Consciente de Secure Boot.** Al instalar cualquier `akmod-*` con Secure Boot activo, el FAP guía por el enrollment MOK (kmodgenca + mokutil) antes de instalar.
+- **Consciente de Secure Boot.** Al instalar cualquier `akmod-*` con Secure Boot activo, el FAP guía por el enrollment MOK (kmodgenca + mokutil) antes de instalar. Si el usuario ya tiene una clave enrolled (de cualquier origen), el FAP lo detecta y oculta las instrucciones.
 - **Contenedor WebKitGTK nativo.** Interfaz propia, sin depender de Firefox/Chromium.
 - **`install.sh` se niega a ejecutarse como root.** Instala en `~/.local/share` y usa `sudo` solo donde hace falta.
 
 ## 🖥️ Requisitos
 
-- **Fedora 44 o 45.**
+- **Fedora 44 o 45.** Foco activo de desarrollo y pruebas en **Fedora 45 y futuras versiones**. Fedora 44 se mantiene como legado.
 - **GNOME, KDE Plasma, XFCE, Cinnamon, MATE, LXQt, LXDE, Budgie, Sway, Hyprland, i3** y otros tiling WMs.
 - **PT-BR, EN y ES.**
 
