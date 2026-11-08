@@ -8,7 +8,7 @@
 // com o hardware_map.json e devolver uma lista de dispositivos
 // detectados com sugestões de driver.
 
-const { exec } = require('child_process');
+const { exec, execFile } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 
@@ -21,32 +21,36 @@ const HARDWARE_MAP_PATH = path.join(__dirname, 'hardware_map.json');
 function _exec(cmd, timeoutMs) {
     return new Promise(function(resolve) {
         // ============================================================
-        // LIMPAR BASH_ENV/ENV (v1.5.6)
+        // EXECFILE COM --noprofile --norc (v1.5.6)
         // ============================================================
         //
-        // `bash -c` NÃO carrega o `.bashrc` por padrão, MAS carrega
-        // o arquivo apontado por `$BASH_ENV` (se setado). Se o
-        // usuário configurou o `.bashrc` para rodar `fastfetch`/
-        // `neofetch` e o node herdou `BASH_ENV` do terminal, o
-        // `bash -c` do `_exec` executa o fastfetch — e o output
-        // vai parar no `stdout` do comando.
+        // Versão anterior usava `exec` com `shell: '/bin/bash'`. O
+        // `bash -c` resultante CARREGA o `.bashrc` do usuário em
+        // alguns cenários (Fedora 45 + bash 5.3.15 + ambiente de
+        // sessão KDE), mesmo com `BASH_ENV=''`. O `.bashrc` do fgc
+        // roda `fastfetch`, que poluía o `stdout` de todo comando
+        // shell do FAP.
         //
-        // Sintoma em hardware real (fgc, Fedora 45): o
-        // `_akmodCarregado` retornava o fastfetch inteiro como se
-        // fosse o nome do módulo. O banner "Chave local do akmods
-        // não está enrolled" mostrava o fastfetch colado no
-        // `{modulo}`.
+        // Sintoma em hardware real (fgc, Fedora 45 + KDE):
+        // `test -d /etc/pki/akmods/certs/ && echo yes` retornava
+        // `"<fastfetch inteiro>\nyes\n"`. O `_checkMokEnrolled`
+        // compara `stdout.trim() === 'yes'` — com o fastfetch no
+        // meio, a comparação falhava, e o FAP mostrava "chave não
+        // gerada" / "enrollment necessário" mesmo com a chave
+        // enrolled.
         //
-        // Limpar `BASH_ENV` e `ENV` força o `bash -c` a não
-        // carregar nada. O `PATH` (e outras variáveis) continua
-        // herdado do `process.env` — só o carregamento do
-        // `.bashrc` é suprimido.
+        // Correção: `execFile` com `--noprofile --norc` — o bash
+        // IGNORA `.bash_profile`, `.bashrc` e `$BASH_ENV`. Nenhum
+        // arquivo de inicialização é carregado. O `execFile` não
+        // passa por shell, então não há interpolação de `~`, `$VAR`,
+        // etc. no comando — o comando é passado como string única
+        // pro `-c`, que é o comportamento esperado (o FAP monta o
+        // comando com paths absolutos e variáveis já expandidas).
         var envLimpo = Object.assign({}, process.env, {
             BASH_ENV: '',
             ENV: ''
         });
-        exec(cmd, {
-            shell: '/bin/bash',
+        execFile('/bin/bash', ['--noprofile', '--norc', '-c', cmd], {
             timeout: timeoutMs || 5000,
             maxBuffer: 5 * 1024 * 1024,
             env: envLimpo
@@ -279,7 +283,11 @@ async function _checkMokEnrolled() {
     // pode haver um akmod carregado por fora — vale a pena checar
     // (o frontend usa `akmod_carregado` para o banner neutro).
     var existeDir = await _exec('test -d ' + chaveDir + ' 2>/dev/null && echo yes');
-    if (existeDir.stdout.trim() !== 'yes') {
+    // v1.5.6: `includes('yes')` em vez de `=== 'yes'` — defesa em
+    // profundidade. Mesmo com `execFile --noprofile --norc`, se
+    // algum outro `.bashrc` rodar no futuro, o `yes` ainda é
+    // detectado no meio do output.
+    if (existeDir.stdout.indexOf('yes') === -1) {
         var akmodCarregadoSemDir = await _akmodCarregado();
         return {
             chave_gerada: false,
@@ -293,7 +301,7 @@ async function _checkMokEnrolled() {
     // testar. Mas pode haver chave `.der` no diretório (chave
     // antiga, com symlink quebrado) — vale varrer.
     var existe = await _exec('test -f ' + chave + ' 2>/dev/null && echo yes');
-    var publicKeyExiste = (existe.stdout.trim() === 'yes');
+    var publicKeyExiste = (existe.stdout.indexOf('yes') !== -1);
 
     function _interpretar(saida) {
         var out = (saida || '').toLowerCase();
