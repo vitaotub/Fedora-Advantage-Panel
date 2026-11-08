@@ -2,7 +2,7 @@
 
 **🌐 Idioma:** Português (BR) | [English](README.en.md) | [Español](README.es.md)
 
-![Versão](https://img.shields.io/badge/Vers%C3%A3o-v1.5.5--11072026-orange?style=flat-square)
+![Versão](https://img.shields.io/badge/Vers%C3%A3o-v1.5.6--11072026-orange?style=flat-square)
 ![Fedora](https://img.shields.io/badge/Fedora-44%20%7C%2045-294172?style=flat-square&logo=fedora)
 ![Licença](https://img.shields.io/badge/Licen%C3%A7a-GPL--3.0-green?style=flat-square)
 ![Idiomas](https://img.shields.io/badge/Idiomas-PT--BR%20%7C%20EN%20%7C%20ES-3c67e3?style=flat-square)
@@ -93,6 +93,53 @@ bash <(curl -s https://raw.githubusercontent.com/vitaotub/Fedora-Advantage-Panel
 ```
 
 Atualizações são feitas em cima da instalação existente — progresso, tema e idioma são preservados.
+
+## 🧹 Troubleshooting
+
+### O FAP não instala ou não abre, mesmo desinstalando e reinstalando
+
+Se você já rodou `./install.sh --uninstall` e a reinstalação continua falhando (servidor não sobe, janela fecha em ~15s, `git pull` com conflito, permissões perdidas em `.sh`), pode haver resíduos de instalações antigas que o uninstall padrão não cobriu. Nesse caso, use o script de limpeza pesada:
+
+```bash
+sudo bash ~/.local/share/fedora-advantage-panel/scripts/fap-cleanup.sh
+# ou, se instalou a partir de um clone de dev:
+sudo bash ~/Downloads/fap/scripts/fap-cleanup.sh
+```
+
+> **⚠️ ATENÇÃO:** este script apaga **tudo** relacionado ao FAP, incluindo:
+> - A instalação oficial em `~/.local/share/fedora-advantage-panel/`
+> - O clone de dev em `~/Downloads/fap/` (se você tem commits locais não enviados, faça `git push` antes!)
+> - O esquema antigo FOF (se você migrou dele)
+> - `.progresso.json` — todo o histórico de botões clicados
+> - Tema, idioma, filtros salvos
+> - Os 3 `sysctl.d/99-fap-*` (tunings)
+> - Entradas `PATH` nos rc files (com backup automático)
+>
+> **Não** remove pacotes instalados (Flatpak, DNF, akmods), COPRs, Terra, repos de fabricante, chave MOK, `/etc/chromium/master_preferences` ou presets do MangoHud/GameMode.
+
+Depois de rodar o cleanup, reinstale do zero:
+
+```bash
+bash <(curl -s https://raw.githubusercontent.com/vitaotub/Fedora-Advantage-Panel/main/install.sh)
+```
+
+### Quando NÃO usar o `fap-cleanup.sh`
+
+- **Para atualizar o FAP:** use o badge de atualização ou `./install.sh --update`. Nenhum dos dois precisa do cleanup.
+- **Para desinstalar normalmente:** use o botão "Desinstalar" em **Sobre o FAP** ou `./install.sh --uninstall`. O desinstalar padrão já cobre tudo que o FAP instalou e preserva o histórico e o clone de dev.
+- **Para limpar pacotes instalados pelo FAP:** o cleanup não remove pacotes (Flatpak, DNF, akmods) por design. Use o botão "Reverter" de cada sessão, ou remova manualmente com `flatpak uninstall <app>` / `sudo dnf remove <pkg>`.
+
+### O aviso "reinicie o computador" não aparece após atualizar
+
+`dnf needs-restarting -r` só retorna 1 quando um pacote crítico foi atualizado (kernel, glibc, systemd, dbus, openssl-libs, pam, selinux-policy, polkit). Se a sua atualização foi só de apps (Firefox, GIMP, VLC), o aviso **corretamente** não aparece. Para confirmar:
+
+```bash
+dnf needs-restarting -r; echo "Exit: $?"
+# Exit: 0 → não precisa reiniciar
+# Exit: 1 → precisa reiniciar (o aviso deve aparecer)
+```
+
+A partir da v1.5.5, se o próprio `dnf needs-restarting` falhar (RPM DB lock, `dnf5-plugins` ausente, timeout), o FAP mostra um banner neutro: *"Não foi possível verificar se é necessário reiniciar. Verifique no terminal: dnf needs-restarting -r"*.
 
 ## 🐛 Feedback
 

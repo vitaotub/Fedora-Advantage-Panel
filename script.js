@@ -1608,6 +1608,16 @@ function _mokEnrolled() {
     return _secureBootMokCache && _secureBootMokCache.enrolled === true;
 }
 
+// v1.5.6: retorna o módulo akmod carregado por fora (nvidia,
+// vboxdrv, etc.), ou null se nenhum. Usado para o banner neutro
+// quando `enrolled: false` mas o akmod está funcionando — cobre
+// o caso de o usuário ter enrollado uma chave DIFERENTE da
+// public_key.der local.
+function _akmodCarregadoFora() {
+    if (!_secureBootMokCache) return null;
+    return _secureBootMokCache.akmod_carregado || null;
+}
+
 async function _prepararSecureBoot() {
     // Mantém o idComando `nvidia-secureboot-prepare` por compatibilidade
     // com o `.progresso.json` (o botão é o mesmo, aparece na Sessão 3
@@ -1733,6 +1743,34 @@ function _renderizarPainelSecureBoot(container, estado) {
         return;
     }
 
+    // ============================================================
+    // v1.5.6: AKMOD CARREGADO MAS CHAVE LOCAL NÃO ENROLLED
+    // ============================================================
+    //
+    // Caso o usuário tenha enrollado uma chave DIFERENTE da
+    // public_key.der local (chave do RPM Fusion direto, chave
+    // de outro HD/máquina, chave antiga), o `mokutil --test-key`
+    // local retorna "not enrolled", mas o driver funciona.
+    //
+    // O FAP detecta isso via `_akmodCarregadoFora()`. Mostra um
+    // banner neutro (amarelo) em vez do painel completo — não é
+    // "enrollment necessário" para o que já está funcionando, só
+    // um aviso para quem for instalar outros akmods.
+    var akmodFora = _akmodCarregadoFora();
+    if (akmodFora) {
+        var modNome = akmodFora.modulo;
+        var nomeSessaoSb = _t('sessoes.estado-fedora.nome', 'Estado do Fedora');
+        container.innerHTML =
+        '<div class="aviso-caixa" style="border-color: #f59e0b; color: #f59e0b;">' +
+        '<strong>⚠️ ' + _t('seguranca.secureboot_akmod_carregado_titulo',
+                           'Chave local do akmods não está enrolled') + '</strong><br>' +
+                           _tVars('seguranca.secureboot_akmod_carregado_desc',
+                                  'O módulo <code>{modulo}</code> está carregado e funcionando, o que significa que ALGUMA chave akmods está enrolled no firmware. Mas a chave local do FAP (<code>/etc/pki/akmods/certs/public_key.der</code>) NÃO está enrolled. Se você for instalar outros akmods pelo FAP (VirtualBox, Broadcom, Realtek, xpadneo, câmera virtual do OBS), precisa fazer o enrollment da chave local em <strong>{sessao}</strong> → <strong>Secure Boot</strong>. Se for continuar só com o que já tem, pode ignorar este aviso.',
+                                  { modulo: modNome, sessao: nomeSessaoSb }) +
+                           '</div>';
+        return;
+    }
+
     var html = '';
 
     // ============================================================
@@ -1849,6 +1887,23 @@ function _renderizarBadgeSecureBoot(container, estado, contexto) {
     // módulos do akmods carregam sem intervenção.
     if (mokEnrolled) {
         container.innerHTML = '';
+        return;
+    }
+
+    // v1.5.6: akmod carregado mas chave local não enrolled.
+    // Mostra aviso neutro (não vermelho) — o driver funciona,
+    // mas a chave local não está enrolled. Se o usuário for
+    // instalar outros akmods, precisa enrollar.
+    var akmodFora = _akmodCarregadoFora();
+    if (akmodFora) {
+        var modNomeFora = akmodFora.modulo;
+        var nomeSessaoSbFora = _t('sessoes.estado-fedora.nome', 'Estado do Fedora');
+        container.innerHTML =
+        '<div class="aviso-caixa" style="margin: 0 0 1rem 0; font-size: 0.85rem; border-color: #f59e0b; color: #f59e0b;">' +
+        '⚠️ ' + _tVars('seguranca.secureboot_badge_akmod_carregado',
+                       'O módulo <code>{modulo}</code> está funcionando, mas a chave local do FAP não está enrolled. Se for instalar outros akmods pelo FAP, complete o enrollment em <strong>{sessao}</strong> → <strong>Secure Boot</strong>.',
+                       { modulo: modNomeFora, sessao: nomeSessaoSbFora }) +
+        '</div>';
         return;
     }
 

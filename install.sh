@@ -226,6 +226,7 @@ ARQUIVOS_PRINCIPAIS=(
 "build-container.sh"
 "Makefile"
 "CHANGELOG.md"
+"scripts/fap-cleanup.sh"
 )
 
 print_header() {
@@ -286,6 +287,13 @@ chmod +x "$BIN_DIR/$link" 2>/dev/null || true
 print_info "Permissão aplicada: $link (link)"
 fi
 done
+
+# Script de limpeza pesada (v1.5.6). Fica em `scripts/`, não na
+# raiz — por isso não entra no loop defensivo de `*.sh` acima.
+if [ -f "$INSTALL_DIR/scripts/fap-cleanup.sh" ]; then
+    chmod +x "$INSTALL_DIR/scripts/fap-cleanup.sh" 2>/dev/null || true
+    print_info "Permissão aplicada: scripts/fap-cleanup.sh"
+fi
 
 print_success "Permissões reaplicadas com sucesso!"
 }
@@ -894,7 +902,18 @@ mkdir -p "$BIN_DIR"
 if [ -d "$INSTALL_DIR/.git" ]; then
 print_info "Atualizando repositório existente..."
 cd "$INSTALL_DIR"
-git pull --ff-only
+# ============================================================
+# RESET ATÔMICO (v1.5.6)
+# ============================================================
+#
+# Alinhado com `atualizar()` (v1.5.4). O `git pull --ff-only`
+# deixa conflito em arquivos rastreados modificados —
+# `git reset --hard origin/main` é idempotente e sempre termina
+# num estado limpo.
+git fetch origin main 2>&1 || true
+git reset --hard origin/main
+git stash drop 2>/dev/null || true
+git clean -fd 2>/dev/null || true
 else
 print_info "Clonando repositório..."
 git clone "$REPO_URL" "$INSTALL_DIR"
@@ -1106,7 +1125,13 @@ local caminho_falhou=()
 # install.sh via `setsid -f bash -c` (correção 2 no server.js),
 # então o sudo tem um TTY ou usa o SUDO_ASKPASS do ambiente.
 #
-# Se nem `rm` nem `sudo rm` funcionarem, reportamos no final.
+# v1.5.6: adicionado `sudo -A` (askpass) antes do `sudo` interativo.
+# Sem isso, quando o botão "Desinstalar" do FAP chama o
+# `install.sh --uninstall` via `setsid -f` (sem TTY), o `sudo`
+# puro falhava com "no tty present and no askpass program specified"
+# e os arquivos em /etc/ ficavam órfãos.
+#
+# Se nem `rm` nem `sudo` funcionarem, reportamos no final.
 _remover() {
     local caminho="$1"
     local tipo="$2"
@@ -1121,13 +1146,24 @@ _remover() {
         return 0
     fi
 
-    # Tentativa 2: com sudo (arquivos criados por root)
+    # Tentativa 2: com sudo -n (NOPASSWD)
     if sudo -n rm -rf "$caminho" 2>/dev/null; then
         print_success "$tipo removido (sudo): $caminho"
         removidos=$((removidos + 1))
         return 0
     fi
 
+    # Tentativa 3: com sudo -A (askpass) — usado quando o FAP
+    # chama o install.sh --uninstall via botão, sem TTY
+    if [ -n "$SUDO_ASKPASS" ] && [ -x "$SUDO_ASKPASS" ]; then
+        if sudo -A rm -rf "$caminho" 2>/dev/null; then
+            print_success "$tipo removido (sudo -A): $caminho"
+            removidos=$((removidos + 1))
+            return 0
+        fi
+    fi
+
+    # Tentativa 4: sudo interativo (TTY)
     if sudo rm -rf "$caminho" 2>/dev/null; then
         print_success "$tipo removido (sudo): $caminho"
         removidos=$((removidos + 1))
@@ -1142,45 +1178,58 @@ _remover() {
 
 print_step "Removendo arquivos..."
 
-# ─── 1. Diretório de instalação ─────────────────────────────
+# ─── 1. Diretórios de instalação (FAP + FOF legado) ───────
 _remover "$INSTALL_DIR" "Diretório"
+_remover "$OLD_INSTALL_DIR" "Diretório FOF legado"
 
-# ─── 2. Symlinks em ~/.local/bin ────────────────────────────
-local links=("fap" "fap-compat" "fap-container")
+# ─── 2. Symlinks em ~/.local/bin (FAP + FOF legado) ───────
+local links=("fap" "fap-compat" "fap-container" "fof" "fof-compat" "fof-container")
 for link in "${links[@]}"; do
     _remover "$BIN_DIR/$link" "Link"
 done
 
-# ─── 3. Atalhos .desktop ────────────────────────────────────
+# ─── 3. Atalhos .desktop (FAP + FOF legado) ───────────────
 local atalhos=(
 "$DESKTOP_FILE"
 "$DESKTOP_FILE_COMPAT"
 "$DESKTOP_FILE_OLD"
 "$DESKTOP_FILE_COMPAT_OLD"
+"$DESKTOP_FILE_FOF"
+"$DESKTOP_FILE_FOF_COMPAT"
+"$DESKTOP_FILE_FOF_OLD"
+"$DESKTOP_FILE_FOF_COMPAT_OLD"
 )
 for atalho in "${atalhos[@]}"; do
     _remover "$atalho" "Atalho"
 done
 
-# ─── 4. Ícone hicolor ──────────────────────────────────────
-local icone="$HOME/.local/share/icons/hicolor/256x256/apps/fap-container.png"
-if [ -f "$icone" ]; then
-    if rm -f "$icone" 2>/dev/null; then
-        gtk-update-icon-cache -f -t "$HOME/.local/share/icons/hicolor" 2>/dev/null || true
-        print_success "Ícone removido do hicolor"
-        removidos=$((removidos + 1))
-    else
-        print_warning "Não foi possível remover o ícone do hicolor"
-        falhas=$((falhas + 1))
+# ─── 4. Ícones hicolor (FAP + FOF legado) ─────────────────
+local icones=(
+"$HOME/.local/share/icons/hicolor/256x256/apps/fap-container.png"
+"$HOME/.local/share/icons/hicolor/256x256/apps/fof-container.png"
+)
+for icone in "${icones[@]}"; do
+    if [ -f "$icone" ]; then
+        if rm -f "$icone" 2>/dev/null; then
+            print_success "Ícone removido: $icone"
+            removidos=$((removidos + 1))
+        else
+            print_warning "Não foi possível remover o ícone: $icone"
+            falhas=$((falhas + 1))
+        fi
     fi
-fi
+done
+gtk-update-icon-cache -f -t "$HOME/.local/share/icons/hicolor" 2>/dev/null || true
 
-# ─── 5. Dados e cache do WebKitGTK ──────────────────────────
-_remover "$HOME/.cache/fap-container" "Cache WebKitGTK"
-_remover "$HOME/.local/share/fap-container" "Dados WebKitGTK"
+# ─── 5. Caches WebKitGTK (FAP + FOF legado) ───────────────
+_remover "$HOME/.cache/fap-container" "Cache WebKitGTK FAP"
+_remover "$HOME/.local/share/fap-container" "Dados WebKitGTK FAP"
 _remover "$HOME/.config/fap-container" "Configurações FAP"
+_remover "$HOME/.cache/fof-container" "Cache WebKitGTK FOF"
+_remover "$HOME/.local/share/fof-container" "Dados WebKitGTK FOF"
+_remover "$HOME/.config/fof-container" "Configurações FOF"
 
-# ─── 6. Arquivos de configuração criados pelo FAP ───────────
+# ─── 6. Arquivos de configuração do FAP em ~/.config/ ─────
 #
 # Arquivos que o FAP grava em ~/.config/ durante o uso normal.
 # Todos têm prefixo `99-fap-` (identificável e seguro) ou são
@@ -1197,8 +1246,49 @@ _remover "$HOME/.config/environment.d/99-fap-nvidia-vaapi.conf" "Variáveis VA-A
 _remover "$HOME/.config/pipewire/pipewire.conf.d/99-fap-quantum.conf" "Configuração PipeWire (baixa latência)"
 _remover "$HOME/.config/MangoHud/MangoHud.conf" "Preset MangoHud"
 _remover "$HOME/.config/gamemode.ini" "Preset GameMode"
+# v1.5.6: os arquivos `.fap-backup` são criados pelo botão
+# "Aplicar Presets" da Sessão 8 (backup antes de sobrescrever um
+# config pré-existente do usuário). Se o usuário desinstala sem
+# clicar na lixeira, eles ficam órfãos. O `.fap-backup` do
+# MangoHud/GameMode é resíduo do FAP (não existiria sem ele) e
+# pode ser removido com segurança — o original restaurado está
+# em `.conf` / `.ini`, e o `.fap-backup` só existe se o FAP foi
+# quem sobrescreveu.
+_remover "$HOME/.config/MangoHud/MangoHud.conf.fap-backup" "Backup do Preset MangoHud"
+_remover "$HOME/.config/gamemode.ini.fap-backup" "Backup do Preset GameMode"
 
-# ─── 7. Logs temporários ────────────────────────────────────
+# ─── 7. Tunings de sistema aplicados pelo FAP (/etc/sysctl.d) ──
+#
+# v1.5.6: os 3 arquivos `/etc/sysctl.d/99-fap-*.conf` são criados
+# pelo FAP quando o usuário aplica os tunings na Sessão 11. Sem
+# removê-los, ficam órfãos no sistema (sem UI para reverter após
+# o FAP sumir). O `sysctl --system` reaplica o default do Fedora
+# (sem os `99-fap-*`), revertendo o runtime imediatamente — sem
+# reboot.
+print_step "Removendo tunings de sistema do FAP..."
+_remover "/etc/sysctl.d/99-fap-vm-max-map-count.conf" "Tuning vm.max_map_count"
+_remover "/etc/sysctl.d/99-fap-vm-swappiness.conf" "Tuning vm.swappiness + vfs_cache_pressure"
+_remover "/etc/sysctl.d/99-fap-tcp-bbr.conf" "Tuning TCP BBR"
+
+# `sysctl --system` reaplica todos os /etc/sysctl.d/ (agora sem
+# os 99-fap-*). Precisa de root. `sudo -A` cobre o caso do botão
+# "Desinstalar" (sem TTY); `sudo -n` cobre NOPASSWD; `sudo` puro
+# cobre uso interativo no terminal.
+if sudo -n sysctl --system > /dev/null 2>&1; then
+    print_success "sysctl reaplicado (sem senha)"
+elif [ -n "$SUDO_ASKPASS" ] && [ -x "$SUDO_ASKPASS" ]; then
+    if sudo -A sysctl --system > /dev/null 2>&1; then
+        print_success "sysctl reaplicado (askpass)"
+    else
+        print_warning "Rode manualmente: sudo sysctl --system"
+    fi
+elif sudo sysctl --system > /dev/null 2>&1; then
+    print_success "sysctl reaplicado"
+else
+    print_warning "Rode manualmente: sudo sysctl --system"
+fi
+
+# ─── 8. Logs temporários (FAP + FOF legado) ───────────────
 #
 # Logs em /tmp pertencem ao usuário (instalação) ou ao root
 # (pkexec). `find -delete` funciona sem sudo quando o dono é o
@@ -1210,16 +1300,21 @@ find /tmp -maxdepth 1 -name 'fap-*.log' -user "$(id -un)" -delete 2>/dev/null ||
 find /tmp -maxdepth 1 -name 'fap-out-*.log' -user "$(id -un)" -delete 2>/dev/null || true
 find /tmp -maxdepth 1 -name 'fap-askpass-*.sh' -user "$(id -un)" -delete 2>/dev/null || true
 find /tmp -maxdepth 1 -name 'fap-cmd-*.sh' -user "$(id -un)" -delete 2>/dev/null || true
+find /tmp -maxdepth 1 -name 'fof-*.log' -user "$(id -un)" -delete 2>/dev/null || true
+find /tmp -maxdepth 1 -name 'fof-out-*.log' -user "$(id -un)" -delete 2>/dev/null || true
+find /tmp -maxdepth 1 -name 'fof-cmd-*.sh' -user "$(id -un)" -delete 2>/dev/null || true
 
 # Logs de root (best-effort, sem travar se não houver askpass)
 if [ -n "$SUDO_ASKPASS" ] && [ -x "$SUDO_ASKPASS" ]; then
     sudo -A rm -f /tmp/fap-out-*.log 2>/dev/null || true
     sudo -A rm -f /tmp/fap-cmd-*.sh 2>/dev/null || true
+    sudo -A rm -f /tmp/fof-out-*.log 2>/dev/null || true
+    sudo -A rm -f /tmp/fof-cmd-*.sh 2>/dev/null || true
 fi
 
 print_success "Logs temporários processados"
 
-# ─── 8. Limpeza de PATH nos rc files ────────────────────────
+# ─── 9. Limpeza de PATH nos rc files ──────────────────────
 remover_linha_path() {
 local arquivo="$1"
 local linha_a_remover='export PATH="$HOME/.local/bin:$PATH"'
@@ -1250,7 +1345,7 @@ remover_linha_path "$HOME/.bashrc"
 remover_linha_path "$HOME/.zshrc"
 remover_linha_path "$HOME/.profile"
 
-# ─── 9. Reindexação do menu ─────────────────────────────────
+# ─── 10. Reindexação do menu ──────────────────────────────
 update-desktop-database ~/.local/share/applications/ 2>/dev/null || true
 kbuildsycoca6 --noincremental 2>/dev/null || kbuildsycoca5 --noincremental 2>/dev/null || true
 

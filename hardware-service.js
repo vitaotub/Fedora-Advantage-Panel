@@ -162,17 +162,98 @@ async function _checkSecureBoot() {
 // O frontend usa isso para esconder o passo a passo do Secure Boot
 // quando o enrollment já foi concluído — em vez de mostrar instruções
 // para algo que o usuário já fez.
-async function _checkMokEnrolled() {
-    var chave = '/etc/pki/akmods/certs/public_key.der';
+// ============================================================
+// AKMOD CARREGADO (v1.5.6)
+// ============================================================
+//
+// Retorna o nome do primeiro módulo akmod conhecido que está
+// carregado no kernel, ou `null` se nenhum está.
+//
+// Usado como evidência EMPÍRICA de que uma chave akmods está
+// enrolled no firmware: se o módulo carregou com Secure Boot
+// ativo, então alguma chave (a que assinou o módulo) está
+// enrolled. Pode ser uma chave DIFERENTE da `public_key.der`
+// local — ex.: chave gerada pelo RPM Fusion direto, ou por
+// outra instalação de akmod fora do FAP.
+//
+// Cobre os 6 akmods do FAP:
+//   • nvidia*            (Sessão 3 — akmod-nvidia / -open / -580xx)
+//   • vboxdrv            (Sessão 9 — akmod-VirtualBox)
+//   • wl                 (Sessão 4 — akmod-wl, Broadcom)
+//   • r8168              (Sessão 4 — akmod-r8168, Realtek Ethernet)
+//   • xpadneo            (Sessão 4 — xpadneo, DKMS)
+//   • v4l2loopback       (Sessão 5 — akmod-v4l2loopback, câmera virtual OBS)
+async function _akmodCarregado() {
+    var modulos = [
+        'nvidia', 'nvidia_drm', 'nvidia_modeset', 'nvidia_uvm',
+        'vboxdrv', 'wl', 'r8168', 'xpadneo', 'v4l2loopback'
+    ];
+    var script = 'for mod in ' + modulos.join(' ') + '; do ' +
+    '  if lsmod | awk \'{print $1}\' | grep -qx "$mod"; then ' +
+    '    echo "$mod"; break; ' +
+    '  fi; ' +
+    'done';
+        var r = await _exec(script, 3000);
+        var nome = (r.stdout || '').trim();
+        return nome ? { modulo: nome } : null;
+}
 
-    // Se o arquivo nem existe, não há o que testar.
-    var existe = await _exec('test -f ' + chave + ' 2>/dev/null && echo yes');
-    if (existe.stdout.trim() !== 'yes') {
-        return { chave_gerada: false, enrolled: false, erro: null };
+// ============================================================
+// MOK ENROLLED (v1.5.6 — expandido)
+// ============================================================
+//
+// A v1.5.5 só testava a chave `public_key.der` via
+// `mokutil --test-key`. Isso gerava falso negativo quando o
+// usuário enrollou uma chave DIFERENTE — por exemplo:
+//
+//   • Chave gerada pelo RPM Fusion direto (kmodgenca sem o FAP)
+//   • Chave gerada em outra instalação de FAP/HD e enrollada no
+//     mesmo firmware
+//   • Chave antiga do diretório `/etc/pki/akmods/certs/` cujo
+//     symlink `public_key.der` aponta para outra
+//
+// Nesses casos, o driver funciona (porque a chave enrolled É
+// reconhecida pelo firmware), mas o FAP mostrava "enrollment
+// necessário" indevidamente.
+//
+// Correção em 4 camadas (v1.5.6):
+//   1. `mokutil --test-key public_key.der` (sem sudo) — caso comum
+//   2. `sudo -n mokutil --test-key public_key.der` — efivar protegida
+//   3. Varredura de todos os `.der` em `/etc/pki/akmods/certs/` —
+//      cobre chaves antigas/paralelas do mesmo diretório
+//   4. `_akmodCarregado()` — evidência empírica de que alguma
+//      chave akmods está enrolled (mesmo fora do diretório)
+//
+// O campo `akmod_carregado` é retornado JUNTO com `enrolled:
+// false` (não substitui o false). O frontend decide: se `false`
+// E `akmod_carregado !== null`, mostra aviso neutro ("akmod X
+// está funcionando, mas a chave local do FAP não está enrolled");
+// se `false` E `akmod_carregado === null`, mostra o painel
+// completo de enrollment.
+async function _checkMokEnrolled() {
+    var chaveDir = '/etc/pki/akmods/certs/';
+    var chave = chaveDir + 'public_key.der';
+
+    // Se o diretório nem existe, não há o que testar. Mas ainda
+    // pode haver um akmod carregado por fora — vale a pena checar
+    // (o frontend usa `akmod_carregado` para o banner neutro).
+    var existeDir = await _exec('test -d ' + chaveDir + ' 2>/dev/null && echo yes');
+    if (existeDir.stdout.trim() !== 'yes') {
+        var akmodCarregadoSemDir = await _akmodCarregado();
+        return {
+            chave_gerada: false,
+            enrolled: false,
+            erro: null,
+            akmod_carregado: akmodCarregadoSemDir
+        };
     }
 
-    // Interpreta a saída do mokutil. true = enrolled, false =
-    // explicitamente não enrolled, null = não deu para concluir.
+    // Se o arquivo `public_key.der` não existe, não há o que
+    // testar. Mas pode haver chave `.der` no diretório (chave
+    // antiga, com symlink quebrado) — vale varrer.
+    var existe = await _exec('test -f ' + chave + ' 2>/dev/null && echo yes');
+    var publicKeyExiste = (existe.stdout.trim() === 'yes');
+
     function _interpretar(saida) {
         var out = (saida || '').toLowerCase();
         if (out.indexOf('already enrolled') !== -1) return true;
@@ -180,29 +261,78 @@ async function _checkMokEnrolled() {
         return null;
     }
 
-    // Tentativa 1: sem sudo. `mokutil --test-key` lê o efivar
-    // MokListRT, que normalmente é 0444 (world-readable). Funciona
-    // na maioria dos sistemas, mas pode falhar em firmwares que
-    // restringem o acesso (ou em D-Bus transitório).
-    var r1 = await _exec('mokutil --test-key ' + chave + ' 2>&1', 10000);
-    var res1 = _interpretar(r1.stdout);
-    if (res1 === true)  return { chave_gerada: true, enrolled: true,  erro: null };
-    if (res1 === false) return { chave_gerada: true, enrolled: false, erro: null };
+    // ---------- Tentativa 1 + 2: public_key.der sem/com sudo -n ----------
+    if (publicKeyExiste) {
+        var r1 = await _exec('mokutil --test-key ' + chave + ' 2>&1', 10000);
+        var res1 = _interpretar(r1.stdout);
+        if (res1 === true) return { chave_gerada: true, enrolled: true,  erro: null, akmod_carregado: null };
 
-    // Tentativa 2: com `sudo -n` (rápido se NOPASSWD não estiver
-    // configurado — não trava, apenas falha). Cobre casos onde o
-    // efivar exige root, ou o keyctl interno do mokutil precisa
-    // de CAP_SYS_ADMIN.
-    var r2 = await _exec('sudo -n mokutil --test-key ' + chave + ' 2>&1', 10000);
-    var res2 = _interpretar(r2.stdout);
-    if (res2 === true)  return { chave_gerada: true, enrolled: true,  erro: null };
-    if (res2 === false) return { chave_gerada: true, enrolled: false, erro: null };
+        var r2 = await _exec('sudo -n mokutil --test-key ' + chave + ' 2>&1', 10000);
+        var res2 = _interpretar(r2.stdout);
+        if (res2 === true) return { chave_gerada: true, enrolled: true,  erro: null, akmod_carregado: null };
+    }
 
-    // Ambas falharam. Reporta o motivo (tentativa 1, mais comum
-    // — permissão negada no efivar) para o frontend exibir.
-    var motivo = (r1.stdout || r2.stdout || '').slice(0, 200).trim()
-                 || 'mokutil --test-key falhou sem saída';
-    return { chave_gerada: true, enrolled: null, erro: motivo };
+    // ---------- Tentativa 3: varrer outras chaves .der ----------
+    //
+    // Varre o diretório inteiro. Pode haver múltiplos
+    // `fedora_<id>_<hash>.der` — um por vez que o kmodgenca rodou.
+    // Se algum estiver enrolled, considera OK (alguma chave akmods
+    // está funcionando; o usuário pode ter enrollado uma antiga).
+    var r3 = await _exec('ls ' + chaveDir + '*.der 2>/dev/null', 5000);
+    if (r3.ok && r3.stdout.trim()) {
+        var arquivos = r3.stdout.split('\n')
+        .map(function(f) { return f.trim(); })
+        .filter(function(f) {
+            if (!f) return false;
+            // Pula o próprio public_key.der (já testado acima)
+            // e o symlink para o mesmo arquivo.
+            if (f === chave) return false;
+            return true;
+        });
+
+        for (var i = 0; i < arquivos.length; i++) {
+            var teste = await _exec('mokutil --test-key "' + arquivos[i] + '" 2>&1', 10000);
+            if (_interpretar(teste.stdout) === true) {
+                return {
+                    chave_gerada: true,
+                    enrolled: true,
+                    erro: null,
+                    chave_enrolled: arquivos[i],
+                    akmod_carregado: null
+                };
+            }
+        }
+    }
+
+    // ---------- Tentativa 4: evidência empírica ----------
+    //
+    // Nenhuma chave do diretório está enrolled. Mas se algum
+    // akmod está carregado, então ALGUMA chave (fora do
+    // diretório, ou de outro HD/máquina) está enrolled e
+    // funcionando. Não é "enrollment necessário" — é "chave
+    // local não enrolled, mas outro akmod funciona".
+    var akmodCarregado = await _akmodCarregado();
+
+    // Se `public_key.der` existe mas o teste falhou, ainda temos
+    // um caso ambíguo (permissão negada). Reporta `erro`.
+    if (publicKeyExiste) {
+        var motivo = 'mokutil --test-key falhou sem saída conclusiva';
+        return {
+            chave_gerada: true,
+            enrolled: false,
+            erro: motivo,
+            akmod_carregado: akmodCarregado
+        };
+    }
+
+    // `public_key.der` não existe e nenhum `.der` no diretório.
+    // Chave não foi gerada (nunca rodou "Preparar Secure Boot").
+    return {
+        chave_gerada: false,
+        enrolled: false,
+        erro: null,
+        akmod_carregado: akmodCarregado
+    };
 }
 
 // ============================================================
