@@ -1,5 +1,5 @@
 const http = require('http');
-const { exec, spawn, spawnSync } = require('child_process');
+const { exec, execFile, spawn, spawnSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 const hardwareService = require('./hardware-service');
@@ -506,25 +506,26 @@ function _podeExecutar(idComando) {
 function _execReadOnly(comando, timeoutMs) {
     return new Promise(function(resolve) {
         // ============================================================
-        // LIMPAR BASH_ENV/ENV (v1.5.6)
+        // EXECFILE COM --noprofile --norc (v1.5.6)
         // ============================================================
         //
         // Mesmo problema do `_exec` do `hardware-service.js`. O
-        // `_execReadOnly` alimenta os endpoints `/system-info`,
-        // `/top-processes`, `/disk-usage`, `/journal-errors`,
-        // `/kernel-atual`, `/reboot-needed`, `/check-package`,
-        // `/check-package-available`, `/hardware-detect-atomic`,
-        // `/grub-info`. Se o `BASH_ENV` do usuário executa
-        // `fastfetch`/`neofetch`, o output aparece no JSON desses
-        // endpoints — o `_parseChaveValor` recebe linhas
-        // "fedora=..." no meio do fastfetch e pode casar por
-        // acidente.
+        // `bash -c` carrega o `.bashrc` do usuário (KDE, Fedora 45),
+        // e um `.bashrc` com `fastfetch` polui o stdout de todos os
+        // endpoints de diagnóstico (`/system-info`, `/top-processes`,
+        // `/disk-usage`, `/journal-errors`, `/kernel-atual`,
+        // `/reboot-needed`, `/check-package`, `/check-package-available`,
+        // `/hardware-detect-atomic`, `/grub-info`).
+        //
+        // Correção: `execFile` com `--noprofile --norc` — nenhum
+        // arquivo de inicialização é carregado. Combinado com
+        // `detached: true` (que isola o grupo de processos para o
+        // kill em timeout).
         var envLimpo = Object.assign({}, process.env, {
             BASH_ENV: '',
             ENV: ''
         });
-        exec(comando, {
-            shell: '/bin/bash',
+        execFile('/bin/bash', ['--noprofile', '--norc', '-c', comando], {
             timeout: timeoutMs || 5000,
             maxBuffer: 1024 * 1024 * 5,
             env: envLimpo,
