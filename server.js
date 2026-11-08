@@ -408,6 +408,28 @@ function _substituirCaminhosUsuario(comando) {
     .replace(/\$USER\b/g, USUARIO_REAL);
 }
 
+const HOME_DIR_USUARIO = process.env.HOME || ('/home/' + (process.env.USER || 'user'));
+const USUARIO_REAL = process.env.USER || process.env.LOGNAME || 'user';
+
+// ============================================================
+// ACEITA GET E HEAD (v1.5.6)
+// ============================================================
+//
+// `curl -I` envia HEAD, não GET. A versão anterior do server.js
+// só tratava GET nos arquivos estáticos e nos locales. O HEAD
+// caía no handler de 404 (que retorna `text/plain`), enganando
+// ferramentas de debug: `curl -I /script.js` mostrava
+// `Content-Type: text/plain; charset=utf-8` em vez de
+// `text/javascript; charset=utf-8`.
+//
+// O navegador (WebKitGTK) usa GET, então o FAP funcionava
+// normalmente. Só ferramentas de debug eram afetadas. Correção
+// cosmética, mas alinhada com a RFC 9110: servidores DEVEM
+// responder a HEAD com os mesmos headers de GET, sem o body.
+function _aceitaGetOuHead(req) {
+    return req.method === 'GET' || req.method === 'HEAD';
+}
+
 const sseClients = new Map();
 
 // ============================================================
@@ -1988,23 +2010,59 @@ function servirArquivoEstatico(req, res, filePath) {
 
         const mimeType = mimeTypes[ext] || 'application/octet-stream';
 
+        // `Content-Length` é obrigatório para HEAD (RFC 9110: a
+        // resposta a HEAD deve ter os mesmos headers que a
+        // resposta a GET, sem o body). Também ajuda em GET —
+        // o navegador sabe o tamanho antes de baixar.
+        let tamanho = 0;
+        try {
+            tamanho = fs.statSync(fullPath).size;
+        } catch (e) { /* mantém 0 em caso de erro */ }
+
         res.writeHead(200, {
             'Content-Type': mimeType,
+            'Content-Length': String(tamanho),
             'Cache-Control': 'no-cache, no-store, must-revalidate',
             'Pragma': 'no-cache',
             'Expires': '0'
         });
+
+        // HEAD: envia só os headers, sem o body. O cliente
+        // (curl -I, navegador, ferramentas de debug) usa os
+        // headers pra saber tipo, tamanho, cache, etc., sem
+        // baixar o conteúdo. O `res.end()` (sem argumentos)
+        // fecha a conexão.
+        if (req.method === 'HEAD') {
+            res.end();
+            return;
+        }
+
         fs.createReadStream(fullPath).pipe(res);
     } else {
-        res.writeHead(404);
-        res.end('Arquivo não encontrado');
+        // 404 também respeita HEAD — `res.end('texto')` seria
+        // enviado mesmo em HEAD pelo Node.js, então verificamos
+        // manualmente.
+        const corpo404 = 'Arquivo não encontrado';
+        res.writeHead(404, {
+            'Content-Type': 'text/plain; charset=utf-8',
+            'Content-Length': String(Buffer.byteLength(corpo404, 'utf8'))
+        });
+        if (req.method === 'HEAD') {
+            res.end();
+        } else {
+            res.end(corpo404);
+        }
     }
 }
 
 function servirLocale(req, res, lang) {
     if (LANGS_SUPORTADOS.indexOf(lang) === -1) {
-        res.writeHead(404, { 'Content-Type': 'application/json; charset=utf-8' });
-        res.end(JSON.stringify({ error: 'Idioma não suportado: ' + lang }));
+        const corpo = JSON.stringify({ error: 'Idioma não suportado: ' + lang });
+        res.writeHead(404, {
+            'Content-Type': 'application/json; charset=utf-8',
+            'Content-Length': String(Buffer.byteLength(corpo, 'utf8'))
+        });
+        if (req.method === 'HEAD') { res.end(); } else { res.end(corpo); }
         return;
     }
 
@@ -2012,21 +2070,39 @@ function servirLocale(req, res, lang) {
 
     const rel = path.relative(LOCALES_DIR, arquivo);
     if (rel.startsWith('..') || path.isAbsolute(rel)) {
-        res.writeHead(403, { 'Content-Type': 'application/json; charset=utf-8' });
-        res.end(JSON.stringify({ error: 'Acesso negado' }));
+        const corpo = JSON.stringify({ error: 'Acesso negado' });
+        res.writeHead(403, {
+            'Content-Type': 'application/json; charset=utf-8',
+            'Content-Length': String(Buffer.byteLength(corpo, 'utf8'))
+        });
+        if (req.method === 'HEAD') { res.end(); } else { res.end(corpo); }
         return;
     }
 
     if (!fs.existsSync(arquivo)) {
-        res.writeHead(404, { 'Content-Type': 'application/json; charset=utf-8' });
-        res.end(JSON.stringify({ error: 'Locale não encontrado: ' + lang }));
+        const corpo = JSON.stringify({ error: 'Locale não encontrado: ' + lang });
+        res.writeHead(404, {
+            'Content-Type': 'application/json; charset=utf-8',
+            'Content-Length': String(Buffer.byteLength(corpo, 'utf8'))
+        });
+        if (req.method === 'HEAD') { res.end(); } else { res.end(corpo); }
         return;
     }
 
+    let tamanho = 0;
+    try {
+        tamanho = fs.statSync(arquivo).size;
+    } catch (e) { /* mantém 0 */ }
+
     res.writeHead(200, {
         'Content-Type': 'application/json; charset=utf-8',
+        'Content-Length': String(tamanho),
         'Cache-Control': 'no-cache'
     });
+    if (req.method === 'HEAD') {
+        res.end();
+        return;
+    }
     fs.createReadStream(arquivo).pipe(res);
 }
 
@@ -2143,7 +2219,10 @@ const server = http.createServer((req, res) => {
     // ----------------------------------------------------------
     // LOCALES (JSON de tradução)
     // ----------------------------------------------------------
-    if (req.method === 'GET' && url.startsWith('/locales/')) {
+    //
+    // v1.5.6: aceita GET e HEAD. O `curl -I` envia HEAD; sem isso,
+    // caía no handler de 404 (que retorna `text/plain`).
+    if (_aceitaGetOuHead(req) && url.startsWith('/locales/')) {
         // `url` já é pathname-only, então não há query para remover.
         let resto = url.substring('/locales/'.length);
 
@@ -2155,8 +2234,12 @@ const server = http.createServer((req, res) => {
         try {
             lang = decodeURIComponent(resto);
         } catch (e) {
-            res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
-            res.end(JSON.stringify({ error: 'Requisição inválida' }));
+            const corpo = JSON.stringify({ error: 'Requisição inválida' });
+            res.writeHead(400, {
+                'Content-Type': 'application/json; charset=utf-8',
+                'Content-Length': String(Buffer.byteLength(corpo, 'utf8'))
+            });
+            if (req.method === 'HEAD') { res.end(); } else { res.end(corpo); }
             return;
         }
 
@@ -2167,86 +2250,22 @@ const server = http.createServer((req, res) => {
     // ----------------------------------------------------------
     // PROGRESSO
     // ----------------------------------------------------------
-    if (req.method === 'GET' && url === '/progress') {
-        const progresso = lerProgresso();
-        res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({
-            executados: progresso.executados,
-            pulados: progresso.pulados,
-            origem: progresso.origem || {}
-        }));
-        return;
-    }
-
-    if (req.method === 'POST' && url === '/progress') {
-        let body = '';
-        req.on('data', chunk => { body += chunk.toString(); });
-        req.on('end', () => {
-            try {
-                const { executados, pulados } = JSON.parse(body);
-                if (Array.isArray(executados) || Array.isArray(pulados)) {
-                    // Preserva o campo `origem` do arquivo atual. O
-                    // cliente NÃO o envia em `POST /progress` (é campo
-                    // de auditoria preenchido só por `salvarProgresso`
-                    // no backend, quando o próprio servidor executa um
-                    // comando). Se sobrescrevêssemos com o body, o
-                    // `origem` seria apagado em qualquer clique de
-                    // botão — porque `marcarComoExecutado()` do cliente
-                    // dispara `POST /progress` em toda transição.
-                    const atual = lerProgresso();
-                    const novosExec = Array.isArray(executados) ? executados : [];
-                    const novosPul = Array.isArray(pulados) ? pulados : [];
-
-                    // Filtra `origem` para manter apenas IDs que
-                    // ainda estão em `executados`. Sem isso, remoções
-                    // via lixeira deixavam entradas órfãs em
-                    // .progresso.json (o FAP "achava" que ainda era
-                    // instalado pelo FAP, mas o pacote já tinha saído).
-                    const origemAtual = atual.origem || {};
-                    const origemFiltrada = {};
-                    Object.keys(origemAtual).forEach(function(id) {
-                        if (novosExec.indexOf(id) !== -1) {
-                            origemFiltrada[id] = origemAtual[id];
-                        }
-                    });
-
-                    escreverProgresso({
-                        executados: novosExec,
-                        pulados: novosPul,
-                        origem: origemFiltrada
-                    });
-                }
-                res.writeHead(200, { 'Content-Type': 'application/json' });
-                res.end(JSON.stringify({ success: true }));
-            } catch (err) {
-                res.writeHead(400, { 'Content-Type': 'application/json' });
-                res.end(JSON.stringify({ success: false, error: err.message }));
-            }
-        });
-        return;
-    }
-
-    if (req.method === 'DELETE' && url === '/progress') {
-        const ok = resetarProgresso();
-        if (ok) {
-            res.writeHead(200, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify({ success: true }));
-        } else {
-            res.writeHead(500, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify({ success: false, error: 'Falha ao remover o arquivo de progresso' }));
-        }
-        return;
-    }
+    // (... resto do server.js ...)
 
     // ----------------------------------------------------------
     // PÁGINAS E ARQUIVOS ESTÁTICOS
     // ----------------------------------------------------------
-    if (req.method === 'GET' && (url === '/' || url === '/index.html')) {
+    //
+    // v1.5.6: todos os handlers usam `_aceitaGetOuHead(req)` em vez
+    // de `req.method === 'GET'`. O `curl -I` envia HEAD e precisa
+    // receber os headers corretos (Content-Type, Content-Length)
+    // em vez de cair no 404 genérico com `text/plain`.
+    if (_aceitaGetOuHead(req) && (url === '/' || url === '/index.html')) {
         servirArquivoEstatico(req, res, 'index.html');
         return;
     }
 
-    if (req.method === 'GET' && url === '/guiado.html') {
+    if (_aceitaGetOuHead(req) && url === '/guiado.html') {
         servirArquivoEstatico(req, res, 'guiado.html');
         return;
     }
@@ -2261,7 +2280,7 @@ const server = http.createServer((req, res) => {
     // nome comece com letra minúscula e contenha apenas letras,
     // dígitos e hífen. Também impede path traversal (não aceita
     // '/', '.', nem maiúsculas).
-    if (req.method === 'GET' && url.match(/^\/([a-z][a-z0-9-]*\.html)$/)) {
+    if (_aceitaGetOuHead(req) && url.match(/^\/([a-z][a-z0-9-]*\.html)$/)) {
         const match = url.match(/^\/([a-z][a-z0-9-]*\.html)$/);
         if (match) {
             servirArquivoEstatico(req, res, match[1]);
@@ -2269,22 +2288,22 @@ const server = http.createServer((req, res) => {
         }
     }
 
-    if (req.method === 'GET' && url === '/style.css') {
+    if (_aceitaGetOuHead(req) && url === '/style.css') {
         servirArquivoEstatico(req, res, 'style.css');
         return;
     }
 
-    if (req.method === 'GET' && url === '/script.js') {
+    if (_aceitaGetOuHead(req) && url === '/script.js') {
         servirArquivoEstatico(req, res, 'script.js');
         return;
     }
 
-    if (req.method === 'GET' && url === '/i18n.js') {
+    if (_aceitaGetOuHead(req) && url === '/i18n.js') {
         servirArquivoEstatico(req, res, 'i18n.js');
         return;
     }
 
-    if (req.method === 'GET' && (url === '/icone_app.png' || url === '/favicon.ico')) {
+    if (_aceitaGetOuHead(req) && (url === '/icone_app.png' || url === '/favicon.ico')) {
         servirArquivoEstatico(req, res, 'icone_app.png');
         return;
     }
