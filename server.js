@@ -408,9 +408,6 @@ function _substituirCaminhosUsuario(comando) {
     .replace(/\$USER\b/g, USUARIO_REAL);
 }
 
-const HOME_DIR_USUARIO = process.env.HOME || ('/home/' + (process.env.USER || 'user'));
-const USUARIO_REAL = process.env.USER || process.env.LOGNAME || 'user';
-
 // ============================================================
 // ACEITA GET E HEAD (v1.5.6)
 // ============================================================
