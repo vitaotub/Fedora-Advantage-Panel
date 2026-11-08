@@ -15,7 +15,7 @@ que exibe a seção da versão atual dentro do FAP, na sessão **Sobre o FAP**.
 
 ## v1.5.7-11082026
 
-Correção cosmética no `server.js`. O `curl -I` envia `HEAD`, não `GET` — e a versão anterior só tratava `GET` nos arquivos estáticos e nos locales. O `HEAD` caía no handler de 404 (que retorna `text/plain`), enganando ferramentas de debug: `curl -I /script.js` mostrava `Content-Type: text/plain; charset=utf-8` em vez de `application/javascript`. O navegador (WebKitGTK) usa `GET` e funcionava normalmente — o bug era só cosmético. Esta versão também adiciona `Content-Length` nos headers de resposta (obrigatório pela RFC 9110 para `HEAD`; útil em `GET` para o navegador saber o tamanho antes de baixar). É a primeira versão publicada após o ciclo de correções da v1.5.6 (falso positivo do Secure Boot, fastfetch poluindo o `_exec`, reset atômico no install, desinstalar completo, `fap-cleanup.sh`).
+Correção cosmética no `server.js` + republicação após bug de sintaxe. O `curl -I` envia `HEAD`, não `GET` — e a versão anterior só tratava `GET` nos arquivos estáticos e nos locales. O `HEAD` caía no handler de 404 (que retorna `text/plain`), enganando ferramentas de debug: `curl -I /script.js` mostrava `Content-Type: text/plain; charset=utf-8` em vez de `application/javascript`. O navegador (WebKitGTK) usa `GET` e funcionava normalmente — o bug era só cosmético. Esta versão também adiciona `Content-Length` nos headers de resposta (obrigatório pela RFC 9110 para `HEAD`; útil em `GET` para o navegador saber o tamanho antes de baixar). **Republicação (mesma versão, sem bump):** a v1.5.7 foi publicada inicialmente com um bug de sintaxe no `server.js` — duas declarações `const HOME_DIR_USUARIO` e `const USUARIO_REAL` duplicadas, o que causava `SyntaxError: Identifier 'HOME_DIR_USUARIO' has already been declared` no parse do Node. O FAP não abria (o `iniciar_fap.sh` mostrava "Aguardando servidor iniciar..." 15 vezes e travava). O bug foi corrigido removendo as duas linhas duplicadas (que apareciam entre `_substituirCaminhosUsuario` e `_aceitaGetOuHead`), e a v1.5.7 foi republicada com o `server.js` corrigido. Como a versão não mudou, quem já tinha baixado a v1.5.7 quebrada precisa rodar `bash <(curl -s .../install.sh) --update` para puxar o `main` corrigido — ou aguardar a v1.5.8.
 
 ### 🟢 Melhorado
 
@@ -25,9 +25,13 @@ Correção cosmética no `server.js`. O `curl -I` envia `HEAD`, não `GET` — e
   - **`servirLocale`** idem: `HEAD` sem body + `Content-Length` em 200/403/404.
   - **`_aceitaGetOuHead`** é uma função pura, sem efeitos colaterais, alinhada com a RFC 9110 (servidores DEVEM responder a `HEAD` com os mesmos headers de `GET`, sem o body).
 
-### ✅ Validação empírica (VM Fedora 44)
+### 🟡 Corrigido (republicação)
 
-- **`make check-basico`:** todos os 10 checks passam (sintaxe JS, sintaxe Bash, JSON, CHANGELOG vs package.json, `_MAPA_ORIGEM`, chaves i18n, `_meta.lang`, DNF5).
+- **`server.js` → declarações duplicadas de `const HOME_DIR_USUARIO` e `const USUARIO_REAL`.** O bloco da v1.5.6 que introduziu `_aceitaGetOuHead` incluía, por engano, uma cópia das duas constantes que já estavam declaradas acima de `_substituirCaminhosUsuario`. O Node abortava no parse (`SyntaxError: Identifier 'HOME_DIR_USUARIO' has already been declared`) antes de qualquer linha rodar. Correção: removidas as duas linhas duplicadas (o bloco agora começa direto em `_aceitaGetOuHead`).
+
+### ✅ Validação empírica (VM Fedora 44 + hardware real do `fgc`)
+
+- **`make check-basico`:** todos os 10 checks passam, tanto em `~/Downloads/fap` quanto em `~/.local/share/fedora-advantage-panel`.
 - **`node --check server.js`:** OK.
 - **`curl -I http://localhost:3000/script.js`:** `HTTP/1.1 200 OK` + `Content-Type: application/javascript; charset=utf-8` + `Content-Length: <tamanho real>` (antes: `Content-Type: text/plain; charset=utf-8`, sem `Content-Length`).
 - **`curl -I http://localhost:3000/style.css`:** `Content-Type: text/css; charset=utf-8`.
@@ -35,7 +39,7 @@ Correção cosmética no `server.js`. O `curl -I` envia `HEAD`, não `GET` — e
 - **`curl -I http://localhost:3000/locales/en.json`:** `Content-Type: application/json; charset=utf-8`.
 - **`GET` continua funcionando:** `curl -s http://localhost:3000/script.js | head -c 50` retorna `/**` (início do arquivo, sem regressão).
 - **404 (HEAD e GET):** `curl -I http://localhost:3000/nao-existe.js` retorna `HTTP/1.1 404` + `Content-Type: text/plain; charset=utf-8` + `Content-Length`.
-- **Chave MOK e `/etc/chromium/master_preferences`:** preservados (não tocados pela correção).
+- **FAP no hardware real do `fgc` (Fedora 45 + KDE Plasma Wayland):** atualização v1.5.6 → v1.5.7 sem problemas, abertura pelo menu do KDE, Secure Boot detecta a chave MOK corretamente (banner verde), endpoints de diagnóstico retornam JSON limpo (sem fastfetch).
 
 ### 🧪 Requisito
 
