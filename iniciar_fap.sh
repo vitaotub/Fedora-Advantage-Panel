@@ -203,6 +203,20 @@ abrir_no_terminal_nativo() {
     log_debug "Tentando abrir no terminal nativo..."
     log_debug "Desktop detectado: ${DESKTOP_ATUAL:-(desconhecido)}"
 
+    # ============================================================
+    # `return 0` REMOVIDOS APÓS `_executar_terminal` (auditoria C5)
+    # ============================================================
+    #
+    # `_executar_terminal` termina com `exit 0` (fecha o processo
+    # pai para o filho — o terminal com o FAP — continuar em sessão
+    # própria via `setsid`). Os `return 0` dos callers eram dead
+    # code: nunca executavam. Deixá-los dava a impressão falsa de
+    # que a função poderia retornar normalmente em algum caminho.
+    #
+    # Não muda comportamento — `_executar_terminal` continua
+    # `exit 0` quando encontra um terminal. Os `exit 1` do final
+    # (nenhum terminal disponível) permanecem.
+
     # --- Etapa 1: terminal nativo do desktop detectado ---
     local terminais_nativos
     terminais_nativos="$(_terminais_para_desktop)"
@@ -214,7 +228,6 @@ abrir_no_terminal_nativo() {
         if command -v "$term" &> /dev/null; then
             log_debug "Usando $term (terminal nativo de $DESKTOP_ATUAL)"
             _executar_terminal "$term" "$script_path" "$titulo"
-            return 0
         fi
     done
 
@@ -233,7 +246,6 @@ abrir_no_terminal_nativo() {
         if command -v "$term" &> /dev/null; then
             log_debug "Usando $term (fallback cross-DE)"
             _executar_terminal "$term" "$script_path" "$titulo"
-            return 0
         fi
     done
 
@@ -244,7 +256,6 @@ abrir_no_terminal_nativo() {
         if command -v "$term" &> /dev/null; then
             log_debug "Usando $term (universal)"
             _executar_terminal "$term" "$script_path" "$titulo"
-            return 0
         fi
     done
 
@@ -412,65 +423,41 @@ instalar_dependencias_container() {
 
     log_info "🔧 Verificando dependências de compilação do container..."
 
-    # ============================================================
-    # CHECAGEM POR BINÁRIO, NÃO POR PACOTE
-    # ============================================================
-    #
-    # `rpm -q pkgconfig` FALHA no Fedora 40+ porque o pacote foi
-    # renomeado para `pkgconf-pkg-config`. O nome antigo só existe
-    # como Provides virtual, que o rpm -q não enxerga. Resultado:
-    # a checagem antiga achava que faltava instalar e pedia senha
-    # de root SEM NADA ESTAR FALTANDO.
-    #
-    # A checagem correta é pelo BINÁRIO (`command -v`) para
-    # ferramentas, e pelo `pkg-config --exists` para bibliotecas
-    # de desenvolvimento (que não têm binário próprio).
+    # Delega para o script comum (compartilhado com install.sh).
+    # O script é idempotente: retorna 0 rapidamente se nada faltar,
+    # ou roda `sudo dnf install` do que faltar. Evita duplicação
+    # (auditoria v1.5.8).
+    local script="$DIR/scripts/verificar-deps-container.sh"
+    if [ -f "$script" ]; then
+        if bash "$script"; then
+            log_success "Dependências de compilação OK"
+            return 0
+        else
+            log_warning "Algumas dependências não puderam ser instaladas"
+            log_warning "O FAP tentará compilar mesmo assim"
+            return 1
+        fi
+    fi
 
+    # Fallback: script ausente (instalação antiga, pré-v1.5.8).
+    # Mantém a checagem inline original.
+    log_warning "Script de verificação ausente — usando fallback inline"
     local faltando=()
-
-    # Ferramentas: checagem por binário.
-    if ! command -v gcc &> /dev/null; then
-        faltando+=("gcc")
-    fi
-
-    if ! command -v make &> /dev/null; then
-        faltando+=("make")
-    fi
-
-    # pkg-config: o binário pode vir de `pkgconf-pkg-config`
-    # (Fedora 40+) ou do antigo `pkgconfig`. Nome moderno em uso.
-    if ! command -v pkg-config &> /dev/null; then
-        faltando+=("pkgconf-pkg-config")
-    fi
-
-    # Bibliotecas: checagem via pkg-config --exists (o binário
-    # pkg-config precisa existir; se não existir, os dois testes
-    # falham e ambos os pacotes entram na lista — o que é correto,
-    # porque sem pkg-config o build não funciona de qualquer jeito).
+    command -v gcc &> /dev/null || faltando+=("gcc")
+    command -v make &> /dev/null || faltando+=("make")
+    command -v pkg-config &> /dev/null || faltando+=("pkgconf-pkg-config")
     if command -v pkg-config &> /dev/null; then
-        if ! pkg-config --exists webkit2gtk-4.1 2>/dev/null; then
-            faltando+=("webkit2gtk4.1-devel")
-        fi
-
-        if ! pkg-config --exists gtk+-3.0 2>/dev/null; then
-            faltando+=("gtk3-devel")
-        fi
+        pkg-config --exists webkit2gtk-4.1 2>/dev/null || faltando+=("webkit2gtk4.1-devel")
+        pkg-config --exists gtk+-3.0 2>/dev/null || faltando+=("gtk3-devel")
     else
-        # Sem pkg-config, assume que as duas devel precisam ser
-        # instaladas. `dnf` é idempotente — se já estiverem, não
-        # faz nada.
-        faltando+=("webkit2gtk4.1-devel")
-        faltando+=("gtk3-devel")
+        faltando+=("webkit2gtk4.1-devel" "gtk3-devel")
     fi
-
     if [ ${#faltando[@]} -eq 0 ]; then
         log_success "Dependências de compilação já estão instaladas"
         return 0
     fi
-
     log_info "Instalando dependências de compilação: ${faltando[*]}"
     log_info "(será solicitada sua senha de administrador)"
-
     if sudo dnf install -y "${faltando[@]}"; then
         log_success "Dependências de compilação instaladas"
         return 0
@@ -766,13 +753,17 @@ iniciar_servidor() {
 
     local server_pid
 
+    # `nohup node server.js >> "$LOG_FILE" 2>&1 &` em AMBOS os
+    # casos. Antes, o modo `--debug` usava `node server.js 2>&1 |
+    # tee -a "$LOG_FILE" &`, e o `$!` capturava o PID do `tee` (não
+    # do node). O `install.sh --update` matava o `tee`, deixando o
+    # node órfão e a versão antiga rodando em memória — o badge de
+    # atualização nunca sumia.
     if [ "$DEBUG" = true ]; then
-        node server.js 2>&1 | tee -a "$LOG_FILE" &
-        server_pid=$!
-    else
-        nohup node server.js >> "$LOG_FILE" 2>&1 &
-        server_pid=$!
+        log_info "🐛 Modo debug: logs detalhados em $LOG_FILE"
     fi
+    nohup node server.js >> "$LOG_FILE" 2>&1 &
+    server_pid=$!
 
     echo $server_pid > "$SERVER_PID_FILE"
 
@@ -1091,15 +1082,16 @@ main() {
     fi
 
     # Fallback: se o servidor morreu antes do container fechar,
-    # monitora até o node cair.
-    while true; do
-        if [ -f "$SERVER_PID_FILE" ]; then
-            local pid=$(cat "$SERVER_PID_FILE")
-            if ! kill -0 $pid 2>/dev/null; then
-                log_error "Servidor morreu inesperadamente!"
-                log_error "Verifique o log: $LOG_FILE"
-                break
-            fi
+    # monitora até o node cair. Se o arquivo de PID sumir (o
+    # `cleanup` anterior o removeu, ou o container fechou antes do
+    # node), sai do loop imediatamente — sem isso, o `while true`
+    # gira para sempre (bug v1.5.8).
+    while [ -f "$SERVER_PID_FILE" ]; do
+        local pid=$(cat "$SERVER_PID_FILE")
+        if ! kill -0 $pid 2>/dev/null; then
+            log_error "Servidor morreu inesperadamente!"
+            log_error "Verifique o log: $LOG_FILE"
+            break
         fi
         sleep 2
     done
@@ -1156,24 +1148,20 @@ cleanup() {
     fi
 
     # ============================================================
-    # LIMPEZA DE ÓRFÃOS (rede de segurança)
+    # LIMPEZA DE ÓRFÃOS (v1.5.8 — auditoria C4)
     # ============================================================
     #
-    # Se por algum motivo o PID salvo em arquivo não corresponder
-    # ao processo node real (crash anterior, kill -9 externo, etc.),
-    # o servidor pode ficar órfão. Este pkill varre qualquer
-    # `node server.js` que esteja rodando no DIRETÓRIO do FAP —
-    # evitando matar outros projetos node do usuário.
+    # Antes havia um `pgrep -f "node .*$DIR/server\.js"` aqui que
+    # NUNCA casava — o cmdline do node rodando o FAP é `node
+    # server.js` (sem path absoluto, porque o `iniciar_fap.sh` faz
+    # `cd "$DIR"` antes de subir o node). O padrão `.*$DIR/` casa
+    # zero vezes. O bloco inteiro era dead code, e o log "Processos
+    # node órfãos encerrados" nunca era impresso.
     #
-    # `pkill -f` casa pela linha de comando completa; combinamos
-    # com o diretório do FAP para ser cirúrgico. Tentamos SIGTERM
-    # primeiro (para dar chance ao handler do node), depois SIGKILL.
-    if pgrep -f "node .*$DIR/server\.js" > /dev/null 2>&1; then
-    pkill -TERM -f "node .*$DIR/server\.js" 2>/dev/null || true
-    sleep 0.5
-    pkill -KILL -f "node .*$DIR/server\.js" 2>/dev/null || true
-    log_success "Processos node órfãos do FAP encerrados"
-fi
+    # A limpeza real de órfãos acontece no bloco `lsof -t -i:3000`
+    # mais abaixo (seção "Libera a porta 3000"). Lá está a rede de
+    # segurança efetiva — detecta o node pela porta (confiável,
+    # independente do cmdline) e mata via SIGKILL.
 
 # Mata o container WebKit se ainda estiver vivo (evita janela órfã
 # mostrando a página antiga após o servidor morrer).

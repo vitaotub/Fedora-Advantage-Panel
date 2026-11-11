@@ -642,16 +642,11 @@ async function executarAjusteDNF() {
         logBox.appendChild(errorLine2);
         logBox.scrollTop = logBox.scrollHeight;
         completarProgresso(idComando, false);
-    } finally {
-        setTimeout(function() {
-            if (btn) {
-                btn.disabled = false;
-                btn.textContent = _t('sessoes.ajustes-manutencao.btn_aplicar_ajuste', 'Aplicar Ajuste');
-                btn.style.opacity = '1';
-                btn.style.backgroundColor = '';
-            }
-        }, 3000);
     }
+    // O `completarProgresso` (via SSE 'end') já reabilita o botão
+    // com `restaurarBotaoAposExecucao`. O `finally` anterior
+    // reabilitava em 3s — antes do DNF terminar em redes lentas,
+    // permitindo dupla execução. Removido.
 }
 
 // ------------------------------------------------------------
@@ -781,15 +776,8 @@ async function executarLimpeza() {
         logBox.appendChild(errorLine2);
         logBox.scrollTop = logBox.scrollHeight;
         completarProgresso(idComando, false);
-    } finally {
-        setTimeout(function() {
-            if (btn) {
-                btn.disabled = false;
-                btn.textContent = nomeAcao;
-                btn.style.opacity = '1';
-            }
-        }, 3000);
     }
+    // (ver comentário em executarAjusteDNF — re-enable via SSE)
 }
 
 // ------------------------------------------------------------
@@ -901,7 +889,15 @@ async function removerKernel() {
 
     var textoOriginalBotao = btnRemover.getAttribute('data-texto-original') || btnRemover.textContent;
 
-        try {
+    // `sucesso` é declarado FORA do `try` para o `finally` poder
+    // decidir se precisa completar manualmente (HTTP error,
+    // exception antes do `await`, ou timeout do
+    // `aguardarConclusaoReal`). Sem isso, o `finally` original
+    // chamava `completarProgresso('remover-kernel', true)` sempre,
+    // mascarando falhas como sucesso na barra de progresso.
+    var sucesso = null;
+
+    try {
         // Endpoint dedicado, JSON — evita parse de log compartilhado
         // (race com outra execução escrevendo no mesmo log).
         var response = await fetch(API_URL + '/kernel-atual', { cache: 'no-store' });
@@ -964,37 +960,51 @@ async function removerKernel() {
             body: JSON.stringify({ comando: comando, idComando: idComando })
         });
 
-        if (response2.ok) {
-            var sucesso = await aguardarConclusaoReal(idComando, 180000);
+        if (!response2.ok) {
+            // HTTP error: SSE nunca vai entregar `end` (o
+            // `/executar` rejeitou o comando antes do dispatch).
+            // Loga o erro e sai — o `finally` completa como falha
+            // via `sucesso === null`.
+            if (logBox) {
+                var httpErr = document.createElement('div');
+                httpErr.className = 'log-line error';
+                httpErr.textContent = '❌ Erro HTTP: ' + response2.status;
+                logBox.appendChild(httpErr);
+                logBox.scrollTop = logBox.scrollHeight;
+            }
+            return;
+        }
 
-            if (sucesso) {
-                if (logBox) {
-                    var successLine = document.createElement('div');
-                    successLine.className = 'log-line success';
-                    // Traduzido via chave i18n (antes era PT-BR hardcoded).
-                    successLine.textContent = _tVars('sessoes.ajustes-manutencao.kernel_log_sucesso',
-                        '✅ Kernel ' + kernel + ' removido com sucesso!',
-                        { kernel: kernel });
-                    logBox.appendChild(successLine);
-                    logBox.scrollTop = logBox.scrollHeight;
-                }
-                setTimeout(function() { listarKernels(); }, 1000);
-            } else {
-                if (logBox) {
-                    var errorLine = document.createElement('div');
-                    errorLine.className = 'log-line error';
-                    // Traduzido via chave i18n (antes era PT-BR hardcoded).
-                    errorLine.textContent = sucesso === null
-                        ? _t('sessoes.ajustes-manutencao.kernel_log_timeout',
-                            '❌ Tempo esgotado esperando a remoção.')
-                        : _t('sessoes.ajustes-manutencao.kernel_log_falha',
-                            '❌ Falha ao remover kernel.');
-                    logBox.appendChild(errorLine);
-                    logBox.scrollTop = logBox.scrollHeight;
-                }
+        sucesso = await aguardarConclusaoReal(idComando, 180000);
+
+        if (sucesso) {
+            if (logBox) {
+                var successLine = document.createElement('div');
+                successLine.className = 'log-line success';
+                // Traduzido via chave i18n (antes era PT-BR hardcoded).
+                successLine.textContent = _tVars('sessoes.ajustes-manutencao.kernel_log_sucesso',
+                    '✅ Kernel ' + kernel + ' removido com sucesso!',
+                    { kernel: kernel });
+                logBox.appendChild(successLine);
+                logBox.scrollTop = logBox.scrollHeight;
+            }
+            setTimeout(function() { listarKernels(); }, 1000);
+        } else {
+            if (logBox) {
+                var errorLine = document.createElement('div');
+                errorLine.className = 'log-line error';
+                // Traduzido via chave i18n (antes era PT-BR hardcoded).
+                errorLine.textContent = sucesso === null
+                    ? _t('sessoes.ajustes-manutencao.kernel_log_timeout',
+                        '❌ Tempo esgotado esperando a remoção.')
+                    : _t('sessoes.ajustes-manutencao.kernel_log_falha',
+                        '❌ Falha ao remover kernel.');
+                logBox.appendChild(errorLine);
+                logBox.scrollTop = logBox.scrollHeight;
             }
         }
     } catch (e) {
+        sucesso = false;
         console.error('Erro ao remover kernel:', e);
         if (logBox) {
             var errorLine2 = document.createElement('div');
@@ -1016,7 +1026,14 @@ async function removerKernel() {
         if (selectKernel) {
             selectKernel.disabled = false;
         }
-        completarProgresso('remover-kernel', true);
+        // Completa manualmente APENAS quando o SSE não entregou
+        // `end` (HTTP error, exception, ou timeout do
+        // `aguardarConclusaoReal` — todos com `sucesso === null`).
+        // Quando SSE entregou `end`, `completarProgresso` já rodou
+        // com o status real.
+        if (sucesso === null) {
+            completarProgresso('remover-kernel', false);
+        }
     }
 }
 
@@ -1244,13 +1261,40 @@ function _renderizarPreviewGrub(params, info) {
 
     conteudo.innerHTML = html;
     preview.style.display = 'block';
-}
 
-function _escapeHTML(s) {
-    if (s == null) return '';
-    return String(s).replace(/[&<>"']/g, function(c) {
-        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
-    });
+    // ============================================================
+    // DESABILITA O BOTÃO SE NADA VAI MUDAR (auditoria C7)
+    // ============================================================
+    //
+    // `mudancas === 0` significa que a config atual já bate com a
+    // recomendada. Mostrar "Nada será alterado" e manter o botão
+    // clicável é UX ruim — o usuário clica, a função reescreve o
+    // arquivo com os mesmos valores, `grub2-mkconfig` regenera, e
+    // o resultado é idêntico. O aviso de sucesso confirma "tudo
+    // certo", mas a operação foi inútil (e levemente arriscada,
+    // porque o arquivo é regravado com conteúdo gerado pelo FAP
+    // — pode alterar formatação/comentários do original).
+    //
+    // Desabilita com tooltip explicativo. Só desabilita se o botão
+    // NÃO está no estado "aplicado" (`isExecutado === false`). Se
+    // já foi aplicado pelo FAP, `_aplicarEstadoBotoesGrub(true)` já
+    // cuidou do estado visual (texto "✅ Configuração aplicada") —
+    // não sobrescreve.
+    var btnAplicarPreview = document.getElementById('btn-grub-aplicar-recomendado');
+    if (btnAplicarPreview && !isExecutado('grub-aplicar-recomendado')) {
+        if (mudancas === 0) {
+            btnAplicarPreview.disabled = true;
+            btnAplicarPreview.style.opacity = '0.5';
+            btnAplicarPreview.style.cursor = 'not-allowed';
+            btnAplicarPreview.title = _t('sessoes.ajustes-manutencao.grub_preview_sem_mudancas',
+                'A configuração atual já corresponde à recomendada. Nada será alterado.');
+        } else {
+            btnAplicarPreview.disabled = false;
+            btnAplicarPreview.style.opacity = '1';
+            btnAplicarPreview.style.cursor = 'pointer';
+            btnAplicarPreview.title = '';
+        }
+    }
 }
 
 async function executarGrubAplicarRecomendado() {
@@ -1264,11 +1308,54 @@ async function executarGrubAplicarRecomendado() {
     // Guarda contra duplo clique / já executado
     if (btn && btn.disabled) return;
 
-    if (!_grubInfoCache) {
-        await carregarInfoGrub();
-    }
+    // ============================================================
+    // SEMPRE RE-BUSCA /grub-info ANTES DE APLICAR (auditoria v1.5.8)
+    // ============================================================
+    //
+    // `_grubInfoCache` pode estar populado por um fetch de minutos
+    // atrás (o `carregarInfoGrub` só re-busca no boot da sessão e no
+    // `onSucesso` da própria apply). Como estamos prestes a
+    // sobrescrever `/etc/default/grub`, queremos o estado ATUAL —
+    // não um cache velho. Custo: 1 fetch rápido (~100–300ms) lendo
+    // `/etc/default/grub` + `lsblk`. O usuário está prestes a uma
+    // operação destrutiva; latência é aceitável.
+    await carregarInfoGrub();
 
     var info = _grubInfoCache || {};
+
+    // ============================================================
+    // GUARD DE INFORMAÇÃO CONFIÁVEL (auditoria v1.5.8)
+    // ============================================================
+    //
+    // Se `carregarInfoGrub()` falhou (rede, /grub-info quebrado),
+    // `_grubInfoCache` fica `null`. O código anterior fazia
+    // `info = _grubInfoCache || {}` e `osProber = info.dualBoot ?
+    // 'false' : 'true'` — quando `info.dualBoot` é `undefined`,
+    // cai no ramo `'true'` (desabilita os-prober). O
+    // `/etc/default/grub` é reescrito com
+    // `GRUB_DISABLE_OS_PROBER=true` e o `grub2-mkconfig` regenera
+    // o `grub.cfg` SEM a entrada do Windows — usuário de dual boot
+    // perde o Windows do menu até clicar "Reverter" (que existe,
+    // mas só ajuda se o usuário perceber que sumiu).
+    //
+    // Pior: o `confirm` mostra "Detecção de outros sistemas (dual
+    // boot): Não" — informando ao usuário um dado que o FAP NÃO
+    // conhece. Ele aceita achando que o FAP checou.
+    //
+    // Correção: abortar se `grubReadable` é `false` OU
+    // `dualBoot` não é booleano. Exige que a leitura tenha
+    // funcionado em ambos os eixos antes de tocar no arquivo.
+    if (!info.grubReadable || typeof info.dualBoot !== 'boolean') {
+        alert(_t('sessoes.ajustes-manutencao.grub_info_indisponivel',
+            '⚠️ Não foi possível ler a configuração atual do GRUB.\n\n' +
+            'Sem essa informação, o FAP não consegue saber se o sistema tem ' +
+            'dual boot com Windows — e poderia desabilitar a detecção de ' +
+            'outros sistemas, escondendo o Windows do menu.\n\n' +
+            'Nada foi alterado. Tente novamente. Se o erro persistir, ' +
+            'verifique se /etc/default/grub existe e é legível.'));
+        return;
+    }
+
     var res = info.detectedRes && info.detectedRes !== '0x0' ? info.detectedRes : '1024x768';
     var osProber = info.dualBoot ? 'false' : 'true';
 
@@ -1904,9 +1991,25 @@ async function _carregarUpgradeStatus(forcar) {
     }
     try {
         var url = API_URL + '/fedora-upgrade-status' + (forcar ? '?refresh=1' : '');
+        // ============================================================
+        // TIMEOUT = 60s (v1.5.8 — auditoria B4)
+        // ============================================================
+        //
+        // O server roda `dnf check-update` (até 30s) + `dnf
+        // needs-restarting` (até 10s) + `_verificarCanalFedora`
+        // (2 hosts × 10s após v1.5.8) + os demais checks em
+        // paralelo. Antes, o pior caso passava de 35s — e o
+        // `_sinalTimeout(35000)` abortava o fetch antes da
+        // resposta chegar. A UI mostrava "Não foi possível
+        // verificar" mesmo com o server prestes a responder.
+        //
+        // 60s cobre o pior caso (30s do `dnf` + ~10s de overhead
+        // de fork/startup + margem para a rede). Se a checagem
+        // passar disso, é sinal de problema real (rede caída,
+        // dnf travado em RPM DB lock) — aí vale abortar.
         var r = await fetch(url, {
-        cache: 'no-store',
-        signal: _sinalTimeout(35000)
+            cache: 'no-store',
+            signal: _sinalTimeout(60000)
         });
         if (!r.ok) return null;
         var data = await r.json();
@@ -2603,8 +2706,36 @@ function _renderUpgradeBaixado(data) {
 async function executarUpgradeDownload() {
     var idComando = 'upgrade-f45-download';
     var alvo = _upgradeStatusCache ? _upgradeStatusCache.target_version : '45';
+
+    // ============================================================
+    // PLUGIN DO SYSTEM-UPGRADE (v1.5.8 — auditoria B6)
+    // ============================================================
+    //
+    // No DNF5 (Fedora 41+, alvo oficial do FAP), o subcomando
+    // `system-upgrade` já vem no pacote `dnf5-plugins` (instalado
+    // por padrão). O pacote `dnf-plugin-system-upgrade` é da era
+    // DNF4 e **não existe mais nos repos do Fedora 44/45** — o
+    // `dnf install -y dnf-plugin-system-upgrade` falha com "No
+    // match for argument", e o `&&` aborta a cadeia antes mesmo
+    // do `system-upgrade download`. O botão "Baixar pacotes"
+    // nunca funcionava em instalação limpa.
+    //
+    // Correção: guard de detecção em vez de `dnf install` cego.
+    // Se `dnf system-upgrade` já funciona (caso comum em Fedora
+    // 44/45), pula o `install`. Se não funciona (Fedora legado
+    // com DNF4 puro), instala o plugin antigo — e ABORTA se o
+    // install falhar (sem esconder o erro atrás de um `|| true`).
+    //
+    // O guard detecta tanto `dnf system-upgrade` (DNF4) quanto
+    // `dnf5 system-upgrade` (DNF5). Em DNF5, `dnf` é symlink
+    // para `dnf5` em algumas configurações, mas o subcomando
+    // responde mesmo sem o symlink — o `dnf system-upgrade --help`
+    // é o teste mais robusto.
     var comando =
-        'sudo dnf install -y dnf-plugin-system-upgrade && ' +
+        'if ! dnf system-upgrade --help >/dev/null 2>&1; then ' +
+        '  echo "ℹ️ Plugin system-upgrade ausente — instalando..."; ' +
+        '  sudo dnf install -y dnf-plugin-system-upgrade || exit 1; ' +
+        'fi && ' +
         'sudo dnf upgrade --refresh -y && ' +
         'sudo dnf system-upgrade download --releasever=' + alvo + ' -y';
 
@@ -2632,30 +2763,12 @@ async function executarUpgradeReboot() {
         'Continuar?'))) return;
 
     var idComando = 'upgrade-f45-reboot';
+    var btnReboot = document.getElementById('btn-upgrade-f45-reboot');
 
-    // `dnf5 offline reboot` NÃO tem flag `-y` — ele reinicia direto,
-    // sem perguntar. O `dnf system-upgrade reboot` (DNF clássico)
-    // aceita `-y` globalmente, mas o Fedora 44+ usa DNF5 por padrão,
-    // e o `dnf` já é um alias para o `dnf5`.
-    //
-    // A correção precisa ser:
-    //   • dnf5 offline reboot          → SEM `-y` (reinicia direto)
-    //   • dnf -y system-upgrade reboot → COM `-y` (aceita a pergunta)
-    //
-    // Tentamos o `dnf5` primeiro (caso comum). Se não existir,
-    // caímos no `dnf` clássico com `-y`.
-    // `dnf5 offline reboot` NÃO tem flag `-y` e PEDE confirmação
-    // (`Is this ok [y/N]:`) quando roda sem TTY. O `echo s |` não
-    // resolve porque o `dnf5` lê a confirmação do terminal, não
-    // do stdin do script.
-    //
-    // A solução é usar `system-upgrade reboot`, que é o comando
-    // compatível com o DNF4 e ACEITA `-y` para pular a confirmação.
-    // A documentação do Fedora e os relatos da lista de usuários
-    // confirmam que `dnf system-upgrade reboot` funciona no DNF5.
-    //
-    // Tentamos o `dnf5` primeiro (caso comum). Se não existir,
-    // caímos no `dnf` clássico com `-y`.
+    // Mesma lógica do `executarUpgradeCancelar`: `dnf5 offline
+    // reboot` NÃO tem flag `-y` e PEDE confirmação quando roda sem
+    // TTY. Usamos `system-upgrade reboot` (compatível com DNF4),
+    // que aceita `-y`. Tentamos `dnf5` primeiro; fallback `dnf`.
     var comando =
         'if command -v dnf5 > /dev/null 2>&1; then ' +
         '  sudo dnf5 system-upgrade reboot -y; ' +
@@ -2663,32 +2776,55 @@ async function executarUpgradeReboot() {
         '  sudo dnf -y system-upgrade reboot; ' +
         'fi';
 
-// Reboot mata o node — não dá para esperar `end`. Envia o POST e
-// retorna. A UI mostra "⏳ Reiniciando..." até a máquina desligar.
-var logBox = _getLogBox(idComando);
-if (logBox) {
-    logBox.style.display = 'block';
-    _separadorLog(logBox, _tUpgrade('upgrade_log_reiniciando', '🔄 Reiniciando para aplicar upgrade'));
-    var linha = document.createElement('div');
-    linha.className = 'log-line info';
-    linha.textContent = '🔄 Enviando comando de reboot. O computador será reiniciado em instantes...';
-    logBox.appendChild(linha);
-    logBox.scrollTop = logBox.scrollHeight;
-}
-try {
-    await fetch(API_URL + '/executar', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ comando: comando, idComando: idComando })
-    });
-} catch (e) {
-    if (logBox) {
-        var err = document.createElement('div');
-        err.className = 'log-line error';
-        err.textContent = '❌ Erro ao disparar reboot: ' + e.message;
-        logBox.appendChild(err);
+    // Bloqueia a sessão e desabilita o botão — o node morre no
+    // reboot, então não há `end` para re-habilitar. Sem isso, o
+    // usuário pode clicar em "Cancelar upgrade" durante o reboot.
+    if (btnReboot) {
+        btnReboot.disabled = true;
+        btnReboot.textContent = '⏳ Reiniciando...';
+        btnReboot.style.opacity = '0.6';
+        btnReboot.style.cursor = 'not-allowed';
     }
-}
+    if (typeof _bloquearSessao === 'function') {
+        try { _bloquearSessao(idComando); } catch (e) { /* ignore */ }
+    }
+
+    // Reboot mata o node — não dá para esperar `end`. Envia o POST e
+    // retorna. A UI mostra "⏳ Reiniciando..." até a máquina desligar.
+    var logBox = _getLogBox(idComando);
+    if (logBox) {
+        logBox.style.display = 'block';
+        _separadorLog(logBox, _tUpgrade('upgrade_log_reiniciando', '🔄 Reiniciando para aplicar upgrade'));
+        var linha = document.createElement('div');
+        linha.className = 'log-line info';
+        linha.textContent = '🔄 Enviando comando de reboot. O computador será reiniciado em instantes...';
+        logBox.appendChild(linha);
+        logBox.scrollTop = logBox.scrollHeight;
+    }
+    try {
+        await fetch(API_URL + '/executar', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ comando: comando, idComando: idComando })
+        });
+    } catch (e) {
+        if (logBox) {
+            var err = document.createElement('div');
+            err.className = 'log-line error';
+            err.textContent = '❌ Erro ao disparar reboot: ' + e.message;
+            logBox.appendChild(err);
+        }
+        // Reabilita se o POST falhou (reboot não foi disparado).
+        if (btnReboot) {
+            btnReboot.disabled = false;
+            btnReboot.textContent = '🔄 ' + _tUpgrade('upgrade_btn_reboot', 'Reiniciar agora e atualizar');
+            btnReboot.style.opacity = '1';
+            btnReboot.style.cursor = 'pointer';
+        }
+        if (typeof _liberarSessao === 'function') {
+            try { _liberarSessao(idComando); } catch (e2) { /* ignore */ }
+        }
+    }
 }
 
 async function executarUpgradeCancelar() {

@@ -330,6 +330,16 @@ async function carregarSessao(index) {
     var arquivo = nomeSessao + '.html';
     var nomeTraduzido = nomeDaSessao(nomeSessao);
 
+    // Aguarda o i18n estar pronto ANTES de renderizar o texto de
+    // loading. Em PT-BR, `I18N.ready` resolve imediatamente (sem
+    // atraso perceptível). Em EN/ES, evita o flash "Carregando
+    // Hardware..." em PT-BR por 100–300ms enquanto `en.json`
+    // resolve.
+    if (typeof I18N !== 'undefined' && I18N.ready &&
+        typeof I18N.ready.then === 'function') {
+        try { await I18N.ready; } catch (e) { /* fallback */ }
+    }
+
     container.innerHTML = `
         <div class="loading-sessao">
             <div class="spinner"></div>
@@ -647,6 +657,14 @@ function _configurarBusca() {
 
         if (termo.length < 2) {
             _resetSidebarBusca();
+            // Limpa o filtro DOM se ele estava ativo. Sem isso,
+            // apagar o termo (ou apagar até sobrar 1 char) deixava
+            // a sessão filtrada até o usuário trocar de sessão —
+            // a sessão aberta continuava com `.bloco-comando`
+            // ocultos.
+            if (typeof _limparFiltroSessao === 'function') {
+                _limparFiltroSessao();
+            }
             return;
         }
 
@@ -654,6 +672,14 @@ function _configurarBusca() {
             if (typeof _buscar !== 'function') return;
             var res = _buscar(termo);
             _aplicarDestaqueBusca(res, termo);
+            // Aplica o filtro DOM imediatamente na sessão atual.
+            // Antes, o filtro só era aplicado no evento
+            // `sessao-carregada` (que só dispara em troca de
+            // sessão) — digitar na sessão ativa não filtrava
+            // nada. Bug reportado na auditoria da v1.5.8.
+            if (typeof _aplicarFiltroSessao === 'function') {
+                _aplicarFiltroSessao(termo);
+            }
         }, 100);
     });
 
@@ -662,6 +688,9 @@ function _configurarBusca() {
             input.value = '';
             _termoBuscaAtual = '';
             _resetSidebarBusca();
+            if (typeof _limparFiltroSessao === 'function') {
+                _limparFiltroSessao();
+            }
         }
     });
 }
@@ -1028,6 +1057,26 @@ function _reaplicarTextosDinamicos() {
     var container = document.getElementById('sessao-container');
     if (container && typeof numerarSessao === 'function') {
         numerarSessao(SESSOES_PRINCIPAIS[sessaoAtual], container);
+    }
+
+    // Botão de tema: o title/aria-label são setados por
+    // `atualizarBotaoTema()` (em script.js) via `_t()`. Sem
+    // `data-i18n-title`, o `I18N.aplicarTraducoes()` NÃO os
+    // reaplica. Sem essa chamada, em EN/ES o title do botão
+    // ficava em PT até o usuário trocar de tema manualmente.
+    if (typeof atualizarBotaoTema === 'function') {
+        atualizarBotaoTema();
+    }
+
+    // Texto de loading inicial (só existe durante o boot, antes
+    // de `carregarSessao` substituir o conteúdo de
+    // `#sessao-container`). Em EN/ES, o handler de
+    // `DOMContentLoaded` setou o texto em PT (fallback), e sem
+    // esse re-render o usuário via "Carregando sessão..." em PT
+    // mesmo com o idioma EN.
+    var loadingTexto = document.getElementById('loading-inicial-texto');
+    if (loadingTexto) {
+        loadingTexto.textContent = _t('comum.spinner_carregando_sessao', 'Carregando sessão...');
     }
 
     var nav = document.getElementById('fap-sidebar-nav');

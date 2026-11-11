@@ -273,6 +273,7 @@ abre o instalador da comunidade; ele é quem vai pedir o arquivo <code>.exe</cod
 </div>
 
 <div class="botoes-flex" style="margin-top: 1rem;">
+<div class="btn-flatpak-wrapper">
 <button class="btn-executar"
 onclick="abrirInstaladorAffinity()"
 data-comando="abrir-affinity"
@@ -281,6 +282,7 @@ id="btn-abrir-affinity"
 data-i18n="sessoes.aplicativos.btn_abrir_instalador">
 🎨 Abrir Instalador da Affinity
 </button>
+</div>
 <button class="btn-executar" onclick="abrirGitHubAffinity()" data-i18n="sessoes.aplicativos.btn_github_projeto">
 🐙 GitHub do Projeto
 </button>
@@ -439,7 +441,7 @@ BLOCO 6 — EDIÇÃO DE VÍDEO, ÁUDIO E MODELAGEM 3D
 </div>
 <div class="launcher-item">
 <div class="btn-flatpak-wrapper">
-<button class="btn-executar" onclick="instalarDnf('instalar-avidemux')" data-comando="instalar-avidemux" data-logbox="log-sessao-aplicativos" id="btn-instalar-avidemux" data-i18n="sessoes.aplicativos.btn_avidemux">✂️ Avidemux</button>
+<button class="btn-executar" onclick="instalarFlatpak('instalar-avidemux')" data-comando="instalar-avidemux" data-logbox="log-sessao-aplicativos" id="btn-instalar-avidemux" data-i18n="sessoes.aplicativos.btn_avidemux">✂️ Avidemux</button>
 </div>
 </div>
 <div class="launcher-item">
@@ -499,7 +501,7 @@ BLOCO 7 — SINCRONIZAÇÃO EM NUVEM
 <p data-i18n="sessoes.aplicativos.bloco6_desc">Ferramentas para sincronizar arquivos com Google Drive, OneDrive, Dropbox e outros serviços.</p>
 
 <div class="aviso-caixa" data-i18n-html="sessoes.aplicativos.rclone_aviso">
-ℹ️ <strong>Configuração das contas de nuvem:</strong> o Rclone Manager é uma interface gráfica para o Rclone. Ele permite configurar acesso a Google Drive, OneDrive, Dropbox, S3, e dezenas de outros serviços de armazenamento em nuvem. Após instalar, abra o Rclone Manager e siga o guia interno da própria interface para adicionar suas contas. <strong>Se você precisar do Rclone CLI, o próprio Rclone Manager oferece a opção de instalá-lo.</strong> A configuração das contas é feita por você, dentro do Rclone Manager.
+ℹ️ <strong>Configuração das contas de nuvem:</strong> o Rclone Manager é uma interface gráfica para o Rclone. Ele permite configurar acesso a Google Drive, OneDrive, Dropbox, S3, e dezenas de outros serviços de armazenamento em nuvem. Após instalar, abra o Rclone Manager e siga o guia interno da própria interface para adicionar suas contas. <strong>Se você precisar do Rclone CLI, o próprio Rclone Manager oferece a opção de instalá-lo — mas a lixeira do FAP remove apenas o rclone-manager, preservando o CLI se ele foi instalado separadamente.</strong> A configuração das contas é feita por você, dentro do Rclone Manager.
 </div>
 
 <div class="botoes-flex">
@@ -648,6 +650,7 @@ var APPS_FLATPAK = {
     'instalar-kdenlive': { appId: 'org.kde.kdenlive', fallback: '🎬 Kdenlive' },
     'instalar-shotcut': { appId: 'org.shotcut.Shotcut', fallback: '✂️ Shotcut' },
     'instalar-openshot': { appId: 'org.openshot.OpenShot', fallback: '🎬 OpenShot' },
+    'instalar-avidemux': { appId: 'org.avidemux.Avidemux', fallback: '✂️ Avidemux' },
     'instalar-drift': { appId: 'org.cutwire.Drift', fallback: '🎬 Drift' },
     'instalar-blender': { appId: 'org.blender.Blender', fallback: '🧊 Blender' },
     'instalar-audacity': { appId: 'org.audacityteam.Audacity', fallback: '🎙️ Audacity' },
@@ -755,6 +758,25 @@ function _registrarAbrirEmMassa() {
             // DNF/RPM_REPO; URL_RPM precisa de `binAbrir`).
             if (nomeMapa === 'APPS_URL_RPM' && !info.binAbrir) return;
 
+            // ============================================================
+            // SKIP FIREFOX/THUNDERBIRD (v1.5.8 — auditoria C3)
+            // ============================================================
+            //
+            // Firefox e Thunderbird são "apps do dia a dia" — o usuário
+            // já os abre pelo menu do sistema. Mostrar "Abrir Firefox"
+            // no FAP é redundante (abre uma nova janela a cada clique).
+            // A versão anterior registrava esses dois no loop e deletava
+            // logo depois (3 linhas abaixo), num `delete _ABRIR_REGISTRY`
+            // explícito — funcionava, mas era código morto que confundia
+            // manutenção. Skipá-los aqui é mais direto e elimina o
+            // `delete` subsequente.
+            //
+            // Efeito: `_dadosAbrirDoApp('instalar-firefox')` retorna
+            // `null` → `aplicarEstadoInstalavel` deixa o botão em
+            // "instalado-sem-abrir" (cinza + lixeira), que é o
+            // comportamento desejado.
+            if (id === 'instalar-firefox' || id === 'instalar-thunderbird') return;
+
             var chaveI18n = 'sessoes.aplicativos.btn_abrir_' +
                 id.replace(/^instalar-/, '');
             var nomeAmigavel = (info.fallback || 'App').replace(/^[^\s]+\s*/, '');
@@ -823,7 +845,6 @@ var _CMD_ABRIR_DNF = {
     'instalar-darktable':   'darktable',
     'instalar-librecad':    'librecad',
     'instalar-pitivi':      'pitivi',
-    'instalar-avidemux':    'gtk-launch org.avidemux.Avidemux',
     'instalar-ardour':      'ardour8',
     'instalar-lmms':        'lmms',
     'instalar-chromium':    'chromium-browser'
@@ -876,13 +897,6 @@ function abrirAppGenerico(idInstall) {
 }
 
 _registrarAbrirEmMassa();
-
-// Firefox e Thunderbird são "apps do dia a dia" — o usuário já os
-// abre pelo menu do sistema. Mostrar "Abrir Firefox" no FAP é
-// redundante (abre uma nova janela a cada clique). Removemos as
-// entradas para que fiquem em "instalado-sem-abrir" (cinza + lixeira).
-delete _ABRIR_REGISTRY['instalar-firefox'];
-delete _ABRIR_REGISTRY['instalar-thunderbird'];
 
 // ============================================================
 // REGISTRO DE APPS REMOVÍVEIS
@@ -942,13 +956,22 @@ registrarAppRemovivel('instalar-rustdesk', {
 // (lixeira em vez de botão destrutivo separado).
 registrarAppRemovivel('instalar-rclone-manager', {
     tipo: 'dnf',
-    pacotes: ['rclone-manager', 'rclone'],
+    // O RPM real chama-se `r-clone-manager` (com hífen entre `r` e
+    // `clone`). A versão anterior usava `rclone-manager` (sem hífen)
+    // — nunca instalava, a lixeira nunca removia, e o auto-reset
+    // (`_estaRealmenteInstalado`) limpava o marcador em loop.
+    //
+    // Só `r-clone-manager` é removido. O CLI `rclone` (que o
+    // próprio Rclone Manager oferece instalar) é PRESERVADO — o
+    // usuário pode tê-lo instalado para outros fins, e removê-lo
+    // sem aviso seria agressivo. Se quiser remover o CLI também,
+    // precisa fazer manualmente (instrução no confirmMsg).
+    pacotes: ['r-clone-manager'],
     comandoRemocao:
-        'PKGS=$(rpm -qa | grep -i "^rclone"); ' +
-        'if [ -n "$PKGS" ]; then ' +
-        '  sudo dnf remove -y $PKGS; ' +
+        'if rpm -q r-clone-manager >/dev/null 2>&1; then ' +
+        '  sudo dnf remove -y r-clone-manager; ' +
         'else ' +
-        '  echo "ℹ️ Nenhum pacote rclone* encontrado para remover."; ' +
+        '  echo "ℹ️ Pacote r-clone-manager não encontrado."; ' +
         'fi; ' +
         'rm -f $HOME/.local/share/applications/rclone-manager.desktop; ' +
         'rm -f $HOME/.local/share/icons/hicolor/*/apps/rclone-manager.*; ' +
@@ -962,13 +985,16 @@ registrarAppRemovivel('instalar-rclone-manager', {
     confirmMsg:
         '⚠️ Remover completamente o Rclone Manager?\n\n' +
         'Este botão remove:\n' +
-        '• Os pacotes rclone* do sistema (rclone-manager e rclone)\n' +
+        '• O pacote r-clone-manager\n' +
         '• O atalho do menu iniciar\n' +
         '• O ícone do tema hicolor\n' +
         '• Os dados locais do Rclone Manager (~/.local/share/rclone-manager e ~/.cache/rclone-manager)\n\n' +
+        '⚠️ IMPORTANTE: o CLI rclone NÃO é removido — se você o instalou pelo\n' +
+        'próprio Rclone Manager, ele continuará disponível. Para removê-lo\n' +
+        'manualmente depois: sudo dnf remove rclone\n\n' +
         'Suas contas de nuvem ficam em ~/.config/rclone/ e NÃO são apagadas —\n' +
         'se reinstalar depois, elas continuarão lá.\n\n' +
-        'Ação irreversível em relação aos pacotes. Continuar?'
+        'Ação irreversível em relação ao r-clone-manager. Continuar?'
 });
 
 // --- DNF (repos oficiais do Fedora) ---
@@ -984,7 +1010,7 @@ registrarAppRemovivel('instalar-gimp',        { tipo: 'dnf', pacotes: ['gimp'], 
 registrarAppRemovivel('instalar-darktable',   { tipo: 'dnf', pacotes: ['darktable'],   nome: 'Darktable' });
 registrarAppRemovivel('instalar-librecad',    { tipo: 'dnf', pacotes: ['librecad'],    nome: 'LibreCAD' });
 registrarAppRemovivel('instalar-pitivi',      { tipo: 'dnf', pacotes: ['pitivi'],      nome: 'Pitivi' });
-registrarAppRemovivel('instalar-avidemux',    { tipo: 'dnf', pacotes: ['avidemux'],    nome: 'Avidemux' });
+registrarAppRemovivel('instalar-avidemux',    { tipo: 'flatpak', appId: 'org.avidemux.Avidemux', nome: 'Avidemux' });
 registrarAppRemovivel('instalar-ardour',      { tipo: 'dnf', pacotes: ['ardour8'],     nome: 'Ardour' });
 registrarAppRemovivel('instalar-lmms',        { tipo: 'dnf', pacotes: ['lmms'],        nome: 'LMMS' });
 registrarAppRemovivel('instalar-chromium',    { tipo: 'dnf', pacotes: ['chromium'],    nome: 'Chromium' });
@@ -1040,7 +1066,31 @@ registrarAppRemovivel('instalar-artcraft-launcher', {
 });
 
 // --- 5 apps novos (v1.2.2) ---
-registrarAppRemovivel('instalar-firefox',    { tipo: 'dnf',     pacotes: ['firefox'],                nome: 'Mozilla Firefox' });
+registrarAppRemovivel('instalar-firefox', {
+    tipo: 'dnf',
+    pacotes: ['firefox'],
+    nome: 'Mozilla Firefox',
+    // MITIGAÇÃO (v1.5.8 — auditoria B7): pré-existente NÃO pode
+    // ser removido.
+    //
+    // Firefox é o navegador padrão do Fedora Workstation e é
+    // dependência de vários pacotes do sistema (gnome-shell,
+    // fedora-workstation-repositories, firefox-langpacks). Remover
+    // via lixeira pode cascatear (`dnf remove --allowerasing` por
+    // fora) ou deixar estado ambíguo quando o dnf recusa por
+    // dependência. Diferente dos apps de usuário (VLC, GIMP), o
+    // usuário NÃO deveria poder desinstalar o navegador padrão do
+    // sistema por um clique acidental.
+    permitirRemocaoPreExistente: false,
+    motivoBloqueio: 'O Firefox já estava instalado antes do FAP ' +
+                    'e é o navegador padrão do Fedora Workstation — ' +
+                    'vários pacotes do sistema dependem dele ' +
+                    '(gnome-shell, fedora-workstation-repositories). ' +
+                    'Removê-lo pode cascatear e quebrar o ambiente ' +
+                    'gráfico. Para remover manualmente (com consciência ' +
+                    'dos dependentes), use o terminal:\n\n' +
+                    '  sudo dnf remove firefox'
+});
 registrarAppRemovivel('instalar-vscode',     { tipo: 'flatpak', appId: 'com.visualstudio.code',      nome: 'Visual Studio Code' });
 registrarAppRemovivel('instalar-drawy',      { tipo: 'flatpak', appId: 'org.kde.drawy',              nome: 'Drawy' });
 registrarAppRemovivel('instalar-gear-lever', { tipo: 'flatpak', appId: 'it.mijorus.gearlever',       nome: 'Gear Lever' });

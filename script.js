@@ -1146,6 +1146,7 @@ var SESSOES = [
         'instalar-kdenlive': { textoConcluido: '✅ Kdenlive instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_kdenlive', flatpakId: 'org.kde.kdenlive' },
         'instalar-shotcut': { textoConcluido: '✅ Shotcut instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_shotcut', flatpakId: 'org.shotcut.Shotcut' },
         'instalar-openshot': { textoConcluido: '✅ OpenShot instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_openshot', flatpakId: 'org.openshot.OpenShot' },
+        'instalar-avidemux': { textoConcluido: '✅ Avidemux instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_avidemux', flatpakId: 'org.avidemux.Avidemux' },
         'instalar-drift': { textoConcluido: '✅ Drift instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_drift', flatpakId: 'org.cutwire.Drift' },
         'instalar-rustdesk': { textoConcluido: '✅ RustDesk instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_rustdesk' },
 
@@ -1618,6 +1619,32 @@ function _akmodCarregadoFora() {
     return _secureBootMokCache.akmod_carregado || null;
 }
 
+// ============================================================
+// HELPERS DE ESTADO EXPANDIDO (v1.5.8)
+// ============================================================
+//
+// Expõe os novos campos de `_secureBootMokCache` (populados por
+// `_checkMokEnrolled` do `hardware-service.js`):
+//   • pending_import — chave importada, reboot pendente
+//   • current_key_not_enrolled — chave antiga enrolled, atual não
+//   • other_akmods_keys_enrolled — chave akmods de outra fonte
+//
+// Cada helper devolve `false` quando o cache ainda não foi
+// populado (backend antigo ou falha de rede) — o frontend cai
+// no comportamento anterior sem regressão.
+
+function _secureBootPendingImport() {
+    return !!(_secureBootMokCache && _secureBootMokCache.pending_import === true);
+}
+
+function _secureBootCurrentKeyNotEnrolled() {
+    return !!(_secureBootMokCache && _secureBootMokCache.current_key_not_enrolled === true);
+}
+
+function _secureBootOutrasChavesAkmos() {
+    return !!(_secureBootMokCache && _secureBootMokCache.other_akmods_keys_enrolled === true);
+}
+
 async function _prepararSecureBoot() {
     // Mantém o idComando `nvidia-secureboot-prepare` por compatibilidade
     // com o `.progresso.json` (o botão é o mesmo, aparece na Sessão 3
@@ -1626,7 +1653,23 @@ async function _prepararSecureBoot() {
     var idComando = 'nvidia-secureboot-prepare';
     var comando =
     'sudo dnf install -y kmodtool akmods mokutil openssl kernel-devel-matched kernel-headers || exit 1; ' +
-    'sudo kmodgenca -a 2>&1 || true; ' +
+    // ============================================================
+    // GUARD DO kmodgenca (v1.5.8)
+    // ============================================================
+    //
+    // NÃO roda `kmodgenca -a` se a chave JÁ EXISTE. Sem o guard,
+    // o `kmodgenca` sem `-f` falha com "key already exists" (o
+    // `|| true` engolia), mas em versões futuras que aceitem
+    // sobrescrever, a regeneração quebraria o enrollment existente
+    // — `public_key.der` passaria a apontar para a chave nova,
+    // não-enrolled. O guard elimina o ruído de erro e protege
+    // contra essa mudança de comportamento.
+    //
+    // Se o usuário quiser forçar uma nova chave, faça manualmente
+    // com `kmodgenca -f` e re-enrole.
+    'if [ ! -f /etc/pki/akmods/certs/public_key.der ]; then ' +
+    '  sudo kmodgenca -a 2>&1 || true; ' +
+    'fi; ' +
     // ============================================================
     // PERMISSÃO DO DIRETÓRIO (v1.4.8, rodada 2)
     // ============================================================
@@ -1671,19 +1714,63 @@ async function _prepararSecureBoot() {
                                       // consultar o backend (que agora vê a
                                       // chave em disco mas `enrolled: false`).
                                       _secureBootMokCache = null;
-                                      _invalidarContadorSessoes();
-                                      _atualizarProgressoGlobal();
-                                      // Invalida o SystemState para forçar re-leitura do
-                                      // `public_key.der` (agora legível). Sem isso, o
-                                      // `_aplicarEstadoNvidia` continua vendo cache stale
-                                      // e mantém o botão desabilitado.
+                                      // ============================================================
+                                      // `_invalidarContadorSessoes`/`_atualizarProgressoGlobal`
+                                      // REMOVIDAS (auditoria C12)
+                                      // ============================================================
+                                      //
+                                      // `nvidia-secureboot-prepare` está em
+                                      // `SEMPRE_CLICAVEIS` (script.js → SESSOES),
+                                      // então `completarProgresso` NÃO chama
+                                      // `marcarComoExecutado`. O contador de
+                                      // sessões concluídas não muda — as duas
+                                      // chamadas eram no-ops (recomputavam o
+                                      // mesmo valor).
+                                      //
+                                      // O `SystemState.invalidar/carregar(true)`
+                                      // abaixo continua necessário: a chave
+                                      // `public_key.der` foi gerada e o
+                                      // `_aplicarEstadoNvidia` precisa reler o
+                                      // `/system-state` para ver o arquivo
+                                      // presente (antes era `false`).
                                       try {
                                           SystemState.invalidar();
                                           await SystemState.carregar(true);
                                       } catch (e) { /* ignore */ }
+
+                                      // Re-renderiza o painel/badge de Secure Boot
+                                      // (Sessão 12 e Sessão 3) para refletir o novo
+                                      // estado (chave gerada mas não enrolled) sem
+                                      // precisar recarregar a sessão. Sem isso, o
+                                      // usuário via só o toast e o painel continuava
+                                      // mostrando "passo 1" até reload.
+                                      try {
+                                          var novoEstadoSb = await _detectarSecureBoot();
+                                          var painelGlobal = document.getElementById('secureboot-painel-global');
+                                          if (painelGlobal && typeof _renderizarPainelSecureBoot === 'function') {
+                                              _renderizarPainelSecureBoot(painelGlobal, novoEstadoSb);
+                                          }
+                                          var badgeNvidia = document.getElementById('nvidia-secureboot-panel');
+                                          if (badgeNvidia && typeof _renderizarBadgeSecureBoot === 'function') {
+                                              _renderizarBadgeSecureBoot(badgeNvidia, novoEstadoSb, 'o driver NVIDIA');
+                                          }
+                                          var badgeVirt = document.getElementById('secureboot-badge-virtualizacao');
+                                          if (badgeVirt && typeof _renderizarBadgeSecureBoot === 'function') {
+                                              _renderizarBadgeSecureBoot(badgeVirt, novoEstadoSb, 'VirtualBox');
+                                          }
+                                          var badgeDisp = document.getElementById('secureboot-badge-dispositivos');
+                                          if (badgeDisp && typeof _renderizarBadgeSecureBoot === 'function') {
+                                              _renderizarBadgeSecureBoot(badgeDisp, novoEstadoSb, 'Broadcom, Realtek ou xpadneo');
+                                          }
+                                          var badgeProd = document.getElementById('secureboot-badge-producao');
+                                          if (badgeProd && typeof _renderizarBadgeSecureBoot === 'function') {
+                                              _renderizarBadgeSecureBoot(badgeProd, novoEstadoSb, 'a câmera virtual do OBS');
+                                          }
+                                      } catch (e) { /* ignore — toast já confirma */ }
+
                                       if (typeof mostrarToast === 'function') {
                                           mostrarToast(_t('seguranca.secureboot_preparado_ok',
-                                                          '✅ Chave do akmods gerada. Falta o enrollment no firmware (passo 2).'),
+                                                          '✅ Chave do akmods gerada. Falta o registro no firmware (passo 2).'),
                                                        'success', 8000);
                                       }
                                   });
@@ -1699,7 +1786,7 @@ function _renderizarPainelSecureBoot(container, estado) {
     if (estado === 'disabled') {
         container.innerHTML = '<div class="aviso-sucesso">✅ ' +
         _t('seguranca.secureboot_desabilitado',
-           'Secure Boot está desabilitado. Você pode instalar qualquer <code>akmod-*</code> sem enrollment.') +
+           'Secure Boot está desabilitado. Você pode instalar qualquer <code>akmod-*</code> sem registro no firmware.') +
         '</div>';
         return;
     }
@@ -1709,7 +1796,7 @@ function _renderizarPainelSecureBoot(container, estado) {
         // (mokutil ausente/quebrado), que exige investigação.
         container.innerHTML = '<div class="aviso-sucesso">✅ ' +
         _t('seguranca.secureboot_nao_aplica',
-           'Secure Boot não se aplica — o sistema está em BIOS legacy (não-UEFI). Nenhum enrollment é necessário; os <code>akmod-*</code> carregam normalmente.') +
+           'Secure Boot não se aplica — o sistema está em BIOS legacy (não-UEFI). Nenhum registro é necessário; os <code>akmod-*</code> carregam normalmente.') +
         '</div>';
         return;
     }
@@ -1722,40 +1809,124 @@ function _renderizarPainelSecureBoot(container, estado) {
     }
 
     // estado === 'enabled'
+    //
+    // v1.5.8: fonte PRIMÁRIA é `_secureBootMokCache.chave_gerada`
+    // (do `/hardware-scan`, teste `test -f` direto — a fonte que o
+    // `_checkMokEnrolled` do backend usa). `SystemState.arquivoPresente()`
+    // fica como FALLBACK para quando `/hardware-scan` ainda não foi
+    // consultado (primeira renderização, antes do fetch resolver).
+    //
+    // Motivo: `/system-state` testa com `sudo -n test -f || test -f`
+    // (funciona em `0750 root:akmods` se houver NOPASSWD),
+    // `/hardware-scan` usa `test -f` direto (falha sem permissão).
+    // Quando o usuário tem NOPASSWD e a chave existe, as duas fontes
+    // podem divergir. Alinhar com `/hardware-scan` evita que o
+    // painel mostre "chave já gerada" enquanto o backend reporta
+    // `chave_gerada: false`.
     var chaveLocal = false;
-    try { chaveLocal = SystemState.arquivoPresente('/etc/pki/akmods/certs/public_key.der'); } catch (e) {}
+    if (_secureBootMokCache && typeof _secureBootMokCache.chave_gerada === 'boolean') {
+        chaveLocal = _secureBootMokCache.chave_gerada;
+    } else {
+        try { chaveLocal = SystemState.arquivoPresente('/etc/pki/akmods/certs/public_key.der'); } catch (e) {}
+    }
     var mokEnrolled = _mokEnrolled();
 
     // ============================================================
-    // ESTADO FINAL: Secure Boot ativo + chave gerada + enrolled.
+    // ESTADO FINAL: Secure Boot ativo + chave gerada + enrolled
+    // E a chave enrolled É a `public_key.der` atual (v1.5.8).
     // ============================================================
-    //
-    // Quando o enrollment já foi concluído, NÃO faz sentido mostrar
-    // o passo a passo (passos 1–3) nem o botão "Preparar Secure
-    // Boot". O usuário já fez tudo. Mostramos um banner verde de
-    // confirmação e encerramos o painel.
-    if (mokEnrolled) {
+    if (mokEnrolled && chaveLocal && !_secureBootCurrentKeyNotEnrolled()) {
         container.innerHTML =
         '<div class="aviso-sucesso" style="border-color: #34d399; color: #34d399;">✅ ' +
         _t('seguranca.secureboot_configurado_ok',
-           'Secure Boot está ativo e a chave do akmods já está <strong>enrolled no firmware</strong>. Os módulos assinados pelo FAP (NVIDIA, VirtualBox, Broadcom, Realtek, xpadneo, câmera virtual do OBS) carregam normalmente no boot. Nenhuma ação adicional é necessária.') +
+           'Secure Boot está ativo e a chave do akmods já está <strong>registrada no firmware</strong>. Os módulos assinados pelo FAP (NVIDIA, VirtualBox, Broadcom, Realtek, xpadneo, câmera virtual do OBS) carregam normalmente no boot. Nenhuma ação adicional é necessária.') +
         '</div>';
         return;
     }
 
     // ============================================================
-    // v1.5.6: AKMOD CARREGADO MAS CHAVE LOCAL NÃO ENROLLED
+    // v1.5.8: CHAVE ANTIGA ENROLLED, MAS `public_key.der` (ATUAL) NÃO
     // ============================================================
     //
-    // Caso o usuário tenha enrollado uma chave DIFERENTE da
-    // public_key.der local (chave do RPM Fusion direto, chave
-    // de outro HD/máquina, chave antiga), o `mokutil --test-key`
-    // local retorna "not enrolled", mas o driver funciona.
+    // Cenário: `kmodgenca -f` manual regenerou a chave, ou o
+    // usuário reinstalou o FAP sobre uma chave antiga. O firmware
+    // reconhece a chave ANTIGA, mas o FAP assina NOVOS akmods com
+    // a chave ATUAL (`public_key.der`), que NÃO está enrolled.
+    // Qualquer akmod novo instalado pelo FAP vai falhar no boot.
     //
-    // O FAP detecta isso via `_akmodCarregadoFora()`. Mostra um
-    // banner neutro (amarelo) em vez do painel completo — não é
-    // "enrollment necessário" para o que já está funcionando, só
-    // um aviso para quem for instalar outros akmods.
+    // Não fazemos `return` aqui. DOIS caminhos possíveis:
+    //
+    //   • Se `pending_import` estiver ativo: o bloco 3 (pending)
+    //     retorna ANTES com a mensagem COMBINADA (chave antiga +
+    //     chave nova importada + reboot pendente). O `notaHtml`
+    //     abaixo nunca é montado nesse caso — a mensagem do bloco 3
+    //     já explica os dois estados de forma integrada.
+    //
+    //   • Se `pending_import` NÃO estiver ativo: caímos nos steps
+    //     1-3 com o `notaHtml` amarelo prepended. O step 1 fica
+    //     escondido (`chaveLocal = true`), então o usuário vê só
+    //     steps 2-3 — que é o correto (a chave já existe, só
+    //     precisa enrolar).
+    if (mokEnrolled && _secureBootCurrentKeyNotEnrolled()) {
+        // Nota informativa — não retorna, cai no fluxo do html
+        // (SE `pendingImport` não interceptar antes).
+    }
+
+    // ============================================================
+    // v1.5.8: CHAVE IMPORTADA, REBOOT PENDENTE
+    // ============================================================
+    //
+    // `mokutil --import` rodado, mas o enrollment só acontece no
+    // próximo boot (MOK Management). Antes, o FAP mostrava
+    // "enrollment necessário" (step 2), mandando rodar `--import`
+    // de novo — que erra com "already imported". Agora mostramos
+    // a instrução correta: reiniciar e completar o MOK.
+    //
+    // Caso COMBINADO (v1.5.8, rodada 2): se ALÉM do pending_import,
+    // também há `current_key_not_enrolled` (chave antiga enrolled,
+    // `public_key.der` atual ainda não), a mensagem é enriquecida
+    // para explicar os DOIS estados. Sem isso, o usuário que rodou
+    // `kmodgenca -f` (regenerou a chave) ou reinstalou o FAP
+    // sobre uma chave antiga vê apenas "reinicie", sem saber que
+    // a chave antiga continua sendo a reconhecida até o próximo
+    // boot — e pode ficar confuso com o badge da chave antiga
+    // desaparecendo só depois do reboot.
+    if (chaveLocal && _secureBootPendingImport()) {
+        var chaveAntigaEnrolled = mokEnrolled && _secureBootCurrentKeyNotEnrolled();
+        if (chaveAntigaEnrolled) {
+            container.innerHTML =
+            '<div class="aviso-caixa" style="border-color: #f59e0b; color: #f59e0b;">' +
+            '<strong>' + _t('seguranca.secureboot_combined_titulo',
+                            '🔐 Chave nova importada — reinício pendente') + '</strong><br>' +
+                            _t('seguranca.secureboot_combined_desc',
+                               'O firmware reconhece uma chave <strong>antiga</strong> do akmods, mas o FAP assina NOVOS ' +
+                               'akmods com a chave <strong>atual</strong> (<code>/etc/pki/akmods/certs/public_key.der</code>), ' +
+                               'que foi importada com <code>mokutil --import</code> e aguarda o <strong>próximo boot</strong> ' +
+                               'para ser efetivada. ' +
+                               'Reinicie o computador e complete a tela azul do <strong>MOK Management</strong> ' +
+                               '("Enroll MOK" → "Continue" → "Yes"). ' +
+                               'Depois do reboot, esta mensagem deve desaparecer — a chave atual será a reconhecida pelo ' +
+                               'firmware, e novos akmods do FAP carregarão normalmente no boot.') +
+                            '</div>';
+                            return;
+        }
+
+        container.innerHTML =
+        '<div class="aviso-caixa" style="border-color: #f59e0b; color: #f59e0b;">' +
+        '<strong>' + _t('seguranca.secureboot_pending_import_titulo',
+                        '🔐 Chave importada — reinício pendente') + '</strong><br>' +
+                        _t('seguranca.secureboot_pending_import_desc',
+                           'A chave do akmods foi importada com <code>mokutil --import</code>, mas o registro no firmware ' +
+                           'só acontece no <strong>próximo boot</strong>. Reinicie o computador e complete a tela azul do ' +
+                           '<strong>MOK Management</strong> ("Enroll MOK" → "Continue" → "Yes"). ' +
+                           'Depois do reboot, volte aqui para confirmar — esta mensagem deve desaparecer.') +
+                        '</div>';
+                        return;
+    }
+
+    // ============================================================
+    // v1.5.6: AKMOD CARREGADO MAS CHAVE LOCAL NÃO ENROLLED
+    // ============================================================
     var akmodFora = _akmodCarregadoFora();
     if (akmodFora) {
         var modNome = akmodFora.modulo;
@@ -1763,15 +1934,55 @@ function _renderizarPainelSecureBoot(container, estado) {
         container.innerHTML =
         '<div class="aviso-caixa" style="border-color: #f59e0b; color: #f59e0b;">' +
         '<strong>⚠️ ' + _t('seguranca.secureboot_akmod_carregado_titulo',
-                           'Chave local do akmods não está enrolled') + '</strong><br>' +
+                           'Chave local do akmods não está registrada') + '</strong><br>' +
                            _tVars('seguranca.secureboot_akmod_carregado_desc',
-                                  'O módulo <code>{modulo}</code> está carregado e funcionando, o que significa que ALGUMA chave akmods está enrolled no firmware. Mas a chave local do FAP (<code>/etc/pki/akmods/certs/public_key.der</code>) NÃO está enrolled. Se você for instalar outros akmods pelo FAP (VirtualBox, Broadcom, Realtek, xpadneo, câmera virtual do OBS), precisa fazer o enrollment da chave local em <strong>{sessao}</strong> → <strong>Secure Boot</strong>. Se for continuar só com o que já tem, pode ignorar este aviso.',
+                                  'O módulo <code>{modulo}</code> está carregado e funcionando, o que significa que ALGUMA chave akmods está registrada no firmware. Mas a chave local do FAP (<code>/etc/pki/akmods/certs/public_key.der</code>) NÃO está registrada. Se você for instalar outros akmods pelo FAP (VirtualBox, Broadcom, Realtek, xpadneo, câmera virtual do OBS), precisa fazer o registro da chave local em <strong>{sessao}</strong> → <strong>Secure Boot</strong>. Se for continuar só com o que já tem, pode ignorar este aviso.',
                                   { modulo: modNome, sessao: nomeSessaoSb }) +
                            '</div>';
         return;
     }
 
-    var html = '';
+    // ============================================================
+    // v1.5.8: CHAVE AKMODS DE OUTRA FONTE ENROLLED, MAS A LOCAL NÃO
+    // ============================================================
+    //
+    // Cenário: usuário instalou o driver NVIDIA pelo RPM Fusion
+    // direto (`kmodgenca` sem o FAP), ou trouxe a chave de outro
+    // HD. `mokutil --list-enrolled` mostra um cert com "akmods"
+    // no subject, mas não em `/etc/pki/akmods/certs/`.
+    //
+    // A `notaHtml` é prepended no `var html = ...` abaixo. Não
+    // faz `return` — o usuário ainda precisa enrolar a chave
+    // local para instalar akmods novos pelo FAP.
+    var notaHtml = '';
+
+    if (mokEnrolled && _secureBootCurrentKeyNotEnrolled()) {
+        notaHtml =
+        '<div class="aviso-caixa" style="border-color: #f59e0b; color: #f59e0b; margin-bottom: 1rem;">' +
+        '<strong>' + _t('seguranca.secureboot_old_key_nota_titulo',
+                        '⚠️ Chave antiga do akmods está registrada, mas a atual do FAP não') + '</strong><br>' +
+                        _t('seguranca.secureboot_old_key_nota_desc',
+                           'O firmware reconhece uma chave antiga, mas o FAP assina NOVOS akmods com a chave atual (' +
+                           '<code>/etc/pki/akmods/certs/public_key.der</code>), que ainda não foi registrada. ' +
+                           'Se você instalar qualquer <code>akmod-*</code> novo pelo FAP, ele <strong>não vai carregar no boot</strong>. ' +
+                           'Registre a chave atual seguindo os passos abaixo antes de instalar qualquer akmod.' +
+                           '<br><br>' +
+                           'ℹ️ <strong>Não precisa rodar "Preparar Secure Boot" de novo</strong> — a chave já existe. ' +
+                           'Pule direto para o passo 2.') +
+                        '</div>';
+    } else if (_secureBootOutrasChavesAkmos() && !mokEnrolled) {
+        notaHtml =
+        '<div class="aviso-caixa" style="border-color: #f59e0b; color: #f59e0b; margin-bottom: 1rem; font-size: 0.85rem;">' +
+        _t('seguranca.secureboot_other_keys_nota',
+           'ℹ️ <strong>Chave akmods de outra fonte já está registrada no firmware.</strong> ' +
+           'Os módulos assinados por ela continuam funcionando. ' +
+           'Mas o FAP assina os próprios akmods com a chave local (<code>/etc/pki/akmods/certs/public_key.der</code>), ' +
+           'que precisa ser registrada separadamente para que os akmods do FAP carreguem no boot. ' +
+           'Siga os passos abaixo para registrar a chave do FAP — o firmware aceita múltiplas chaves sem conflito.') +
+        '</div>';
+    }
+
+    var html = notaHtml;
 
     // ============================================================
     // VERIFICAÇÃO INDETERMINADA: chave existe, mas o mokutil não
@@ -1791,10 +2002,10 @@ function _renderizarPainelSecureBoot(container, estado) {
     _secureBootMokCache.enrolled === null;
     if (mokIndeterminado) {
         html += '<div class="aviso-caixa" style="border-color: #f59e0b; color: #f59e0b; margin-bottom: 1rem;">';
-        html += '<strong>⚠️ Não foi possível verificar se a chave do akmods está enrolled no firmware.</strong><br>';
+        html += '<strong>⚠️ Não foi possível verificar se a chave do akmods está registrada no firmware.</strong><br>';
         html += '<span style="font-size: 0.85rem;">O arquivo <code>/etc/pki/akmods/certs/public_key.der</code> existe, mas o <code>mokutil --test-key</code> não retornou um resultado conclusivo. ';
         html += 'Isso pode acontecer por uma falha transitória (D-Bus, efivars). ';
-        html += 'Se você já fez o enrollment, pode ignorar este aviso. ';
+        html += 'Se você já fez o registro, pode ignorar este aviso. ';
         html += 'Caso contrário, siga os passos abaixo.</span>';
         if (_secureBootMokCache.erro) {
             html += '<div style="margin-top: 0.5rem; font-size: 0.75rem; color: var(--text-muted);">Detalhe: <code>' +
@@ -1810,7 +2021,7 @@ function _renderizarPainelSecureBoot(container, estado) {
     html += '<strong>🔐 ' + _t('seguranca.secureboot_titulo',
                                'Secure Boot está ativo') + '</strong><br>';
                                html += _t('seguranca.secureboot_desc',
-                                          'Vários pacotes do FAP compilam módulos de kernel localmente pelo <code>akmods</code> (driver NVIDIA, VirtualBox, Broadcom, Realtek, xpadneo, câmera virtual do OBS). Todos são assinados com a MESMA chave, gerada por <code>kmodgenca</code>. Essa chave precisa ser enrolled no firmware ANTES de instalar qualquer um deles — sem isso, o módulo não carrega no boot. O processo abaixo NÃO desativa o Secure Boot; apenas registra a chave.');
+                                          'Vários pacotes do FAP compilam módulos de kernel localmente pelo <code>akmods</code> (driver NVIDIA, VirtualBox, Broadcom, Realtek, xpadneo, câmera virtual do OBS). Todos são assinados com a MESMA chave, gerada por <code>kmodgenca</code>. Essa chave precisa ser registrada no firmware ANTES de instalar qualquer um deles — sem isso, o módulo não carrega no boot. O processo abaixo NÃO desativa o Secure Boot; apenas registra a chave.');
                                html += '</div>';
 
                                if (!chaveLocal) {
@@ -1819,7 +2030,7 @@ function _renderizarPainelSecureBoot(container, estado) {
                                                            'Passo 1 — preparar a chave') + '</strong>';
                                                            html += '<p style="margin: 0.4rem 0 0.75rem 0; font-size: 0.85rem; color: var(--text-muted);">' +
                                                            _t('seguranca.secureboot_passo1_desc',
-                                                              'Instala as ferramentas do <code>akmods</code> e gera a chave local em <code>/etc/pki/akmods/certs/</code>. Não altera o firmware ainda — o enrollment vem no passo 2.') + '</p>';
+                                                              'Instala as ferramentas do <code>akmods</code> e gera a chave local em <code>/etc/pki/akmods/certs/</code>. Não altera o firmware ainda — o registro vem no passo 2.') + '</p>';
                                                               html += '<div class="botoes-flex">';
                                                               // `data-comando` + `data-logbox` são OBRIGATÓRIOS: sem eles,
                                                               // `_getLogBox('nvidia-secureboot-prepare')` retorna null e
@@ -1843,7 +2054,7 @@ function _renderizarPainelSecureBoot(container, estado) {
                                } else {
                                    html += '<div class="aviso-sucesso" style="border-color: #34d399; color: #34d399;">✅ ' +
                                    _t('seguranca.secureboot_chave_ok',
-                                      'A chave do akmods já foi gerada. Falta o enrollment no firmware (passo 2).') +
+                                      'A chave do akmods já foi gerada. Falta o registro no firmware (passo 2).') +
                                    '</div>';
                                }
 
@@ -1859,7 +2070,7 @@ function _renderizarPainelSecureBoot(container, estado) {
 
                                                           html += '<div class="bloco-info" style="border-left-color: #a855f7;">';
                                                           html += '<strong>' + _t('seguranca.secureboot_passo3',
-                                                                                  'Passo 3 — reiniciar e fazer o enrollment') + '</strong>';
+                                                                                  'Passo 3 — reiniciar e fazer o registro') + '</strong>';
                                                                                   html += '<p style="margin: 0.4rem 0 0 0; font-size: 0.85rem; color: var(--text-muted);">' +
                                                                                   _t('seguranca.secureboot_passo3_desc',
                                                                                      'Reinicie o computador. Na tela azul do MOK Management, escolha "Enroll MOK" → "Continue" → "Yes", digite a senha que você definiu no passo 2 e finalize. ATENÇÃO: o teclado do MOK é sempre QWERTY, mesmo que o seu layout seja ABNT2. Depois disso, você pode instalar qualquer <code>akmod-*</code> normalmente.') +
@@ -1878,22 +2089,115 @@ function _renderizarBadgeSecureBoot(container, estado, contexto) {
         return;
     }
 
+    // v1.5.8: mesma fonte primária do `_renderizarPainelSecureBoot`
+    // (ver comentário lá). `_secureBootMokCache.chave_gerada` (do
+    // `/hardware-scan`) tem precedência; `SystemState.arquivoPresente()`
+    // só é usado como fallback quando o cache ainda não está populado.
     var chaveLocal = false;
-    try { chaveLocal = SystemState.arquivoPresente('/etc/pki/akmods/certs/public_key.der'); } catch (e) {}
+    if (_secureBootMokCache && typeof _secureBootMokCache.chave_gerada === 'boolean') {
+        chaveLocal = _secureBootMokCache.chave_gerada;
+    } else {
+        try { chaveLocal = SystemState.arquivoPresente('/etc/pki/akmods/certs/public_key.der'); } catch (e) {}
+    }
     var mokEnrolled = _mokEnrolled();
 
-    // Enrollment concluído: nada a fazer, nada a mostrar. O badge
-    // some — o Secure Boot está configurado corretamente e os
-    // módulos do akmods carregam sem intervenção.
-    if (mokEnrolled) {
+    // Enrollment concluído E chave atual é a enrolled: badge some.
+    if (mokEnrolled && chaveLocal && !_secureBootCurrentKeyNotEnrolled()) {
         container.innerHTML = '';
         return;
     }
 
-    // v1.5.6: akmod carregado mas chave local não enrolled.
-    // Mostra aviso neutro (não vermelho) — o driver funciona,
-    // mas a chave local não está enrolled. Se o usuário for
-    // instalar outros akmods, precisa enrollar.
+    // ============================================================
+    // v1.5.8 (rodada 3) — ORDEM CORRETA
+    // ============================================================
+    //
+    // A v1.5.8 original colocava o caso "chave antiga enrolled"
+    // ANTES do caso "pending_import + chave antiga" — como o
+    // primeiro fazia `return` incondicional, o caso COMBINADO
+    // (texto `secureboot_badge_pending_import_combined`) nunca
+    // disparava no badge. O painel (`_renderizarPainelSecureBoot`)
+    // funcionava porque lá o "nota" não fazia `return`.
+    //
+    // Ordem de prioridade (mais específico → mais genérico):
+    //   1. pending_import + chave antiga enrolled → combinado
+    //   2. pending_import (sozinho)               → "reinicie"
+    //   3. enrolled: null (mokutil falhou)         → "verificar"
+    //   4. chave antiga enrolled (sem pending)     → "enrole atual"
+    //   5. outras chaves akmods enrolled           → nota
+    //   6. akmod carregado (evidência)             → banner neutro
+    //   7. chaveLocal                              → verde/vermelho
+    if (chaveLocal && _secureBootPendingImport()) {
+        var chaveAntigaEnrolledBadge = mokEnrolled && _secureBootCurrentKeyNotEnrolled();
+        if (chaveAntigaEnrolledBadge) {
+            container.innerHTML =
+            '<div class="aviso-caixa" style="margin: 0 0 1rem 0; font-size: 0.85rem; border-color: #f59e0b; color: #f59e0b;">' +
+            _t('seguranca.secureboot_badge_pending_import_combined',
+               '⏳ Chave <strong>antiga</strong> do akmods está registrada no firmware. A chave <strong>atual</strong> foi importada ' +
+               'e aguarda <strong>reinicialização</strong> + MOK Management para ser efetivada. ' +
+               'Enquanto isso, novos akmods do FAP não carregarão no boot.') +
+            '</div>';
+            return;
+        }
+
+        container.innerHTML =
+        '<div class="aviso-caixa" style="margin: 0 0 1rem 0; font-size: 0.85rem; border-color: #f59e0b; color: #f59e0b;">' +
+        _t('seguranca.secureboot_badge_pending_import',
+           '⏳ Chave do akmods importada. <strong>Reinicie</strong> o computador e complete o MOK Management ' +
+           '(tela azul) para efetivar o registro.') +
+        '</div>';
+        return;
+    }
+
+    // v1.5.8 (rodada 3): enrolled === null (mokutil falhou).
+    // Badge amarelo neutro — NÃO usar vermelho "registro
+    // necessário" (falso positivo em falha transitória de D-Bus).
+    var mokIndeterminadoBadge = chaveLocal &&
+    _secureBootMokCache &&
+    _secureBootMokCache.enrolled === null;
+    if (mokIndeterminadoBadge) {
+        var nomeSessaoSbIndet = _t('sessoes.estado-fedora.nome', 'Estado do Fedora');
+        container.innerHTML =
+        '<div class="aviso-caixa" style="margin: 0 0 1rem 0; font-size: 0.85rem; border-color: #f59e0b; color: #f59e0b;">' +
+        '⚠️ <strong>Não foi possível verificar se a chave do akmods está registrada no firmware.</strong> ' +
+        'O <code>mokutil --test-key</code> falhou. Se você já fez o registro, pode ignorar. ' +
+        'Caso contrário, verifique manualmente em <strong>' +
+        _escapeHTML(nomeSessaoSbIndet) + '</strong> → <strong>Secure Boot</strong>.' +
+        '</div>';
+        return;
+    }
+
+    // v1.5.8: chave ANTIGA registrada no firmware, `public_key.der` (atual) não.
+    if (mokEnrolled && _secureBootCurrentKeyNotEnrolled()) {
+        var nomeSessaoSbOldKey = _t('sessoes.estado-fedora.nome', 'Estado do Fedora');
+        container.innerHTML =
+        '<div class="aviso-caixa" style="margin: 0 0 1rem 0; font-size: 0.85rem; border-color: #f59e0b; color: #f59e0b;">' +
+        _tVars('seguranca.secureboot_badge_old_key',
+               '⚠️ Chave antiga do akmods está registrada no firmware, mas a atual do FAP não. ' +
+               'Antes de instalar akmods novos, registre a chave atual em <strong>{sessao}</strong> → <strong>Secure Boot</strong>.',
+               { sessao: nomeSessaoSbOldKey }) +
+        '</div>';
+        return;
+    }
+
+    // v1.5.8 (rodada 3): chave akmods de outra fonte registrada no
+    // firmware, mas a local não. Banner informativo — NÃO é erro
+    // (os módulos assinados pela outra chave funcionam), mas o
+    // usuário precisa saber que novos akmods do FAP vão falhar no boot.
+    if (_secureBootOutrasChavesAkmos() && !mokEnrolled) {
+        var nomeSessaoSbOutras = _t('sessoes.estado-fedora.nome', 'Estado do Fedora');
+        container.innerHTML =
+        '<div class="aviso-caixa" style="margin: 0 0 1rem 0; font-size: 0.85rem; border-color: #f59e0b; color: #f59e0b;">' +
+        _tVars('seguranca.secureboot_badge_other_keys',
+               'ℹ️ Chave akmods de outra fonte já está registrada no firmware. ' +
+               'Os módulos assinados por ela continuam funcionando. ' +
+               'Mas o FAP assina os próprios akmods com a chave local, que precisa ser registrada em ' +
+               '<strong>{sessao}</strong> → <strong>Secure Boot</strong> para que os akmods do FAP carreguem no boot.',
+               { sessao: nomeSessaoSbOutras }) +
+        '</div>';
+        return;
+    }
+
+    // v1.5.6: akmod carregado mas chave local não registrada.
     var akmodFora = _akmodCarregadoFora();
     if (akmodFora) {
         var modNomeFora = akmodFora.modulo;
@@ -1901,7 +2205,7 @@ function _renderizarBadgeSecureBoot(container, estado, contexto) {
         container.innerHTML =
         '<div class="aviso-caixa" style="margin: 0 0 1rem 0; font-size: 0.85rem; border-color: #f59e0b; color: #f59e0b;">' +
         '⚠️ ' + _tVars('seguranca.secureboot_badge_akmod_carregado',
-                       'O módulo <code>{modulo}</code> está funcionando, mas a chave local do FAP não está enrolled. Se for instalar outros akmods pelo FAP, complete o enrollment em <strong>{sessao}</strong> → <strong>Secure Boot</strong>.',
+                       'O módulo <code>{modulo}</code> está funcionando, mas a chave local do FAP não está registrada. Se for instalar outros akmods pelo FAP, complete o registro em <strong>{sessao}</strong> → <strong>Secure Boot</strong>.',
                        { modulo: modNomeFora, sessao: nomeSessaoSbFora }) +
         '</div>';
         return;
@@ -1921,11 +2225,11 @@ function _renderizarBadgeSecureBoot(container, estado, contexto) {
     var ctxTraduzido = _secureBootCtxTraduzido(contexto);
 
     if (chaveLocal) {
-        // Chave já gerada — badge verde apontando para o enrollment.
+        // Chave já gerada — badge verde apontando para o registro.
         container.innerHTML =
         '<div class="aviso-sucesso" style="margin: 0 0 1rem 0; font-size: 0.85rem;">✅ ' +
         _tVars('seguranca.secureboot_badge_ok',
-               'Secure Boot ativo — chave do akmods já preparada. Se ainda não fez o enrollment, complete em <strong>{sessao}</strong>.',
+               'Secure Boot ativo — chave do akmods já preparada. Se ainda não fez o registro, complete em <strong>{sessao}</strong>.',
                { sessao: nomeSessaoSb }) +
         ' <a href="?session=estado-fedora" style="color: inherit; font-weight: bold; text-decoration: underline;">→</a>' +
         '</div>';
@@ -1938,9 +2242,9 @@ function _renderizarBadgeSecureBoot(container, estado, contexto) {
     container.innerHTML =
     '<div class="aviso-caixa" style="margin: 0 0 1rem 0; font-size: 0.85rem; border-color: #ef4444; color: #ef4444;">' +
     '<strong>🔐 ' + _t('seguranca.secureboot_badge_titulo',
-                       'Secure Boot ativo — enrollment necessário') + '</strong><br>' +
+                       'Secure Boot ativo — registro necessário') + '</strong><br>' +
                        _tVars('seguranca.secureboot_badge_desc',
-                              'Antes de instalar {ctx}, prepare a chave do akmods e faça o enrollment no firmware. Sem isso, o módulo não carrega no próximo boot. O passo a passo completo está em <strong>{sessao}</strong> → <strong>Secure Boot</strong>.',
+                              'Antes de instalar {ctx}, prepare a chave do akmods e faça o registro no firmware. Sem isso, o módulo não carrega no próximo boot. O passo a passo completo está em <strong>{sessao}</strong> → <strong>Secure Boot</strong>.',
                               { ctx: ctxTraduzido, sessao: nomeSessaoSb }) +
                        '</div>';
 }
@@ -2453,23 +2757,41 @@ async function _sincronizarEstadoFlatpaks() {
         await SystemState.carregar();
 
         // ============================================================
-        // GUARD DE ESTADO CONFIÁVEL (v1.5.0, auditoria)
+        // GUARD DE ESTADO CONFIÁVEL (v1.5.0, auditoria; expandido v1.5.8)
         // ============================================================
         //
         // Se `SystemState.carregar` falhou (rede caiu, /system-state
-        // retornou erro), `_dados` fica `null` no `catch`. O
-        // `cacheIdade()` devolve `Infinity`, que NÃO é `< 10s`, então
-        // o guard de cache fresco abaixo NÃO pula. O loop então vê
-        // `flatpakInstalado()` = false para todos, e desmarca em
-        // massa tudo que o usuário instalou via FAP.
+        // retornou erro), `_dados` pode ficar em DOIS estados
+        // diferentes:
         //
-        // Guard: se `bruto()` é null/vazio (sem `flatpaks_installed`),
-        // NÃO sincroniza. Só quando os dados são confiáveis.
+        //   1. `null` — o `catch` do `carregar` limpou o estado
+        //      (fetch rejeitou com erro de rede ou HTTP != 2xx).
+        //      `cacheIdade()` devolve `Infinity`, que NÃO é `< 10s`,
+        //      então o guard de cache fresco abaixo NÃO pula.
+        //
+        //   2. Objeto com arrays vazios + campo `error` — o
+        //      server.js respondeu 200 com
+        //      `{ flatpaks_installed: [], error: "..." }` no catch
+        //      do handler `/system-state`. O array vazio É
+        //      `Array.isArray` válido, então o guard original
+        //      passava — e o loop de "removidos" desmarcava em
+        //      massa todos os flatpaks instalados via FAP (perda
+        //      de estado no `.progresso.json`).
+        //
+        // Guard corrigido: rejeita os DOIS casos. Sem o segundo,
+        // uma falha transitória de `/system-state` (RPM DB lock,
+        // timeout no `flatpak list`, `dnf repolist` quebrado)
+        // apagava o progresso do usuário — bug reportado na
+        // auditoria v1.5.8.
         var bruto = (typeof SystemState.bruto === 'function')
         ? SystemState.bruto()
         : null;
         if (!bruto || !Array.isArray(bruto.flatpaks_installed)) {
             console.log('[Flatpak] sync pulado: SystemState indisponível');
+            return;
+        }
+        if (typeof bruto.error === 'string' && bruto.error.length > 0) {
+            console.log('[Flatpak] sync pulado: /system-state retornou erro:', bruto.error);
             return;
         }
 
@@ -3509,7 +3831,8 @@ var _MAPA_MOTIVO_BLOQUEIO = {
     'samba-install':            'mitigacao.samba_install',
     'qemu-kvm-install':         'mitigacao.qemu_kvm_install',
     'virtualbox-install':       'mitigacao.virtualbox_install',
-    'gnome-boxes-install':      'mitigacao.gnome_boxes_install'
+    'gnome-boxes-install':      'mitigacao.gnome_boxes_install',
+    'instalar-firefox':         'mitigacao.firefox_preexistente'
 };
 
 function _traduzirMotivoBloqueio(idInstall, info) {
@@ -3783,24 +4106,23 @@ async function _executarRemocaoApp(idComando) {
     var info = APPS_REMOVIVEIS[idComando];
     if (!info) return;
 
-    // Garante que o estado do sistema está FRESCO antes de decidir
-    // "instalado vs não instalado". Invalidar primeiro é crítico:
-    // se o cache de 60s já tem os dados, `carregar()` retorna o
-    // cache e uma remoção externa recente (fora do FAP) faria o
-    // FAP tentar remover algo que já não existe.
-    if (typeof SystemState !== 'undefined') {
-        try {
-            SystemState.invalidar();
-            // `true` força o server a invalidar o cache de 60s do
-            // `system-state-service.js`. Sem isso, uma remoção
-            // externa recente (fora do FAP) seria mascarada pelo
-            // cache do servidor, e o FAP tentaria remover algo
-            // que já não existe (ou bloquearia por falso-positivo
-            // de `instaladoNoSistema`).
-            await SystemState.carregar(true);
-        } catch (e) { /* ignore */ }
-    }
-
+    // ============================================================
+    // DECISÃO RÁPIDA (SEM I/O) ANTES DO CONFIRM
+    // ============================================================
+    //
+    // O `SystemState.carregar(true)` ANTIGO ficava AQUI, antes do
+    // `confirm`. Ele faz `fetch('/system-state?refresh=1')`, que
+    // re-roda 10 comandos no servidor (dnf repolist, rpm -qa,
+    // flatpak list, systemctl is-active × 6, etc.) — 1-2s de
+    // delay ANTES do popup de confirmação aparecer. Perceptível
+    // e reportado em teste.
+    //
+    // Correção: usar APENAS dados já disponíveis em memória para
+    // os checks pré-confirm (`marcadoPeloFap` do `.progresso.json`
+    // local, `instaladoNoSistema` do cache do `SystemState`,
+    // `visualDizInstalado` do DOM). O refresh de verdade só
+    // acontece DEPOIS do `confirm`, onde é realmente necessário
+    // (filtro de pacotes do `dnf remove`).
     var marcadoPeloFap = isExecutado(idComando);
     var instaladoNoSistema = false;
     try {
@@ -3813,10 +4135,6 @@ async function _executarRemocaoApp(idComando) {
     // `aplicarEstadoInstalavel` marcou `data-estado` como
     // "instalado-*", foi porque `isExecutado` ou
     // `appJaInstaladoNoSistema` retornou `true` em algum momento.
-    // Uma nova consulta pode retornar `false` por race condition
-    // (cache invalidado, rede), e nesse caso é melhor tentar a
-    // remoção e mostrar o erro real no log do que bloquear com um
-    // alerta enganoso.
     var btnInstall = document.getElementById('btn-' + idComando);
     var estadoVisual = btnInstall ? btnInstall.getAttribute('data-estado') : null;
     var visualDizInstalado = estadoVisual === 'instalado-abrir' || estadoVisual === 'instalado-sem-abrir';
@@ -3846,6 +4164,29 @@ async function _executarRemocaoApp(idComando) {
     }
     if (!confirm(msg)) return;
 
+    // ============================================================
+    // REFRESH DE ESTADO (SÓ PARA O FILTRO `pacotesInstalados`)
+    // ============================================================
+    //
+    // Depois do `confirm`, precisamos do estado REAL dos pacotes
+    // para filtrar `info.pacotes` antes de montar o `dnf remove`
+    // (Fix da rodada anterior). Apenas `dnf` sem `comandoRemocao`
+    // custom precisa disso:
+    //   • `flatpak` não usa o filtro (o `flatpak uninstall` é
+    //     idempotente e já devolve erro claro).
+    //   • `comandoRemocao` custom é responsabilidade do autor
+    //     (cada um checa `rpm -q` / `test -f` internamente).
+    var precisaRefreshDnf = info.tipo === 'dnf' &&
+    !info.comandoRemocao &&
+    Array.isArray(info.pacotes) &&
+    info.pacotes.length > 0;
+    if (precisaRefreshDnf && typeof SystemState !== 'undefined') {
+        try {
+            SystemState.invalidar();
+            await SystemState.carregar(true);
+        } catch (e) { /* ignore */ }
+    }
+
     var comando, idRemocao;
 
     if (info.comandoRemocao) {
@@ -3857,13 +4198,35 @@ async function _executarRemocaoApp(idComando) {
         comando = 'flatpak uninstall -y ' + info.appId;
         idRemocao = idComando + '-revert';
     } else if (info.tipo === 'dnf') {
-        var pacotes = info.pacotes.join(' ');
-        // `--skip-broken` (v1.5.1): faz o `dnf remove` ignorar
-        // pacotes da lista que não estão instalados. Sem isso,
-        // um item como `kmod-v4l2loopback` (que o FAP não instala,
-        // só o `akmod-`) derruba o comando com "No match for
-        // argument" e o botão não volta para "Instalar".
-        comando = 'sudo dnf remove -y --skip-broken ' + pacotes;
+        // Filtra os pacotes que estão DE FATO instalados antes de
+        // montar o `dnf remove`. Motivos:
+        //
+        //   1. O `--skip-broken` (v1.5.1) NÃO ignora "pacote não
+        //      instalado" no DNF5 — é alias de `strict=0` para
+        //      depsolve. Ele pode ser rejeitado pelo subcomando
+        //      `remove` no DNF5 (Fedora 45), causando "Argumento
+        //      desconhecido". Removido.
+        //
+        //   2. Itens como `obs-cam` registram `pacotes:
+        //      ['akmod-v4l2loopback', 'v4l-utils']` — mas o
+        //      usuário pode ter instalado só um dos dois. Filtrar
+        //      evita "No match for argument" no DNF5.
+        //
+        //   3. Se sobrar zero pacotes, o alerta "não instalado" é
+        //      mais claro que o erro do dnf.
+        var pacotesInstalados = (info.pacotes || []).filter(function(p) {
+            try { return SystemState.pacoteInstalado(p); } catch (e) { return true; }
+        });
+        if (pacotesInstalados.length === 0) {
+            alert(_tVars('comum.nao_instalado', '{nome} não está instalado.',
+                         { nome: info.nome || idComando }));
+            _liberarSessao(idComando);
+            _liberarOutrasSessoes();
+            _atualizarBloqueioNavegacao();
+            return;
+        }
+        var pacotes = pacotesInstalados.join(' ');
+        comando = 'sudo dnf remove -y ' + pacotes;
 
         if (Array.isArray(info.reposRemover) && info.reposRemover.length > 0) {
             var repos = info.reposRemover.join(' ');
@@ -3932,6 +4295,14 @@ async function _executarRemocaoApp(idComando) {
                 logBox.appendChild(errorLine2);
                 logBox.scrollTop = logBox.scrollHeight;
             }
+            // Libera a sessão e as outras, senão os botões ficam
+            // bloqueados permanentemente (o `catch` cobre exceções,
+            // mas o `sucesso === false` é um retorno limpo do
+            // `aguardarConclusaoReal` — sem isso, o `return` deixa
+            // `_bloquearSessao` ativo).
+            _liberarSessao(idComando);
+            _liberarOutrasSessoes();
+            _atualizarBloqueioNavegacao();
             return;
         }
 
@@ -3950,7 +4321,14 @@ async function _executarRemocaoApp(idComando) {
         // `null` no segundo argumento: o "Abrir X" vem do registry
         // (o `<button class="verde">` não existe mais no DOM desde
         // a Rodada 2B).
-        aplicarEstadoInstalavel(idComando, null, idComando);
+        //
+        // Terceiro argumento = `idRemocao` (a variável calculada acima),
+        // NÃO `idComando`. `idRemocao` é `_idRemocaoDe(idComando)` para
+        // DNF, ou `idComando + '-revert'` para Flatpak. Passar `idComando`
+        // fazia `_mostrarLixeira` setar `data-comando-remover="<idComando>"`
+        // — metadata errada que passaria despercebida até um refactor
+        // reutilizar `idRem` no branch `else`.
+        aplicarEstadoInstalavel(idComando, null, idRemocao);
 
         if (logBox) {
             var successLine = document.createElement('div');
@@ -4148,6 +4526,26 @@ document.addEventListener('keydown', function(e) {
 // ============================================================
 
 var _MAPA_ORIGEM = {
+    // ============================================================
+    // CRITÉRIO DE EXIBIÇÃO DO BADGE
+    // ============================================================
+    //
+    // Só comandos cujo botão está dentro de um `.btn-flatpak-wrapper`
+    // no HTML da sessão exibem o quadrado colorido de origem
+    // (`_renderizarBadgeOrigem` retorna cedo se não houver wrapper —
+    // evita re-layout em botões de sistema).
+    //
+    // Entradas daqui que NÃO têm wrapper no HTML são "semânticas":
+    // servem de consulta (via `_origemDoApp(id)`) e para o popover
+    // (`_abrirPopoverOrigem`), mas nunca renderizam badge visual.
+    // Exemplos: codecs-essenciais, vulkan-amd, intel-media-install.
+    //
+    // Se quiser que o badge apareça em mais sessões, envolva o
+    // `<button>` num `<div class="btn-flatpak-wrapper">` no HTML
+    // da sessão. Não altere `_renderizarBadgeOrigem` para criar
+    // wrapper on-the-fly — quebra o layout de botões pensados
+    // sem badge.
+
     // ---- Sessão 2 ----
     'codecs-essenciais': 'rpmfusion',
     'extras-tainted': 'rpmfusion',
@@ -4199,6 +4597,7 @@ var _MAPA_ORIGEM = {
     'instalar-kdenlive': 'flathub',
     'instalar-shotcut': 'flathub',
     'instalar-openshot': 'flathub',
+    'instalar-avidemux': 'flathub',
     'instalar-drift': 'flathub',
     'instalar-blender': 'flathub',
     'instalar-audacity': 'flathub',
@@ -4215,7 +4614,6 @@ var _MAPA_ORIGEM = {
     'instalar-darktable': 'fedora',
     'instalar-librecad': 'fedora',
     'instalar-pitivi': 'fedora',
-    'instalar-avidemux': 'fedora',
     'instalar-ardour': 'fedora',
     'instalar-lmms': 'fedora',
     'instalar-chromium': 'fedora',
@@ -4487,7 +4885,30 @@ function _renderizarBadgesFixas() {
 var _popoverAtual = null;
 var _popoverAnchorBadge = null;
 
+// IDs cujo comando de instalação NÃO é reproduzível por
+// `sudo dnf install -y <pkg>`:
+//   • APPS_URL_RPM (RustDesk, Lightworks, Rclone Manager,
+//     ArtCraft Launcher): a URL exata do RPM é resolvida em
+//     runtime via GitHub Releases API.
+//   • APPS_RPM_REPO (Brave, Vivaldi, Edge): depende de configurar
+//     o `.repo` do fabricante primeiro (`dnf config-manager
+//     addrepo --from-repofile=...`).
+//
+// Para esses, `_comandoInstalacaoDoApp` retorna `null` e o popover
+// omite o campo "Comando exato" (em vez de mostrar um comando
+// que o usuário não consegue reproduzir).
+var _COMANDOS_NAO_DETERMINISTICOS = {
+    'instalar-rustdesk': true,
+    'instalar-lightworks': true,
+    'instalar-rclone-manager': true,
+    'instalar-artcraft-launcher': true,
+    'instalar-brave': true,
+    'instalar-vivaldi': true,
+    'instalar-edge': true
+};
+
 function _comandoInstalacaoDoApp(idComando) {
+    if (_COMANDOS_NAO_DETERMINISTICOS[idComando]) return null;
     var info = APPS_REMOVIVEIS[idComando];
     if (!info) return null;
     if (info.motivoBloqueio) return null;
@@ -4813,80 +5234,10 @@ async function _refreshEstadoSessao() {
 // CARD DE STATUS NA LANDING
 // ============================================================
 
-var _GRUPOS_LANDING = {
-    'geral': {
-        label: 'Uso geral',
-        sessoes: ['primeiros-passos', 'codecs', 'casa-escritorio', 'virtualizacao', 'ajustes-manutencao']
-    },
-    'gaming': {
-        label: 'Gaming',
-        sessoes: ['gaming']
-    },
-    'producao': {
-        label: 'Produção',
-        sessoes: ['producao-multimidia', 'aplicativos']
-    },
-    'seguranca': {
-        label: 'Segurança',
-        sessoes: ['hardware', 'dispositivos-perifericos', 'diagnostico', 'estado-fedora']
-    }
-};
-
-async function _renderizarCardStatus() {
-    var container = document.getElementById('card-status');
-    if (!container) return;
-
-    try {
-        await getProgress();
-        await SystemState.carregar();
-    } catch (e) {
-        // SystemState indisponível: esconde as barras. O texto
-        // descritivo (fora do #card-status) continua visível.
-        container.hidden = true;
-        return;
-    }
-
-    var na = _sessoesNA();
-    var totalSteps = 0, doneSteps = 0;
-    var barrasHtml = '';
-
-    Object.keys(_GRUPOS_LANDING).forEach(function(key) {
-        var grupo = _GRUPOS_LANDING[key];
-        var sessoesValidas = grupo.sessoes.filter(function(id) { return na.indexOf(id) === -1; });
-        var total = 0, feitos = 0;
-        sessoesValidas.forEach(function(id) {
-            var c = _contagemSessao(id);
-            total += c.total;
-            feitos += c.feitos;
-        });
-        totalSteps += total;
-        doneSteps += feitos;
-
-        var pct = total > 0 ? Math.round((feitos / total) * 100) : 0;
-        var completo = pct >= 100;
-
-        barrasHtml +=
-        '<div class="fap-status-barra">' +
-        '<div class="fap-status-barra-label">' +
-        '<span>' + _escapeHTML(_t('landing.grupo_' + key, grupo.label)) + '</span>' +
-        '<span class="fap-status-barra-count">' + feitos + '/' + total + '</span>' +
-        '</div>' +
-        '<div class="fap-status-barra-track">' +
-        '<div class="fap-status-barra-fill' + (completo ? ' completo' : '') + '" style="width:' + pct + '%"></div>' +
-        '</div>' +
-        '</div>';
-    });
-
-    var restantes = totalSteps - doneSteps;
-    var frase = restantes <= 0
-    ? _t('landing.pronto', 'Seu Fedora está pronto. 🎉')
-    : _tVars('landing.faltam', 'Faltam ' + restantes + ' passos para deixar o Fedora completo.', { n: restantes });
-
-    container.innerHTML = '<div class="fap-status-barras">' + barrasHtml + '</div>' +
-    '<p class="fap-status-frase">' + _escapeHTML(frase) + '</p>';
-
-    container.hidden = false;
-}
+// (removido) `_GRUPOS_LANDING` e `_renderizarCardStatus` — a
+// landing não usa mais `#card-status` desde a v1.4.3. O progresso
+// global é mostrado via `#progresso-global` (script.js) e pela
+// barra de progresso da própria sessão. A função era dead code.
 
 // ============================================================
 // FILTROS DA SESSÃO 6
@@ -5231,7 +5582,34 @@ function _aplicarFiltroSessao(termo) {
     //    + 3 (itens) = 4" no banner.
     container.querySelectorAll('.bloco-comando').forEach(function(bloco) {
         var casa = _casaElemento(bloco);
-        bloco.style.display = casa ? '' : 'none';
+
+        // ============================================================
+        // PRESERVA PROGRESSO ATIVO (auditoria C14)
+        // ============================================================
+        //
+        // Filtrar enquanto um comando está rodando escondia o
+        // `.progress-container` junto com o `.bloco-comando`. O
+        // usuário via a sessão "sumir" sem entender o que
+        // aconteceu, mesmo com o `dnf` rodando em background e a
+        // barra de progresso em 0%. O feedback visual era perdido.
+        //
+        // Correção: se algum `.progress-container` DENTRO do bloco
+        // está visível (`display != 'none'`), mantém o bloco
+        // visível mesmo sem match no filtro. Assim o usuário
+        // continua vendo a barra/status/percentual do comando em
+        // execução.
+        //
+        // Nota: o contador do banner (`visiveis`) continua contando
+        // apenas os matches reais (`casa === true`). O bloco
+        // mantido por progresso ativo não infla o "N filtrados".
+        var temProgressoAtivo = false;
+        bloco.querySelectorAll('.progress-container').forEach(function(pc) {
+            if (pc.style.display && pc.style.display !== 'none') {
+                temProgressoAtivo = true;
+            }
+        });
+
+        bloco.style.display = (casa || temProgressoAtivo) ? '' : 'none';
         if (casa && !bloco.querySelector('.launcher-item')) visiveis++;
     });
 
@@ -5304,9 +5682,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
     verificarFlatpaksRemovidos();
 
-    _renderizarCardStatus();
-
     // (bloco removido — guiado.html já cuida do ?session= em irParaSessaoInicial)
+    // (bloco removido — `_renderizarCardStatus` era dead code: #card-status
+    //  foi removido do index.html na v1.4.3)
 
     if (typeof I18N !== 'undefined' && typeof I18N.criarSeletorIdioma === 'function') {
         setTimeout(function() { I18N.criarSeletorIdioma(); }, 50);
@@ -5353,7 +5731,7 @@ document.addEventListener('sessao-carregada', function(e) {
 
     // Se a sessão carregada é 'aplicativos', inicializa os filtros
     if (e && e.detail && e.detail.sessao === 'aplicativos') {
-        setTimeout(_inicializarFiltrosApp, 300);
+        setTimeout(_inicializarFiltrosApps, 300);
     }
 });
 

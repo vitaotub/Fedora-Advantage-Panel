@@ -227,6 +227,8 @@ ARQUIVOS_PRINCIPAIS=(
 "Makefile"
 "CHANGELOG.md"
 "scripts/fap-cleanup.sh"
+"scripts/verificar-deps-container.sh"
+"scripts/validar-botoes.js"
 )
 
 print_header() {
@@ -288,12 +290,16 @@ print_info "Permissão aplicada: $link (link)"
 fi
 done
 
-# Script de limpeza pesada (v1.5.6). Fica em `scripts/`, não na
-# raiz — por isso não entra no loop defensivo de `*.sh` acima.
-if [ -f "$INSTALL_DIR/scripts/fap-cleanup.sh" ]; then
-    chmod +x "$INSTALL_DIR/scripts/fap-cleanup.sh" 2>/dev/null || true
-    print_info "Permissão aplicada: scripts/fap-cleanup.sh"
-fi
+# Scripts em `scripts/` — não entram no loop defensivo de `*.sh`
+# da raiz (que cobre só arquivos no top-level).
+# Inclui o `validar-botoes.js` (chamado por `make check-buttons`
+# via `node`, mas o `+x` permite invocação direta).
+for script_aux in "scripts/fap-cleanup.sh" "scripts/verificar-deps-container.sh" "scripts/validar-botoes.js"; do
+    if [ -f "$INSTALL_DIR/$script_aux" ]; then
+        chmod +x "$INSTALL_DIR/$script_aux" 2>/dev/null || true
+        print_info "Permissão aplicada: $script_aux"
+    fi
+done
 
 print_success "Permissões reaplicadas com sucesso!"
 }
@@ -480,7 +486,7 @@ migrar_esquema_antigo() {
 # do node. O SIGTERM do node NÃO propaga para o container — são
 # processos separados, iniciados pelo `iniciar_fap.sh`/`iniciar_fof.sh`.
 # Sem isso, o container fica órfão quando o node morre por SIGTERM.
-_mat_atras_servidor_fap() {
+_matar_servidor_fap() {
     # ============================================================
     # ORDEM CORRETA: container primeiro, node depois
     # ============================================================
@@ -504,6 +510,12 @@ _mat_atras_servidor_fap() {
     sleep 2
     pkill -9 -f "fap-container.*--url http://localhost:3000" 2>/dev/null || true
     pkill -9 -f "fof-container.*--url http://localhost:3000" 2>/dev/null || true
+    # Órfãos do pkexec (Fase I). O `_matarArvoreProcessos` do
+    # server.js limpa o mesmo UID, mas filhos root do pkexec
+    # sobrevivem sem `NOPASSWD: /usr/bin/kill`. Como o install.sh
+    # já tem sudo, limpamos aqui também.
+    sudo pkill -9 -f "fap-cmd-" 2>/dev/null || true
+    sudo pkill -9 -f "pkexec /tmp/fap-cmd-" 2>/dev/null || true
 fi
 
     # ============================================================
@@ -544,17 +556,42 @@ fi
     fi
 
     local cmd
-    cmd=$(ps -p "$pid" -o cmd= 2>/dev/null || true)
-    case "$cmd" in
-        *node*server.js*)
-            print_info "🔄 Encerrando o servidor antigo em 3 segundos (PID: $pid)..."
-            print_info "💡 Reabra o FAP com o comando 'fap' para usar a versão nova."
-            nohup bash -c "sleep 3 && kill $pid 2>/dev/null; sleep 1; kill -9 $pid 2>/dev/null" > /dev/null 2>&1 &
-            ;;
-        *)
-            print_info "PID $pid não é o servidor FAP — não vou encerrar."
-            ;;
-    esac
+cmd=$(ps -p "$pid" -o cmd= 2>/dev/null || true)
+case "$cmd" in
+    *node*server.js*)
+        print_info "🔄 Encerrando o servidor antigo em 5 segundos (PID: $pid)..."
+        print_info "💡 Reabra o FAP com o comando 'fap' para usar a versão nova."
+        # `setsid -f` desacopla o processo de kill da sessão do
+        # install.sh. Sem isso, se o install.sh (ou o node pai)
+        # morresse antes do `sleep`, o bash -c era morto junto e
+        # o node antigo sobrevivia — exatamente o bug que este
+        # bloco deveria evitar (v1.5.2).
+        #
+        # `sleep 5` (era 3): margem extra para o install.sh
+        # terminar o próprio cleanup (`criar_atalhos`,
+        # `reaplicar_permissoes`, etc.).
+        #
+        # Retry loop com SIGTERM → 2s de espera → SIGKILL: mais
+        # gracioso que o `sleep 1 && kill -9` anterior. Dá tempo
+        # do `_encerrarGraciosamente` do server.js fechar as
+        # conexões SSE e matar as árvores de processos
+        # (dnf/pkexec) que ainda estiverem rodando.
+        setsid -f bash -c "
+            sleep 5
+            if kill -0 $pid 2>/dev/null; then
+                kill -TERM $pid 2>/dev/null || true
+                for i in \$(seq 1 20); do
+                    if ! kill -0 $pid 2>/dev/null; then exit 0; fi
+                    sleep 0.1
+                done
+                kill -KILL $pid 2>/dev/null || true
+            fi
+        " < /dev/null > /dev/null 2>&1 &
+        ;;
+    *)
+        print_info "PID $pid não é o servidor FAP — não vou encerrar."
+        ;;
+esac
     rm -f "$INSTALL_DIR/.fap.pid" 2>/dev/null || true
 }
 
@@ -621,12 +658,12 @@ _migrar_via_update() {
     echo ""
 
     # Encerra o servidor antigo (node server.js) que ainda está
-    # rodando com o código do FOF. O `_matar_servidor_fap_antigo()`
+    # rodando com o código do FOF. O `_matar_servidor_fap()`
     # detecta via `lsof -t -i:3000` (não depende do path, que está
     # ausente do cmdline) e mata node + container. Antes, o
     # `pgrep -f "node .*/(fedora-only-fans|fedora-advantage-panel)/server\.js"`
     # nunca casava (cmdline = `node server.js`) e o FOF sobrevivia.
-    _mat_atras_servidor_fap
+    _matar_servidor_fap
 }
 
 verificar_arquivos_instalados() {
@@ -649,56 +686,46 @@ fi
 }
 
 instalar_dependencias_container() {
-print_step "Instalando dependências do container nativo..."
+    print_step "Verificando dependências de compilação do container..."
 
-# ============================================================
-# CHECAGEM POR BINÁRIO, NÃO POR PACOTE
-# ============================================================
-#
-# `rpm -q pkgconfig` FALHA no Fedora 40+ porque o pacote foi
-# renomeado para `pkgconf-pkg-config`. O nome antigo só existe
-# como Provides virtual, que o rpm -q não enxerga.
-#
-# A checagem correta é pelo BINÁRIO (`command -v`) para
-# ferramentas, e pelo `pkg-config --exists` para bibliotecas
-# de desenvolvimento.
+    # Delega para o script comum (compartilhado com iniciar_fap.sh).
+    # O script é idempotente: retorna 0 rapidamente se nada faltar,
+    # ou roda `sudo dnf install` do que faltar e retorna o status
+    # do dnf. Evita duplicação (auditoria v1.5.8).
+    local script="$INSTALL_DIR/scripts/verificar-deps-container.sh"
+    if [ ! -f "$script" ]; then
+        # Fallback defensivo: instalação antiga (pré-v1.5.8) que
+        # ainda não tem o script. Roda a checagem inline.
+        print_warning "Script de verificação ausente — usando fallback inline"
+        local instalar=()
+        command -v gcc &> /dev/null || instalar+=("gcc")
+        command -v make &> /dev/null || instalar+=("make")
+        command -v pkg-config &> /dev/null || instalar+=("pkgconf-pkg-config")
+        if command -v pkg-config &> /dev/null; then
+            pkg-config --exists webkit2gtk-4.1 2>/dev/null || instalar+=("webkit2gtk4.1-devel")
+            pkg-config --exists gtk+-3.0 2>/dev/null || instalar+=("gtk3-devel")
+        else
+            instalar+=("webkit2gtk4.1-devel" "gtk3-devel")
+        fi
+        if [ ${#instalar[@]} -gt 0 ]; then
+            print_info "Instalando: ${instalar[*]}"
+            if sudo dnf install -y "${instalar[@]}"; then
+                print_success "Dependências instaladas"
+            else
+                print_warning "Algumas dependências podem não ter sido instaladas"
+            fi
+        else
+            print_success "Todas as dependências já estão instaladas"
+        fi
+        return 0
+    fi
 
-local instalar=()
-
-if ! command -v gcc &> /dev/null; then
-instalar+=("gcc")
-fi
-
-if ! command -v make &> /dev/null; then
-instalar+=("make")
-fi
-
-if ! command -v pkg-config &> /dev/null; then
-instalar+=("pkgconf-pkg-config")
-fi
-
-if command -v pkg-config &> /dev/null; then
-if ! pkg-config --exists webkit2gtk-4.1 2>/dev/null; then
-instalar+=("webkit2gtk4.1-devel")
-fi
-if ! pkg-config --exists gtk+-3.0 2>/dev/null; then
-instalar+=("gtk3-devel")
-fi
-else
-instalar+=("webkit2gtk4.1-devel")
-instalar+=("gtk3-devel")
-fi
-
-if [ ${#instalar[@]} -gt 0 ]; then
-print_info "Instalando: ${instalar[*]}"
-if sudo dnf install -y "${instalar[@]}"; then
-print_success "Dependências instaladas"
-else
-print_warning "Algumas dependências podem não ter sido instaladas"
-fi
-else
-print_success "Todas as dependências já estão instaladas"
-fi
+    chmod +x "$script" 2>/dev/null || true
+    if bash "$script"; then
+        print_success "Dependências do container OK"
+    else
+        print_warning "Algumas dependências do container não foram instaladas"
+    fi
 }
 
 compilar_container_install() {
@@ -742,13 +769,31 @@ print_step "Verificando sistema operacional..."
 # Lê /etc/os-release (padrão freedesktop, presente em todo Fedora e
 # derivados). Antes usávamos /etc/fedora-release, que é específico do
 # Fedora "puro" e pode não existir em derivados (Nobara, Ultramarine).
-if [ -f /etc/os-release ]; then
-    . /etc/os-release
-    if [ "$ID" = "fedora" ]; then
-        print_success "Fedora $VERSION_ID detectado"
-        log "Sistema: Fedora $VERSION_ID"
+#
+# ============================================================
+# LEITURA EM SUBSHELL (v1.5.8 — auditoria C6)
+# ============================================================
+#
+# Antes, o `. /etc/os-release` era sourceado no shell principal,
+# sobrescrevendo `$VERSION` (definido no topo do script com o
+# valor do package.json). O banner é impresso ANTES desta
+# função, então não quebrava o output atual — mas qualquer
+# código futuro que use `$VERSION` depois de `verificar_sistema`
+# herdaria o valor errado (ex.: "Fedora 44 (Workstation
+# Edition)" em vez de "1.5.8-11112026").
+#
+# Correção: subshell (`$( ... )`). O `. /etc/os-release` roda
+# em um shell filho, e as variáveis não vazam para o pai.
+local os_id os_version_id
+os_id="$(. /etc/os-release 2>/dev/null && echo "$ID")"
+os_version_id="$(. /etc/os-release 2>/dev/null && echo "$VERSION_ID")"
+
+if [ -n "$os_id" ]; then
+    if [ "$os_id" = "fedora" ]; then
+        print_success "Fedora $os_version_id detectado"
+        log "Sistema: Fedora $os_version_id"
     else
-        print_warning "Sistema não identificado como Fedora (detectado: ${ID:-desconhecido} ${VERSION_ID:-})"
+        print_warning "Sistema não identificado como Fedora (detectado: ${os_id:-desconhecido} ${os_version_id:-})"
         print_warning "A instalação pode não funcionar corretamente"
         if ! _perguntar_sim_nao "Continuar mesmo assim?" "n"; then
             print_error "Instalação cancelada"
@@ -756,7 +801,7 @@ if [ -f /etc/os-release ]; then
         fi
     fi
 else
-    print_warning "Arquivo /etc/os-release não encontrado — sistema não identificado"
+    print_warning "Arquivo /etc/os-release não encontrado ou sem \$ID — sistema não identificado"
     if ! _perguntar_sim_nao "Continuar mesmo assim?" "n"; then
         print_error "Instalação cancelada"
         exit 1
@@ -1357,12 +1402,12 @@ kbuildsycoca6 --noincremental 2>/dev/null || kbuildsycoca5 --noincremental 2>/de
 # que nunca casa (o cmdline é só `node server.js`). O `/shutdown`
 # do server.js é quem mata o container + node. Como o node pode
 # já ter morrido (ou o user fechou manualmente), o `/shutdown` é
-# a primeira tentativa e o `_matar_servidor_fap_antigo` é o
+# a primeira tentativa e o `_matar_servidor_fap` é o
 # fallback (v1.5.2).
 #
 # ORDEM IMPORTA: o `/shutdown` PRIMEIRO, porque ele mata o container
 # (via pkill) e o node (via `_encerrarGraciosamente`) na ordem certa.
-# Se o `_matar_servidor_fap_antigo` rodasse primeiro, ele mataria só
+# Se o `_matar_servidor_fap` rodasse primeiro, ele mataria só
 # o node (SIGTERM), o container ficaria órfão, e o `/shutdown`
 # falharia (node morto).
 print_step "Encerrando servidor e container..."
@@ -1373,7 +1418,7 @@ if curl -s --max-time 2 -X POST http://127.0.0.1:3000/shutdown > /dev/null 2>&1;
     sleep 1
 else
     print_info "Servidor já estava encerrado — limpando processos remanescentes"
-    _mat_atras_servidor_fap
+    _matar_servidor_fap
 fi
 
 # ============================================================
@@ -1548,9 +1593,9 @@ print_success "✅ FAP atualizado para a versão mais recente!"
 #
 # O bloco anterior usava `pgrep -f "node .*$INSTALL_DIR/server\.js"`,
 # que **nunca casa** (cmdline = `node server.js`, sem o path).
-# O `_matar_servidor_fap_antigo()` detecta via `lsof -t -i:3000`
+# O `_matar_servidor_fap()` detecta via `lsof -t -i:3000`
 # (fallback em `.fap.pid`) e mata node + container.
-_mat_atras_servidor_fap
+_matar_servidor_fap
 }
 
 mostrar_ajuda() {

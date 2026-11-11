@@ -104,7 +104,7 @@ compacto apontando para cá.
 <div class="acordeao-conteudo">
 
 <div class="sessao-descricao" data-i18n-html="sessoes.estado-fedora.secureboot_desc">
-O Secure Boot ativo exige que módulos de kernel compilados localmente sejam assinados com uma chave que o firmware reconheça. Vários pacotes do FAP compilam módulos pelo <code>akmods</code> (NVIDIA, VirtualBox, Broadcom, Realtek, xpadneo, câmera virtual do OBS) — todos assinados com a MESMA chave, gerada por <code>kmodgenca</code>. Um único enrollment cobre todos.
+O Secure Boot ativo exige que módulos de kernel compilados localmente sejam assinados com uma chave que o firmware reconheça. Vários pacotes do FAP compilam módulos pelo <code>akmods</code> (NVIDIA, VirtualBox, Broadcom, Realtek, xpadneo, câmera virtual do OBS) — todos assinados com a MESMA chave, gerada por <code>kmodgenca</code>. Um único registro cobre todos.
 </div>
 
 <div id="secureboot-painel-global" style="margin-top: 1rem;">
@@ -350,13 +350,6 @@ return null;
 }
 }
 
-function _escapeHTML(s) {
-if (s == null) return '';
-return String(s).replace(/[&<>"']/g, function(c) {
-return {'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c];
-});
-}
-
 // ------------------------------------------------------------
 // Executor genérico para comandos sempre-clicáveis que só leem
 // ------------------------------------------------------------
@@ -444,13 +437,30 @@ var sys = await _fetchJSON('/system-info');
 var fedora = (sys && sys.fedora) ? sys.fedora : null;
 var kernel = (sys && sys.kernel) ? sys.kernel : null;
 
-if (!fedora) {
-var comando = 'cat /etc/fedora-release 2>/dev/null || echo "Não foi possível determinar a versão"';
-await _executarLeitura(idComando, comando, _t('sessoes.estado-fedora.btn_verificar_versao', '🔍 Verificar Versão do Fedora'));
-}
+    if (!fedora) {
+        var comando = 'cat /etc/fedora-release 2>/dev/null || echo ""';
+        await _executarLeitura(idComando, comando, _t('sessoes.estado-fedora.btn_verificar_versao', '🔍 Verificar Versão do Fedora'));
+        // Recupera o output do fallback do log (o `_executarLeitura`
+        // não devolve stdout, mas escreve em `.log-line.output`).
+        // O primeiro `.output` com "Fedora release" ou "release N"
+        // é o que interessa.
+        try {
+            var logBox = _getLogBox(idComando);
+            if (logBox) {
+                var linhas = logBox.querySelectorAll('.log-line.output');
+                for (var li = 0; li < linhas.length; li++) {
+                    var txt = (linhas[li].textContent || '').trim();
+                    if (/^Fedora\b/i.test(txt) || /release\s+\d+/i.test(txt)) {
+                        fedora = txt;
+                        break;
+                    }
+                }
+            }
+        } catch (e) { /* mantém fedora = null */ }
+    }
 
-var versaoNumero = null;
-if (fedora) {
+    var versaoNumero = null;
+    if (fedora) {
 var match = String(fedora).match(/(\d+)/);
 if (match) versaoNumero = parseInt(match[1], 10);
 }
@@ -631,10 +641,14 @@ var resultadoEl = document.getElementById('diag-selinux-avisos');
 // Se não tiver, o pkexec abaixo pede a senha — comportamento correto,
 // em vez do `-n` que falhava silenciosamente.
 var comando =
-'COUNT=$(journalctl -g "avc: *denied" -S "24 hours ago" 2>/dev/null | grep -c "avc: *denied" || echo 0); ' +
-'echo "TOTAL_AVC=$COUNT"; ' +
-'echo "---"; ' +
-'journalctl -g "avc: *denied" -S "24 hours ago" 2>/dev/null | grep -oP "comm=\\"\\K[^\\"]+" | sort | uniq -c | sort -rn | head -10 || true';
+    // `grep -c` já imprime `0` e sai com código 1 quando não há match.
+    // O `|| echo 0` adicionava OUTRO `0`, e o `$COUNT` virava "0\n0" —
+    // duplicava a linha `TOTAL_AVC=0` no log. Trocado por `|| true`,
+    // que suprime o exit code (mantém o `0` impresso pelo grep).
+    'COUNT=$(journalctl -g "avc: *denied" -S "24 hours ago" 2>/dev/null | grep -c "avc: *denied" || true); ' +
+    'echo "TOTAL_AVC=$COUNT"; ' +
+    'echo "---"; ' +
+    'journalctl -g "avc: *denied" -S "24 hours ago" 2>/dev/null | grep -oP "comm=\\"\\K[^\\"]+" | sort | uniq -c | sort -rn | head -10 || true';
 
 await _executarLeitura(idComando, comando, _t('sessoes.estado-fedora.btn_selinux_troubleshoot', '🔍 Verificar Avisos Recentes'));
 

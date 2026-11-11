@@ -16,7 +16,7 @@
 //
 // Nenhum comando aqui requer senha (todos são read-only).
 
-const { exec } = require('child_process');
+const { exec, execFile } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 
@@ -31,11 +31,41 @@ let _cache = { dados: null, ts: 0 };
 
 function _exec(cmd, timeoutMs) {
     return new Promise(function(resolve) {
-        exec(cmd, {
-            shell: '/bin/bash',
+        // ============================================================
+        // EXECFILE COM --noprofile --norc (v1.5.8)
+        // ============================================================
+        //
+        // Mesmo problema do `_exec` do `hardware-service.js`
+        // (corrigido na v1.5.6) e do `_execReadOnly` do `server.js`.
+        // O `exec(cmd, { shell: '/bin/bash' })` carrega o `.bashrc`
+        // do usuário, e um `.bashrc` com `fastfetch`/`neofetch`
+        // polui o stdout de todo comando shell do FAP.
+        //
+        // Sintoma em hardware real (fgc, Fedora 45 + KDE + bash
+        // 5.3.15, `.bashrc` com `fastfetch`): `test -f X && echo
+        // yes` retornava `"<fastfetch inteiro>\nyes\n"`. Os
+        // helpers que comparam `stdout.trim() === 'yes'` /
+        // `=== 'true'` / `=== 'active'` falhavam, e o FAP via
+        // estado errado:
+        //   • `/etc/pki/akmods/certs/public_key.der` existia mas
+        //     `_detectarArquivosConfig` retornava vazio → badge
+        //     "enrollment necessário" falso (mesmo já enrolled).
+        //   • `rpmfusion-nonfree` ativo mas `_detectarRepos` via
+        //     lixo → aviso "RPM Fusion não está ativo" falso.
+        //   • Usuário no grupo `input` mas `_detectarGrupos` via
+        //     lixo → toggle com revert sempre visível.
+        //
+        // Correção: `execFile` com `--noprofile --norc` — o bash
+        // IGNORA `.bashrc`, `.bash_profile` e `$BASH_ENV`. Nenhum
+        // arquivo de inicialização é carregado.
+        var envLimpo = Object.assign({}, process.env, {
+            BASH_ENV: '',
+            ENV: ''
+        });
+        execFile('/bin/bash', ['--noprofile', '--norc', '-c', cmd], {
             timeout: timeoutMs || 8000,
             maxBuffer: 5 * 1024 * 1024,
-            env: process.env
+            env: envLimpo
         }, function(error, stdout) {
             resolve((stdout || '').trim());
         });

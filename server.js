@@ -51,6 +51,11 @@ const LOCALES_DIR = path.join(__dirname, 'locales');
 //   agora exigem autenticação (pkexec). O install.sh invoca
 //   sudo internamente e o usuário vê o comando na janela de senha
 //   antes de autorizar — comportamento correto.
+// - 'vainfo' / 'vdpauinfo' / 'env LIBVA_DRIVER_NAME=nvidia vainfo'
+//   — a verificação de aceleração VA-API agora usa o endpoint
+//   `/vaapi-check` (que roda via `_execReadOnly`, bypassando
+//   `/executar`). As entradas antigas na whitelist eram dead code
+//   e foram removidas na v1.5.8 (rodada 3).
 //
 // SOBRE O FLATPAK:
 // - Flatpak NUNCA deve rodar via pkexec. Rodar como root
@@ -95,9 +100,6 @@ const COMANDOS_SEM_AUTENTICACAO = [
 'rclone-manager',
 'corectrl',
 'lact',
-'vainfo',
-'vdpauinfo',
-'env LIBVA_DRIVER_NAME=nvidia vainfo',
 
 // --- setsid -f: abertura de GUI em sessão própria ---
 // App aberto via `gtk-launch` (cobre a maioria).
@@ -113,24 +115,6 @@ const COMANDOS_SEM_AUTENTICACAO = [
 'setsid -f okular',
 'setsid -f artcraft-launcher',
 'setsid -f sealert',
-// Editores/apps que NÃO usam gtk-launch (não têm .desktop
-// com o binário). Precisam de entrada própria.
-'setsid -f lightworks',
-'setsid -f desktopeditors',
-// Suíte ArtCraft.
-'setsid -f photocraft',
-'setsid -f vectorcraft',
-'setsid -f filmcraft',
-'setsid -f lightcraft',
-'setsid -f pdfcraft',
-'setsid -f effectcraft',
-'setsid -f designcraft',
-'setsid -f figcraft',
-'setsid -f deckcraft',
-'setsid -f gridcraft',
-'setsid -f wordcraft',
-'setsid -f cadcraft',
-'setsid -f soundcraft',
 // Players de mídia, editores gráficos e de vídeo/áudio.
 'setsid -f vlc',
 'setsid -f krita',
@@ -313,8 +297,67 @@ function _precisaEnvUserContext(comando) {
 // vetores de sobrescrita de arquivo (ex.: `rpm -q kernel > ~/.bashrc`).
 // Bloqueia-os, MAS permite `>&N` (dup de fd, ex.: `2>&1`) e `>N`
 // (redirect para fd N), que são sintaxe de redirect legítima.
-// O lookahead `(?![&\d])` evita falsos positivos nesses casos.
-const _CARACTERES_ENCADEAMENTO = /[\n\r;`|]|\$\(|&&|<\(|>\(|(?:^|\s)&(?:\s|$)|(?:^|\s)>>?(?![&\d])/;
+// Caracteres de encadeamento de shell que permitem burlar a whitelist.
+// Cobre: ; ` | $( ) <( ) >( ) && & (background, não 2>&1) e quebras de linha.
+//
+// `>` NÃO é tratado aqui: o regex original `(?:^|\s)>>?(?![&\d])` só
+// bloqueava `>` quando precedido por espaço. Variantes como
+// `rpm -q kernel>~/.bashrc` (sem espaço) passavam pela whitelist de
+// prefixo e o bash do `exec` interpretava `>` como redirect,
+// sobrescrevendo arquivos do usuário. `_temRedirectInvalido()` faz o
+// check correto (whitelist exata de dup-fd + bloqueio de qualquer
+// outro `>`). A ordem importa: `_cmdSemAutenticacao` chama
+// `_temRedirectInvalido` DEPOIS de `_CARACTERES_ENCADEAMENTO`.
+const _CARACTERES_ENCADEAMENTO = /[\n\r;`|]|\$\(|&&|<\(|>\(|(?:^|\s)&(?:\s|$)/;
+
+// Detecta redirect `>` como vetor de sobrescrita de arquivo.
+//
+// Remove PRIMEIRO as duplicações de fd legítimas (sintaxe padrão do
+// bash):
+//   • 2>&1 — stderr para stdout
+//   • 1>&2 — stdout para stderr
+//   • >&2  — forma curta de 1>&2
+//
+// Qualquer `>` remanescente bloqueia. Isso cobre `>`, `>>`, `2>`,
+// `2>>`, `>&file`, `2>&file`, todos vetores de escrita arbitrária
+// em CWD/HOME (ex.: `~/.bashrc`, `~/.profile`, `~/.zshrc`).
+//
+// O `_ehRedirectAbrirValido` (chamado ANTES) tem regex exato que
+// fixa `> /tmp/fap-open-*.log 2>&1 < /dev/null` — o único `>`
+// legítimo que o FAP usa.
+function _temRedirectInvalido(texto) {
+    var semDupFd = String(texto || '')
+    .replace(/2>&1/g, '  ')
+    .replace(/1>&2/g, '  ')
+    .replace(/(?:^|\s)>&2/g, '  ');
+    return semDupFd.indexOf('>') !== -1;
+}
+
+function _cmdSemAutenticacao(comando) {
+    const trimmed = (comando || '').trim();
+
+    // Exceção: padrão interno de abrir app (redirect legítimo).
+    // Só passa se o binário estiver na whitelist E o formato casar
+    // exatamente com `setsid -f <bin> > /tmp/fap-open-*.log 2>&1 < /dev/null`.
+    if (_ehRedirectAbrirValido(trimmed)) {
+        return true;
+    }
+
+    if (_CARACTERES_ENCADEAMENTO.test(trimmed)) {
+        return false;
+    }
+
+    // NOVO: bloqueia `>` como redirect (exceto 2>&1, 1>&2, >&2).
+    if (_temRedirectInvalido(trimmed)) {
+        return false;
+    }
+
+    return COMANDOS_SEM_AUTENTICACAO.some(function(cmd) {
+        return trimmed === cmd
+        || trimmed.startsWith(cmd + ' ')
+        || trimmed.startsWith(cmd + '\t');
+    });
+}
 
 // Exceção estrita: o comando gerado por `abrirFerramentaExterna`
 // usa `> /tmp/fap-open-*.log 2>&1 < /dev/null` para desacoplar o
@@ -335,13 +378,10 @@ const _CARACTERES_ENCADEAMENTO = /[\n\r;`|]|\$\(|&&|<\(|>\(|(?:^|\s)&(?:\s|$)|(?
 const _BINARIOS_ABRIR_WHITELIST = new Set([
     'gtk-launch', 'xdg-open', 'sealert',
     'corectrl', 'lact', 'rclone-manager', 'steam', 'heroic', 'rustdesk',
-    'keepassxc', 'firefox', 'okular', 'artcraft-launcher', 'lightworks',
-    'desktopeditors', 'photocraft', 'vectorcraft', 'filmcraft', 'lightcraft',
-    'pdfcraft', 'effectcraft', 'designcraft', 'figcraft', 'deckcraft',
-    'gridcraft', 'wordcraft', 'cadcraft', 'soundcraft',
+    'keepassxc', 'firefox', 'kate', 'okular', 'artcraft-launcher',
     'vlc', 'krita', 'inkscape', 'gimp', 'darktable', 'coolercontrol',
     'jstest-gtk', 'freecad', 'librecad', 'kdenlive', 'pitivi', 'shotcut',
-    'avidemux', 'blender', 'ardour8', 'lmms', 'audacity',
+    'blender', 'ardour8', 'lmms', 'audacity',
     'chromium-browser', 'opera', 'brave-browser', 'vivaldi-stable',
     'microsoft-edge-stable'
 ]);
@@ -355,25 +395,6 @@ function _ehRedirectAbrirValido(trimmed) {
     var m = trimmed.match(_REDIRECT_ABRIR_PADRAO);
     if (!m) return false;
     return _BINARIOS_ABRIR_WHITELIST.has(m[1]);
-}
-
-function _cmdSemAutenticacao(comando) {
-    const trimmed = (comando || '').trim();
-
-    // Exceção: padrão interno de abrir app (redirect legítimo).
-    // Só passa se o binário estiver na whitelist.
-    if (_ehRedirectAbrirValido(trimmed)) {
-        return true;
-    }
-
-    if (_CARACTERES_ENCADEAMENTO.test(trimmed)) {
-        return false;
-    }
-    return COMANDOS_SEM_AUTENTICACAO.some(function(cmd) {
-        return trimmed === cmd
-        || trimmed.startsWith(cmd + ' ')
-        || trimmed.startsWith(cmd + '\t');
-    });
 }
 
 function _filtrarLog(mensagem) {
@@ -471,22 +492,95 @@ function _registrarProcesso(proc) {
     return proc;
 }
 
+// ============================================================
+// LISTAGEM RECURSIVA DE DESCENDENTES (Fase I)
+// ============================================================
+//
+// O `pkexec` quebra o grupo via `setsid()`: o filho root vira
+// líder de uma NOVA sessão, e `process.kill(-pidRaiz)` não o
+// alcança. Precisamos listar os descendentes explicitamente
+// ANTES de matar — depois que o bash pai morre, os netos viram
+// órfãos (`ppid` = 1) e `pgrep -P` não os acha mais.
+//
+// `spawnSync` (não async) é de propósito: precisamos do snapshot
+// completo antes de começar a matar. Se fosse async, o primeiro
+// SIGTERM podia matar o bash pai e perder os netos antes de
+// listá-los.
+function _listarDescendentes(pidRaiz, maxProfundidade) {
+    var todos = [pidRaiz];
+    var nivel = [pidRaiz];
+    var max = maxProfundidade || 5;
+    for (var d = 0; d < max && nivel.length > 0; d++) {
+        var proximo = [];
+        for (var i = 0; i < nivel.length; i++) {
+            var r = spawnSync('pgrep', ['-P', String(nivel[i])],
+                              { encoding: 'utf8', timeout: 1000 });
+            if (r && r.status === 0 && r.stdout) {
+                r.stdout.trim().split('\n').forEach(function(s) {
+                    var p = parseInt(s, 10);
+                    if (p && todos.indexOf(p) === -1) {
+                        todos.push(p);
+                        proximo.push(p);
+                    }
+                });
+            }
+        }
+        nivel = proximo;
+    }
+    return todos;
+}
+
 function _matarArvoreProcessos(proc) {
     if (!proc || !proc.pid) return;
 
-    let grupoMorto = false;
-    try {
-        process.kill(-proc.pid, 'SIGTERM');
-        grupoMorto = true;
-    } catch (e) {
-        // ESRCH = grupo não existe (o processo já morreu, ou não é líder).
-        // EPERM = sem permissão (não deveria acontecer aqui).
-        // Em ambos os casos, tenta o kill simples abaixo.
+    var pidRaiz = proc.pid;
+
+    // 1. Snapshot dos descendentes ANTES de matar.
+    var alvos = _listarDescendentes(pidRaiz, 5);
+
+    // 2. SIGTERM em todos (mais fundo primeiro).
+    for (var i = alvos.length - 1; i >= 0; i--) {
+        try { process.kill(alvos[i], 'SIGTERM'); } catch (e) { /* ESRCH/EPERM */ }
     }
 
-    if (!grupoMorto) {
-        try { proc.kill('SIGTERM'); } catch (e) {}
+    // 3. SIGTERM no grupo inteiro.
+    try { process.kill(-pidRaiz, 'SIGTERM'); } catch (e) { /* ESRCH/EPERM */ }
+
+    // 4. pkill de fap-cmd-* como usuário. Cobre os scripts
+    //    temporários criados pelo pkexec (`/tmp/fap-cmd-*.sh`).
+    //    O pkexec pode ter deixado processos root que este `pkill`
+    //    (rodando como usuário) não alcança — mas o bash que
+    //    invocou e o script em si rodam como usuário.
+    try {
+        spawnSync('pkill', ['-9', '-f', 'fap-cmd-'], { timeout: 1000 });
+    } catch (e) { /* ignora */ }
+
+    // 5. Aguarda efeito dos SIGTERMs/SIGKILLs antes de checar vivos.
+    try {
+        spawnSync('sleep', ['0.3'], { timeout: 1000 });
+    } catch (e) { /* ignora */ }
+
+    // 6. Vivos: `process.kill(pid, 0)` sem exceção = vivo (mesmo UID);
+    //    ESRCH = morto; EPERM = vivo em outro UID (root). Tratamos
+    //    EPERM como vivo — o pkexec cria filhos root que o usuário
+    //    não pode sinalizar sem `NOPASSWD: /usr/bin/kill`.
+    var vivos = [];
+    for (var j = 0; j < alvos.length; j++) {
+        try {
+            process.kill(alvos[j], 0);
+            vivos.push(alvos[j]);
+        } catch (e) {
+            if (e.code === 'EPERM') vivos.push(alvos[j]);
+        }
     }
+
+    if (vivos.length > 0) {
+        console.warn('[cleanup] PIDs root órfãos:', vivos.join(', '));
+        console.warn('[cleanup] Para limpar: sudo kill -9 ' + vivos.join(' '));
+    }
+
+    // 7. SIGKILL de segurança no grupo.
+    try { process.kill(-pidRaiz, 'SIGKILL'); } catch (e) { /* ESRCH */ }
 }
 
 // ============================================================
@@ -544,7 +638,7 @@ function _execReadOnly(comando, timeoutMs) {
             BASH_ENV: '',
             ENV: ''
         });
-        execFile('/bin/bash', ['--noprofile', '--norc', '-c', comando], {
+        var child = execFile('/bin/bash', ['--noprofile', '--norc', '-c', comando], {
             timeout: timeoutMs || 5000,
             maxBuffer: 1024 * 1024 * 5,
             env: envLimpo,
@@ -556,6 +650,23 @@ function _execReadOnly(comando, timeoutMs) {
                 resolve((stdout || '').trim());
             }
         });
+        // ============================================================
+        // REGISTRA O CHILD EM `_processosAtivos` (v1.5.8 rodada 3)
+        // ============================================================
+        //
+        // `detached: true` isola o filho em seu próprio PGID. O
+        // `timeout` do execFile só mata o filho direto — subprocessos
+        // (ex.: `dnf check-update` chamado por um script bash) ficam
+        // órfãos. O `_matarArvoreProcessos` no SIGINT percorre
+        // `_processosAtivos` e mata o GRUPO inteiro
+        // (`process.kill(-pid, 'SIGTERM')`). Sem o registro, o
+        // `_execReadOnly` ficava de fora do `_encerrarGraciosamente`.
+        //
+        // `_registrarProcesso` já adiciona o listener `close` para
+        // remover do Set — nenhum vazamento. O callback do execFile
+        // também é chamado normalmente (os dois listeners coexistem;
+        // o `close` do Node dispara para todos).
+        if (child) _registrarProcesso(child);
     });
 }
 
@@ -591,15 +702,31 @@ function _parseChaveValor(texto) {
 // Esses dois são suficientes para o frontend mostrar um status
 // verde/amarelo/vermelho sem interpretar o resto.
 function _parseVainfo(stdout) {
+    // ============================================================
+    // MENSAGENS EM INGLÊS (v1.5.8 — auditoria C8)
+    // ============================================================
+    //
+    // Antes, os `error` retornados eram strings PT-BR hardcoded.
+    // Como o cliente exibe `data.error` como detalhe técnico abaixo
+    // do título (que é traduzido), o PT-BR vazava em EN/ES. O
+    // painel mostrava:
+    //
+    //   ❌ Video acceleration is NOT active    (traduzido)
+    //   vainfo não encontrado. Instale o pacote libva-utils.  (PT-BR)
+    //
+    // Inglês como lingua franca para detalhes técnicos é
+    // consistente com o resto do código (comentários, logs do
+    // server, stack traces) e aceitável em PT-BR — o título do
+    // painel + os botões já dão o contexto traduzido.
     if (!stdout) {
-        return { ok: false, error: 'vainfo não retornou saída', profiles: [] };
+        return { ok: false, error: 'vainfo returned no output', profiles: [] };
     }
 
     // Detecção de "não instalado" (mensagem localizada do bash)
     if (/command not found|comando não encontrado|No such file/i.test(stdout)) {
         return {
             ok: false,
-            error: 'vainfo não encontrado. Instale o pacote libva-utils.',
+            error: 'vainfo not found. Install the libva-utils package.',
             profiles: []
         };
     }
@@ -648,7 +775,7 @@ function _parseVainfo(stdout) {
         has_decoding: has_decoding,
         has_encoding: has_encoding,
         error: profiles.length === 0
-        ? 'Nenhum perfil VA-API encontrado. Verifique se o driver está instalado e se a GPU é compatível.'
+        ? 'No VA-API profiles found. Check that the driver is installed and the GPU is supported.'
         : null
     };
 }
@@ -864,14 +991,74 @@ async function _verificarGaFedora(versao) {
 }
 
 async function _verificarCanalFedora(versao) {
-    try {
-        var url = 'https://mirrors.kernel.org/fedora/updates/' + versao +
-        '/Everything/x86_64/repodata/repomd.xml';
-        var resp = await fetch(url, { method: 'HEAD', signal: AbortSignal.timeout(10000) });
-        return { ok: resp.ok, status: resp.status };
-    } catch (e) {
-        return { ok: false, motivo: e.message };
+    // ============================================================
+    // FONTES CANÔNICAS DO FEDORA (v1.5.8)
+    // ============================================================
+    //
+    // Antes, usava `mirrors.kernel.org` (mirror dos EUA) como fonte
+    // única. Redes corporativas com proxy/firewall restritivo,
+    // países com bloqueio a domínios estrangeiros, ou simples
+    // indisponibilidade do mirror → a checagem falhava sempre, e o
+    // upgrade do Fedora 44 → 45 ficava travado em `waiting_ga`
+    // mesmo após o GA. O usuário via "Fedora 45 ainda não lançado"
+    // sem saber que o problema era o mirror.
+    //
+    // Correção: usa `dl.fedoraproject.org` (canônico do Fedora,
+    // sem redirect) com fallback em `download.fedoraproject.org`
+    // (round-robin). O segundo é tentado APENAS quando o primeiro
+    // falha por erro de rede/servidor (5xx, timeout, DNS) — não em
+    // 4xx, porque se o canal não existe no canônico, também não
+    // existe no round-robin.
+    //
+    // Ambos são HEAD (só headers, sem body) com timeout de 10s.
+    // O `Promise.all` do `_calcularUpgradeStatus` roda esta função
+    // em paralelo com as demais checagens, então o pior caso
+    // (primeiro falha por timeout, segundo responde) é 10s + RTT
+    // — dentro do limite dos demais checks (dnf check-update até 30s).
+    var urls = [
+        'https://dl.fedoraproject.org/pub/fedora/linux/updates/' + versao +
+        '/Everything/x86_64/repodata/repomd.xml',
+        'https://download.fedoraproject.org/pub/fedora/linux/updates/' + versao +
+        '/Everything/x86_64/repodata/repomd.xml'
+    ];
+
+    var ultimoErro = null;
+    var ultimoStatus = null;
+
+    for (var i = 0; i < urls.length; i++) {
+        try {
+            var resp = await fetch(urls[i], {
+                method: 'HEAD',
+                signal: AbortSignal.timeout(10000),
+                                   // Não seguir redirects para o HEAD — queremos saber
+                                   // se o ARQUIVO está lá no host canônico, não para
+                                   // onde ele redireciona.
+                                   redirect: 'manual'
+            });
+
+            // 2xx: canal existe.
+            if (resp.status >= 200 && resp.status < 300) {
+                return { ok: true, status: resp.status };
+            }
+
+            // 4xx: canal NÃO existe neste host. Não tenta o próximo
+            // — o segundo host tem a mesma árvore do canônico.
+            if (resp.status >= 400 && resp.status < 500) {
+                return { ok: false, status: resp.status, motivo: 'HTTP ' + resp.status };
+            }
+
+            // 3xx ou 5xx: pode ser redirect (download.fedoraproject.org
+            // redireciona para o mirror mais próximo) ou instabilidade
+            // do host. Registra e tenta o próximo.
+            ultimoStatus = resp.status;
+            ultimoErro = 'HTTP ' + resp.status;
+        } catch (e) {
+            // Erro de rede (DNS, timeout, TLS): tenta o próximo.
+            ultimoErro = e.message;
+        }
     }
+
+    return { ok: false, status: ultimoStatus, motivo: ultimoErro || 'todos os hosts falharam' };
 }
 
 async function _verificarCanalRpmFusion(versao) {
@@ -920,19 +1107,41 @@ async function _detectarAtomic() {
 }
 
 async function _verificarAtualizacoesPendentes() {
-    var check = await _execReadOnly(
-        'dnf check-update --quiet > /dev/null 2>&1; echo "exit=$?"',
-        30000
-    );
+    // ============================================================
+    // PARALELIZA OS DOIS `dnf` (v1.5.8 — auditoria B4)
+    // ============================================================
+    //
+    // Antes, `dnf check-update` (até 30s) e `dnf needs-restarting`
+    // (até 10s) rodavam SEQUENCIALMENTE dentro desta função. O
+    // pior caso somava 40s. Como o `_calcularUpgradeStatus` chama
+    // esta função dentro de um `Promise.all` que também inclui
+    // `_verificarCanalFedora` (2 hosts × 10s = 20s) e demais
+    // checagens, o server podia passar de 35s — e o client
+    // (`_carregarUpgradeStatus`, `_sinalTimeout(35000)`) abortava
+    // antes da resposta chegar. A UI mostrava "Não foi possível
+    // verificar disponibilidade" mesmo com o server a milissegundos
+    // de responder.
+    //
+    // Correção: Promise.all reduz o pior caso para 30s (o mais
+    // lento dos dois). Os dois comandos são read-only e
+    // independentes — não há razão técnica para rodar em série.
+    //
+    // `Promise.all` NÃO rejeita em caso de erro em uma das
+    // promises (o `_execReadOnly` resolve com `''` em erro, nunca
+    // rejeita). Portanto é seguro: nunca cai no `catch` externo.
+    var resultados = await Promise.all([
+        _execReadOnly('dnf check-update --quiet > /dev/null 2>&1; echo "exit=$?"', 30000),
+                                       _execReadOnly('dnf needs-restarting -r > /dev/null 2>&1; echo "exit=$?"', 10000)
+    ]);
+
+    var check = resultados[0];
+    var restart = resultados[1];
+
     var m = check.match(/exit=(\d+)/);
     var codigo = m ? parseInt(m[1], 10) : -1;
     var temUpdates = codigo === 100;
     var checagemOk = (codigo === 0 || codigo === 100);
 
-    var restart = await _execReadOnly(
-        'dnf needs-restarting -r > /dev/null 2>&1; echo "exit=$?"',
-        10000
-    );
     var mr = restart.match(/exit=(\d+)/);
     var codigoR = mr ? parseInt(mr[1], 10) : -1;
     var precisaReboot = (codigoR === 1);
@@ -2245,9 +2454,109 @@ const server = http.createServer((req, res) => {
     }
 
     // ----------------------------------------------------------
-    // PROGRESSO
+    // /progress — GET (ler), POST (salvar), DELETE (resetar)
     // ----------------------------------------------------------
-    // (... resto do server.js ...)
+    //
+    // Bloco crítico. Sem ele, o `.progresso.json` do servidor
+    // dessincroniza do `progressCache`/localStorage do cliente:
+    //
+    //   • GET    → getProgress() no boot, _limparIdsOrfaos,
+    //              marcarComoExecutado, desmarcarComoExecutado
+    //   • POST   → saveProgress (ações da UI)
+    //   • DELETE → resetarProgressoFAP (Sessão 13)
+    //
+    // Sem isso, "Reset progress" não funciona (404), e o arquivo
+    // só é atualizado por `salvarProgresso` (server-side, após
+    // comando OK) — as remoções via lixeira ficam no localStorage
+    // mas não no arquivo.
+
+    if (req.method === 'GET' && url === '/progress') {
+        var progressoAtual = lerProgresso();
+        res.writeHead(200, {
+            'Content-Type': 'application/json',
+            'Cache-Control': 'no-cache, no-store, must-revalidate'
+        });
+        res.end(JSON.stringify({
+            executados: progressoAtual.executados,
+            pulados: progressoAtual.pulados,
+            origem: progressoAtual.origem || {}
+        }));
+        return;
+    }
+
+    if (req.method === 'POST' && url === '/progress') {
+        // CSRF guard — mesma regra de /executar e /shutdown.
+        var originProgress = req.headers.origin || '';
+        var originProgressOk = !originProgress ||
+        /^https?:\/\/(127\.0\.0\.1|localhost)(:\d+)?$/.test(originProgress);
+        if (!originProgressOk) {
+            console.warn('[FAP] /progress bloqueado — Origin suspeita:', originProgress);
+            res.writeHead(403, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ success: false, error: 'Origin não autorizada' }));
+            return;
+        }
+
+        let body = '';
+        req.on('data', chunk => { body += chunk.toString(); });
+        req.on('end', () => {
+            try {
+                const { executados, pulados } = JSON.parse(body);
+
+                // Filtro de IDs transientes — espelha `salvarProgresso`
+                // (defesa em profundidade). Sem isso, `open-*`,
+                // `*-open`, `*-remove` e `*-revert` entrariam no
+                // `.progresso.json` e o `_limparIdsOrfaos` (frontend)
+                // teria que removê-los na próxima passada — churn
+                // desnecessário.
+                function _idTransienteProgress(id) {
+                    return !id ||
+                    id.startsWith('open-') ||
+                    id.endsWith('-open') ||
+                    id.endsWith('-remove') ||
+                    id.endsWith('-revert');
+                }
+
+                var progressoAtual = lerProgresso();
+                progressoAtual.executados = (executados || []).filter(function(id) {
+                    return !_idTransienteProgress(id);
+                });
+                progressoAtual.pulados = (pulados || []).filter(function(id) {
+                    return !_idTransienteProgress(id);
+                });
+                // Preserva `origem` — é auditoria, não é resetado.
+                // (O cliente não envia `origem` no POST; só o
+                // server-side `salvarProgresso` grava esse campo.)
+
+                escreverProgresso(progressoAtual);
+
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ success: true }));
+            } catch (err) {
+                console.error('[progress POST] Erro:', err.message);
+                res.writeHead(400, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ success: false, error: 'Body inválido' }));
+            }
+        });
+        return;
+    }
+
+    if (req.method === 'DELETE' && url === '/progress') {
+        // CSRF guard — mesma regra do POST.
+        var originDelete = req.headers.origin || '';
+        var originDeleteOk = !originDelete ||
+        /^https?:\/\/(127\.0\.0\.1|localhost)(:\d+)?$/.test(originDelete);
+        if (!originDeleteOk) {
+            console.warn('[FAP] /progress DELETE bloqueado — Origin suspeita:', originDelete);
+            res.writeHead(403, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ success: false, error: 'Origin não autorizada' }));
+            return;
+        }
+
+        var ok = resetarProgresso();
+        res.writeHead(ok ? 200 : 500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: ok }));
+        return;
+    }
 
     // ----------------------------------------------------------
     // PÁGINAS E ARQUIVOS ESTÁTICOS
@@ -2354,7 +2663,7 @@ const server = http.createServer((req, res) => {
     // o kernel atual — frágil, porque outra linha `output` podia se
     // misturar se o usuário clicasse em outro botão ao mesmo tempo.
     if (req.method === 'GET' && url === '/kernel-atual') {
-        exec('uname -r', { shell: '/bin/bash', timeout: 3000 }, (error, stdout) => {
+        _execReadOnly('uname -r', 3000).then(function(stdout) {
             var kernel = (stdout || '').trim();
             res.writeHead(200, {
                 'Content-Type': 'application/json',
@@ -2403,29 +2712,27 @@ const server = http.createServer((req, res) => {
         // compara com o kernel em execução). O `_execReadOnly` mata
         // o grupo (detached: true) em timeout, então não há risco
         // de deixar `dnf` órfão.
-        exec('dnf needs-restarting -r 2>&1; echo "---EXIT=$?---"',
-             { shell: '/bin/bash', timeout: 15000 },
-             (error, stdout) => {
-                 var out = (stdout || '');
-                 var m = out.match(/---EXIT=(\d+)---/);
-                 var codigo = m ? parseInt(m[1], 10) : -1;
-                 var reboot = (codigo === 1);
-                 var erro = (codigo !== 0 && codigo !== 1);
-                 var motivo = erro
-                 ? 'dnf needs-restarting retornou código ' + codigo
-                 : null;
+        _execReadOnly('dnf needs-restarting -r 2>&1; echo "---EXIT=$?---"', 15000).then(function(stdout) {
+            var out = (stdout || '');
+            var m = out.match(/---EXIT=(\d+)---/);
+            var codigo = m ? parseInt(m[1], 10) : -1;
+            var reboot = (codigo === 1);
+            var erro = (codigo !== 0 && codigo !== 1);
+            var motivo = erro
+            ? 'dnf needs-restarting retornou código ' + codigo
+            : null;
 
-                 res.writeHead(200, {
-                     'Content-Type': 'application/json',
-                     'Cache-Control': 'no-cache, no-store, must-revalidate'
-                 });
-                 res.end(JSON.stringify({
-                     reboot: reboot,
-                     erro: erro,
-                     code: codigo,
-                     motivo: motivo
-                 }));
-             });
+            res.writeHead(200, {
+                'Content-Type': 'application/json',
+                'Cache-Control': 'no-cache, no-store, must-revalidate'
+            });
+            res.end(JSON.stringify({
+                reboot: reboot,
+                erro: erro,
+                code: codigo,
+                motivo: motivo
+            }));
+        });
         return;
     }
 
@@ -2433,22 +2740,25 @@ const server = http.createServer((req, res) => {
     // /kernels — lista de kernels instalados
     // ----------------------------------------------------------
     if (req.method === 'GET' && url === '/kernels') {
-        exec('rpm -q kernel-core --queryformat "%{VERSION}-%{RELEASE}.%{ARCH}\\n" 2>/dev/null',
-             { shell: '/bin/bash', timeout: 5000 },
-             (error, stdout) => {
-                 const kernels = (stdout || '').trim().split('\n').filter(Boolean);
-                 exec('uname -r', (err2, stdout2) => {
-                     const atual = (stdout2 || '').trim();
-                     res.writeHead(200, {
-                         'Content-Type': 'application/json',
-                         'Cache-Control': 'no-cache, no-store, must-revalidate'
-                     });
-                     res.end(JSON.stringify({
-                         kernels: kernels,
-                         atual: atual
-                     }));
-                 });
-             });
+        // Paraleliza as duas consultas (o `rpm -q` e o `uname -r` são
+        // independentes; o aninhamento do `exec` original era só por
+        // conveniência). `Promise.all` reduz o pior caso de ~2×RTT
+        // para 1×RTT.
+        Promise.all([
+            _execReadOnly('rpm -q kernel-core --queryformat "%{VERSION}-%{RELEASE}.%{ARCH}\\n" 2>/dev/null', 5000),
+                    _execReadOnly('uname -r', 3000)
+        ]).then(function(resultados) {
+            var kernels = (resultados[0] || '').trim().split('\n').filter(Boolean);
+            var atual = (resultados[1] || '').trim();
+            res.writeHead(200, {
+                'Content-Type': 'application/json',
+                'Cache-Control': 'no-cache, no-store, must-revalidate'
+            });
+            res.end(JSON.stringify({
+                kernels: kernels,
+                atual: atual
+            }));
+        });
         return;
     }
 
@@ -2742,12 +3052,18 @@ const server = http.createServer((req, res) => {
             res.end(JSON.stringify({ error: 'pkg inválido' }));
             return;
         }
-        exec('rpm -q ' + pkg, { shell: '/bin/bash', timeout: 3000 }, (error, stdout) => {
-            var out = (stdout || '').toLowerCase();
-            var instalado = !error &&
-            !/not installed/.test(out) &&
-            !/não instalado/.test(out) &&
-            out.trim().length > 0;
+        // Usa o padrão `exit=$?` para inspecionar o código de saída do
+        // `rpm -q` — em vez de tentar inferir pelo stdout (o
+        // `_execReadOnly` não propaga `error`). `rpm -q` retorna 0 se
+        // instalado, != 0 caso contrário (seja "not installed",
+        // "não instalado" ou DB lock). É locale-independente.
+        //
+        // `pkg` foi validado por `/^[a-zA-Z0-9._-]+$/` logo acima —
+        // sem shell metacharacters. `rpm -q ` + pkg é seguro.
+        _execReadOnly('rpm -q ' + pkg + ' >/dev/null 2>&1; echo "exit=$?"', 3000).then(function(stdout) {
+            var m = (stdout || '').match(/exit=(\d+)/);
+            var codigo = m ? parseInt(m[1], 10) : -1;
+            var instalado = (codigo === 0);
             res.writeHead(200, {
                 'Content-Type': 'application/json',
                 'Cache-Control': 'no-cache, no-store, must-revalidate'
@@ -2894,16 +3210,14 @@ const server = http.createServer((req, res) => {
     // `--columns=application` retorna apenas os app-ids, uma por
     // linha, sem cabeçalho — formato ideal para comparação.
     if (req.method === 'GET' && url === '/flatpak-installed') {
-        exec('flatpak list --app --columns=application 2>/dev/null',
-             { shell: '/bin/bash', timeout: 5000 },
-             (error, stdout) => {
-                 const apps = (stdout || '').trim().split('\n').filter(Boolean);
-                 res.writeHead(200, {
-                     'Content-Type': 'application/json',
-                     'Cache-Control': 'no-cache, no-store, must-revalidate'
-                 });
-                 res.end(JSON.stringify({ apps: apps }));
-             });
+        _execReadOnly('flatpak list --app --columns=application 2>/dev/null', 5000).then(function(stdout) {
+            const apps = (stdout || '').trim().split('\n').filter(Boolean);
+            res.writeHead(200, {
+                'Content-Type': 'application/json',
+                'Cache-Control': 'no-cache, no-store, must-revalidate'
+            });
+            res.end(JSON.stringify({ apps: apps }));
+        });
         return;
     }
 

@@ -2,7 +2,7 @@
 
 **🌐 Language:** [Português (BR)](README.md) | English | [Español](README.es.md)
 
-![Version](https://img.shields.io/badge/Version-v1.5.7--11082026-orange?style=flat-square)
+![Version](https://img.shields.io/badge/Version-v1.5.8--11112026-orange?style=flat-square)
 ![Fedora](https://img.shields.io/badge/Fedora-44%20%7C%2045-294172?style=flat-square&logo=fedora)
 ![License](https://img.shields.io/badge/License-GPL--3.0-green?style=flat-square)
 ![Languages](https://img.shields.io/badge/Languages-PT--BR%20%7C%20EN%20%7C%20ES-3c67e3?style=flat-square)
@@ -74,14 +74,14 @@ bash <(curl -s https://raw.githubusercontent.com/vitaotub/Fedora-Advantage-Panel
 - **Backup before overwriting.** GameMode + MangoHud presets back up the user's files before applying — and the trash icon restores them.
 - **Authentication via `pkexec`.** Native desktop password dialog. The script to be executed is logged **before** pkexec opens — you see what you're authorizing.
 - **File-based audit.** Every `pkexec` leaves a trail in `/tmp/fap-audit-*.log` (removed after 7 days).
-- **Local CSRF protection.** `/executar` and `/shutdown` reject requests with an `Origin` from another host.
+- **Local CSRF protection.** `/executar` and `/shutdown` reject requests with an `Origin` from another host. `/executar` also blocks `>` (file redirection) unless it's a legitimate dup-fd (`2>&1`, `1>&2`, `>&2`) — closes the `~/.bashrc` overwrite vector.
 - **Secure Boot aware.** When installing any `akmod-*` with Secure Boot enabled, FAP guides the user through MOK enrollment (kmodgenca + mokutil) before installing. If the user already has an enrolled key (from any source), FAP detects it and hides the instructions.
 - **Native WebKitGTK container.** Own interface, no dependence on Firefox/Chromium.
 - **`install.sh` refuses to run as root.** Installs to `~/.local/share` and uses `sudo` only where needed.
 
 ## 🖥️ Requirements
 
-- **Fedora 44 or 45.** Active development and testing focus on **Fedora 45 and future versions**. Fedora 44 is maintained as legacy.
+- **Fedora 44 or 45.** Both are **officially supported**. Active development and testing focus on **Fedora 45 and future versions**, but Fedora 44 remains homologated — every FAP command is tested on both versions.
 - **GNOME, KDE Plasma, XFCE, Cinnamon, MATE, LXQt, LXDE, Budgie, Sway, Hyprland, i3** and other tiling WMs.
 - **PT-BR, EN and ES.**
 
@@ -98,7 +98,7 @@ Updates are applied on top of the existing installation — progress, theme, and
 
 ### FAP won't install or won't open, even after uninstall/reinstall
 
-If you already ran `./install.sh --uninstall` and reinstalling keeps failing (server doesn't start, window closes in ~15s, `git pull` with conflict, lost `.sh` permissions), there may be leftovers from older installations that the standard uninstall didn't cover. In that case, use the heavy cleanup script:
+If you already ran `./install.sh --uninstall` and reinstalling keeps failing (server doesn't start, window closes in ~15s, `git pull` with conflict, lost `.sh` permissions), there may be leftovers from older installations that the standard uninstall didn't cover. In that case, use the heavy cleanup script (it lives in `scripts/`):
 
 ```bash
 sudo bash ~/.local/share/fedora-advantage-panel/scripts/fap-cleanup.sh

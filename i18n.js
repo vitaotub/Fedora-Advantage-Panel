@@ -52,6 +52,21 @@
         carregando: null
     };
 
+    // Promise que resolve quando o idioma atual terminou de
+    // carregar (JSON disponível em `estado.strings`, ou PT-BR
+    // nativo). Consumidores externos (ex.: `guiado.html` →
+    // `carregarSessao`) usam `I18N.ready.then(...)` para adiar
+    // a renderização de textos dinâmicos até o i18n estar
+    // pronto — evitando o flash "PT-BR → EN/ES" no boot.
+    //
+    // Resolve UMA ÚNICA VEZ. `initI18n` é idempotente (pode ser
+    // chamado múltiplas vezes), mas `_readyResolve` só dispara
+    // na primeira.
+    var _readyResolve = null;
+    var _readyPromise = new Promise(function(resolve) {
+        _readyResolve = resolve;
+    });
+
     // Guard: impede que criarSeletorIdioma() rode múltiplas vezes.
     var _seletorCriado = false;
 
@@ -105,21 +120,34 @@
         // A versão faz parte da chave do cache: quando o FAP é
         // atualizado, a chave muda e o cache antigo é descartado
         // automaticamente por _limparCachesAntigos().
-        var v = window.FAP_VERSION_UI18N || 'unknown';
+        //
+        // Se a versão ainda NÃO está disponível (1ª carga, antes de
+        // `carregarVersaoServidor` resolver), retornamos `null`.
+        // `carregarDoCache`/`salvarNoCache` fazem no-op nesse caso —
+        // evitando gravar um cache `_unknown` que seria descartado
+        // em seguida por `_limparCachesAntigos`.
+        var v = window.FAP_VERSION_UI18N;
+        if (!v || typeof v !== 'string' || v.length === 0) {
+            return null;
+        }
         return CACHE_PREFIX + lang + '_' + v;
     }
 
     // Remove do localStorage todas as chaves de cache do idioma
     // informado que NÃO sejam a chave atual (versões antigas do FAP).
-    // Chamado no boot, depois que _chaveCache() está estável.
+    // Também remove caches legados com sufixo `_unknown` (versão
+    // indisponível) — não são mais gravados, mas podem existir em
+    // instalações antigas.
     function _limparCachesAntigos(lang) {
         try {
-            var prefixo = CACHE_PREFIX + lang + '_';
             var chaveAtual = _chaveCache(lang);
+            if (!chaveAtual) return;
+            var prefixo = CACHE_PREFIX + lang + '_';
             var paraRemover = [];
             for (var i = 0; i < localStorage.length; i++) {
                 var k = localStorage.key(i);
-                if (k && k.indexOf(prefixo) === 0 && k !== chaveAtual) {
+                if (!k) continue;
+                if (k.indexOf(prefixo) === 0 && k !== chaveAtual) {
                     paraRemover.push(k);
                 }
             }
@@ -136,7 +164,9 @@
 
     function carregarDoCache(lang) {
         try {
-            var raw = localStorage.getItem(_chaveCache(lang));
+            var chave = _chaveCache(lang);
+            if (!chave) return null;
+            var raw = localStorage.getItem(chave);
             if (!raw) return null;
             return JSON.parse(raw);
         } catch (e) {
@@ -146,10 +176,9 @@
 
     function salvarNoCache(lang, dados) {
         try {
-            // Grava sempre (mesmo sem versão) para cache funcionar no boot.
-            // A versão entra como prefixo quando conhecida; _limparCachesAntigos
-            // remove chaves antigas no evento 'fap-versao-pronta'.
-            localStorage.setItem(_chaveCache(lang), JSON.stringify(dados));
+            var chave = _chaveCache(lang);
+            if (!chave) return;
+            localStorage.setItem(chave, JSON.stringify(dados));
         } catch (e) { }
     }
 
@@ -254,7 +283,20 @@
         }
         var valor = buscarChave(estado.strings, chave);
         if (typeof valor !== 'string') {
-            console.warn('[i18n] Chave não encontrada:', chave, 'em', estado.lang);
+            // Só loga warning DEPOIS que o idioma terminou de
+            // carregar. Durante o boot (estado.carregado === false),
+            // a ausência da chave é esperada: o `script.js` e o
+            // `guiado.html` chamam `_t()` em handlers de
+            // `DOMContentLoaded`, que rodam em paralelo ao fetch
+            // assíncrono do JSON (i18n.js). O `aplicarTraducoes`
+            // (chamado logo depois do JSON resolver) corrige o DOM.
+            //
+            // Sem esse guard, a primeira carga em EN/ES gerava ~20
+            // warnings de console — ruído que mascarava warnings
+            // REAIS (chave removida, typo, etc.).
+            if (estado.carregado) {
+                console.warn('[i18n] Chave não encontrada:', chave, 'em', estado.lang);
+            }
             return null;
         }
         return interpolar(valor, vars);
@@ -411,6 +453,14 @@
             console.warn('[i18n] Idioma não suportado:', lang);
             return;
         }
+        // Guard: se já é o idioma atual, reload seria desnecessário
+        // (recarrega a página toda sem motivo). O `<select>` só
+        // dispara `change` quando o valor muda, então o caminho
+        // comum não é afetado — o guard cobre chamadas programáticas
+        // e o caso do usuário re-selecionar o mesmo idioma.
+        if (lang === estado.lang) {
+            return;
+        }
         try {
             localStorage.setItem(STORAGE_KEY, lang);
         } catch (e) { /* ignore */ }
@@ -454,6 +504,7 @@
             estado.carregado = true;
             criarSeletorIdioma();
             document.dispatchEvent(new CustomEvent('i18n-pronto', { detail: { lang: estado.lang } }));
+            _readyResolve();
             return Promise.resolve();
         }
 
@@ -462,6 +513,7 @@
             aplicarTraducoes();
             criarSeletorIdioma();
             document.dispatchEvent(new CustomEvent('i18n-pronto', { detail: { lang: estado.lang } }));
+            _readyResolve();
         });
     }
 
@@ -477,7 +529,11 @@
         aplicarTraducoes: aplicarTraducoes,
         criarSeletorIdioma: criarSeletorIdioma,
         initI18n: initI18n,
-        LANGS_DISPONIVEIS: LANGS_DISPONIVEIS
+        LANGS_DISPONIVEIS: LANGS_DISPONIVEIS,
+        // Promise que resolve quando o idioma atual terminou de
+        // carregar. Consumidores usam para adiar renderização de
+        // textos dinâmicos (evita flash "PT → EN/ES").
+        ready: _readyPromise
     };
 
     // Atalhos globais (usados pelos scripts de sessão)

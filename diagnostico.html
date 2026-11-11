@@ -669,13 +669,6 @@ async function _atualizarTopProcessos() {
     }
 }
 
-function _escapeHTML(s) {
-    if (s == null) return '';
-    return String(s).replace(/[&<>"']/g, function(c) {
-        return {'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c];
-    });
-}
-
 // ============================================================
 // PARTIÇÕES
 // ============================================================

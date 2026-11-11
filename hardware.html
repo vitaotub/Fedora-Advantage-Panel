@@ -198,7 +198,9 @@ NVIDIA
 ⚠️ O driver proprietário da NVIDIA exige que o parâmetro <code>nvidia-drm.modeset=1</code> esteja ativo para o Wayland funcionar corretamente. O RPM Fusion (Sessão 1) é pré-requisito. Após instalar o driver, o computador precisa ser reiniciado.
 </div>
 
-<!-- Painel de Secure Boot — preenchido por _renderizarPainelSecureBoot -->
+<!-- Badge de Secure Boot — preenchido por _renderizarBadgeSecureBoot
+     (a Sessão 3 mostra o badge compacto; o painel completo com os
+     3 passos vive na Sessão 12 — fonte única do texto) -->
 <div id="nvidia-secureboot-panel" style="margin-bottom: 1rem;"></div>
 
 <div class="aviso-caixa" id="nvidia-aviso-legado" style="display: none; border-color: #ef4444; color: #ef4444;">
@@ -864,12 +866,14 @@ async function executarVaapiCheckIntel() {
 // NVIDIA — detecção
 // ------------------------------------------------------------
 
-function _escapeHTMLNvidia(s) {
-    if (s == null) return '';
-    return String(s).replace(/[&<>"']/g, function(c) {
-        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
-    });
-}
+// ============================================================
+// `_escapeHTMLNvidia` REMOVIDA (auditoria C11)
+// ============================================================
+//
+// Duplicava `_escapeHTML` (mesma implementação, mesmo regex, mesmo
+// mapa de substituição). As chamadas em `_renderizarPanelNvidia`
+// e `_renderizarPanelDriverStatus` agora usam `_escapeHTML` — que
+// já existe no escopo da sessão (definido em `_buildCard`).
 
 // ============================================================
 // DETECÇÃO DE GERAÇÃO NVIDIA (v1.4.9)
@@ -933,17 +937,25 @@ function _detectarGeracaoNvidia(modelo) {
         };
     }
 
-    // Turing (RTX 20xx, GTX 16xx, TU1xx)
-    if (/\btu1\d|rtx 20[0-9]{2}\b|gtx 16[0-9]{2}\b|turing/.test(m)) {
-        return {
-            tipo: 'turing',
-            nome: 'Turing (RTX 20xx / GTX 16xx)',
-            precisaOpen: false,
-            bloqueado: false,
-            pkg: 'akmod-nvidia',
-            cuda: 'xorg-x11-drv-nvidia-cuda'
-        };
-    }
+    // Turing (RTX 20xx, GTX 16xx, TU1xx, TITAN RTX)
+//
+// `titan rtx` é TURING (TU102), não Pascal/Maxwell. Sem o match
+// explícito aqui, o `\btitan\b` do ramo seguinte captura "TITAN RTX"
+// e devolve `akmod-nvidia-580xx` (branch legado) — pacote que NÃO
+// SUPORTA Turing. O módulo compila mas recusa carregar no boot
+// (black screen). O LSPCI frequentemente reporta só
+// "NVIDIA TITAN RTX" (sem codename TU102), então a regex de
+// codename não cobre esse caso.
+if (/\btu1\d|rtx 20[0-9]{2}\b|gtx 16[0-9]{2}\b|turing|titan rtx/.test(m)) {
+    return {
+        tipo: 'turing',
+        nome: 'Turing (RTX 20xx / GTX 16xx)',
+        precisaOpen: false,
+        bloqueado: false,
+        pkg: 'akmod-nvidia',
+        cuda: 'xorg-x11-drv-nvidia-cuda'
+    };
+}
 
     // Maxwell/Pascal/Volta (GTX 9xx/10xx, Titan, GV100)
     if (/\btitan\b|gtx (745|750)\b|mx[0-9]{3}|gtx 8[0-9]{2}m|gtx 9[0-9]{2}\b|gtx 10[0-9]{2}\b|quadro [mp]|tesla [mp]|volta|gv100/.test(m)) {
@@ -1031,10 +1043,28 @@ async function _detectarGpuPorVendor(vendorIds) {
             return false;
         });
 
+        // ============================================================
+        // REPASSA secure_boot/secure_boot_mok (v1.5.8 — auditoria B9)
+        // ============================================================
+        //
+        // O JSON do `/hardware-scan` já contém esses campos. A versão
+        // anterior descartava — o que forçava `_atualizarSecaoNvidia`
+        // a chamar `_detectarSecureBoot()`, que faz um SEGUNDO fetch
+        // do mesmo endpoint (bypassa o cache de 5s do
+        // `_fetchHardwareScan`). Resultado: 2 `/hardware-scan`
+        // completos por load da Sessão 3.
+        //
+        // Repassar aqui permite que `_atualizarSecaoNvidia` popule
+        // os caches globais `_secureBootCache`/`_secureBootMokCache`
+        // sem fetch adicional. `_atualizarSecaoAmd` e
+        // `_atualizarSecaoIntel` ignoram os campos extras (só usam
+        // `detected`/`gpus`/`rpmfusion`) — sem regressão.
         return {
             detected: gpus.length > 0,
             gpus: gpus,
-            rpmfusion: rpmfusionOk
+            rpmfusion: rpmfusionOk,
+            secure_boot: data.secure_boot || 'unknown',
+            secure_boot_mok: data.secure_boot_mok || null
         };
     } catch (e) {
         return { detected: false, rpmfusion: false, error: e.message };
@@ -1044,7 +1074,12 @@ async function _detectarGpuPorVendor(vendorIds) {
 async function _detectarGpuNvidia() {
     var info = await _detectarGpuPorVendor(['10de']);
     if (!info.detected) {
-        return { detected: false, rpmfusion: info.rpmfusion };
+        return {
+            detected: false,
+            rpmfusion: info.rpmfusion,
+            secure_boot: info.secure_boot,
+            secure_boot_mok: info.secure_boot_mok
+        };
     }
     var gpu = info.gpus[0];
     var modelo = (gpu.name || 'GPU NVIDIA').trim();
@@ -1063,7 +1098,16 @@ async function _detectarGpuNvidia() {
         modelo: modelo,
         geracao: geracao,
         pkg: geracao.pkg,
-        serie: geracao.nome
+        // Repassa os campos de Secure Boot obtidos no MESMO scan
+        // (v1.5.8 — auditoria B9). `_atualizarSecaoNvidia` usa
+        // para popular `_secureBootCache`/`_secureBootMokCache`
+        // sem fetch adicional.
+        //
+        // `serie` removido na auditoria C10: era `geracao.nome`
+        // duplicado e ninguém consumia (`_renderizarPanelNvidia`
+        // usa `info.geracao.nome`). Dead property.
+        secure_boot: info.secure_boot,
+        secure_boot_mok: info.secure_boot_mok
     };
 }
 
@@ -1105,11 +1149,11 @@ function _renderizarPanelNvidia(info) {
             '🔍 Hardware detectado') + '</strong>' +
         '<ul class="lista-info" style="margin-top: 0.5rem;">' +
         '<li><span class="label">' + _t('sessoes.hardware.nvidia_panel_label_gpu',
-            'GPU') + '</span><span class="valor">' + _escapeHTMLNvidia(info.modelo) + '</span></li>' +
+            'GPU') + '</span><span class="valor">' + _escapeHTML(info.modelo) + '</span></li>' +
         '<li><span class="label">' + _t('sessoes.hardware.nvidia_panel_label_geracao',
-            'Geração') + '</span><span class="valor">' + _escapeHTMLNvidia(geracaoExibida) + '</span></li>' +
+            'Geração') + '</span><span class="valor">' + _escapeHTML(geracaoExibida) + '</span></li>' +
         '<li><span class="label">' + _t('sessoes.hardware.nvidia_panel_label_driver',
-            'Driver recomendado') + '</span><span class="valor"><code>' + _escapeHTMLNvidia(pkgExibido) + '</code></span></li>' +
+            'Driver recomendado') + '</span><span class="valor"><code>' + _escapeHTML(pkgExibido) + '</code></span></li>' +
         '</ul>' +
         rpmfusionAviso;
 }
@@ -1188,8 +1232,8 @@ async function _renderizarPanelDriverStatus(info) {
             panel.innerHTML =
                 '<div class="aviso-caixa" style="border-color: #f59e0b; color: #f59e0b;">' +
                 '⚠️ <strong>Não foi possível verificar a disponibilidade do driver <code>' +
-                _escapeHTMLNvidia(info.geracao.pkg) + '</code> no RPM Fusion.</strong><br>' +
-                '<span style="font-size: 0.85rem;">Motivo: ' + _escapeHTMLNvidia(disp.erro || 'desconhecido') +
+                _escapeHTML(info.geracao.pkg) + '</code> no RPM Fusion.</strong><br>' +
+                '<span style="font-size: 0.85rem;">Motivo: ' + _escapeHTML(disp.erro || 'desconhecido') +
                 '. O botão "Instalar Driver NVIDIA" continua habilitado — clique nele para tentar. ' +
                 'Se o pacote não existir, o <code>dnf install</code> mostrará o erro real no log.</span>' +
                 '</div>';
@@ -1279,19 +1323,39 @@ async function _aplicarEstadoNvidia(info) {
     }
 
     // Bloqueio 3: Secure Boot ativo sem chave preparada
+    //
+    // v1.5.8: fonte PRIMÁRIA de `chaveLocal` é
+    // `_secureBootMokCache.chave_gerada` (do `/hardware-scan`,
+    // teste `test -f` direto — a mesma fonte usada por
+    // `_renderizarPainelSecureBoot` e `_renderizarBadgeSecureBoot`
+    // em script.js). `SystemState.arquivoPresente` fica como
+    // FALLBACK para quando o cache ainda não foi populado
+    // (primeira renderização, antes do fetch resolver).
+    //
+    // Motivo: `/system-state` testa com `sudo -n test -f || test -f`
+    // (funciona em `0750 root:akmods` se houver NOPASSWD),
+    // `/hardware-scan` usa `test -f` direto (falha sem permissão).
+    // Quando o usuário tem NOPASSWD e a chave existe, as duas fontes
+    // podem divergir. Alinhar com `/hardware-scan` evita que o
+    // painel mostre "chave já gerada" enquanto o backend reporta
+    // `chave_gerada: false`.
     if (!installFeito) {
         var btnInstall3 = document.getElementById('btn-nvidia-driver-install');
         if (btnInstall3) {
             var sb = await _detectarSecureBoot();
             if (sb === 'enabled') {
                 var chaveLocal = false;
-                try { chaveLocal = SystemState.arquivoPresente('/etc/pki/akmods/certs/public_key.der'); } catch (e) {}
-                if (!chaveLocal && SystemState.cacheIdade() < 60000) {
-                    try {
-                        SystemState.invalidar();
-                        await SystemState.carregar(true);
-                        chaveLocal = SystemState.arquivoPresente('/etc/pki/akmods/certs/public_key.der');
-                    } catch (e) { /* mantém chaveLocal = false */ }
+                if (_secureBootMokCache && typeof _secureBootMokCache.chave_gerada === 'boolean') {
+                    chaveLocal = _secureBootMokCache.chave_gerada;
+                } else {
+                    try { chaveLocal = SystemState.arquivoPresente('/etc/pki/akmods/certs/public_key.der'); } catch (e) {}
+                    if (!chaveLocal && SystemState.cacheIdade() < 60000) {
+                        try {
+                            SystemState.invalidar();
+                            await SystemState.carregar(true);
+                            chaveLocal = SystemState.arquivoPresente('/etc/pki/akmods/certs/public_key.der');
+                        } catch (e) { /* mantém chaveLocal = false */ }
+                    }
                 }
                 if (!chaveLocal) {
                     btnInstall3.disabled = true;
@@ -1385,31 +1449,49 @@ async function _verificarPacoteDisponivel(pkg, forcarRefresh) {
 
 async function _atualizarSecaoNvidia() {
     var info = await _detectarGpuNvidia();
+
+    // ============================================================
+    // PRÉ-POPULA OS CACHES DE SECURE BOOT COM O MESMO SCAN (v1.5.8 — B9)
+    // ============================================================
+    //
+    // `_detectarGpuNvidia` → `_detectarGpuPorVendor` já fez o
+    // `/hardware-scan` e recebeu `secure_boot` + `secure_boot_mok`
+    // no JSON (repassados na auditoria B9). Populamos os caches
+    // globais `_secureBootCache`/`_secureBootMokCache` com esses
+    // dados, evitando um SEGUNDO fetch dentro de `_detectarSecureBoot`.
+    //
+    // Efeito colateral positivo: `executarNvidiaDriver` (chamado
+    // depois, quando o usuário clica em "Instalar Driver NVIDIA")
+    // também consulta `_detectarSecureBoot()`. Com o cache já
+    // populado, a consulta é O(1) em memória.
+    //
+    // Guard: só popula se `info.detected` E `info.secure_boot` está
+    // preenchido. Se o `_fetchHardwareScan` falhou (retornou
+    // `secure_boot: undefined`), deixa os caches como estão —
+    // `_detectarSecureBoot` ainda tenta o fetch (comportamento
+    // anterior, correto para retry).
+    if (info.detected && info.secure_boot) {
+        _secureBootCache = info.secure_boot;
+        _secureBootMokCache = info.secure_boot_mok || null;
+    }
+
     _renderizarPanelNvidia(info);
     await _renderizarPanelDriverStatus(info);
     await _aplicarEstadoNvidia(info);
     _mostrarAvisoX11Nvidia(info);
 
     // Secure Boot: usa `_renderizarBadgeSecureBoot` (badge compacto
-    // com link "Abrir passo a passo"), NÃO o painel completo.
+    // com link "Abrir passo a passo"). O painel completo vive na
+    // Sessão 12.
     //
-    // O painel completo (3 passos: kmodgenca → mokutil --import →
-    // reboot + MOK Management) vive APENAS na Sessão 12 (Estado do
-    // Fedora), que é a fonte única do texto. A Sessão 3 mostra só o
-    // badge apontando para lá — mesmo padrão já usado em
-    // `virtualizacao.html` (VirtualBox), `dispositivos-perifericos.html`
-    // (Broadcom/Realtek/xpadneo) e `producao-multimidia.html`
-    // (câmera virtual do OBS).
-    //
-    // Motivo: o usuário precisa ir à Sessão 12 de qualquer forma
-    // para preparar/enrolar a chave (o botão "Instalar Driver
-    // NVIDIA" fica desabilitado até lá). Duplicar o texto de 3
-    // passos em 2 sessões confunde e cria risco de drift.
+    // `_secureBootCache` já está populado acima (se `info.detected`).
+    // Se `info.detected` é `false`, limpamos o badge — sem GPU, não
+    // há akmod NVIDIA a instalar, então o aviso de Secure Boot é
+    // irrelevante.
     var badgeSb = document.getElementById('nvidia-secureboot-panel');
     if (badgeSb) {
         if (info.detected) {
-            var estadoSb = await _detectarSecureBoot();
-            _renderizarBadgeSecureBoot(badgeSb, estadoSb, 'o driver NVIDIA');
+            _renderizarBadgeSecureBoot(badgeSb, _secureBootCache || 'unknown', 'o driver NVIDIA');
         } else {
             badgeSb.innerHTML = '';
         }
@@ -1460,6 +1542,20 @@ async function _atualizarSecaoAmd() {
                 b.getAttribute('data-estado') === 'instalado-sem-abrir') {
                 return;
             }
+            // ============================================================
+            // NÃO DESABILITA "VERIFICAR ACELERAÇÃO" SEM GPU (auditoria C9)
+            // ============================================================
+            //
+            // `vaapi-check-amd` roda `vainfo` (read-only). É informativo
+            // mesmo sem GPU AMD: numa máquina Intel-only ou NVIDIA-only,
+            // o botão ainda retorna o estado real do sistema (quem é o
+            // driver ativo, se há decode por hardware). Desabilitar
+            // esconde a informação sem motivo.
+            //
+            // O comando em si continua funcionando — só é inútil se o
+            // usuário NÃO tem NENHUM driver VA-API instalado (o que já
+            // seria detectado pela própria saída do `vainfo`).
+            if (b.id === 'btn-vaapi-check-amd') return;
             b.setAttribute('data-hw-disabled', '1');
             b.disabled = true;
             b.style.opacity = '0.5';
@@ -1537,6 +1633,9 @@ async function _atualizarSecaoIntel() {
                 b.getAttribute('data-estado') === 'instalado-sem-abrir') {
                 return;
             }
+            // Mesma lógica do AMD (auditoria C9): `vaapi-check-intel`
+            // é informativo sem GPU Intel. Skipa.
+            if (b.id === 'btn-vaapi-check-intel') return;
             b.setAttribute('data-hw-disabled', '1');
             b.disabled = true;
             b.style.opacity = '0.5';
@@ -1655,9 +1754,10 @@ async function executarNvidiaDriver() {
         var chaveLocal = false;
         try { chaveLocal = SystemState.arquivoPresente('/etc/pki/akmods/certs/public_key.der'); } catch (e) {}
         if (!chaveLocal) {
-            alert(_t('sessoes.hardware.nvidia_secureboot_bloqueio',
+            alert(_tVars('sessoes.hardware.nvidia_secureboot_bloqueio',
                 'Secure Boot está ativo e a chave do akmods ainda não foi preparada. ' +
-                'Use o botão "Preparar Secure Boot" (Sessão 12) antes de instalar o driver.'));
+                'Use o botão "Preparar Secure Boot" em {sessao} antes de instalar o driver.',
+                { sessao: _t('sessoes.estado-fedora.nome', 'Estado do Fedora') }));
             return;
         }
     }

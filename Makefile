@@ -54,7 +54,7 @@ WEBKIT_PKG := $(shell pkg-config --exists webkit2gtk-4.1 2>/dev/null && echo web
 TARGET = fap-container
 SRC = src/fap-container.c
 
-.PHONY: all clean install uninstall run version check check-basico help
+.PHONY: all clean install uninstall run version check check-basico check-buttons help
 
 all: $(TARGET)
 
@@ -100,6 +100,15 @@ version:
 # com quem já tem o hábito de rodar `make check`.
 check: check-basico
 
+# Validador estático de contratos de botões (v1.5.8-11112026).
+# Roda em ~2s, zero dependências. Pega "cliquei e não aconteceu nada"
+# sem precisar clicar em nenhum botão. Cobre 7 regras entre SESSOES,
+# onclick, data-logbox, registrarAppRemovivel e _registrarAbrir.
+# O `check-basico` chama este alvo automaticamente.
+check-buttons:
+	@echo "==> Checando contratos de botões..."
+	@node scripts/validar-botoes.js
+
 # Checagem de sintaxe JS/Bash/JSON + consistência de versão entre
 # package.json e CHANGELOG.md. Alvo principal de validação do projeto.
 check-basico:
@@ -108,13 +117,47 @@ check-basico:
 		node --check "$$f" && echo "  OK: $$f" || exit 1; \
 	done
 	@echo "==> Checando sintaxe Bash..."
-	@for f in iniciar_fap.sh iniciar_fap_compat.sh install.sh build-container.sh; do \
+	@for f in iniciar_fap.sh iniciar_fap_compat.sh install.sh build-container.sh scripts/fap-cleanup.sh scripts/verificar-deps-container.sh; do \
 		bash -n "$$f" && echo "  OK: $$f" || exit 1; \
 	done
 	@echo "==> Checando JSON dos locales e do mapa de hardware..."
 	@for f in locales/*.json hardware_map.json; do \
 		node -e "JSON.parse(require('fs').readFileSync('$$f','utf8'))" && echo "  OK: $$f" || exit 1; \
 	done
+	@echo "==> Checando sintaxe JavaScript dos <script> inline em HTML..."
+	@node -e " \
+		const fs = require('fs'); \
+		const path = require('path'); \
+		const os = require('os'); \
+		const htmls = fs.readdirSync('.').filter(f => /^[a-z][a-z0-9-]*\.html$$/.test(f)); \
+		let falhas = 0; \
+		for (const arq of htmls) { \
+			const html = fs.readFileSync(arq, 'utf8'); \
+			const scripts = [...html.matchAll(/<script(?![^>]*src=)[^>]*>([\s\S]*?)<\/script>/gi)]; \
+			if (scripts.length === 0) continue; \
+			let idx = 0; \
+			for (const m of scripts) { \
+				idx++; \
+				const tmp = path.join(os.tmpdir(), 'fap-check-' + process.pid + '-' + idx + '.js'); \
+				try { \
+					fs.writeFileSync(tmp, m[1]); \
+					const r = require('child_process').spawnSync('node', ['--check', tmp], { encoding: 'utf8' }); \
+					if (r.status !== 0) { \
+						console.error('  ERRO: sintaxe JS inválida em ' + arq + ' (script #' + idx + '):'); \
+						console.error('    ' + (r.stderr || '').trim().split('\\n').join('\\n    ')); \
+						falhas++; \
+					} \
+				} catch (e) { \
+					console.error('  ERRO ao checar ' + arq + ' #' + idx + ': ' + e.message); \
+					falhas++; \
+				} finally { \
+					try { fs.unlinkSync(tmp); } catch (e) {} \
+				} \
+			} \
+			if (falhas === 0) console.log('  OK: ' + arq + ' (' + scripts.length + ' script(s))'); \
+		} \
+		if (falhas > 0) process.exit(1); \
+	"
 	@echo "==> Checando CHANGELOG.md vs package.json..."
 	@node -e " \
 		const fs = require('fs'); \
@@ -222,6 +265,8 @@ check-basico:
 		} \
 		console.log('  OK: server.js compatível com DNF5 (sem --all, sem --enablerepo em lista)'); \
 	"
+	@echo "==> Checando contratos de botões..."
+	@node scripts/validar-botoes.js
 	@echo ""
 	@echo "✅ Todos os checks básicos passaram."
 

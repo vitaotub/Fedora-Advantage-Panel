@@ -178,20 +178,6 @@ async function _checkSecureBoot() {
 }
 
 // ============================================================
-// MOK ENROLLED — verifica se a chave do akmods está de fato
-// registrada no firmware (não só gerada em disco).
-// ============================================================
-//
-// `mokutil --test-key <arquivo>` é o teste canônico:
-//   • exit 0 + "is already enrolled"  → enrolled
-//   • exit != 0 + "is not enrolled"   → gerada mas não enrolled
-//   • arquivo ausente                 → sem chave
-//
-// Usado pelo `/hardware-scan` como campo adicional `secure_boot_enrolled`.
-// O frontend usa isso para esconder o passo a passo do Secure Boot
-// quando o enrollment já foi concluído — em vez de mostrar instruções
-// para algo que o usuário já fez.
-// ============================================================
 // AKMOD CARREGADO (v1.5.6)
 // ============================================================
 //
@@ -223,28 +209,120 @@ async function _akmodCarregado() {
     // aceitamos a linha com o prefixo. O `fastfetch`/`neofetch`
     // do usuário, se rodar, não tem esse prefixo e é ignorado.
     var script = 'for mod in ' + modulos.join(' ') + '; do ' +
-                 '  if lsmod | awk \'{print $1}\' | grep -qx "$mod"; then ' +
-                 '    echo "MATCH:$mod"; break; ' +
-                 '  fi; ' +
-                 'done';
-    var r = await _exec(script, 3000);
-    var linhas = (r.stdout || '').split('\n');
-    for (var i = 0; i < linhas.length; i++) {
-        var l = linhas[i].trim();
-        if (l.indexOf('MATCH:') === 0) {
-            var nome = l.substring('MATCH:'.length).trim();
-            // Confirma que o nome é um dos módulos esperados —
-            // evita injeção via output malformado.
-            if (modulos.indexOf(nome) !== -1) {
-                return { modulo: nome };
+    '  if lsmod | awk \'{print $1}\' | grep -qx "$mod"; then ' +
+    '    echo "MATCH:$mod"; break; ' +
+    '  fi; ' +
+    'done';
+        var r = await _exec(script, 3000);
+        var linhas = (r.stdout || '').split('\n');
+        for (var i = 0; i < linhas.length; i++) {
+            var l = linhas[i].trim();
+            if (l.indexOf('MATCH:') === 0) {
+                var nome = l.substring('MATCH:'.length).trim();
+                // Confirma que o nome é um dos módulos esperados —
+                // evita injeção via output malformado.
+                if (modulos.indexOf(nome) !== -1) {
+                    return { modulo: nome };
+                }
             }
         }
-    }
-    return null;
+        return null;
 }
 
 // ============================================================
-// MOK ENROLLED (v1.5.6 — expandido)
+// PENDING IMPORT (v1.5.8)
+// ============================================================
+//
+// `mokutil --list-new` lista chaves importadas via
+// `mokutil --import` que ainda NÃO foram enrolled no firmware
+// (aguardando reboot + MOK Management). Correlacionamos por SHA1
+// fingerprint com os `.der` locais.
+//
+// Uso: distinguir "chave importada, aguardando reboot" de "chave
+// nunca importada" — antes, o FAP mandava o usuário rodar
+// `mokutil --import` de novo, que erra com "already imported".
+//
+// Retorna array de paths dos `.der` que estão pending. Vazio se
+// não há pending OU se não conseguimos correlacionar (openssl
+// ausente, fingerprints não batem). Nesse caso, o frontend cai
+// no comportamento antigo (step 2) — sem regressão.
+async function _detectarPendingImport(chaveDir) {
+    if (!chaveDir) return [];
+
+    var listNew = await _exec('mokutil --list-new 2>/dev/null', 5000);
+    if (!listNew.stdout || listNew.stdout.trim() === '') {
+        listNew = await _exec('sudo -n mokutil --list-new 2>/dev/null', 5000);
+    }
+    if (!listNew.stdout || listNew.stdout.indexOf('Fingerprint') === -1) {
+        return [];
+    }
+
+    var fingerprints = [];
+    var re = /SHA1 Fingerprint:\s*([\dA-Fa-f:]+)/g;
+    var m;
+    while ((m = re.exec(listNew.stdout)) !== null) {
+        var fp = m[1].replace(/:/g, '').toUpperCase();
+        if (fp.length === 40) fingerprints.push(fp);
+    }
+    if (fingerprints.length === 0) return [];
+
+    var r3 = await _exec('ls ' + chaveDir + '*.der 2>/dev/null', 5000);
+    if (!r3.ok || !r3.stdout.trim()) return [];
+
+    var arquivos = r3.stdout.split('\n')
+    .map(function(f) { return f.trim(); })
+    .filter(Boolean);
+
+    var matches = [];
+    for (var i = 0; i < arquivos.length; i++) {
+        var fp2 = await _exec(
+            'command -v openssl >/dev/null 2>&1 && ' +
+            'openssl x509 -inform DER -in "' + arquivos[i] + '" -noout -fingerprint -sha1 2>/dev/null | ' +
+            'sed "s/^.*=//; s/://g" | tr "[:lower:]" "[:upper:]"',
+            5000
+        );
+        var localFp = (fp2.stdout || '').trim();
+        if (!localFp || localFp.length !== 40) continue;
+        if (fingerprints.indexOf(localFp) !== -1) {
+            matches.push(arquivos[i]);
+        }
+    }
+
+    return matches;
+}
+
+// ============================================================
+// OUTRAS CHAVES AKMODS ENROLLED (v1.5.8)
+// ============================================================
+//
+// Detecta chaves do tipo akmods enrolled no firmware que NÃO
+// estão em `/etc/pki/akmods/certs/` — ex.: chave gerada pelo
+// RPM Fusion direto em outra instalação, chave trazida de outro
+// HD, chave antiga enrolada em outra máquina.
+//
+// Heurística: `kmodgenca` gera certificados com "akmods" no
+// subject/issuer. O `mokutil --list-enrolled` mostra o cert
+// completo. Se aparecer "akmod" em qualquer lugar, é evidência
+// de chave akmods enrolled.
+//
+// Falso positivo teórico (nome de usuário contendo "akmod") é
+// improvável e de baixo impacto — só aciona um banner informativo,
+// não altera o fluxo.
+//
+// Uso: distinguir "nenhuma chave akmods no firmware" de "alguma
+// chave akmods existe (de outra fonte), mas a local não".
+async function _detectarOutrasChavesAkmosEnrolled() {
+    var r = await _exec('mokutil --list-enrolled 2>/dev/null', 5000);
+    if (!r.stdout || r.stdout.trim() === '') {
+        r = await _exec('sudo -n mokutil --list-enrolled 2>/dev/null', 5000);
+    }
+    if (!r.stdout) return false;
+    return /akmods?/i.test(r.stdout);
+}
+
+// ============================================================
+// MOK ENROLLED (v1.5.6 — expandido; v1.5.8 — pending_import,
+// current_key_not_enrolled, other_akmods_keys_enrolled)
 // ============================================================
 //
 // A v1.5.5 só testava a chave `public_key.der` via
@@ -261,27 +339,34 @@ async function _akmodCarregado() {
 // reconhecida pelo firmware), mas o FAP mostrava "enrollment
 // necessário" indevidamente.
 //
-// Correção em 4 camadas (v1.5.6):
+// Correção em 5 camadas (v1.5.8):
 //   1. `mokutil --test-key public_key.der` (sem sudo) — caso comum
 //   2. `sudo -n mokutil --test-key public_key.der` — efivar protegida
 //   3. Varredura de todos os `.der` em `/etc/pki/akmods/certs/` —
 //      cobre chaves antigas/paralelas do mesmo diretório
 //   4. `_akmodCarregado()` — evidência empírica de que alguma
 //      chave akmods está enrolled (mesmo fora do diretório)
+//   5. `_detectarOutrasChavesAkmosEnrolled()` — detecta chaves
+//      akmods enrolled por fora (RPM Fusion direto, outro HD)
 //
-// O campo `akmod_carregado` é retornado JUNTO com `enrolled:
-// false` (não substitui o false). O frontend decide: se `false`
-// E `akmod_carregado !== null`, mostra aviso neutro ("akmod X
-// está funcionando, mas a chave local do FAP não está enrolled");
-// se `false` E `akmod_carregado === null`, mostra o painel
-// completo de enrollment.
+// Também detecta `pending_import`: chave importada via
+// `mokutil --import` aguardando reboot. Antes, o FAP mostrava
+// "enrollment necessário" e mandava rodar `--import` de novo,
+// que erra com "already imported".
+//
+// Retorna:
+//   • chave_gerada: bool — `public_key.der` existe
+//   • enrolled: bool | null — true/false/null (indeterminado)
+//   • erro: string | null
+//   • akmod_carregado: { modulo } | null
+//   • pending_import: bool
+//   • pending_import_files: string[]
+//   • other_akmods_keys_enrolled: bool | null
+//   • current_key_not_enrolled: bool | null
 async function _checkMokEnrolled() {
     var chaveDir = '/etc/pki/akmods/certs/';
     var chave = chaveDir + 'public_key.der';
 
-    // Se o diretório nem existe, não há o que testar. Mas ainda
-    // pode haver um akmod carregado por fora — vale a pena checar
-    // (o frontend usa `akmod_carregado` para o banner neutro).
     var existeDir = await _exec('test -d ' + chaveDir + ' 2>/dev/null && echo yes');
     // v1.5.6: `includes('yes')` em vez de `=== 'yes'` — defesa em
     // profundidade. Mesmo com `execFile --noprofile --norc`, se
@@ -289,17 +374,18 @@ async function _checkMokEnrolled() {
     // detectado no meio do output.
     if (existeDir.stdout.indexOf('yes') === -1) {
         var akmodCarregadoSemDir = await _akmodCarregado();
+        var outrasSemDir = await _detectarOutrasChavesAkmosEnrolled();
         return {
             chave_gerada: false,
             enrolled: false,
             erro: null,
-            akmod_carregado: akmodCarregadoSemDir
+            akmod_carregado: akmodCarregadoSemDir,
+            pending_import: false,
+            other_akmods_keys_enrolled: outrasSemDir,
+            current_key_not_enrolled: null
         };
     }
 
-    // Se o arquivo `public_key.der` não existe, não há o que
-    // testar. Mas pode haver chave `.der` no diretório (chave
-    // antiga, com symlink quebrado) — vale varrer.
     var existe = await _exec('test -f ' + chave + ' 2>/dev/null && echo yes');
     var publicKeyExiste = (existe.stdout.indexOf('yes') !== -1);
 
@@ -310,23 +396,49 @@ async function _checkMokEnrolled() {
         return null;
     }
 
+    // Detecta pending import ANTES dos testes (o `mokutil --test-key`
+    // retorna `false` para chave pending, o que é correto, mas o
+    // frontend precisa distinguir pending de "nunca importada").
+    var pendingImportFiles = await _detectarPendingImport(chaveDir);
+    var pendingImport = pendingImportFiles.length > 0;
+
+    var resultadosTesteKey = [];
+
     // ---------- Tentativa 1 + 2: public_key.der sem/com sudo -n ----------
     if (publicKeyExiste) {
         var r1 = await _exec('mokutil --test-key ' + chave + ' 2>&1', 10000);
         var res1 = _interpretar(r1.stdout);
-        if (res1 === true) return { chave_gerada: true, enrolled: true,  erro: null, akmod_carregado: null };
+        resultadosTesteKey.push(res1);
+        if (res1 === true) {
+            return {
+                chave_gerada: true,
+                enrolled: true,
+                erro: null,
+                akmod_carregado: null,
+                pending_import: pendingImport,
+                other_akmods_keys_enrolled: null,
+                current_key_not_enrolled: null
+            };
+        }
 
         var r2 = await _exec('sudo -n mokutil --test-key ' + chave + ' 2>&1', 10000);
         var res2 = _interpretar(r2.stdout);
-        if (res2 === true) return { chave_gerada: true, enrolled: true,  erro: null, akmod_carregado: null };
+        resultadosTesteKey.push(res2);
+        if (res2 === true) {
+            return {
+                chave_gerada: true,
+                enrolled: true,
+                erro: null,
+                akmod_carregado: null,
+                pending_import: pendingImport,
+                other_akmods_keys_enrolled: null,
+                current_key_not_enrolled: null
+            };
+        }
     }
 
     // ---------- Tentativa 3: varrer outras chaves .der ----------
-    //
-    // Varre o diretório inteiro. Pode haver múltiplos
-    // `fedora_<id>_<hash>.der` — um por vez que o kmodgenca rodou.
-    // Se algum estiver enrolled, considera OK (alguma chave akmods
-    // está funcionando; o usuário pode ter enrollado uma antiga).
+    var oldKeyEnrolledFile = null;
     var r3 = await _exec('ls ' + chaveDir + '*.der 2>/dev/null', 5000);
     if (r3.ok && r3.stdout.trim()) {
         var arquivos = r3.stdout.split('\n')
@@ -342,35 +454,70 @@ async function _checkMokEnrolled() {
         for (var i = 0; i < arquivos.length; i++) {
             var teste = await _exec('mokutil --test-key "' + arquivos[i] + '" 2>&1', 10000);
             if (_interpretar(teste.stdout) === true) {
-                return {
-                    chave_gerada: true,
-                    enrolled: true,
-                    erro: null,
-                    chave_enrolled: arquivos[i],
-                    akmod_carregado: null
-                };
+                oldKeyEnrolledFile = arquivos[i];
+                break;
             }
         }
     }
 
+    if (oldKeyEnrolledFile) {
+        // Chave antiga enrolled, mas `public_key.der` (a "atual")
+        // NÃO está enrolled. Se `publicKeyExiste` for `false`,
+        // a "chave atual" sequer existe — `kmodgenca -a` precisa
+        // rodar de novo. Sem esse alinhamento, o painel mostra
+        // "configurado OK" (verde) para um usuário que não tem
+        // chave local, e a próxima instalação de akmod falha no
+        // boot sem aviso.
+        return {
+            chave_gerada: publicKeyExiste,
+            enrolled: true,
+            erro: null,
+            chave_enrolled: oldKeyEnrolledFile,
+            akmod_carregado: null,
+            pending_import: pendingImport,
+            other_akmods_keys_enrolled: null,
+            current_key_not_enrolled: publicKeyExiste
+        };
+    }
+
     // ---------- Tentativa 4: evidência empírica ----------
-    //
-    // Nenhuma chave do diretório está enrolled. Mas se algum
-    // akmod está carregado, então ALGUMA chave (fora do
-    // diretório, ou de outro HD/máquina) está enrolled e
-    // funcionando. Não é "enrollment necessário" — é "chave
-    // local não enrolled, mas outro akmod funciona".
     var akmodCarregado = await _akmodCarregado();
 
+    // ---------- Tentativa 5: chaves akmods de outras fontes ----------
+    var outrasChavesAkmos = await _detectarOutrasChavesAkmosEnrolled();
+
     // Se `public_key.der` existe mas o teste falhou, ainda temos
-    // um caso ambíguo (permissão negada). Reporta `erro`.
+    // um caso ambíguo (permissão negada, D-Bus transitório).
     if (publicKeyExiste) {
-        var motivo = 'mokutil --test-key falhou sem saída conclusiva';
+        // Determina enrolled: false vs null
+        //   • pending_import → definitivamente NÃO enrolled (pending)
+        //   • qualquer teste concluiu false → enrolled: false
+        //   • todos inconclusivos → enrolled: null (indeterminado)
+        var algumFalsoConclusivo = false;
+        for (var k = 0; k < resultadosTesteKey.length; k++) {
+            if (resultadosTesteKey[k] === false) {
+                algumFalsoConclusivo = true;
+                break;
+            }
+        }
+
+        var enrolledResult;
+        if (pendingImport) {
+            enrolledResult = false;
+        } else if (algumFalsoConclusivo) {
+            enrolledResult = false;
+        } else {
+            enrolledResult = null;
+        }
+
         return {
             chave_gerada: true,
-            enrolled: false,
-            erro: motivo,
-            akmod_carregado: akmodCarregado
+            enrolled: enrolledResult,
+            erro: enrolledResult === null ? 'mokutil --test-key falhou sem saída conclusiva' : null,
+            akmod_carregado: akmodCarregado,
+            pending_import: pendingImport,
+            other_akmods_keys_enrolled: outrasChavesAkmos,
+            current_key_not_enrolled: null
         };
     }
 
@@ -380,7 +527,10 @@ async function _checkMokEnrolled() {
         chave_gerada: false,
         enrolled: false,
         erro: null,
-        akmod_carregado: akmodCarregado
+        akmod_carregado: akmodCarregado,
+        pending_import: pendingImport,
+        other_akmods_keys_enrolled: outrasChavesAkmos,
+        current_key_not_enrolled: null
     };
 }
 
@@ -576,11 +726,13 @@ async function scanHardware() {
         },
         secure_boot: secureBoot,
         // `null` quando SB não está ativo. Caso contrário,
-        // `{ chave_gerada: bool, enrolled: bool | null }`:
+        // `{ chave_gerada, enrolled, pending_import, ... }`:
         //   • chave_gerada === false → nunca rodou "Preparar Secure Boot"
-        //   • enrolled === true      → chave enrolled no firmware (tudo OK)
-        //   • enrolled === false     → chave gerada mas NÃO enrolled
-        //   • enrolled === null      → não foi possível determinar
+        //   • enrolled === true + current_key_not_enrolled false → tudo OK
+        //   • enrolled === true + current_key_not_enrolled true → chave antiga enrolled, atual não
+        //   • enrolled === false + pending_import true → chave importada, aguardando reboot
+        //   • enrolled === false → chave gerada mas NÃO enrolled
+        //   • enrolled === null → não foi possível determinar
         secure_boot_mok: mok
     };
 }

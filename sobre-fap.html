@@ -226,57 +226,105 @@ async function desinstalarFAP() {
             logBox.appendChild(errorLine);
             logBox.scrollTop = logBox.scrollHeight;
             completarProgresso(idComando, false);
-                } else {
-            // ============================================================
-            // DESINSTALAÇÃO DESACOPLADA
-            // ============================================================
-            //
-            // O `setsid -f` desacopla o `install.sh` do node, então o
-            // SSE nunca recebe um evento `end` — `aguardarConclusaoReal`
-            // só resolveria por timeout (3 minutos) ou prematuramente
-            // (se o shell que invoca o setsid retornar antes do
-            // install.sh terminar). Nenhum dos dois é correto.
-            //
-            // Solução: não espera o SSE. Confirma que o comando foi
-            // disparado e mostra uma mensagem clara de "em andamento",
-            // com instrução para abrir o log do install.sh. O
-            // `install.sh` roda em background e termina sozinho,
-            // independente do FAP.
-            var successLine = document.createElement('div');
-            successLine.className = 'log-line success';
-            successLine.textContent = '🚀 ' + _t('sessoes.sobre-fap.desinstalar_log_iniciado',
-                'Desinstalação iniciada em background. O FAP será fechado automaticamente quando o install.sh terminar.');
-            logBox.appendChild(successLine);
-            logBox.scrollTop = logBox.scrollHeight;
-
-            // Mostra o comando para o usuário acompanhar manualmente
-            var cmdLine = document.createElement('div');
-            cmdLine.className = 'log-line info';
-            cmdLine.textContent = '📋 Para acompanhar: tail -f /tmp/fap-install-*.log';
-            logBox.appendChild(cmdLine);
-
-            // Limpa localStorage (o FAP vai sumir; não adianta manter
-            // estado que será recriado vazio na próxima instalação)
-            try {
-                localStorage.removeItem('fap_progress');
-                localStorage.removeItem('fap_tema');
-                localStorage.removeItem('fap_lang');
-                localStorage.removeItem('fap_sessao_ativa');
-            } catch (e) { /* ignore */ }
-
-            alert(_t('sessoes.sobre-fap.desinstalar_msg_em_andamento',
-                '🗑️ Desinstalação iniciada!\n\n' +
-                'O FAP será removido em segundo plano. ' +
-                'Isso pode levar alguns segundos.\n\n' +
-                'O container do FAP será fechado automaticamente. ' +
-                'Se ele não fechar sozinho em 1 minuto, feche manualmente.\n\n' +
-                'Para acompanhar: tail -f /tmp/fap-install-*.log'));
-
-            // Não fecha a janela — deixa o `install.sh` fechar o
-            // container quando terminar (via pkill do `iniciar_fap.sh`
-            // ou simplesmente porque o server.js morre). Se ele não
-            // fechar, o usuário fecha manualmente.
+            return;
         }
+
+        // ============================================================
+        // DESINSTALAÇÃO DESACOPLADA (POST aceito)
+        // ============================================================
+        //
+        // O `setsid -f` desacopla o `install.sh` do node, então o
+        // SSE nunca recebe um evento `end` — `aguardarConclusaoReal`
+        // só resolveria por timeout (3 minutos) ou prematuramente
+        // (se o shell que invoca o setsid retornar antes do
+        // install.sh terminar). Nenhum dos dois é correto.
+        //
+        // Solução: não espera o SSE. Confirma que o comando foi
+        // disparado e mostra uma mensagem clara de "em andamento",
+        // com instrução para abrir o log do install.sh. O
+        // `install.sh` roda em background e termina sozinho,
+        // independente do FAP.
+        var successLine = document.createElement('div');
+        successLine.className = 'log-line success';
+        successLine.textContent = '🚀 ' + _t('sessoes.sobre-fap.desinstalar_log_iniciado',
+            'Desinstalação iniciada em background. O FAP será fechado automaticamente quando o install.sh terminar.');
+        logBox.appendChild(successLine);
+        logBox.scrollTop = logBox.scrollHeight;
+
+        // Mostra o comando para o usuário acompanhar manualmente
+        var cmdLine = document.createElement('div');
+        cmdLine.className = 'log-line info';
+        cmdLine.textContent = '📋 Para acompanhar: tail -f /tmp/fap-install-*.log';
+        logBox.appendChild(cmdLine);
+
+        // Limpa localStorage (o FAP vai sumir; não adianta manter
+        // estado que será recriado vazio na próxima instalação)
+        try {
+            localStorage.removeItem('fap_progress');
+            localStorage.removeItem('fap_tema');
+            localStorage.removeItem('fap_lang');
+            localStorage.removeItem('fap_sessao_ativa');
+        } catch (e) { /* ignore */ }
+
+        // ============================================================
+        // LIBERA A SESSÃO APÓS O POST (auditoria v1.5.8)
+        // ============================================================
+        //
+        // A `_bloquearSessao(idComando)` acima desabilitou todos
+        // os botões da Sessão 13 (exceto o próprio). O
+        // `completarProgresso` só rodava nos erros (HTTP, catch).
+        // No sucesso aparente, a sessão ficava travada.
+        //
+        // Cenário problemático: o `install.sh` pode FALHAR em
+        // background (rede instável, `git clone` quebrado, `npm
+        // install` quebrado, etc.). Nesse caso, o FAP NÃO é
+        // desinstalado, o container continua aberto, e o usuário
+        // fica com "Atualizar FAP" / "Resetar progresso" / "Ver
+        // changelog" desabilitados até fechar e reabrir
+        // manualmente.
+        //
+        // Como o POST foi aceito, o comando já está no server.
+        // Bloquear a UI não impede a desinstalação (que roda
+        // em background, desacoplada via `setsid -f`) nem
+        // protege contra nada — só prejudica o usuário.
+        //
+        // Liberar a sessão + reabilitar o próprio botão, SEM
+        // chamar `completarProgresso` (que marcaria o id como
+        // executado e esconderia o botão "Desinstalar" numa
+        // próxima abertura, mesmo que o `install.sh` tenha
+        // falhado em background).
+        _liberarSessao(idComando);
+        if (btn) {
+            btn.disabled = false;
+            btn.textContent = _textoOriginalTraduzido(btn) || _t('sessoes.sobre-fap.btn_desinstalar', '🗑️ Desinstalar FAP');
+            btn.style.opacity = '1';
+            btn.style.cursor = 'pointer';
+        }
+
+        // Esconde o progress-container após 3s (o SSE nunca
+        // entrega `end`, então `completarProgresso` não roda).
+        // Sem isso, o `progress-desinstalar-fap` fica visível
+        // em 0% e o `_atualizarBloqueioNavegacao` bloqueia a
+        // navegação para outras sessões — sintoma residual que
+        // aparecia até no caso de sucesso.
+        var progContainer = document.getElementById('progress-' + idComando);
+        if (progContainer) {
+            setTimeout(function() { progContainer.style.display = 'none'; }, 3000);
+        }
+        _atualizarBloqueioNavegacao();
+
+        alert(_t('sessoes.sobre-fap.desinstalar_msg_em_andamento',
+            '🗑️ Desinstalação iniciada!\n\n' +
+            'O FAP será removido em segundo plano. ' +
+            'Isso pode levar alguns segundos.\n\n' +
+            'O container do FAP será fechado automaticamente. ' +
+            'Se ele não fechar sozinho em 1 minuto, feche manualmente.\n\n' +
+            'Para acompanhar: tail -f /tmp/fap-install-*.log'));
+
+        // Não fecha a janela — deixa o `install.sh` fechar o
+        // container quando terminar (via pkill do `iniciar_fap.sh`
+        // ou simplesmente porque o server.js morre). Se ele não
+        // fechar, o usuário fecha manualmente.
     } catch (e) {
         var errorLine2 = document.createElement('div');
         errorLine2.className = 'log-line error';
@@ -284,6 +332,38 @@ async function desinstalarFAP() {
         logBox.appendChild(errorLine2);
         logBox.scrollTop = logBox.scrollHeight;
         completarProgresso(idComando, false);
+    } finally {
+        // ============================================================
+        // FECHA O SSE EM TODOS OS CAMINHOS (v1.5.8 — auditoria B10)
+        // ============================================================
+        //
+        // `conectarSSE(idComando, logBox)` foi chamado antes do POST
+        // e a conexão ficava aberta até o node morrer (via
+        // `_encerrarGraciosamente` do server). Durante a janela do
+        // `install.sh` (30s–2min), o slot do SSE no server e o
+        // buffer de replay (2000 mensagens) ficavam ocupados —
+        // desnecessariamente, porque o `install.sh` roda
+        // desacoplado via `setsid -f` e o SSE nunca vai receber
+        // `end` (o handler HTTP do `/executar` responde antes).
+        //
+        // Antes, no sucesso aparente, o `completarProgresso` nem era
+        // chamado (só nos erros). Mesmo nos erros, o
+        // `completarProgresso` faz `_notificarConclusaoReal` mas NÃO
+        // fecha o `EventSource` — a conexão TCP subjacente só era
+        // liberada em `_encerrarGraciosamente`.
+        //
+        // O `finally` roda em TODOS os caminhos (sucesso aparente,
+        // erro HTTP, exceção de rede), garantindo limpeza
+        // consistente. `EventSource.close()` é safe mesmo se a
+        // conexão já estiver fechada — o `sseConnections[idComando]`
+        // pode ter sido deletado pelo `onerror` anterior, e o `if`
+        // cobre esse caso.
+        try {
+            if (sseConnections[idComando]) {
+                sseConnections[idComando].close();
+                delete sseConnections[idComando];
+            }
+        } catch (e2) { /* ignore */ }
     }
 }
 
@@ -313,6 +393,41 @@ async function resetarProgressoFAP() {
         logBox.appendChild(linha);
         logBox.scrollTop = logBox.scrollHeight;
     }
+
+    // ============================================================
+    // LIMPA localStorage RELACIONADO AO PROGRESSO (v1.5.8 — auditoria B8)
+    // ============================================================
+    //
+    // "Reset progress" significa "voltar o FAP ao estado de fábrica
+    // no que diz respeito a botões e caches derivados". Antes, só
+    // o `progressCache` (variável) e o `.progresso.json` (server)
+    // eram resetados — três chaves de `localStorage` continuavam
+    // com estado obsoleto:
+    //
+    //   1. `fap_upgrade_finalizado` — flag permanente consultada
+    //      por `_upgradeFinalizadoNoCliente()` em
+    //      `ajustes-manutencao.html`. Depois do reset, a área de
+    //      upgrade continua mostrando `no_upgrade_needed` para
+    //      sempre (o client nem re-consulta o server). Se o FAP
+    //      for atualizado para um `target_version` maior no
+    //      futuro, o usuário não vê o upgrade até limpar
+    //      `localStorage` manualmente.
+    //
+    //   2. `fap_ultima_verificacao` + `fap_versao_remota` — cache
+    //      do GitHub usado pelo badge "Nova versão disponível".
+    //      Após o reset, o badge pode ficar até 12h mostrando
+    //      "atualização disponível" obsoleto (a versão remota em
+    //      cache pode ser uma versão que já foi instalada) ou
+    //      15min escondendo uma versão nova publicada.
+    //
+    // `fap_tema` / `fap_lang` / `fap_sessao_ativa` NÃO entram —
+    // são preferências do usuário, não estado de progresso.
+    // Resetá-las apagaria o tema/idioma/sessão atual sem motivo.
+    try {
+        localStorage.removeItem('fap_upgrade_finalizado');
+        localStorage.removeItem('fap_ultima_verificacao');
+        localStorage.removeItem('fap_versao_remota');
+    } catch (e) { /* localStorage indisponível — ignora */ }
 
     try {
         var r = await fetch(API_URL + '/progress', { method: 'DELETE' });
