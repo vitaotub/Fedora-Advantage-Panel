@@ -102,6 +102,12 @@ echo ""
 echo "[1/9] Matando processos FAP/FOF/container..."
 pkill -9 -f "fap-container" 2>/dev/null
 pkill -9 -f "fof-container" 2>/dev/null
+# Órfãos do pkexec (Fase I): `fap-cmd-*` são os scripts
+# temporários criados pelo pkexec; `pkexec /tmp/fap-cmd-` são os
+# wrappers que podem ter ficado vivos. Como o script roda como
+# root (via sudo), `pkill` alcança os dois.
+pkill -9 -f "fap-cmd-" 2>/dev/null
+pkill -9 -f "pkexec /tmp/fap-cmd-" 2>/dev/null
 lsof -t -i:3000 2>/dev/null | xargs -r kill -9 2>/dev/null
 sleep 1
 echo "  OK"
@@ -232,6 +238,7 @@ for path in \
     "$REAL_HOME/.local/bin/fap-compat" \
     "$REAL_HOME/.local/bin/fap-container" \
     "$REAL_HOME/.local/share/applications/fap-container.desktop" \
+    "$REAL_HOME/.local/share/applications/fap-container-compat.desktop" \
     "$REAL_HOME/.local/share/icons/hicolor/256x256/apps/fap-container.png" \
     "$REAL_HOME/.cache/fap-container" \
     "$REAL_HOME/.config/fap-container" \
