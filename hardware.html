@@ -227,6 +227,20 @@ Detecta a geração da sua GPU NVIDIA e instala automaticamente a série de driv
      `_renderizarPanelDriverStatus`. -->
 <div id="nvidia-driver-status-panel" style="margin-bottom: 1rem;"></div>
 
+<!-- ============================================================
+AVISO: TELA PODE APAGAR DURANTE A INSTALAÇÃO (v1.5.9)
+============================================================ -->
+<div class="aviso-caixa" style="margin-bottom: 0.75rem;" data-i18n-html="sessoes.hardware.nvidia_aviso_tela_apaga">
+💡 <strong>A tela pode apagar durante a instalação.</strong> Isso é esperado — o driver troca o controle da tela do <code>nouveau</code> (código aberto) para o <code>nvidia</code> (proprietário), e o framebuffer pisca/apaga por alguns segundos a alguns minutos. <strong>Não entre em pânico:</strong> pressione <code>Ctrl+Alt+F3</code> para um console de texto, faça login e acompanhe com <code>journalctl -f | grep -i akmod</code>. Volte com <code>Ctrl+Alt+F2</code>. O FAP agenda um reboot de segurança para <strong>+10 minutos</strong> — se o driver compilar antes, cancele com <code>sudo shutdown -c</code>.
+</div>
+
+<!-- ============================================================
+AVISO: INSTALAÇÃO OFFLINE (último caso — v1.5.9)
+============================================================ -->
+<div class="aviso-caixa" style="margin-bottom: 1rem;" data-i18n-html="sessoes.hardware.nvidia_aviso_offline">
+⚠️ <strong>Se a instalação padrão falhar repetidamente</strong> (a tela apaga e não volta após 10min, ou <code>modinfo nvidia</code> continua falhando mesmo após o reboot), existe uma alternativa <strong>NÃO recomendada</strong>: instalar via DNF offline (<code>sudo dnf install --offline akmod-nvidia &amp;&amp; sudo dnf offline reboot</code>). Nessa modalidade, o driver é compilado durante o próximo boot, evitando a troca de DRM em tempo real. <strong>Riscos:</strong> o <code>akmods</code> pode ter problemas de timing (kernel vs. userspace desincronizados), a compilação pode falhar durante o boot e exigir <code>sudo akmods --force</code> manual, e alguns casos relatam bloqueio de transação. <strong>Use apenas em último caso</strong> e com snapshot/backup do sistema.
+</div>
+
 <div class="botoes-flex">
 <button class="btn-executar"
 onclick="executarNvidiaDriver()"
@@ -1766,12 +1780,18 @@ async function executarNvidiaDriver() {
     // Se a geração é "desconhecida" (fallback Turing+), adiciona um
     // aviso extra explicando o risco. Cobre GPUs futuras (RTX 60xx)
     // e placas antigas fora dos padrões das regex.
+    //
+    // v1.5.9: o `msgConfirm` ganhou itens 4 e 5 sobre tela apagando
+    // e reboot de segurança. O `shutdown -r +10` no início do
+    // `comando` garante que, se a tela apagar, o sistema reinicia
+    // sozinho após 10min (mesmo que o usuário não consiga interagir).
     var msgConfirm = _t('sessoes.hardware.nvidia_aviso_espera',
         '⚠️ ATENÇÃO — leia antes de continuar:\n\n' +
         '1. A compilação do driver pode levar de 2 a 10 minutos.\n' +
         '2. NÃO FECHE o FAP durante o processo.\n' +
         '3. NÃO REINICIE o computador até o FAP avisar.\n' +
-        '4. Recomendado: NÃO USE o desktop durante a compilação (o KWin pode travar).\n\n' +
+        '4. A TELA PODE APAGAR durante a compilação (troca de nouveau → nvidia). Se acontecer, pressione Ctrl+Alt+F3 para um console de texto. Não force o desligamento.\n' +
+        '5. Reboot de segurança agendado para +10 minutos. Se o driver compilar antes e você quiser cancelar, use: sudo shutdown -c\n\n' +
         'O FAP vai avisar quando for seguro reiniciar (ou, se algo der errado, ele reverte a instalação automaticamente).\n\n' +
         'Continuar?');
 
@@ -1793,22 +1813,27 @@ async function executarNvidiaDriver() {
     var cuda = geracao.cuda;
     var tipo = geracao.tipo;
 
-    // ============================================================
-    // COMANDO BASH — sem polling, com akmods throttled
-    // ============================================================
-    //
-    // O `akmods` roda BLOQUEANTE com prioridade mínima. Isso
-    // elimina o polling de 15s e dá ao KWin a chance de respirar.
-    // Quando o `akmods` termina, o FAP checa `modinfo` uma vez e
-    // decide:
-    //   • Sucesso em X11: `depmod` + `modprobe` → driver ativa
-    //     em runtime, sem reboot.
-    //   • Sucesso em Wayland: NÃO carrega o `nvidia-drm` (evita
-    //     freeze do KWin por DRM handoff prematuro). Só avisa
-    //     "reboot necessário".
-    //   • Falha: rollback (remove `pkg` + `cuda`, `dracut -f`,
-    //     nouveau volta no próximo boot).
     var comando =
+        // ============================================================
+        // REBOOT DE SEGURANÇA (v1.5.9)
+        // ============================================================
+        //
+        // Agenda um reboot para daqui a 10 minutos. Se a tela apagar
+        // durante a compilação do akmod e o usuário não conseguir
+        // interagir, o sistema reinicia sozinho e o driver compilado
+        // entra em vigor. Se tudo der certo, o usuário cancela com
+        // `sudo shutdown -c` no terminal — ou o reboot acontece mesmo
+        // (custo: 1 reboot desnecessário).
+        //
+        // `2>/dev/null || true` no final: se o `shutdown` falhar (raro,
+        // mas possível em containers/WSL ou se o systemd não estiver
+        // plenamente funcional), NÃO aborta a instalação do driver.
+        // O `;` (não `&&`) garante que o `dnf install` sempre roda.
+        //
+        // O `sudo` no início vira `shutdown -r +10` no script do
+        // pkexec (o `_substituirCaminhosUsuario` remove o `sudo `).
+        'sudo shutdown -r +10 2>/dev/null || true; ' +
+        'echo "⏰ Reboot de segurança agendado para +10min (cancele com: sudo shutdown -c)."; ' +
         // Detecta GPU (defesa em profundidade — pkexec roda como root)
         'LSPCI=$(command -v lspci 2>/dev/null || echo /usr/sbin/lspci); ' +
         'if [ ! -x "$LSPCI" ]; then echo "❌ lspci não encontrado (instale pciutils)."; exit 1; fi; ' +
@@ -1904,6 +1929,18 @@ async function executarNvidiaDriver() {
                     mostrarToast(_t('sessoes.hardware.nvidia_install_ok',
                         '✅ Driver NVIDIA compilado! Você pode reiniciar o computador agora.'),
                         'success', 120000);
+                    // Aviso do reboot agendado em toast separado (para
+                    // não competir visualmente com o toast de sucesso
+                    // em 120s). O usuário pode cancelar via terminal
+                    // (`sudo shutdown -c`) ou simplesmente reiniciar
+                    // manualmente antes — o `shutdown` agendado é
+                    // idempotente (reboot manual + reboot agendado
+                    // não causam duplo reboot).
+                    setTimeout(function() {
+                        mostrarToast(_t('sessoes.hardware.nvidia_reboot_agendado',
+                            '⏰ Reboot de segurança agendado para +10min (cancele com: sudo shutdown -c)'),
+                            'info', 30000);
+                    }, 500);
                 }
                 if (typeof notificarNativo === 'function') {
                     notificarNativo('NVIDIA',

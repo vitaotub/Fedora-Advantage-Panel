@@ -22,10 +22,12 @@ bloqueios SELinux read-only), migra o Opera de Flathub para o
 repositório RPM oficial da Opera Software, corrige o log do "Preparar
 Secure Boot" na Sessão 12, fecha uma race no NTSYNC, restaura "Abrir +
 lixeira" para Firefox e Thunderbird (padrão do FAP para apps de
-usuário), adiciona quoting defensivo de URLs e alinha a execução via
-`pkexec` ao padrão do Fedora (`dnf` em `/var/cache/dnf/`). **Nenhuma
-migração em massa de `.info-extra` para `.fap-badge-info` nesta
-release** — a Fase 2 fica para versão futura.
+usuário), adiciona quoting defensivo de URLs, alinha a execução via
+`pkexec` ao padrão do Fedora (`dnf` em `/var/cache/dnf/`) e adiciona
+aviso de tela apagando + reboot de segurança (+10min) + info sobre
+instalação offline para o driver NVIDIA. **Nenhuma migração em massa de
+`.info-extra` para `.fap-badge-info` nesta release** — a Fase 2 fica
+para versão futura.
 
 ### 🆕 Novo — Componente `.fap-badge-info` (exclamação + popup)
 
@@ -79,7 +81,7 @@ release** — a Fase 2 fica para versão futura.
 - **`script.js` → `_shellQuote` + `_quotarUrlsNaoQuotadas`.** O `abrirFerramentaExterna` recebe string que vira comando shell (via `POST /executar` → `spawn`/`exec`). URLs com metacaracteres (`&`, `$`, backtick, `>`, `;`) eram interpretadas pelo bash — `https://x.com/?a=1&b=2` virava dois comandos. Correção: `_quotarUrlsNaoQuotadas(comando)` escaneia o comando e cita URLs (`https?://...`) não-quoteadas com `_shellQuote` (aspas simples, com escape `'\''` para aspas internas). Respeita aspas já existentes. Aplicado no topo do `abrirFerramentaExterna`.
 - **`server.js` → `_REDIRECT_ABRIR_PADRAO` expandido para aceitar `'[^']*'` e `"[^"]*"` como argumentos.** URLs com `>` no query string (raro, mas possível) caíam fora do padrão antigo (`(?:\s+[^>\n]+)?`) e o comando ia parar em `pkexec`. Agora aceita argumentos entre aspas simples ou duplas, sem quebrar o PoC original (`setsid -f bash -c 'rm -rf ~' > …` continua bloqueado — `bash` não está em `_BINARIOS_ABRIR_WHITELIST`).
 
-### 🟢 Melhorado — alinhamento com o padrão do Fedora (pkexec + HOME)
+### 🟢 Melhorado — Alinhamento com o padrão do Fedora (pkexec + HOME)
 
 - **`server.js` → `_construirScripts` não exporta mais `HOME=<home-do-usuário>` incondicionalmente.** Antes, o script gerado para o `pkexec` sempre exportava `HOME=<home-do-usuário>`. Como o `pkexec` roda como `root`, o `dnf` (via pkexec) escrevia cache em `~/.cache/dnf/` e `~/.cache/libdnf5/` com dono `root` no home do usuário. Isso **não é o padrão do Fedora** — `sudo dnf` / `pkexec dnf` usam `HOME=/root` (implícito) e `/var/cache/dnf/` (system).
 - **Alinhamento:** o `export HOME=<home-do-usuário>` agora é condicional a `IDS_COM_HOME_DO_USUARIO.has(idComando)`. A constante está **vazia** por enquanto — reservada para scripts EXTERNOS (baixados de URL) que usam `$HOME` **dentro do arquivo** (`install.sh`, `fap-cleanup.sh`, etc.). Comandos inline com `$HOME`/`~` na string **não** precisam: o `_substituirCaminhosUsuario` troca o caminho na string antes do pkexec.
@@ -91,11 +93,25 @@ release** — a Fase 2 fica para versão futura.
   ```
   Ou via `scripts/fap-cleanup.sh` (o script já remove, mas só se o dono for `root` — cache legítimo do `dnf` do usuário é preservado).
 
+### 🟢 Melhorado — NVIDIA: aviso de tela apagando + reboot de segurança (+10min) + info sobre instalação offline
+
+O comportamento de tela piscando/apagando durante a instalação do driver NVIDIA **não é um bug do FAP** — é a troca de controle de framebuffer do `nouveau` (open source) para o `nvidia` (proprietário), que dura de segundos a minutos. O usuário não tinha informação sobre o que fazer nesse cenário, e se a tela apagasse de vez, ficava travado até forçar o desligamento.
+
+- **`hardware.html` → 2 `.aviso-caixa` estáticos antes dos botões do bloco NVIDIA.**
+  - **Aviso 1** (`nvidia_aviso_tela_apaga`, azul/info): "A tela pode apagar durante a instalação. É esperado — o driver troca o controle da tela do `nouveau` para o `nvidia`. Pressione `Ctrl+Alt+F3` para um console de texto. Reboot de segurança agendado para **+10 minutos** — cancele com `sudo shutdown -c`."
+  - **Aviso 2** (`nvidia_aviso_offline`, amarelo/aviso): "Se a instalação padrão falhar repetidamente, existe uma alternativa **NÃO recomendada**: instalar via DNF offline (`dnf install --offline akmod-nvidia && dnf offline reboot`). Riscos: `akmods` com problemas de timing, compilação pode falhar durante o boot e exigir `sudo akmods --force`, bloqueio de transação. **Use apenas em último caso** com snapshot/backup."
+  - Ambos traduzidos em EN/ES; PT-BR é o fallback nativo.
+- **`hardware.html` → `executarNvidiaDriver` agenda reboot de segurança no início do comando.** O primeiro comando executado via `pkexec` é `sudo shutdown -r +10 2>/dev/null || true; echo "⏰ Reboot de segurança agendado para +10min..."`. Efeito: se a tela apagar durante o `akmods`, o sistema reinicia sozinho após 10min e o driver compilado entra em vigor. Se o driver compilar antes e o usuário quiser cancelar: `sudo shutdown -c`. O `|| true` + o `;` (não `&&`) garantem que um eventual erro no `shutdown` **não aborta** o `dnf install` (o `;` é sequencial). O reboot agendado é idempotente com o reboot manual (reboot manual antes cancela o agendado, sem duplo reboot).
+- **`hardware.html` → `msgConfirm` expandido com itens 4 e 5.** O `confirm` que já listava "1. até 10 minutos; 2. NÃO FECHE; 3. NÃO REINICIE" agora inclui "4. A TELA PODE APAGAR durante a compilação (troca de nouveau → nvidia). Se acontecer, pressione Ctrl+Alt+F3 para um console de texto. Não force o desligamento." e "5. Reboot de segurança agendado para +10 minutos. Se o driver compilar antes e você quiser cancelar, use: `sudo shutdown -c`".
+- **`hardware.html` → toast pós-sucesso sobre o reboot agendado.** Depois do toast "✅ Driver NVIDIA compilado! Você pode reiniciar o computador agora." (120s), um segundo toast `⏰ Reboot de segurança agendado para +10min (cancele com: sudo shutdown -c)` aparece 500ms depois, por 30s.
+- **NÃO altera** `_aplicarEstadoNvidia`, `_renderizarPanelNvidia`, `_renderizarPanelDriverStatus`, `_detectarGpuNvidia`, `_detectarGeracaoNvidia`, `executarNvidiaDriverRemove`, polling `modinfo nvidia` nem reversão automática. **Zero regressão** no fluxo existente.
+
 ### 🟢 Melhorado — i18n
 
 - **`locales/en.json` + `es.json` → +6 chaves cada.** `rustdesk_selinux_titulo`, `rustdesk_selinux_corpo`, `rustdesk_selinux_acao`, `rustdesk_selinux_ok`, `rustdesk_selinux_ok_curto`, `rustdesk_selinux_avcs`, `rustdesk_selinux_avcs_curto`, `rustdesk_selinux_erro`. O `corpo` inclui link para `https://rustdesk.com/docs/en/client/linux/`.
 - **`locales/en.json` + `es.json` → +3 chaves em `comum`.** `badge_info_aria`, `badge_info_tooltip`, `fechar` — usadas pelo `_renderizarInfoBadge`/`_abrirPopoverInfo`. Sem elas, o `make check-basico` #43 falhava.
 - **`locales/en.json` + `es.json` → `btn_abrir_firefox` e `btn_abrir_thunderbird` restauradas.** Removidas na auditoria v1.5.9, voltaram com a reversão do Firefox/Thunderbird.
+- **`locales/en.json` + `es.json` → +3 chaves `nvidia_aviso_tela_apaga`, `nvidia_aviso_offline`, `nvidia_reboot_agendado`; `nvidia_aviso_espera` expandido com itens 4 e 5.** Usadas pelos avisos estáticos, pelo `msgConfirm` e pelo toast pós-sucesso do driver NVIDIA.
 - **11 chaves órfãs removidas de `en.json` + `es.json`.** `btn_modeset_on`, `btn_modeset_off`, `nvidia_modeset_titulo`, `nvidia_modeset_desc`, `texto_concluido_modeset_on`, `texto_concluido_modeset_off` (bloco NVIDIA modeset removido na v1.4.9); `btn_grub_padrao`, `grub_confirmar_padrao`, `grub_msg_aplicado` (substituídos por `btn_grub_restaurar_backup`/`grub_msg_aplicado_res`).
 
 ### 🟢 Melhorado — limpeza e dead code
@@ -121,6 +137,7 @@ release** — a Fase 2 fica para versão futura.
 - **Secure Boot log na Sessão 12.** VM limpa: clicar "Preparar Secure Boot", verificar output visível em tempo real.
 - **Firefox e Thunderbird (após reversão).** Botão "🚀 Abrir X" + lixeira, tooltip de pré-existente, remoção + auto-reset para "📦 Instalar X", reinstalação.
 - **Alinhamento com o padrão do Fedora.** Instalar um pacote via pkexec → verificar que `~/.cache/dnf/` e `~/.cache/libdnf5/` **não** são criados (ou são user-owned, se o `dnf` foi usado como usuário). `/var/cache/dnf/` populado (dono `root`). `scripts/fap-cleanup.sh` remove resíduos root-owned e preserva user-owned.
+- **NVIDIA — aviso de tela apagando + reboot de segurança (+10min) + info offline.** Testar em hardware com GPU NVIDIA: os 2 `.aviso-caixa` aparecem antes dos botões (PT/EN/ES); o `msgConfirm` mostra os 5 itens; após confirmar, o log mostra `⏰ Reboot de segurança agendado para +10min`; `sudo shutdown --show` (em outro terminal) mostra o agendamento; se a tela apagar, o sistema reinicia sozinho após 10min; se o driver compilar antes, `sudo shutdown -c` cancela; o toast `⏰ Reboot de segurança agendado...` aparece 500ms depois do sucesso.
 - **`install.sh --update` com `.git` quebrado.** Verificar que a Sessão 13 não trava e o SSE fecha.
 
 ### ✅ Validação estática (11–12/11/2026)
@@ -129,7 +146,7 @@ release** — a Fase 2 fica para versão futura.
 - `node scripts/validar-botoes.js`: **170 data-comando, 13 sessões, 402 funções, 99 registrarAppRemovivel, 32 _registrarAbrir, 0 duplicatas**.
 - `bash -n` em 6 `.sh`, `node --check` em 5 `.js` + 15 `<script>` inline de sessões: OK.
 - `CHANGELOG.md` vs `package.json`: strings `v1.5.9-11122026` batem.
-- **947 chaves i18n** presentes em `en.json` + `es.json` (936 originais + 6 `rustdesk_selinux_*` + 3 `comum.*` + 2 `btn_abrir_*`, − 11 órfãs removidas).
+- **950 chaves i18n** presentes em `en.json` + `es.json` (936 originais + 6 `rustdesk_selinux_*` + 3 `comum.*` + 2 `btn_abrir_*` + 3 `nvidia_aviso_*` + 1 `nvidia_reboot_agendado` − 11 órfãs + 10 `nvidia_aviso_espera` expandido).
 
 ### Arquivos tocados
 
@@ -143,11 +160,11 @@ release** — a Fase 2 fica para versão futura.
 | `gaming.html` | `executarNTSync` async/await |
 | `ajustes-manutencao.html` | `_verificarCanalFedora` (2 hosts); `_verificarAtualizacoesPendentes` (paralelo); `_carregarUpgradeStatus` (60s); `executarUpgradeDownload` (guard); `executarGrubAplicarRecomendado` (re-busca); `_renderizarPreviewGrub` (desabilita); botão GRUB desabilitado em `mudancas === 0` |
 | `sobre-fap.html` | `desinstalarFAP` (libera sessão, esconde progress, fecha SSE); `resetarProgressoFAP` (limpa 3 chaves) |
-| `hardware.html` | `_detectarGpuPorVendor`; `_atualizarSecaoNvidia`; `vaapi-check-*`; `serie` removida; `_escapeHTMLNvidia` removida |
+| `hardware.html` | `_detectarGpuPorVendor`; `_atualizarSecaoNvidia`; `vaapi-check-*`; `serie` removida; `_escapeHTMLNvidia` removida; +2 avisos estáticos (tela apaga + offline); `executarNvidiaDriver` com `shutdown -r +10`; `msgConfirm` expandido; toast pós-sucesso do reboot agendado |
 | `iniciar_fap.sh` | `pgrep` dead code removido; `return 0` dead code removidos |
 | `install.sh` | `. /etc/os-release` em subshell |
 | `scripts/fap-cleanup.sh` | +rm de `~/.cache/dnf` e `~/.cache/libdnf5` (só root-owned) |
-| `locales/en.json` | +6 `rustdesk_selinux_*`; +3 `comum.*`; +2 `btn_abrir_*`; −11 órfãs |
-| `locales/es.json` | +6 `rustdesk_selinux_*`; +3 `comum.*`; +2 `btn_abrir_*`; −11 órfãs |
+| `locales/en.json` | +6 `rustdesk_selinux_*`; +3 `comum.*`; +2 `btn_abrir_*`; +3 `nvidia_aviso_*`; `nvidia_aviso_espera` expandido; −11 órfãs |
+| `locales/es.json` | +6 `rustdesk_selinux_*`; +3 `comum.*`; +2 `btn_abrir_*`; +3 `nvidia_aviso_*`; `nvidia_aviso_espera` expandido; −11 órfãs |
 | `package.json` | bump `1.5.9-11122026` |
 | `CHANGELOG.md` | seção atual substituída |
