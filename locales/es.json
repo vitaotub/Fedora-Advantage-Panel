@@ -102,7 +102,10 @@
         "abrir_aberto": "🚀 ¡{nome} abierto!",
         "abrir_falhou": "⚠️ No se pudo abrir {nome}. Ver /tmp/fap-open-{id}.log",
         "abrir_timeout": "⏳ {nome} aún abriendo (ver /tmp/fap-open-{id}.log)",
-        "erro_sse": "❌ Error al conectar SSE: {msg}"
+        "erro_sse": "❌ Error al conectar SSE: {msg}",
+        "badge_info_aria": "Más información",
+        "badge_info_tooltip": "Clic para más información",
+        "fechar": "Cerrar"
     },
 
     "index": {
@@ -597,6 +600,14 @@
             "btn_rustdesk": "🖥️ RustDesk",
             "texto_concluido_rustdesk": "✅ RustDesk instalado",
             "btn_abrir_rustdesk": "🚀 Abrir RustDesk",
+            "rustdesk_selinux_titulo": "Sobre SELinux y RustDesk",
+            "rustdesk_selinux_corpo": "RustDesk se instala normalmente en Fedora, pero en algunos sistemas SELinux bloquea el servicio. <strong>No desactives SELinux.</strong> La documentación oficial de RustDesk recomienda aplicar una política SELinux específica <strong>solo si</strong> ves bloqueos (AVC denials) — no antes, porque la política debilita SELinux globalmente. Haz clic en \"Verificar bloqueos de SELinux\" abajo para ver si hay AVCs en las últimas 24 horas. Si los hay, sigue la guía oficial en <a href=\"https://rustdesk.com/docs/en/client/linux/\" target=\"_blank\" rel=\"noopener noreferrer\">rustdesk.com/docs/en/client/linux/</a>.",
+            "rustdesk_selinux_acao": "🔍 Verificar bloqueos de SELinux",
+            "rustdesk_selinux_ok": "No se detectaron bloqueos de SELinux en las últimas 24 horas. RustDesk está funcionando con SELinux activo.",
+            "rustdesk_selinux_ok_curto": "Sin bloqueos de SELinux en las últimas 24 horas.",
+            "rustdesk_selinux_avcs": "Se detectaron {n} AVC(s) de RustDesk en las últimas 24 horas. RustDesk puede no funcionar correctamente. Consulta la documentación oficial en https://rustdesk.com/docs/en/client/linux/ para aplicar la política SELinux.",
+            "rustdesk_selinux_avcs_curto": "{n} bloqueo(s) de SELinux detectado(s). Consulta el log.",
+            "rustdesk_selinux_erro": "No se pudo verificar el journal. Consulta el log.",
             "btn_remmina": "🖥️ Remmina",
             "texto_concluido_remmina": "✅ Remmina instalado",
             "btn_abrir_remmina": "🚀 Abrir Remmina",
@@ -608,6 +619,7 @@
             "btn_abrir_krdc": "🚀 Abrir KRDC",
             "btn_abrir_onlyoffice": "🚀 Abrir OnlyOffice",
             "btn_abrir_obsidian": "🚀 Abrir Obsidian",
+            "btn_abrir_thunderbird": "🚀 Abrir Thunderbird",
             "btn_abrir_okular": "🚀 Abrir Okular",
             "btn_abrir_kate": "🚀 Abrir Kate",
             "btn_abrir_joplin": "🚀 Abrir Joplin",
@@ -647,6 +659,7 @@
             "btn_abrir_lmms": "🚀 Abrir LMMS",
             "btn_abrir_lightworks": "🚀 Abrir Lightworks",
             "btn_abrir_audacity": "🚀 Abrir Audacity",
+            "btn_abrir_firefox": "🚀 Abrir Firefox",
             "btn_abrir_vscode": "🚀 Abrir VS Code",
             "btn_abrir_drawy": "🚀 Abrir Drawy",
             "btn_abrir_gear_lever": "🚀 Abrir Gear Lever",
@@ -1287,8 +1300,7 @@
         "samba_install": "Samba ya estaba configurado antes de FAP. Eliminarlo deshabilita compartidos de archivos y acceso a carpetas Windows en la red. Para revertir manualmente:\n\n  sudo systemctl disable --now smb nmb\n  sudo dnf remove samba samba-client cifs-utils",
         "qemu_kvm_install": "QEMU/KVM ya estaba configurado antes de FAP. Eliminarlo deshabilita la ejecución de máquinas virtuales (los discos de las VMs permanecen intactos). Para revertir manualmente:\n\n  sudo systemctl disable --now libvirtd\n  sudo dnf remove qemu-kvm libvirt virt-manager virt-install libvirt-daemon-config-network",
         "virtualbox_install": "VirtualBox ya estaba instalado antes de FAP. Eliminarlo deshabilita las VMs (los discos .vdi permanecen). Para revertir manualmente:\n\n  sudo dnf remove VirtualBox akmod-VirtualBox VirtualBox-kmod",
-        "gnome_boxes_install": "GNOME Boxes ya estaba instalado antes de FAP. Eliminarlo deshabilita las VMs (los discos permanecen). Para revertir manualmente:\n\n  sudo dnf remove gnome-boxes",
-        "firefox_preexistente": "Firefox ya estaba instalado antes de FAP y es el navegador predeterminado de Fedora Workstation — varios paquetes del sistema dependen de él (gnome-shell, fedora-workstation-repositories). Eliminarlo puede cascadear y romper el entorno gráfico. Para eliminarlo manualmente (con conciencia de los dependientes), usa la terminal:\n\n  sudo dnf remove firefox"
+        "gnome_boxes_install": "GNOME Boxes ya estaba instalado antes de FAP. Eliminarlo deshabilita las VMs (los discos permanecen). Para revertir manualmente:\n\n  sudo dnf remove gnome-boxes"
     },
 
     "origem": {

@@ -102,7 +102,10 @@
         "abrir_aberto": "🚀 {nome} opened!",
         "abrir_falhou": "⚠️ Could not open {nome}. See /tmp/fap-open-{id}.log",
         "abrir_timeout": "⏳ {nome} still opening (see /tmp/fap-open-{id}.log)",
-        "erro_sse": "❌ Error connecting SSE: {msg}"
+        "erro_sse": "❌ Error connecting SSE: {msg}",
+        "badge_info_aria": "More information",
+        "badge_info_tooltip": "Click for more information",
+        "fechar": "Close"
     },
 
     "index": {
@@ -597,6 +600,14 @@
             "btn_rustdesk": "🖥️ RustDesk",
             "texto_concluido_rustdesk": "✅ RustDesk installed",
             "btn_abrir_rustdesk": "🚀 Open RustDesk",
+            "rustdesk_selinux_titulo": "About SELinux and RustDesk",
+            "rustdesk_selinux_corpo": "RustDesk installs normally on Fedora, but on some systems SELinux blocks the service. <strong>Do not disable SELinux.</strong> The official RustDesk documentation recommends applying a specific SELinux policy <strong>only if</strong> you see blocks (AVC denials) — not before, because the policy weakens SELinux globally. Click \"Check for SELinux blocks\" below to see if there are any AVCs in the last 24 hours. If there are, follow the official guide at <a href=\"https://rustdesk.com/docs/en/client/linux/\" target=\"_blank\" rel=\"noopener noreferrer\">rustdesk.com/docs/en/client/linux/</a>.",
+            "rustdesk_selinux_acao": "🔍 Check for SELinux blocks",
+            "rustdesk_selinux_ok": "No SELinux blocks detected in the last 24 hours. RustDesk is working with SELinux active.",
+            "rustdesk_selinux_ok_curto": "No SELinux blocks in the last 24 hours.",
+            "rustdesk_selinux_avcs": "Detected {n} RustDesk AVC(s) in the last 24 hours. RustDesk may not work correctly. See the official documentation at https://rustdesk.com/docs/en/client/linux/ to apply the SELinux policy.",
+            "rustdesk_selinux_avcs_curto": "{n} SELinux block(s) detected. See the log.",
+            "rustdesk_selinux_erro": "Could not check the journal. See the log.",
             "btn_remmina": "🖥️ Remmina",
             "texto_concluido_remmina": "✅ Remmina installed",
             "btn_abrir_remmina": "🚀 Open Remmina",
@@ -608,6 +619,7 @@
             "btn_abrir_krdc": "🚀 Open KRDC",
             "btn_abrir_onlyoffice": "🚀 Open OnlyOffice",
             "btn_abrir_obsidian": "🚀 Open Obsidian",
+            "btn_abrir_thunderbird": "🚀 Open Thunderbird",
             "btn_abrir_okular": "🚀 Open Okular",
             "btn_abrir_kate": "🚀 Open Kate",
             "btn_abrir_joplin": "🚀 Open Joplin",
@@ -647,6 +659,7 @@
             "btn_abrir_lmms": "🚀 Open LMMS",
             "btn_abrir_lightworks": "🚀 Open Lightworks",
             "btn_abrir_audacity": "🚀 Open Audacity",
+            "btn_abrir_firefox": "🚀 Open Firefox",
             "btn_abrir_vscode": "🚀 Open VS Code",
             "btn_abrir_drawy": "🚀 Open Drawy",
             "btn_abrir_gear_lever": "🚀 Open Gear Lever",
@@ -1287,8 +1300,7 @@
         "samba_install": "Samba was already configured before FAP. Removing it disables file sharing and access to Windows folders on the network. To revert manually:\n\n  sudo systemctl disable --now smb nmb\n  sudo dnf remove samba samba-client cifs-utils",
         "qemu_kvm_install": "QEMU/KVM was already configured before FAP. Removing it disables running virtual machines (VM disks remain intact). To revert manually:\n\n  sudo systemctl disable --now libvirtd\n  sudo dnf remove qemu-kvm libvirt virt-manager virt-install libvirt-daemon-config-network",
         "virtualbox_install": "VirtualBox was already installed before FAP. Removing it disables VMs (the .vdi disks remain). To revert manually:\n\n  sudo dnf remove VirtualBox akmod-VirtualBox VirtualBox-kmod",
-        "gnome_boxes_install": "GNOME Boxes was already installed before FAP. Removing it disables VMs (disks remain). To revert manually:\n\n  sudo dnf remove gnome-boxes",
-        "firefox_preexistente": "Firefox was already installed before FAP and is the default browser of Fedora Workstation — several system packages depend on it (gnome-shell, fedora-workstation-repositories). Removing it can cascade and break the graphical environment. To remove it manually (aware of the dependents), use the terminal:\n\n  sudo dnf remove firefox"
+        "gnome_boxes_install": "GNOME Boxes was already installed before FAP. Removing it disables VMs (disks remain). To revert manually:\n\n  sudo dnf remove gnome-boxes"
     },
 
     "origem": {
