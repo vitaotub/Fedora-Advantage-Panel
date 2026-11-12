@@ -2312,6 +2312,112 @@ body.log-dock-visivel.log-dock-expandido .fap-main {
     padding-left: 1.75rem;
 }
 
+/* ============================================================
+ * BADGE DE INFORMAÇÃO (.fap-badge-info) — v1.5.9
+ * ============================================================
+ *
+ * Irmão do `.fap-badge-origem`: quadrado colorido de origem
+ * mostra "de onde vem"; exclamação mostra "contexto adicional".
+ * Quando os dois coexistem no mesmo botão, o `_renderizarInfoBadgesFixas`
+ * posiciona a exclamação à DIREITA do badge de origem (o usuário
+ * já conhece o quadrado de origem; a exclamação é o "extra").
+ *
+ * Comportamento:
+ *   • Clique abre `.fap-popover` (mesmo componente do badge de
+ *     origem — posicionamento, cleanup, Esc/clique-fora já
+ *     implementados em `_abrirPopoverOrigem`).
+ *   • Sem "Origem:", "Comando exato", "Como atualizar/remover".
+ *   • Só título + corpo HTML (`data-i18n-html`) + ação opcional.
+ *
+ * Cores (via `data-cor`):
+ *   • `warn` (padrão) — amarelo, para "atenção/nota importante".
+ *   • `info`          — azul, para "contexto/dica".
+ *
+ * Pulsação sutil (`pulse-info`) para o usuário descobrir que é
+ * clicável. NÃO usa auto-open — o `_registrarInfoBadge` só
+ * renderiza o ícone; o clique é sempre explícito.
+ */
+
+.fap-badge-info {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    cursor: pointer;
+    z-index: 3;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1;
+    color: #1a1a1a;
+    transition: transform 0.1s ease, box-shadow 0.2s ease;
+    animation: pulse-info 3s infinite ease-in-out;
+}
+
+.fap-badge-info::before {
+    content: '';
+    position: absolute;
+    inset: -4px;
+    border-radius: 50%;
+}
+
+.fap-badge-info:hover {
+    transform: translateY(-50%) scale(1.15);
+    animation: none;
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.25);
+}
+
+.fap-badge-info:focus-visible {
+    outline: 2px solid var(--text-main);
+    outline-offset: 2px;
+}
+
+.fap-badge-info[data-cor="warn"] {
+    background-color: #f59e0b;
+    color: #1a1a1a;
+}
+
+.fap-badge-info[data-cor="info"] {
+    background-color: #3b82f6;
+    color: #ffffff;
+}
+
+@keyframes pulse-info {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
+    50%      { box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.25); }
+}
+
+[data-cor="info"].fap-badge-info {
+    animation-name: pulse-info-blue;
+}
+
+@keyframes pulse-info-blue {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
+    50%      { box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25); }
+}
+
+/* Quando há AMBOS os badges no mesmo wrapper, a exclamação fica
+ * imediatamente à direita do badge de origem. */
+.btn-flatpak-wrapper:has(.fap-badge-origem):has(.fap-badge-info) .fap-badge-info {
+    left: 26px;
+}
+
+.btn-flatpak-wrapper:has(.fap-badge-info):not(:has(.fap-badge-origem)) .fap-badge-info {
+    left: 6px;
+}
+
+.btn-flatpak-wrapper:has(.fap-badge-info) .btn-executar {
+    padding-left: 1.75rem;
+}
+
+.btn-flatpak-wrapper:has(.fap-badge-origem):has(.fap-badge-info) .btn-executar {
+    padding-left: 2.75rem;
+}
+
 /* ---- POPOVER "SOBRE ESTE APP" ---- */
 
 .fap-popover {
@@ -2356,6 +2462,30 @@ body.log-dock-visivel.log-dock-expandido .fap-main {
     position: static;
     transform: none;
     flex-shrink: 0;
+}
+
+/* Mesmo reset para o badge de info no cabeçalho do popup (v1.5.9
+ * — correção pós-teste). Sem isso, o `!` do `.fap-badge-info`
+ * (que tem `position: absolute` no wrapper do botão) ancoreava
+ * no `.fap-popover` (`position: fixed`) e ficava solto sobre o
+ * título/corpo, atrapalhando a leitura. */
+.fap-popover-titulo .fap-badge-info {
+    position: static;
+    transform: none;
+    flex-shrink: 0;
+    cursor: default;
+    animation: none;
+    box-shadow: none;
+}
+
+.fap-popover-titulo .fap-badge-info:hover {
+    transform: none;
+    box-shadow: none;
+    animation: none;
+}
+
+.fap-popover-titulo .fap-badge-info::before {
+    display: none;
 }
 
 .fap-popover-close {

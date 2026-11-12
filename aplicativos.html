@@ -345,7 +345,7 @@ BLOCO 5 — INTERNET E COMUNICAÇÃO
 <div class="grid-launchers">
 <div class="launcher-item">
 <div class="btn-flatpak-wrapper">
-<button class="btn-executar" onclick="instalarFlatpak('instalar-opera')" data-comando="instalar-opera" data-logbox="log-sessao-aplicativos" id="btn-instalar-opera" data-i18n="sessoes.aplicativos.btn_opera">🌐 Opera</button>
+<button class="btn-executar" onclick="instalarRpmRepo('instalar-opera')" data-comando="instalar-opera" data-logbox="log-sessao-aplicativos" id="btn-instalar-opera" data-i18n="sessoes.aplicativos.btn_opera">🌐 Opera</button>
 </div>
 </div>
 <div class="launcher-item">
@@ -643,7 +643,8 @@ var APPS_FLATPAK = {
     'instalar-upscayl': { appId: 'org.upscayl.Upscayl', fallback: '🔍 Upscayl' },
     'instalar-xnviewmp': { appId: 'com.xnview.XnViewMP', fallback: '🖼️ XnView MP' },
     'instalar-freecad': { appId: 'org.freecad.FreeCAD', fallback: '⚙️ FreeCAD' },
-    'instalar-opera': { appId: 'com.opera.Opera', fallback: '🌐 Opera' },
+    // Opera migrado para APPS_RPM_REPO (v1.5.9) — instalação via
+    // repositório oficial rpm.opera.com. Ver bloco abaixo.
     'instalar-zoom': { appId: 'us.zoom.Zoom', fallback: '📹 Zoom' },
     'instalar-discord': { appId: 'com.discordapp.Discord', fallback: '💬 Discord' },
     'instalar-telegram': { appId: 'org.telegram.desktop', fallback: '✈️ Telegram' },
@@ -710,6 +711,48 @@ var APPS_URL_RPM = {
 // ============================================================
 
 var APPS_RPM_REPO = {
+    // Opera usa o repositório oficial da Opera Software
+    // (rpm.opera.com/rpm). O método canônico de configuração é
+    // criar /etc/yum.repos.d/opera.repo via `tee` — a URL
+    // `rpm.opera.com/rpm` É o repositório, mas NÃO é o arquivo
+    // `.repo` (o `dnf config-manager addrepo --from-repofile=`
+    // não funciona aqui). Múltiplas fontes confirmam o `tee`
+    // manual como o método correto [citation:9][citation:10].
+    //
+    // O `rpm --import` antes do `tee` é redundante com o
+    // `gpgcheck=1` + `gpgkey=` (o dnf importa no primeiro
+    // install), mas torna a operação atômica: se o `dnf install`
+    // for interrompido, a chave já está lá para a próxima
+    // tentativa.
+    'instalar-opera': {
+        pacote: 'opera-stable',
+        // ============================================================
+        // SEM HEREDOC (v1.5.9 — correção pós-teste)
+        // ============================================================
+        //
+        // O heredoc (`<<'FAP_OPERA_REPO'`) é incompatível com a
+        // forma como `instalarRpmRepo` concatena o `dnf install`:
+        //
+        //   • `FAP_OPERA_REPO && dnf install` (mesma linha) — o
+        //     bash NÃO reconhece o delimitador (precisa estar
+        //     sozinho na linha), e o heredoc consome o `&& dnf
+        //     install` até o fim do arquivo. O `tee` escreve o
+        //     `.repo`, mas o `dnf install` NUNCA roda.
+        //
+        //   • `FAP_OPERA_REPO\n&& dnf install` (linha separada) —
+        //     o bash rejeita `&&` no início de linha ("erro de
+        //     sintaxe próximo ao token inesperado `&&'").
+        //
+        // Solução: `printf` + `tee`, uma linha só, sem heredoc.
+        // O `\n` literal no `printf` (escape de string JS `\\n`)
+        // vira newline real na saída do comando. Funciona com
+        // ` && ` em sequência — o comando final é uma linha só.
+        repoSetup:
+            'sudo rpm --import https://rpm.opera.com/rpmrepo.key && ' +
+            'printf \'[opera]\\nname=Opera packages\\ntype=rpm-md\\nbaseurl=https://rpm.opera.com/rpm\\ngpgcheck=1\\ngpgkey=https://rpm.opera.com/rpmrepo.key\\nenabled=1\\n\' | sudo tee /etc/yum.repos.d/opera.repo > /dev/null',
+        repoRemove: 'sudo rm -f /etc/yum.repos.d/opera.repo',
+        fallback: '🌐 Opera'
+    },
     'instalar-brave': {
         pacote: 'brave-browser',
         repoSetup:
@@ -759,22 +802,22 @@ function _registrarAbrirEmMassa() {
             if (nomeMapa === 'APPS_URL_RPM' && !info.binAbrir) return;
 
             // ============================================================
-            // SKIP FIREFOX/THUNDERBIRD (v1.5.8 — auditoria C3)
+            // SKIP FIREFOX/THUNDERBIRD NO LOOP DE MASS (v1.5.9)
             // ============================================================
             //
-            // Firefox e Thunderbird são "apps do dia a dia" — o usuário
-            // já os abre pelo menu do sistema. Mostrar "Abrir Firefox"
-            // no FAP é redundante (abre uma nova janela a cada clique).
-            // A versão anterior registrava esses dois no loop e deletava
-            // logo depois (3 linhas abaixo), num `delete _ABRIR_REGISTRY`
-            // explícito — funcionava, mas era código morto que confundia
-            // manutenção. Skipá-los aqui é mais direto e elimina o
-            // `delete` subsequente.
+            // Firefox e Thunderbird são "apps do dia a dia" e têm
+            // registros explícitos fora do loop (com `textoKey` e
+            // `textoFallback` próprios), logo abaixo do
+            // `_registrarAbrirEmMassa()`. O skip no loop evita
+            // registrar de novo (o segundo `_registrarAbrir` sobrescreve
+            // o primeiro — comportamento idempotente, mas confuso
+            // para manutenção).
             //
-            // Efeito: `_dadosAbrirDoApp('instalar-firefox')` retorna
-            // `null` → `aplicarEstadoInstalavel` deixa o botão em
-            // "instalado-sem-abrir" (cinza + lixeira), que é o
-            // comportamento desejado.
+            // Efeito: `_dadosAbrirDoApp('instalar-firefox')` e
+            // `_dadosAbrirDoApp('instalar-thunderbird')` retornam a
+            // entrada explícita — o botão vira "🚀 Abrir X" (verde) +
+            // lixeira quando o app está instalado, com tooltip de
+            // pré-existente se aplicável.
             if (id === 'instalar-firefox' || id === 'instalar-thunderbird') return;
 
             var chaveI18n = 'sessoes.aplicativos.btn_abrir_' +
@@ -830,11 +873,13 @@ function _registrarAbrirEmMassa() {
 // ============================================================
 
 var _CMD_ABRIR_DNF = {
-    // `instalar-firefox` e `instalar-thunderbird` foram removidos:
-    // `_ABRIR_REGISTRY` é deletado no topo (Firefox/Thunderbird abrem
-    // pelo menu do sistema, sem sentido no FAP), então
-    // `abrirAppGenerico` nunca é chamado para esses ids — as
-    // entradas eram dead code.
+    // Firefox e Thunderbird voltaram ao FAP na v1.5.9 (após revisão):
+    // ambos são registrados explicitamente via `_registrarAbrir(...)`
+    // logo abaixo do `_registrarAbrirEmMassa()`. O skip no loop de
+    // mass continua — só o Firefox/Thunderbird são registrados
+    // manualmente, com `textoKey` e `textoFallback` explícitos.
+    'instalar-firefox':     'firefox',
+    'instalar-thunderbird': 'thunderbird',
     'instalar-okular':      'okular',
     'instalar-kate':        'kate',
     'instalar-foliate':     'gtk-launch com.github.johnfactotum.Foliate',
@@ -851,6 +896,7 @@ var _CMD_ABRIR_DNF = {
 };
 
 var _CMD_ABRIR_RPM_REPO = {
+    'instalar-opera':   'opera',
     'instalar-brave':   'brave-browser',
     'instalar-vivaldi': 'vivaldi-stable',
     'instalar-edge':    'microsoft-edge-stable'
@@ -899,8 +945,172 @@ function abrirAppGenerico(idInstall) {
 _registrarAbrirEmMassa();
 
 // ============================================================
-// REGISTRO DE APPS REMOVÍVEIS
+// ABRIR FIREFOX (v1.5.9)
 // ============================================================
+//
+// Firefox foi skipado do `_registrarAbrirEmMassa` (para não abrir
+// em massa com os outros apps DNF), mas o botão "🚀 Abrir Firefox"
+// faz parte do padrão do FAP: Firefox pré-existente (instalado
+// antes do FAP) aparece como "Abrir" + lixeira, com tooltip de
+// pré-existente. Após remover, o auto-reset volta o botão para
+// "📦 Instalar Firefox". Após reinstalar, volta para "Abrir".
+//
+// `abrirAppGenerico('instalar-firefox')` consulta `APPS_DNF` e usa
+// `_CMD_ABRIR_DNF['instalar-firefox'] = 'firefox'` (adicionado
+// acima) — o binário `firefox` está na
+// `_BINARIOS_ABRIR_WHITELIST` do `server.js`, então o `setsid -f
+// firefox > /tmp/fap-open-instalar-firefox.log 2>&1 < /dev/null`
+// roda sem `pkexec`.
+_registrarAbrir('instalar-firefox', {
+    textoKey: 'sessoes.aplicativos.btn_abrir_firefox',
+    textoFallback: '🚀 Abrir Firefox',
+    onclick: "abrirAppGenerico('instalar-firefox')"
+});
+
+// ============================================================
+// ABRIR THUNDERBIRD (v1.5.9)
+// ============================================================
+//
+// Mesma lógica do Firefox: Thunderbird foi skipado do
+// `_registrarAbrirEmMassa`, mas o botão "🚀 Abrir Thunderbird" faz
+// parte do padrão do FAP. Thunderbird pré-existente aparece como
+// "Abrir" + lixeira, com tooltip de pré-existente. Após remover,
+// o auto-reset volta o botão para "📦 Instalar Thunderbird". Após
+// reinstalar, volta para "Abrir".
+//
+// `abrirAppGenerico('instalar-thunderbird')` consulta `APPS_DNF` e
+// usa `_CMD_ABRIR_DNF['instalar-thunderbird'] = 'thunderbird'`
+// (adicionado acima). O binário `thunderbird` foi adicionado à
+// `_BINARIOS_ABRIR_WHITELIST` do `server.js` nesta correção —
+// sem isso, o `setsid -f thunderbird > /tmp/fap-open-instalar-
+// thunderbird.log 2>&1 < /dev/null` cairia em `pkexec`.
+_registrarAbrir('instalar-thunderbird', {
+    textoKey: 'sessoes.aplicativos.btn_abrir_thunderbird',
+    textoFallback: '🚀 Abrir Thunderbird',
+    onclick: "abrirAppGenerico('instalar-thunderbird')"
+});
+
+// ============================================================
+// BADGE DE INFORMAÇÃO — RustDesk / SELinux (v1.5.9)
+// ============================================================
+//
+// O RustDesk instala normalmente no Fedora, mas em alguns
+// sistemas o SELinux bloqueia o serviço (AVC denial). A doc
+// oficial do RustDesk recomenda aplicar uma política SELinux
+// **apenas se** houver AVC — não antes, porque a política
+// "allow init_t ..." enfraquece o SELinux globalmente.
+//
+// O FAP NÃO instala política automaticamente. O badge de
+// exclamação explica o problema + oferece um botão
+// "Verificar bloqueios do SELinux" (read-only, via endpoint
+// dedicado — ver `/rustdesk-selinux-check` em `server.js`).
+_registrarInfoBadge('instalar-rustdesk', {
+    tituloKey: 'sessoes.aplicativos.rustdesk_selinux_titulo',
+    tituloFallback: 'Sobre o SELinux e o RustDesk',
+    corpoKey: 'sessoes.aplicativos.rustdesk_selinux_corpo',
+    corpoFallback: 'O RustDesk instala normalmente no Fedora, mas em alguns sistemas o SELinux bloqueia o serviço. <strong>Não desative o SELinux.</strong> A documentação oficial do RustDesk recomenda aplicar uma política SELinux específica <strong>apenas se</strong> houver bloqueios (AVC denials) — não antes, porque a política enfraquece o SELinux globalmente. Clique em "Verificar bloqueios do SELinux" abaixo para ver se há AVCs nas últimas 24 horas. Se houver, siga o guia oficial em <a href="https://rustdesk.com/docs/en/client/linux/" target="_blank" rel="noopener noreferrer">rustdesk.com/docs/en/client/linux/</a>.',
+    cor: 'warn',
+    acaoKey: 'sessoes.aplicativos.rustdesk_selinux_acao',
+    acaoFallback: '🔍 Verificar bloqueios do SELinux',
+    acaoFn: 'verificarSelinuxRustDesk'
+});
+
+// ============================================================
+// VERIFICAR SELINUX DO RUSTDESK — read-only
+// ============================================================
+//
+// Conta os AVCs (`avc: denied`) do RustDesk nas últimas 24h via
+// endpoint dedicado `/rustdesk-selinux-check` (server-side,
+// `_execReadOnly`, sem auth). O output vai para o log da sessão
+// (`log-sessao-aplicativos`).
+//
+// Não instala nada. O usuário aplica a política manualmente se
+// decidir. O FAP só informa.
+async function verificarSelinuxRustDesk() {
+    // O botão do RustDesk tem `data-logbox="log-sessao-aplicativos"`
+    // (log compartilhado visível da Sessão 6). Usar o id do badge
+    // de info (`rustdesk-selinux-info`) retornaria null —
+    // `_getLogBox` procura `[data-comando][data-logbox]` ou
+    // `id="log-<idComando>"`, e o badge é um `<span>` sem
+    // `data-logbox`. O `_getLogBox('instalar-rustdesk')` resolve
+    // para `log-sessao-aplicativos` (mesmo destino do `instalar`).
+    var logBox = _getLogBox('instalar-rustdesk');
+    var nomeAcao = _t('sessoes.aplicativos.rustdesk_selinux_acao',
+        'Verificar bloqueios do SELinux');
+
+    if (logBox) {
+        logBox.style.display = 'block';
+        _separadorLog(logBox, nomeAcao);
+        var linha = document.createElement('div');
+        linha.className = 'log-line info';
+        linha.textContent = '🔍 ' + nomeAcao + '...';
+        logBox.appendChild(linha);
+        logBox.scrollTop = logBox.scrollHeight;
+    }
+
+    try {
+        var r = await fetch(API_URL + '/rustdesk-selinux-check', { cache: 'no-store' });
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        var data = await r.json();
+
+        if (data.erro) {
+            if (logBox) {
+                var erroLine = document.createElement('div');
+                erroLine.className = 'log-line error';
+                erroLine.textContent = '❌ Não foi possível verificar o journal: ' + data.erro;
+                logBox.appendChild(erroLine);
+                logBox.scrollTop = logBox.scrollHeight;
+            }
+            if (typeof mostrarToast === 'function') {
+                mostrarToast('⚠️ ' + _t('sessoes.aplicativos.rustdesk_selinux_erro',
+                    'Não foi possível verificar o journal. Veja o log.'), 'info', 6000);
+            }
+            return;
+        }
+
+        if (data.avcs === 0) {
+            if (logBox) {
+                var okLine = document.createElement('div');
+                okLine.className = 'log-line success';
+                okLine.textContent = '✅ ' + _t('sessoes.aplicativos.rustdesk_selinux_ok',
+                    'Nenhum bloqueio do SELinux detectado nas últimas 24h. O RustDesk está funcionando com o SELinux ativo.');
+                logBox.appendChild(okLine);
+                logBox.scrollTop = logBox.scrollHeight;
+            }
+            if (typeof mostrarToast === 'function') {
+                mostrarToast('✅ ' + _t('sessoes.aplicativos.rustdesk_selinux_ok_curto',
+                    'Sem bloqueios do SELinux nas últimas 24h.'), 'success', 5000);
+            }
+        } else {
+            var n = data.avcs;
+            if (logBox) {
+                var avcLine = document.createElement('div');
+                avcLine.className = 'log-line warning';
+                avcLine.textContent = '⚠️ ' + _tVars('sessoes.aplicativos.rustdesk_selinux_avcs',
+                    'Foram detectados ' + n + ' AVC(s) do RustDesk nas últimas 24h. ' +
+                    'O RustDesk pode não funcionar corretamente. Consulte a documentação oficial ' +
+                    'em https://rustdesk.com/docs/en/client/linux/ para aplicar a política SELinux.',
+                    { n: n });
+                logBox.appendChild(avcLine);
+                logBox.scrollTop = logBox.scrollHeight;
+            }
+            if (typeof mostrarToast === 'function') {
+                mostrarToast('⚠️ ' + _tVars('sessoes.aplicativos.rustdesk_selinux_avcs_curto',
+                    n + ' bloqueio(s) do SELinux detectado(s). Veja o log.',
+                    { n: n }), 'info', 7000);
+            }
+        }
+    } catch (e) {
+        if (logBox) {
+            var errLine = document.createElement('div');
+            errLine.className = 'log-line error';
+            errLine.textContent = '❌ ' + _tVars('comum.erro_conexao',
+                'Erro de conexão: {msg}', { msg: e.message });
+            logBox.appendChild(errLine);
+            logBox.scrollTop = logBox.scrollHeight;
+        }
+    }
+}
 
 // --- Flatpaks (Flathub) ---
 
@@ -917,7 +1127,12 @@ registrarAppRemovivel('instalar-cura',     { tipo: 'flatpak', appId: 'com.ultima
 registrarAppRemovivel('instalar-upscayl',  { tipo: 'flatpak', appId: 'org.upscayl.Upscayl',            nome: 'Upscayl' });
 registrarAppRemovivel('instalar-xnviewmp', { tipo: 'flatpak', appId: 'com.xnview.XnViewMP',            nome: 'XnView MP' });
 registrarAppRemovivel('instalar-freecad',  { tipo: 'flatpak', appId: 'org.freecad.FreeCAD',            nome: 'FreeCAD' });
-registrarAppRemovivel('instalar-opera',    { tipo: 'flatpak', appId: 'com.opera.Opera',                nome: 'Opera' });
+registrarAppRemovivel('instalar-opera', {
+    tipo: 'dnf',
+    pacotes: ['opera-stable'],
+    reposRemover: ['/etc/yum.repos.d/opera.repo'],
+    nome: 'Opera'
+});
 registrarAppRemovivel('instalar-zoom',     { tipo: 'flatpak', appId: 'us.zoom.Zoom',                   nome: 'Zoom' });
 registrarAppRemovivel('instalar-discord',  { tipo: 'flatpak', appId: 'com.discordapp.Discord',         nome: 'Discord' });
 registrarAppRemovivel('instalar-telegram', { tipo: 'flatpak', appId: 'org.telegram.desktop',           nome: 'Telegram' });
@@ -1069,27 +1284,18 @@ registrarAppRemovivel('instalar-artcraft-launcher', {
 registrarAppRemovivel('instalar-firefox', {
     tipo: 'dnf',
     pacotes: ['firefox'],
-    nome: 'Mozilla Firefox',
-    // MITIGAÇÃO (v1.5.8 — auditoria B7): pré-existente NÃO pode
-    // ser removido.
+    nome: 'Mozilla Firefox'
+    // Firefox é um APP DE USUÁRIO, não um item crítico do sistema.
+    // Ao contrário de CUPS/Samba/drivers/virtualização (onde o
+    // `dnf remove` quebra outros apps), remover o Firefox só afeta
+    // o próprio Firefox (e, no máximo, dependentes que o dnf
+    // resolve ou recusa). O usuário pode preferir outro navegador
+    // instalado pelo FAP — a lixeira deve estar disponível.
     //
-    // Firefox é o navegador padrão do Fedora Workstation e é
-    // dependência de vários pacotes do sistema (gnome-shell,
-    // fedora-workstation-repositories, firefox-langpacks). Remover
-    // via lixeira pode cascatear (`dnf remove --allowerasing` por
-    // fora) ou deixar estado ambíguo quando o dnf recusa por
-    // dependência. Diferente dos apps de usuário (VLC, GIMP), o
-    // usuário NÃO deveria poder desinstalar o navegador padrão do
-    // sistema por um clique acidental.
-    permitirRemocaoPreExistente: false,
-    motivoBloqueio: 'O Firefox já estava instalado antes do FAP ' +
-                    'e é o navegador padrão do Fedora Workstation — ' +
-                    'vários pacotes do sistema dependem dele ' +
-                    '(gnome-shell, fedora-workstation-repositories). ' +
-                    'Removê-lo pode cascatear e quebrar o ambiente ' +
-                    'gráfico. Para remover manualmente (com consciência ' +
-                    'dos dependentes), use o terminal:\n\n' +
-                    '  sudo dnf remove firefox'
+    // A `permitirRemocaoPreExistente: false` que existiu aqui na
+    // v1.5.9 (correção B7) foi REVERTIDA na mesma versão: o botão
+    // deve seguir o padrão do FAP (Abrir + lixeira), com tooltip
+    // de pré-existente. O `dnf` protege os dependentes sozinho.
 });
 registrarAppRemovivel('instalar-vscode',     { tipo: 'flatpak', appId: 'com.visualstudio.code',      nome: 'Visual Studio Code' });
 registrarAppRemovivel('instalar-drawy',      { tipo: 'flatpak', appId: 'org.kde.drawy',              nome: 'Drawy' });
@@ -1144,6 +1350,19 @@ async function instalarRpmRepo(idComando) {
         console.error('[aplicativos] App RPM-repo não mapeado:', idComando);
         return;
     }
+    // ============================================================
+    // ` && ` NA MESMA LINHA (v1.5.9 — correção pós-teste)
+    // ============================================================
+    //
+    // O `repoSetup` do Opera usa `printf` + `tee` (sem heredoc,
+    // uma linha só), então a concatenação com ` && ` na mesma
+    // linha funciona. A tentativa anterior com `\n&&` era
+    // incompatível com o bash (`&&` no início de linha é erro
+    // de sintaxe).
+    //
+    // Brave/Vivaldi/Edge continuam funcionando: o `repoSetup`
+    // deles é uma linha só (`dnf config-manager addrepo ...`),
+    // e o ` && dnf install` na sequência é válido.
     var comando = info.repoSetup + ' && sudo dnf install -y ' + info.pacote;
 
     var chaveI18n = 'sessoes.aplicativos.btn_' +

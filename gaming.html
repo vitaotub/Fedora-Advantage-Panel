@@ -866,9 +866,34 @@ async function executarNTSync() {
         'echo "ntsync" | sudo tee /etc/modules-load.d/ntsync.conf > /dev/null';
     await executarComandoGenerico(idComando, comando,
         _t('sessoes.gaming.btn_ntsync', '⚡ NTSYNC'),
-        function() {
-            // Estado 2: Instalar → cinza + lixeira ao lado.
-            // `null` porque NTSYNC não tem GUI para "Abrir".
+        async function() {
+            // ============================================================
+            // AGUARDA O `marcarComoExecutado` ANTES DE PINTAR (v1.5.9)
+            // ============================================================
+            //
+            // Race: `completarProgresso(idComando, true)` chama
+            // `marcarComoExecutado(idComando)` ASSÍNCRONO (Promise
+            // não aguardada) e, em paralelo, o `onSucesso` roda
+            // `aplicarEstadoInstalavel(idComando, null)`, que
+            // consulta `isExecutado(idComando)` ANTES da Promise
+            // ter persistido. Resultado: `false` → botão pinta
+            // "Instalar" de novo. Quando o `marcarComoExecutado`
+            // termina, ninguém re-renderiza.
+            //
+            // Sintoma reportado em teste real (Fedora 44, kernel
+            // 6.14+): `lsmod | grep ntsync` mostra o módulo
+            // carregado (`ntsync 20480 0`), mas o botão continua
+            // clicável.
+            //
+            // Correção: aguardar `marcarComoExecutado` explicitamente
+            // ANTES de `aplicarEstadoInstalavel`. Mesma solução já
+            // usada em `executarGrubAplicarRecomendado` (que chama
+            // `await marcarComoExecutado('grub-aplicar-recomendado')`
+            // antes de `_aplicarEstadoBotoesGrub`). `marcarComoExecutado`
+            // é idempotente — o `completarProgresso` ainda tentaria
+            // marcar de novo, mas o segundo `push` é bloqueado pelo
+            // `if (!progress.executados.includes(idComando))`.
+            await marcarComoExecutado(idComando);
             aplicarEstadoInstalavel('ntsync-install', null);
         });
 }

@@ -2,7 +2,7 @@
 
 **🌐 Language:** [Português (BR)](README.md) | English | [Español](README.es.md)
 
-![Version](https://img.shields.io/badge/Version-v1.5.8--11112026-orange?style=flat-square)
+![Version](https://img.shields.io/badge/Version-v1.5.9--11122026-orange?style=flat-square)
 ![Fedora](https://img.shields.io/badge/Fedora-44%20%7C%2045-294172?style=flat-square&logo=fedora)
 ![License](https://img.shields.io/badge/License-GPL--3.0-green?style=flat-square)
 ![Languages](https://img.shields.io/badge/Languages-PT--BR%20%7C%20EN%20%7C%20ES-3c67e3?style=flat-square)
@@ -60,9 +60,11 @@ bash <(curl -s https://raw.githubusercontent.com/vitaotub/Fedora-Advantage-Panel
 - **Network and peripherals** — Broadcom, Realtek, Xbox Wireless (xpadneo), Razer (OpenRazer), extra firmware, all with hardware detection.
 - **Gaming stack** — native Steam, Heroic, Lutris, Wine, Proton-GE (ProtonUp-Qt), GameMode, MangoHud, Gamescope, vkBasalt, NTSYNC, emulators (RetroArch, Dolphin, PCSX2, RPCS3, Duckstation).
 - **Production and office** — OBS Studio + virtual camera, EasyEffects, CUPS + Avahi, Samba, LocalSend, KeePassXC, Rclone Manager, ArtCraft Launcher.
+- **Remote access with SELinux awareness** — RustDesk installs normally, and FAP checks for SELinux blocks (`avc: denied`) from the last 24h, with a link to the official policy when needed. FAP does **not** install the policy automatically (the broad policy weakens SELinux globally).
 - **Virtualization** — QEMU/KVM + virt-manager, VirtualBox, GNOME Boxes, with Secure Boot warnings.
 - **Diagnostics** — system panel, top 5 processes, partitions, journal, GSmartControl (SMART), CoolerControl (temperatures + fan curves).
 - **Reversible tweaks** — `vm.max_map_count`, `vm.swappiness`, TCP BBR, realtime for audio, dual-boot RTC, parallel DNF, GRUB, kernels.
+- **Info badge** — clickable exclamation icon next to apps that need context (SELinux, usage notes, non-urgent warnings). Popup explains without polluting the UI. Urgent warnings (data risk, "do not power off") stay in boxes.
 - **Guided 44 → 45 upgrade** — automatic availability detection, third-party warnings (NVIDIA, Broadcom, COPRs, Terra), download, scheduled reboot and post-upgrade actions (`rpmconf`, `distro-sync`, SELinux relabel, rescue kernel).
 - **Multi-language** — PT-BR, EN and ES, with PT-BR HTML fallback and JSON loaded on demand.
 
@@ -70,12 +72,13 @@ bash <(curl -s https://raw.githubusercontent.com/vitaotub/Fedora-Advantage-Panel
 
 - **Never installs anything without you seeing it.** Every command is visible in the real-time log.
 - **Pre-existence detection.** Apps installed before FAP appear as "Open" from the start.
-- **Critical items protected.** Proprietary drivers, codecs, CUPS, Samba, virtualization: if they already existed, the trash icon doesn't appear.
+- **Critical items protected.** Proprietary drivers, codecs, CUPS, Samba, virtualization: if they already existed, the trash icon doesn't appear (removing the base would break other apps). User apps (like Firefox) follow the FAP pattern: "Open" + trash, with a tooltip warning that they were installed before FAP.
 - **Backup before overwriting.** GameMode + MangoHud presets back up the user's files before applying — and the trash icon restores them.
 - **Authentication via `pkexec`.** Native desktop password dialog. The script to be executed is logged **before** pkexec opens — you see what you're authorizing.
 - **File-based audit.** Every `pkexec` leaves a trail in `/tmp/fap-audit-*.log` (removed after 7 days).
 - **Local CSRF protection.** `/executar` and `/shutdown` reject requests with an `Origin` from another host. `/executar` also blocks `>` (file redirection) unless it's a legitimate dup-fd (`2>&1`, `1>&2`, `>&2`) — closes the `~/.bashrc` overwrite vector.
 - **Secure Boot aware.** When installing any `akmod-*` with Secure Boot enabled, FAP guides the user through MOK enrollment (kmodgenca + mokutil) before installing. If the user already has an enrolled key (from any source), FAP detects it and hides the instructions.
+- **Does not weaken SELinux.** FAP does **not** install broad SELinux policies to "solve" app blocks (RustDesk, etc.). It detects the AVCs (via `journalctl -g`), warns, and points to the official documentation — the user decides.
 - **Native WebKitGTK container.** Own interface, no dependence on Firefox/Chromium.
 - **`install.sh` refuses to run as root.** Installs to `~/.local/share` and uses `sudo` only where needed.
 

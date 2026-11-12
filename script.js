@@ -1149,7 +1149,6 @@ var SESSOES = [
         'instalar-avidemux': { textoConcluido: '✅ Avidemux instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_avidemux', flatpakId: 'org.avidemux.Avidemux' },
         'instalar-drift': { textoConcluido: '✅ Drift instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_drift', flatpakId: 'org.cutwire.Drift' },
         'instalar-rustdesk': { textoConcluido: '✅ RustDesk instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_rustdesk' },
-
         'instalar-thunderbird': { textoConcluido: '✅ Thunderbird instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_thunderbird' },
         'instalar-okular': { textoConcluido: '✅ Okular instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_okular' },
         'instalar-foliate': { textoConcluido: '✅ Foliate instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_foliate' },
@@ -1169,7 +1168,7 @@ var SESSOES = [
         'instalar-lmms': { textoConcluido: '✅ LMMS instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_lmms' },
         'instalar-chromium': { textoConcluido: '✅ Chromium instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_chromium' },
 
-        'instalar-opera': { textoConcluido: '✅ Opera instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_opera', flatpakId: 'com.opera.Opera' },
+        'instalar-opera': { textoConcluido: '✅ Opera instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_opera' },
         'instalar-brave': { textoConcluido: '✅ Brave instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_brave' },
         'instalar-vivaldi': { textoConcluido: '✅ Vivaldi instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_vivaldi' },
         'instalar-edge': { textoConcluido: '✅ Microsoft Edge instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_edge' },
@@ -2046,7 +2045,7 @@ function _renderizarPainelSecureBoot(container, estado) {
                                                               // ache o log.
                                                               html += '<button class="btn-executar" onclick="executarPrepararSecureBoot()" ' +
                                                               'data-comando="nvidia-secureboot-prepare" ' +
-                                                              'data-logbox="log-sessao-hardware" ' +
+                                                              'data-logbox="log-sessao-estado-fedora" ' +
                                                               'id="btn-nvidia-secureboot-prepare">';
                                                               html += '🔐 ' + _t('seguranca.secureboot_preparar_btn',
                                                                                  'Preparar Secure Boot');
@@ -3716,8 +3715,90 @@ executarComandoGenerico = async function(idComando, comando, nomeAcao, onSucesso
 // ABRIR FERRAMENTA EXTERNA
 // ============================================================
 
+// ============================================================
+// QUOTING DEFENSIVO DE URLs (v1.5.9 — pós-teste)
+// ============================================================
+//
+// O `abrirFerramentaExterna` recebe uma string que vai virar
+// comando shell (via `POST /executar` → `spawn`/`exec` no
+// server). URLs passadas para `xdg-open` (links externos,
+// changelog, popup do RustDesk, GitHub do Affinity) podem
+// conter metacaracteres que o bash interpretaria: `&` (background),
+// `$` (variável), backtick (subshell), `>` (redirect), `;`
+// (sequência). Sem quoting, um URL como
+// `https://x.com/?a=1&b=2` vira dois comandos: `xdg-open
+// https://x.com/?a=1` em background, e o shell tenta rodar `b=2`.
+//
+// Defesa em profundidade:
+//   1. `_shellQuote(s)` — cita um argumento com aspas simples
+//      (com escape `'\''` para aspas internas). Se o argumento
+//      só tem caracteres seguros (`[a-zA-Z0-9_./:@%+=,-]`),
+//      devolve sem quotes (cosmético, mas ajuda a ler logs).
+//   2. `_quotarUrlsNaoQuotadas(comando)` — escaneia o comando
+//      e cita URLs (`https?://...`) que NÃO estejam já entre
+//      aspas simples ou duplas. Respeita aspas existentes para
+//      não duplicar quote (ex.: caller já passou URL quotada).
+//
+// Combinado com `_REDIRECT_ABRIR_PADRAO` (server.js), que agora
+// aceita `'...'` e `"..."` como argumentos, o comando final
+// `setsid -f xdg-open 'https://x.com/?a=1&b=2' > /tmp/fap-open-x.log
+// 2>&1 < /dev/null` passa em `_ehRedirectAbrirValido` sem `pkexec`.
+//
+// Limitação conhecida: URLs com aspas simples DENTRO (ex.:
+// `https://x.com/it's`) caem em `'\''` e podem não casar no
+// `_REDIRECT_ABRIR_PADRAO`. URLs com aspas simples são raras
+// (normalmente URL-encoded como `%27`), então aceitamos o edge
+// case.
+function _shellQuote(s) {
+    if (s === '') return "''";
+    if (/^[a-zA-Z0-9_./:@%+=,-]+$/.test(s)) return s;
+    return "'" + String(s).replace(/'/g, "'\\''") + "'";
+}
+
+function _quotarUrlsNaoQuotadas(comando) {
+    var resultado = '';
+    var dentroAspasSimples = false;
+    var dentroAspasDuplas = false;
+    var i = 0;
+    var n = comando.length;
+    while (i < n) {
+        var c = comando[i];
+        if (c === "'" && !dentroAspasDuplas) {
+            dentroAspasSimples = !dentroAspasSimples;
+            resultado += c;
+            i++;
+            continue;
+        }
+        if (c === '"' && !dentroAspasSimples) {
+            dentroAspasDuplas = !dentroAspasDuplas;
+            resultado += c;
+            i++;
+            continue;
+        }
+        if (!dentroAspasSimples && !dentroAspasDuplas &&
+            (comando.startsWith('http://', i) || comando.startsWith('https://', i))) {
+            var j = i;
+        while (j < n && !/[\s'">]/.test(comando[j])) {
+            j++;
+        }
+        var url = comando.substring(i, j);
+        resultado += _shellQuote(url);
+        i = j;
+        continue;
+            }
+            resultado += c;
+            i++;
+    }
+    return resultado;
+}
+
 function abrirFerramentaExterna(comando, idLog, nomeExibicao) {
     var cmdFinal = (comando || '').trim();
+
+    // Aplica quoting defensivo em URLs não-quoteadas. Se o caller
+    // já quotou (aspas simples ou duplas ao redor do URL), a
+    // função respeita as aspas existentes e não toca.
+    cmdFinal = _quotarUrlsNaoQuotadas(cmdFinal);
 
     cmdFinal = cmdFinal.replace(/\s*&\s*$/, '').trim();
 
@@ -3831,8 +3912,7 @@ var _MAPA_MOTIVO_BLOQUEIO = {
     'samba-install':            'mitigacao.samba_install',
     'qemu-kvm-install':         'mitigacao.qemu_kvm_install',
     'virtualbox-install':       'mitigacao.virtualbox_install',
-    'gnome-boxes-install':      'mitigacao.gnome_boxes_install',
-    'instalar-firefox':         'mitigacao.firefox_preexistente'
+    'gnome-boxes-install':      'mitigacao.gnome_boxes_install'
 };
 
 function _traduzirMotivoBloqueio(idInstall, info) {
@@ -4590,7 +4670,7 @@ var _MAPA_ORIGEM = {
     'instalar-upscayl': 'flathub',
     'instalar-xnviewmp': 'flathub',
     'instalar-freecad': 'flathub',
-    'instalar-opera': 'flathub',
+    'instalar-opera': 'fabricante',
     'instalar-zoom': 'flathub',
     'instalar-discord': 'flathub',
     'instalar-telegram': 'flathub',
@@ -4726,6 +4806,304 @@ function _dadosAbrirDoApp(idInstall) {
     if (!idInstall) return null;
     return _ABRIR_REGISTRY[idInstall] || null;
 }
+
+// ============================================================
+// BADGE DE INFORMAÇÃO (.fap-badge-info) — v1.5.9
+// ============================================================
+//
+// Irmão do `.fap-badge-origem`: quadrado colorido de origem mostra
+// "de onde vem"; exclamação mostra "contexto adicional". Reusa o
+// `.fap-popover` (posicionamento, cleanup, Esc/clique-fora já em
+// `_abrirPopoverOrigem`).
+//
+// Fluxo:
+//   1. A sessão chama `_registrarInfoBadge(id, { ... })` no boot.
+//   2. `_renderizarInfoBadgesFixas()` é chamado em `DOMContentLoaded`
+//      e `sessao-carregada`, e injeta `<span class="fap-badge-info">`
+//      no `.btn-flatpak-wrapper` do id correspondente (criando o
+//      wrapper se não existir).
+//   3. Clique abre o popup com título + corpo + ação opcional.
+//
+// Diferenças em relação ao badge de origem:
+//   • Sem color-coding de origem (cor = `warn` amarelo, `info` azul).
+//   • Sem "Origem:", "Comando exato", "Como atualizar/remover".
+//   • Não registra listeners no `document` por popup — a limpeza é
+//     a mesma do `_fecharPopoverOrigem` (chamado pelo `_abrirPopoverInfo`).
+//
+// NÃO instalar auto-open: a `pulse-info` (CSS) + o tooltip padrão
+// do `title` bastam para o usuário descobrir que é clicável.
+var _INFO_BADGES_REGISTRY = {};
+
+function _registrarInfoBadge(idInstall, dados) {
+    if (!idInstall || !dados) return;
+    if (!dados.tituloKey && !dados.corpoKey) {
+        console.warn('[info-badge] registro inválido para', idInstall);
+        return;
+    }
+    // ============================================================
+    // FALLBACKS PT-BR (v1.5.9 — correção pós-teste)
+    // ============================================================
+    //
+    // Em PT-BR, o `i18n.js` não carrega JSON — o HTML é o fallback
+    // natural. Mas o badge de info é gerado dinamicamente
+    // (não existe no HTML da sessão), então o texto PT-BR precisa
+    // vir via `*Fallback` aqui. Sem isso, o popup abria VAZIO em
+    // PT-BR (o `_abrirPopoverInfo` passava `''` como fallback do
+    // `_tVars`), e o botão de ação mostrava o literal `'Executar'`
+    // (fallback hardcoded do `_t(dados.acaoKey, 'Executar')`).
+    //
+    // Em EN/ES, os `*Key` resolvem no JSON e os `*Fallback` são
+    // ignorados. Em PT-BR, os `*Fallback` são o texto real.
+    _INFO_BADGES_REGISTRY[idInstall] = {
+        tituloKey: dados.tituloKey || null,
+        tituloFallback: (typeof dados.tituloFallback === 'string') ? dados.tituloFallback : '',
+        corpoKey: dados.corpoKey || null,
+        corpoFallback: (typeof dados.corpoFallback === 'string') ? dados.corpoFallback : '',
+        cor: dados.cor === 'info' ? 'info' : 'warn',
+        acaoKey: dados.acaoKey || null,
+        acaoFallback: (typeof dados.acaoFallback === 'string') ? dados.acaoFallback : '',
+        acaoFn: (typeof dados.acaoFn === 'string' && dados.acaoFn) ? dados.acaoFn : null
+    };
+}
+
+function _dadosInfoBadgeDoApp(idInstall) {
+    if (!idInstall) return null;
+    return _INFO_BADGES_REGISTRY[idInstall] || null;
+}
+
+function _renderizarInfoBadge(idInstall) {
+    var dados = _dadosInfoBadgeDoApp(idInstall);
+    if (!dados) return;
+
+    var btn = document.getElementById('btn-' + idInstall);
+    if (!btn) return;
+
+    var wrapper = btn.closest('.btn-flatpak-wrapper');
+    if (!wrapper) {
+        // Cria o wrapper on-the-fly. Diferente do badge de origem
+        // (que só renderiza em wrappers pré-existentes), o badge
+        // de info pode aparecer em QUALQUER botão com
+        // `_registrarInfoBadge` — o wrapper é só uma âncora de
+        // posicionamento absoluto.
+        wrapper = _garantirWrapperFlatpak(btn);
+        if (!wrapper) return;
+    }
+
+    var badge = wrapper.querySelector('.fap-badge-info');
+    if (!badge) {
+        badge = document.createElement('span');
+        badge.className = 'fap-badge-info';
+        badge.setAttribute('role', 'button');
+        badge.setAttribute('tabindex', '0');
+        badge.setAttribute('data-comando-info', idInstall);
+        badge.setAttribute('aria-label', _t('comum.badge_info_aria', 'Mais informações'));
+
+        // Ícone: exclamação (⚠️-like) sem emoji, para herdar a cor
+        // do CSS (`color` no `.fap-badge-info`). O `!` central é
+        // renderizado em fonte bold.
+        badge.textContent = '!';
+
+        badge.addEventListener('click', function(e) {
+            e.stopPropagation();
+            _abrirPopoverInfo(idInstall, e);
+        });
+        badge.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                e.stopPropagation();
+                _abrirPopoverInfo(idInstall, e);
+            }
+        });
+
+        wrapper.appendChild(badge);
+    }
+
+    // Sempre reaplica a cor (o `data-cor` pode ter mudado via
+    // `_registrarInfoBadge` em runtime — ex.: um novo registro
+    // sobrescrevendo o anterior).
+    badge.setAttribute('data-cor', dados.cor);
+
+    // Tooltip = primeira frase do título (se houver) ou um texto
+    // genérico. O `title` é a forma mais simples do usuário
+    // descobrir que o badge é clicável sem abrir o popup.
+    //
+    // `tituloFallback` (PT-BR) é usado quando `_t` cai no fallback
+    // (idioma PT-BR, ou chave ausente em EN/ES). Sem ele, o title
+    // ficava vazio em PT-BR.
+    var textoTitulo = dados.tituloKey
+    ? _t(dados.tituloKey, dados.tituloFallback || '')
+    : (dados.tituloFallback || '');
+    var tituloCurto = textoTitulo.replace(/<[^>]+>/g, '').trim();
+    badge.setAttribute('title', tituloCurto || _t('comum.badge_info_tooltip', 'Clique para mais informações'));
+}
+
+function _renderizarInfoBadgesFixas() {
+    document.querySelectorAll('[data-comando]').forEach(function(btn) {
+        var id = btn.getAttribute('data-comando');
+        if (!id) return;
+        if (!_dadosInfoBadgeDoApp(id)) return;
+        if (btn.classList.contains('btn-flatpak-uninstall')) return;
+        _renderizarInfoBadge(id);
+    });
+}
+
+function _abrirPopoverInfo(idInstall, event) {
+    _fecharPopoverOrigem();  // reusa a mesma função de cleanup
+    var dados = _dadosInfoBadgeDoApp(idInstall);
+    if (!dados) return;
+
+    var badge = event.currentTarget;
+
+    var popover = document.createElement('div');
+    popover.className = 'fap-popover';
+    popover.setAttribute('role', 'dialog');
+
+    var info = APPS_REMOVIVEIS[idInstall];
+    var nomeApp = (info && info.nome) || idInstall;
+
+    // Fallbacks PT-BR (v1.5.9 — correção pós-teste): em PT-BR, o
+    // `_tVars` cai no `fallback` (o i18n.js não carrega JSON para
+    // PT-BR). Sem `tituloFallback`/`corpoFallback`, o popup abria
+    // vazio em PT-BR.
+    var tituloHtml = dados.tituloKey
+    ? _tVars(dados.tituloKey, dados.tituloFallback || '', { nome: nomeApp })
+    : (dados.tituloFallback || _escapeHTML(nomeApp));
+    var corpoHtml = dados.corpoKey
+    ? _tVars(dados.corpoKey, dados.corpoFallback || '', { nome: nomeApp })
+    : (dados.corpoFallback || '');
+
+    var html = '';
+    html += '<div class="fap-popover-header">';
+    html += '<span class="fap-popover-titulo">';
+    html += '<span class="fap-badge-info" data-cor="' + dados.cor + '" aria-hidden="true">!</span>';
+    html += _escapeHTML(nomeApp);
+    html += '</span>';
+    html += '<button type="button" class="fap-popover-close" aria-label="' + _escapeHTML(_t('comum.fechar', 'Fechar')) + '">✕</button>';
+    html += '</div>';
+    html += '<div class="fap-popover-body">';
+    if (tituloHtml) {
+        html += '<div class="fap-popover-row">';
+        html += '<div class="fap-popover-value" style="font-weight: 600; font-size: 0.9rem;">' + tituloHtml + '</div>';
+        html += '</div>';
+    }
+    if (corpoHtml) {
+        html += '<div class="fap-popover-row">';
+        html += '<div class="fap-popover-value" style="line-height: 1.5;">' + corpoHtml + '</div>';
+        html += '</div>';
+    }
+    if (dados.acaoKey && dados.acaoFn) {
+        html += '<div class="fap-popover-row" style="margin-top: 0.75rem; border-top: 1px solid var(--border); padding-top: 0.75rem;">';
+        html += '<button type="button" class="btn-executar" style="width: 100%; font-size: 0.85rem;" id="fap-popover-info-acao">';
+        html += _escapeHTML(_t(dados.acaoKey, dados.acaoFallback || 'Executar'));
+        html += '</button>';
+        html += '</div>';
+    }
+    html += '</div>';
+    popover.innerHTML = html;
+
+    document.body.appendChild(popover);
+    _popoverAtual = popover;
+    _popoverAnchorBadge = badge;
+    _posicionarPopover();
+
+    var onKey = function(e) { if (e.key === 'Escape') _fecharPopoverOrigem(); };
+    var onDocClick = function(e) {
+        if (!popover.contains(e.target) && e.target !== badge) _fecharPopoverOrigem();
+    };
+        var onScrollResize = function() { _posicionarPopover(); };
+
+        var closeBtn = popover.querySelector('.fap-popover-close');
+        if (closeBtn) {
+            closeBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                _fecharPopoverOrigem();
+            });
+        }
+
+        if (dados.acaoKey && dados.acaoFn) {
+            var acaoBtn = document.getElementById('fap-popover-info-acao');
+            if (acaoBtn) {
+                acaoBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    _fecharPopoverOrigem();
+                    try {
+                        if (typeof window[dados.acaoFn] === 'function') {
+                            window[dados.acaoFn](idInstall);
+                        } else {
+                            console.warn('[info-badge] ação não encontrada:', dados.acaoFn);
+                        }
+                    } catch (err) {
+                        console.warn('[info-badge] erro na ação', dados.acaoFn, ':', err);
+                    }
+                });
+            }
+        }
+
+        document.addEventListener('keydown', onKey);
+        document.addEventListener('click', onDocClick, true);
+        window.addEventListener('scroll', onScrollResize, true);
+        window.addEventListener('resize', onScrollResize);
+
+        popover._cleanup = function() {
+            document.removeEventListener('keydown', onKey);
+            document.removeEventListener('click', onDocClick, true);
+            window.removeEventListener('scroll', onScrollResize, true);
+            window.removeEventListener('resize', onScrollResize);
+        };
+}
+
+// ============================================================
+// LINKS EXTERNOS EM <a target="_blank"> (v1.5.9 — correção pós-teste)
+// ============================================================
+//
+// No WebKitGTK, `<a target="_blank">` dispara NEW_WINDOW_ACTION,
+// que o `decide_policy` do container NÃO trata (só NAVIGATION_ACTION).
+// Resultado: o clique é silenciosamente ignorado — o link não abre.
+//
+// Afeta:
+//   • Popup do badge de info do RustDesk (`target="_blank"` em
+//     `corpoFallback` e em `rustdesk_selinux_corpo` nos locales).
+//   • Changelog (`_inlineMd` do server.js gera `<a target="_blank">`).
+//   • Qualquer `<a target="_blank">` futuro em sessões.
+//
+// Correção: interceptar via `preventDefault` e rotear para
+// `abrirFerramentaExterna('xdg-open ...')`, que o briefing já
+// documenta como o método correto. O `xdg-open` está em
+// `_BINARIOS_ABRIR_WHITELIST` e o comando gerado
+// (`setsid -f xdg-open <url> > /tmp/fap-open-*.log 2>&1 < /dev/null`)
+// casa com `_ehRedirectAbrirValido` — sem `pkexec`.
+//
+// Esquemas perigosos (`javascript:`, `data:`, `vbscript:`, `file:`,
+// `blob:`) e URLs não-http(s) são ignorados — defesa em profundidade
+// (o `_inlineMd` do changelog já rebaixa esses esquemas para texto,
+// mas HTML manual em sessões poderia escapar).
+//
+// `onDocClick` em `_abrirPopoverOrigem`/`_abrirPopoverInfo` está em
+// capture phase; este handler está em bubble phase (default). O
+// `onDocClick` verifica `popover.contains(e.target)` e não fecha o
+// popup quando o clique é dentro dele — então o handler pode rodar
+// normalmente em seguida.
+document.addEventListener('click', function(e) {
+    var a = e.target && e.target.closest ? e.target.closest('a[target="_blank"]') : null;
+    if (!a) return;
+    // `a.href` (propriedade) devolve o URL RESOLVIDO e DECODIFICADO
+    // (o navegador parseia `&amp;` no HTML de volta para `&`).
+    // `a.getAttribute('href')` devolveria o valor cru do HTML,
+    // com `&amp;` — e o `xdg-open` receberia a URL com entidades,
+    // não com o `&` real. Para URLs geradas por `_inlineMd`
+    // (changelog, markdown) e pelos fallbacks do badge de info,
+    // a diferença é crítica: `https://x.com/?a=1&amp;b=2` vs
+    // `https://x.com/?a=1&b=2`.
+    var href = (a.href || '').trim();
+    if (!href) return;
+    if (/^(?:javascript|data|vbscript|file|blob):/i.test(href)) return;
+    if (!/^https?:\/\//i.test(href)) return;
+        e.preventDefault();
+    e.stopPropagation();
+    // O `_quotarUrlsNaoQuotadas` dentro de `abrirFerramentaExterna`
+    // cuida de quotar a URL (aspas simples com escape `'\''`).
+    abrirFerramentaExterna('xdg-open ' + href, 'link-' + Date.now(), href);
+});
 
 function _origemDoApp(idComando) {
     if (!idComando) return null;
@@ -5032,6 +5410,10 @@ function _fecharPopoverOrigem() {
 
 document.addEventListener('i18n-pronto', function() {
     _TEXTO_ORIGEM_CACHE = null;
+    // Re-renderiza os `.fap-badge-info` para atualizar o tooltip
+    // (que é `_t(tituloKey, ...)` — depende do idioma). O popup em
+    // si é renderizado on-demand, então não precisa re-renderizar.
+    setTimeout(_renderizarInfoBadgesFixas, 50);
 });
 
 // ============================================================
@@ -5675,6 +6057,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
     carregarProgressoInicial();
     setTimeout(initCustomSelects, 300);
+    // Boot inicial: renderiza os `.fap-badge-info` já registrados
+    // (na prática, só os da sessão corrente — mas a sessão ainda
+    // não carregou no `DOMContentLoaded`. Este `setTimeout` curto
+    // cobre o caso da landing/index, e o `sessao-carregada`
+    // cobre as sessões propriamente ditas.)
+    setTimeout(_renderizarInfoBadgesFixas, 400);
     criarBotaoTema();
     _atualizarProgressoGlobal();
 
@@ -5728,6 +6116,12 @@ document.addEventListener('sessao-carregada', function(e) {
 
     // Badges fixas para botões fora de aplicarEstadoInstalavel
     setTimeout(_renderizarBadgesFixas, 250);
+
+    // Badges de informação (.fap-badge-info) — análogo ao
+    // `_renderizarBadgesFixas`, mas para o registro
+    // `_INFO_BADGES_REGISTRY`. Idempotente (o `_renderizarInfoBadge`
+    // só cria se não existir e sempre reaplica o `data-cor`).
+    setTimeout(_renderizarInfoBadgesFixas, 260);
 
     // Se a sessão carregada é 'aplicativos', inicializa os filtros
     if (e && e.detail && e.detail.sessao === 'aplicativos') {

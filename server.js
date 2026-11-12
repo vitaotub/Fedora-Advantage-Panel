@@ -183,6 +183,32 @@ const IDS_SEM_AUTENTICACAO = new Set([
     'nvidia-vaapi-env-remove'
 ]);
 
+// ============================================================
+// ids que precisam de HOME DO USUÁRIO em scripts externos (v1.5.9)
+// ============================================================
+//
+// O `_construirScripts` exporta HOME=<home-do-usuário> APENAS para
+// os IDs desta lista. Para o resto, o `HOME` é herdado do `pkexec`
+// (= /root, padrão do Fedora), e o `dnf` usa `/var/cache/dnf/`
+// (system) em vez de `~/.cache/dnf/` (root-owned no home do
+// usuário).
+//
+// EXCEÇÃO: scripts EXTERNOS baixados de URL (`install.sh`,
+// `fap-cleanup.sh`, etc.) que usam `$HOME` DENTRO do arquivo. O
+// `_substituirCaminhosUsuario` só troca `$HOME`/`~` NA STRING
+// do comando — não dentro do arquivo baixado. Esses IDs precisam
+// do HOME do usuário exportado.
+//
+// Comandos INLINE com `$HOME`/`~` na string (GameMode presets,
+// Rclone Manager `comandoRemocao`, etc.) NÃO precisam entrar
+// aqui — `_substituirCaminhosUsuario` cobre.
+//
+// Estado atual: VAZIO. `desinstalar-fap` e `atualizar-fap` (que
+// rodam `install.sh` baixado) estão em `IDS_SEM_AUTENTICACAO` —
+// rodam como usuário, nunca via pkexec, então nunca chegam ao
+// `_construirScripts`.
+const IDS_COM_HOME_DO_USUARIO = new Set([]);
+
 const PADROES_UPDATE_WHITELIST = [
     /^bash <\(curl -s https:\/\/raw\.githubusercontent\.com\/vitaotub\/Fedora-Advantage-Panel\/main\/install\.sh\) --update$/,
     /^setsid -f bash -c 'bash <\(curl -s https:\/\/raw\.githubusercontent\.com\/vitaotub\/Fedora-Advantage-Panel\/main\/install\.sh\) --uninstall -y'$/,
@@ -378,7 +404,7 @@ function _cmdSemAutenticacao(comando) {
 const _BINARIOS_ABRIR_WHITELIST = new Set([
     'gtk-launch', 'xdg-open', 'sealert',
     'corectrl', 'lact', 'rclone-manager', 'steam', 'heroic', 'rustdesk',
-    'keepassxc', 'firefox', 'kate', 'okular', 'artcraft-launcher',
+    'keepassxc', 'firefox', 'thunderbird', 'kate', 'okular', 'artcraft-launcher',
     'vlc', 'krita', 'inkscape', 'gimp', 'darktable', 'coolercontrol',
     'jstest-gtk', 'freecad', 'librecad', 'kdenlive', 'pitivi', 'shotcut',
     'blender', 'ardour8', 'lmms', 'audacity',
@@ -389,7 +415,28 @@ const _BINARIOS_ABRIR_WHITELIST = new Set([
 // Regex captura o binário no grupo 1 para consulta na whitelist.
 // `(?:\s+[^>\n]+)?` cobre argumentos opcionais (appIds, URLs, etc.)
 // sem permitir `>` (que indica redirect extra, vetor de XSS).
-const _REDIRECT_ABRIR_PADRAO = /^setsid\s+-f\s+(\S+)(?:\s+[^>\n]+)?\s>\s+\/tmp\/fap-open-[\w.\-]+\.log\s+2>&1\s+<\s+\/dev\/null$/;
+// ============================================================
+// REGEX DE ABERTURA DE APP — RESPEITA ASPAS (v1.5.9 — pós-teste)
+// ============================================================
+//
+// Antes: `(?:\s+[^>\n]+)?` aceitava argumentos que não contivessem
+// `>`. URLs com `>` no query string (raro, mas possível) caíam
+// fora do padrão e o comando ia parar em `pkexec` — regressão
+// introduzida quando o `abrirFerramentaExterna` passou a quotar
+// URLs (o quote envolve a URL em aspas simples, mas o `>` dentro
+// das aspas continuava sendo `>` para o regex antigo).
+//
+// Agora: aceita três formas por argumento:
+//   • `'[^']*'`       — aspas simples sem aspas internas
+//   • `"[^"]*"`       — aspas duplas sem aspas internas
+//   • `[^>\n'"]+`     — sem aspas, sem `>` (comportamento antigo)
+//
+// Combinado com o `_quotarUrlsNaoQuotadas` no `script.js`, URLs
+// com caracteres perigosos (`>`, `&`, `$`, backtick) são
+// envolvidas em aspas simples e caem no primeiro ramo — sem
+// `pkexec`, e sem abrir buraco para `>` fora de aspas (o PoC
+// original `rpm -q kernel>~/.bashrc` continua bloqueado).
+const _REDIRECT_ABRIR_PADRAO = /^setsid\s+-f\s+(\S+)(?:\s+(?:'[^']*'|"[^"]*"|[^>\n'"]+))*\s>\s+\/tmp\/fap-open-[\w.\-]+\.log\s+2>&1\s+<\s+\/dev\/null$/;
 
 function _ehRedirectAbrirValido(trimmed) {
     var m = trimmed.match(_REDIRECT_ABRIR_PADRAO);
@@ -1890,13 +1937,43 @@ function executarComandoComStream(comandoFinal, idComando, isReversao, callback)
 //
 // Por isso: usamos pkexec sempre. O branch kdesu foi removido.
 
-function _construirScripts(timestamp, random, comandoCorrigido, descricao) {
+function _construirScripts(timestamp, random, comandoCorrigido, descricao, idComando) {
     const scriptTemp = `/tmp/fap-cmd-${timestamp}-${random}.sh`;
     const homeDir = HOME_DIR_USUARIO;
 
     const comandoLimpo = (comandoCorrigido || '')
     .replace(/\r\n/g, '\n')
     .replace(/\r/g, '\n');
+
+    // ============================================================
+    // HOME CONDICIONAL (v1.5.9 — alinhamento com o padrão do Fedora)
+    // ============================================================
+    //
+    // Antes, o script SEMPRE exportava HOME=<home-do-usuário>. Como
+    // o `pkexec` roda como root, o `dnf` (via pkexec) escrevia
+    // cache em `~/.cache/dnf/` e `~/.cache/libdnf5/` com dono
+    // `root` no home do usuário — efeito colateral indesejado.
+    //
+    // O padrão do Fedora é: `sudo dnf` / `pkexec dnf` usam
+    // `HOME=/root` (implícito, herdado do /etc/passwd do root), e
+    // o `dnf` usa `/var/cache/dnf/` (system), não o cache do
+    // usuário.
+    //
+    // A v1.5.9 alinha o FAP: o `export HOME=<user>` só acontece
+    // quando o `idComando` está em `IDS_COM_HOME_DO_USUARIO` —
+    // reservado para scripts EXTERNOS baixados de URL que usam
+    // `$HOME` DENTRO do arquivo (o `_substituirCaminhosUsuario`
+    // não alcança esses).
+    //
+    // Comandos inline com `$HOME`/`~` na string (GameMode presets,
+    // Rclone Manager `comandoRemocao`, etc.) NÃO precisam do
+    // export — o caminho absoluto já está na string do comando.
+    //
+    // Estado atual: `IDS_COM_HOME_DO_USUARIO` está vazia.
+    // `desinstalar-fap` e `atualizar-fap` (que rodam `install.sh`
+    // baixado) estão em `IDS_SEM_AUTENTICACAO` — rodam como
+    // usuário, nunca via pkexec, então nunca chegam aqui.
+    const precisaHomeDoUsuario = IDS_COM_HOME_DO_USUARIO.has(idComando);
 
     // ============================================================
     // ESTRUTURA DO SCRIPT
@@ -1927,15 +2004,20 @@ function _construirScripts(timestamp, random, comandoCorrigido, descricao) {
         '# Executado em: ' + new Date().toLocaleString('pt-BR'),
                                                        '',
                                                        '# Exports obrigatórios quando roda via pkexec (root).',
-                                                       '# Sem HOME/USER corretos, scripts como install.sh --uninstall',
-                                                       '# procurariam o FAP em /root/.local/share em vez de',
-                                                       '# /home/<user>/.local/share.',
+                                                       '# Sem HOME/USER corretos, scripts EXTERNOS (install.sh,',
+                                                       '# fap-cleanup.sh) que usam $HOME INTERNAMENTE falhariam.',
+                                                       '# Comandos INLINE com $HOME/~ já têm o caminho absoluto',
+                                                       '# substituído por _substituirCaminhosUsuario.',
                                                        'export DISPLAY=' + (process.env.DISPLAY || ':0'),
                                                        'export XAUTHORITY=' + (process.env.XAUTHORITY || homeDir + '/.Xauthority'),
                                                        'export WAYLAND_DISPLAY=' + (process.env.WAYLAND_DISPLAY || ''),
                                                        'export XDG_RUNTIME_DIR=' + (process.env.XDG_RUNTIME_DIR || '/run/user/' + (process.getuid ? process.getuid() : 1000)),
                                                        'export DBUS_SESSION_BUS_ADDRESS=' + (process.env.DBUS_SESSION_BUS_ADDRESS || ''),
-                                                       'export HOME=' + homeDir,
+                                                       // HOME só é exportado para scripts externos que
+                                                       // dependem dele internamente (IDS_COM_HOME_DO_USUARIO).
+                                                       // Para o resto, HOME é herdado do pkexec (= /root,
+                                                       // padrão do Fedora) — o dnf usa /var/cache/dnf/.
+                                                       precisaHomeDoUsuario ? ('export HOME=' + homeDir) : '# HOME herdado do pkexec (padrão do Fedora)',
                                                        'export USER=' + USUARIO_REAL,
                                                        'export LOGNAME=' + USUARIO_REAL,
                                                        '',
@@ -2035,7 +2117,7 @@ async function executarComAutenticacaoSegura(comandoOriginal, idComando, isRever
 
         const timestamp = Date.now();
         const random = Math.random().toString(36).substring(7);
-        const { scriptTemp, scriptContent } = _construirScripts(timestamp, random, comandoCorrigido, descricao);
+        const { scriptTemp, scriptContent } = _construirScripts(timestamp, random, comandoCorrigido, descricao, idComando);
 
         try {
             fs.writeFileSync(scriptTemp, scriptContent, { mode: 0o755 });
@@ -3217,6 +3299,40 @@ const server = http.createServer((req, res) => {
                 'Cache-Control': 'no-cache, no-store, must-revalidate'
             });
             res.end(JSON.stringify({ apps: apps }));
+        });
+        return;
+    }
+
+    // ----------------------------------------------------------
+    // /rustdesk-selinux-check — conta AVCs do RustDesk nas últimas 24h
+    // ----------------------------------------------------------
+    //
+    // Read-only, sem auth. Usado pelo badge de exclamação do
+    // RustDesk (Sessão 6 → Acesso Remoto). Conta linhas
+    // `avc: denied` do journal que mencionem `rustdesk` no comm
+    // ou no path. `journalctl -g` (grep no journal) é a forma
+    // canônica e respeita permissões do usuário (o Fedora
+    // Workstation coloca o usuário no grupo `systemd-journal`,
+    // que lê o journal do sistema sem sudo).
+    //
+    // `wc -l` sem `-c` conta linhas. O `2>/dev/null` no
+    // `journalctl` cobre "No journal files were found" (raro,
+    // mas possível em containers).
+    if (req.method === 'GET' && url === '/rustdesk-selinux-check') {
+        _execReadOnly(
+            'journalctl -g "avc:.*rustdesk" -S "24 hours ago" --no-pager 2>/dev/null | wc -l',
+            10000
+        ).then(function(stdout) {
+            var n = parseInt((stdout || '').trim(), 10);
+            if (isNaN(n)) n = 0;
+            res.writeHead(200, {
+                'Content-Type': 'application/json',
+                'Cache-Control': 'no-cache, no-store, must-revalidate'
+            });
+            res.end(JSON.stringify({ avcs: n }));
+        }).catch(function(e) {
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ avcs: 0, erro: e.message }));
         });
         return;
     }

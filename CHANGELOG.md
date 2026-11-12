@@ -13,185 +13,141 @@ que exibe a seção da versão atual dentro do FAP, na sessão **Sobre o FAP**.
 
 ---
 
-## v1.5.8-11112026
+## v1.5.9-11122026
 
-Re-tag da v1.5.8 (mesma série, data `11112026`) consolidando quatro rodadas de auditoria — correções de segurança, expansão do Secure Boot, dívida técnica e bugs descobertos nas fases A–J dos testes de 09–11/11/2026. O PoC de injeção via `>` no `/executar` está fechado. O Secure Boot reconhece **8 estados** (incluindo o combinado). `_matarArvoreProcessos` cobre `pkexec`/`setsid`. A corrida i18n do boot foi eliminada. Todos os 11 checks do `make check-basico` passam. Validação em software: **11/11 fases A–J** (Fase I com ressalva documentada). Pendências restantes são apenas de **hardware real**.
+Release incremental sobre a `v1.5.8-11112026`. Adiciona o componente
+`.fap-badge-info` (exclamação + popup) para informações de contexto sem
+poluir a UI com retângulos, usa-o no RustDesk (com verificação de
+bloqueios SELinux read-only), migra o Opera de Flathub para o
+repositório RPM oficial da Opera Software, corrige o log do "Preparar
+Secure Boot" na Sessão 12, fecha uma race no NTSYNC, restaura "Abrir +
+lixeira" para Firefox e Thunderbird (padrão do FAP para apps de
+usuário), adiciona quoting defensivo de URLs e alinha a execução via
+`pkexec` ao padrão do Fedora (`dnf` em `/var/cache/dnf/`). **Nenhuma
+migração em massa de `.info-extra` para `.fap-badge-info` nesta
+release** — a Fase 2 fica para versão futura.
 
-### 🔴 Crítico — Segurança
+### 🆕 Novo — Componente `.fap-badge-info` (exclamação + popup)
 
-- **`server.js` → `_temRedirectInvalido`.** O regex anterior `(?:^|\s)>>?(?![&\d])` só bloqueava `>` quando precedido por espaço. Variantes como `rpm -q kernel>~/.bashrc` (sem espaço) passavam pela whitelist de prefixo e o `bash` do `exec` interpretava `>` como redirect, sobrescrevendo arquivos do usuário. Agora `_temRedirectInvalido()` remove primeiro `2>&1`, `1>&2` e `>&2` (dup-fd legítimos) e bloqueia qualquer `>` remanescente. Cobre `>`, `>>`, `2>`, `2>>`, `>&file`, `2>&file`. O `_ehRedirectAbrirValido` (regex exato `/tmp/fap-open-*.log 2>&1 < /dev/null`) continua sendo a única exceção. **PoC fechado:** `POST /executar` com `{"comando":"rpm -q kernel>~/.bashrc"}` → `PrecisaAuth=true`.
+- **`style.css` → `.fap-badge-info`.** Irmão do `.fap-badge-origem`: ícone de exclamação de 16×16, clicável, com pulsação sutil. Posiciona-se à direita do badge de origem (quando os dois coexistem) ou no canto esquerdo do botão (quando só ele existe). Cores: `warn` (amarelo, padrão) e `info` (azul). Sem auto-open — o usuário descobre que é clicável pelo `title` + pulsação. Reusa o `.fap-popover` existente (mesmo layout, mesmo comportamento de Esc/clique-fora/posicionamento).
+- **`script.js` → `_INFO_BADGES_REGISTRY` + `_registrarInfoBadge(idInstall, dados)`.** Registro centralizado (igual a `_ABRIR_REGISTRY` / `APPS_REMOVIVEIS`). Cada sessão declara `{ tituloKey, tituloFallback, corpoKey, corpoFallback, cor, acaoKey, acaoFallback, acaoFn }`. Os `*Fallback` (PT-BR) cobrem o caso em que `i18n.js` não carrega JSON para PT-BR. A ação opcional chama uma função global no clique do botão do popup. A chave `tituloKey` alimenta o `title` do badge (truncado).
+- **`script.js` → `_renderizarInfoBadge(idInstall)` + `_renderizarInfoBadgesFixas()`.** Injeta o `<span class="fap-badge-info">` no `.btn-flatpak-wrapper` do botão correspondente. Cria o wrapper on-the-fly se não existir. Idempotente (o `_renderizarInfoBadge` só cria se não existir e sempre reaplica o `data-cor`). Chamado no `DOMContentLoaded` (boot), no `sessao-carregada` (troca de sessão) e no `i18n-pronto` (atualiza o `title` traduzido). `_abrirPopoverInfo` reusa `_fecharPopoverOrigem` para limpeza.
+- **Hooks de ciclo de vida:** `setTimeout(_renderizarInfoBadgesFixas, 400)` no `DOMContentLoaded`; `setTimeout(_renderizarInfoBadgesFixas, 260)` no `sessao-carregada`; `setTimeout(_renderizarInfoBadgesFixas, 50)` no `i18n-pronto`.
+- **Critério de uso:** urgente/risco (perda de dados, brick, "não desligue", sobrescreve config do usuário, Secure Boot ativo) = retângulo (`.aviso-caixa`); contexto útil ("o que isso resolve", "o que muda", "sobre o pacote") = badge de info; pré-requisito = depende (bloqueia = retângulo, nota = badge).
 
-### 🟡 Corrigido — Estabilidade e processos
+### 🆕 Novo — RustDesk: badge de info + verificação SELinux (read-only)
 
-- **`server.js` → `_matarArvoreProcessos` com `_listarDescendentes` (Fase I).** SIGINT agora mata a árvore completa (mesmo UID), não só o bash pai. Cobre `pkexec`/`setsid` — o `pkexec` quebra o grupo com `setsid()`, então `kill(-pid)` sozinho não alcança os netos. Correção: snapshot recursivo (`pgrep -P` até 5 níveis) **antes** de matar, SIGTERM em todos, SIGTERM no grupo, `pkill -9 -f "fap-cmd-"` como usuário, filtro `EPERM` tratado como vivo, `[cleanup] PIDs root órfãos:` logado quando `pkexec` deixa filhos root (sem `NOPASSWD: /usr/bin/kill`), SIGKILL de segurança no grupo. **Limitação documentada:** filhos root órfãos são limpos por `install.sh --update/--uninstall` e `scripts/fap-cleanup.sh` (ambos com sudo).
-- **`server.js` → `_execReadOnly` registra o `ChildProcess` em `_processosAtivos` (Fase I).** `detached: true` isola o filho em seu próprio PGID, mas o `timeout` do `execFile` só mata o filho direto — subprocessos (ex.: `dnf check-update` chamado por script bash) ficavam órfãos. Agora o SIGINT cobre `_execReadOnly` também.
-- **`server.js` → remoção de `vainfo`, `vdpauinfo` e `env LIBVA_DRIVER_NAME=nvidia vainfo` de `COMANDOS_SEM_AUTENTICACAO` (rodada 3).** A verificação VA-API usa `/vaapi-check` via `_execReadOnly`, bypassando `/executar`. Entradas eram dead code.
-- **`system-state-service.js` → `_exec` com `execFile --noprofile --norc` (rodada 1).** Ambientes com `.bashrc` que carrega banner (`fastfetch`, `neofetch`) tinham `stdout` contaminado. Sintoma: `public_key.der` existia mas `_detectarArquivosConfig` retornava vazio → badge "enrollment necessário" falso; `rpmfusion-nonfree` ativo mas `_detectarRepos` via lixo; usuário no grupo `input` mas `_detectarGrupos` via lixo.
-- **`hardware-service.js` → `_exec` com `execFile --noprofile --norc` (rodada 1).** Mesmo fix do `system-state-service.js` (v1.5.6). `env` limpo (`BASH_ENV: ''`, `ENV: ''`).
+- **`aplicativos.html` → `_registrarInfoBadge('instalar-rustdesk', ...)`.** Badge de exclamação (`cor: 'warn'`) no botão do RustDesk. O popup explica o problema de SELinux (RustDesk instala, mas em alguns sistemas o SELinux bloqueia o serviço) e oferece um botão "🔍 Check for SELinux blocks" que chama `verificarSelinuxRustDesk()`. Os `*Fallback` PT-BR preenchem o popup em PT-BR (título "Sobre o SELinux e o RustDesk", corpo com "Não desative o SELinux" + link, botão "🔍 Verificar bloqueios do SELinux").
+- **`aplicativos.html` → `verificarSelinuxRustDesk()`.** Read-only. Consulta `GET /rustdesk-selinux-check` e escreve o resultado no `log-sessao-aplicativos` (via `_getLogBox('instalar-rustdesk')`). Três estados: `0 AVCs` → `✅ Sem bloqueios`; `N > 0` → `⚠️ N AVC(s) nas últimas 24h — consulte a doc oficial em rustdesk.com`; erro → `❌ Não foi possível verificar`.
+- **`server.js` → `GET /rustdesk-selinux-check`.** Endpoint dedicado, read-only, sem auth (usa `_execReadOnly`, que já tem `execFile --noprofile --norc`). Conta linhas de `journalctl -g "avc:.*rustdesk" -S "24 hours ago"` via `wc -l`. Retorna `{ avcs: N }` ou `{ avcs: 0, erro: "..." }`. **Não instala política SELinux** — a doc oficial do RustDesk recomenda aplicar política **apenas se** houver AVC, porque a política "allow init_t ..." enfraquece o SELinux globalmente.
 
-### 🟡 Corrigido — Secure Boot
+### 🟡 Corrigido — Secure Boot na Sessão 12
 
-- **`hardware-service.js` → `_checkMokEnrolled` expandido (rodadas 1 e 2).** 5 camadas: `mokutil --test-key` sem sudo; `sudo -n mokutil --test-key`; varredura de outros `.der` em `/etc/pki/akmods/certs/`; `_akmodCarregado()`; `_detectarOutrasChavesAkmosEnrolled()`. Retorna `enrolled: true | false | null` (indeterminado). Detecta `pending_import` (via `mokutil --list-new` + SHA1), `current_key_not_enrolled` (chave antiga enrolled, atual não), `other_akmods_keys_enrolled`. **Removido na rodada 3:** `pending_import_files` do retorno (sem consumidor).
-- **`script.js` → `_renderizarBadgeSecureBoot` reordenado (Fase A1/rodada 2).** A v1.5.8 original colocava o caso "chave antiga enrolled" ANTES do caso "pending_import + chave antiga" — como o primeiro fazia `return` incondicional, o caso **COMBINADO** (`secureboot_badge_pending_import_combined`) **nunca disparava no badge**. Ordem correta (8 estados): `pending_import` (combinado + sozinho) → `mokIndeterminado` (`enrolled === null`) → `other_akmods_keys_enrolled` → `chave antiga enrolled` → `akmod carregado` → `chaveLocal` → vermelho.
-- **`script.js` → `_renderizarPainelSecureBoot`/`_renderizarBadgeSecureBoot` com fonte primária `_secureBootMokCache.chave_gerada` (rodada 1).** `SystemState.arquivoPresente()` fica como fallback. Evita divergência entre as duas fontes (quando o usuário tem NOPASSWD e a chave existe, `/system-state` vê mas `/hardware-scan` não).
-- **`script.js` → `_prepararSecureBoot` guard `[ ! -f public_key.der ]` (rodada 1) + re-renderização dos painéis/badges após sucesso (rodada 2).** O guard elimina ruído de erro; o re-render dá feedback visual imediato.
-- **`script.js` → `_executarRemocaoApp` passa `idRemocao` (não `idComando`) como 3º argumento de `aplicarEstadoInstalavel` (rodada 1).** Metadata `data-comando-remover` errada.
-- **`hardware.html` → `_atualizarSecaoNvidia` pré-popula `_secureBootMokCache` (rodada 2).** `await _detectarSecureBoot()` antes de `_aplicarEstadoNvidia` — evita estado divergente entre 1ª abertura e refresh.
-- **`hardware.html` → `executarNvidiaDriver` usa `_tVars` em `nvidia_secureboot_bloqueio` (rodada 2).** A chave contém `{sessao}`; `_t` não interpola.
-- **`hardware.html` → regex Turing cobre `TITAN RTX` (rodada 1).** Antes caía em Maxwell/Pascal → `akmod-nvidia-580xx` → black screen.
+- **`script.js` → `_renderizarPainelSecureBoot` com `data-logbox="log-sessao-estado-fedora"`.** Antes, o botão "Preparar Secure Boot" apontava para `log-sessao-hardware` (id da Sessão 3). Na Sessão 12, esse log não existia visível — o `restaurarEstadoSessao` criava um oculto (`display: none`) para o `_getLogBox` resolver. Resultado: o output do `dnf install` ia para o oculto, e o `log-sessao-estado-fedora` visível ficava vazio. Agora o output aparece em tempo real no log compartilhado da Sessão 12.
+- **`estado-fedora.html` → `restaurarEstadoSessao` sem log oculto.** O `log-sessao-hardware` oculto (criado para a Sessão 12 resolver o `_getLogBox`) foi removido. O log da Sessão 12 é sempre visível, então o `_getLogBox` resolve direto. A Sessão 3 continua usando `log-sessao-hardware` visível via `_renderizarBadgeSecureBoot` (badge compacto, sem botão) — sem regressão.
 
-### 🟡 Corrigido — i18n (fix estrutural + bugs)
+### 🟡 Corrigido — NTSYNC: race no `completarProgresso`
 
-- **`i18n.js` → guard em `t()` durante carregamento (fix estrutural, Fase H).** A primeira carga em EN/ES disparava ~20 `[i18n] Chave não encontrada: ... em en` — todos durante o boot (o `script.js` e o `guiado.html` chamam `_t()` em handlers de `DOMContentLoaded`, que rodam em paralelo ao fetch assíncrono do JSON). Esses warnings eram ruído (o `aplicarTraducoes` corrige o DOM depois), mas mascaravam warnings REAIS. Correção: `t()` só loga warning quando `estado.carregado === true`. `tOr()` continua retornando o fallback normalmente.
-- **`i18n.js` → expor `I18N.ready` (Promise).** Resolve quando o idioma atual terminou de carregar. Permite que consumidores adiem renderização até o JSON estar disponível.
-- **`guiado.html` → `_reaplicarTextosDinamicos` reaplica `atualizarBotaoTema()` e `loadingTexto`.** O title do botão de tema e o texto de loading inicial são setados via `_t()` sem `data-i18n` — `I18N.aplicarTraducoes()` não os cobria. Sem essas chamadas, em EN/ES esses textos ficavam em PT até reload.
-- **`guiado.html` → `carregarSessao` aguarda `I18N.ready` antes do loading.** Evita o flash "Carregando X..." em PT-BR quando o idioma ativo é EN/ES.
-- **`i18n.js` → `_chaveCache` retorna `null` se versão indisponível (rodada 2).** `carregarDoCache`/`salvarNoCache` fazem no-op. Evita cache `_unknown` descartado.
-- **`i18n.js` → `_limparCachesAntigos` remove `_unknown` legacy (rodada 2).** Além das versões antigas, remove também caches com sufixo `_unknown`.
-- **`i18n.js` → `setLang(lang)` no-op quando `lang === estado.lang` (Fase J/rodada 3).** Antes recarregava a página à toa.
-- **`locales/en.json` + `es.json` → removidas 12 chaves `nvidia_secureboot_*` órfãs (rodada 2).** Mantida apenas `nvidia_secureboot_bloqueio`. Adicionada `secureboot_badge_other_keys`.
-- **`locales/en.json` + `es.json` → `btn_abrir_kate` adicionado em `sessoes.aplicativos` (rodada 4).** Sem a chave, o botão de instalar o Kate caía no fallback PT-BR em EN/ES.
-- **`locales/en.json` + `es.json` → `rclone_aviso` alinhado com o novo `comandoRemocao` (rodada 3).** Menciona explicitamente que a lixeira remove apenas o `r-clone-manager` e preserva o CLI `rclone` se instalado separadamente.
+- **`gaming.html` → `executarNTSync` aguarda `marcarComoExecutado` antes de `aplicarEstadoInstalavel`.** `ntsync-install` **não** está em `SEMPRE_CLICAVEIS`, então `completarProgresso(idComando, true)` chama `marcarComoExecutado(idComando)` **assíncrono** (Promise não aguardada). Em paralelo, o `onSucesso` do `executarComandoGenerico` rodava `aplicarEstadoInstalavel('ntsync-install', null)`, que consulta `isExecutado` **antes** da Promise ter persistido → `false` → botão pintava "Instalar" de novo. Sintoma reportado em teste real (Fedora 44, kernel 6.14+): `lsmod | grep ntsync` mostra `ntsync 20480 0` (módulo carregado), mas o botão continua clicável. Correção: `async function onSucesso() { await marcarComoExecutado(idComando); aplicarEstadoInstalavel(...); }` — mesma solução já usada em `executarGrubAplicarRecomendado`. `marcarComoExecutado` é idempotente, então o `completarProgresso` ainda tentaria marcar de novo (bloqueado pelo `if (!includes)`).
 
-### 🟡 Corrigido — Aplicativos e sessões
+### 🟡 Corrigido — Opera: Flathub → repositório oficial RPM (3 rodadas)
 
-- **`aplicativos.html` → Rclone Manager usa `r-clone-manager` (não `rclone-manager`) (Fase C/rodada 4).** O nome real do RPM é `r-clone-manager` (com hífen entre `r` e `clone`). Antes: `pacotes: ['rclone-manager']` nunca instalava, a lixeira nunca removia, e o auto-reset (`_estaRealmenteInstalado`) limpava o marcador em loop.
-- **`script.js` → `_COMANDOS_NAO_DETERMINISTICOS` (Fase D/rodada 2).** `_comandoInstalacaoDoApp` retorna `null` para RustDesk, Lightworks, Rclone Manager, ArtCraft Launcher, Brave, Vivaldi, Edge — comandos não reproduzíveis (URL resolvida em runtime, repo remoto). O popover omite o campo "Comando exato" nesses casos.
-- **`script.js` → removidos `_GRUPOS_LANDING` e `_renderizarCardStatus` (rodada 2).** Dead code — `#card-status` foi removido do `index.html` na v1.4.3.
-- **`script.js` → typo `_inicializarFiltrosApp` → `_inicializarFiltrosApps` (rodada 4).** Chamada silenciosamente quebrada em `DOMContentLoaded`/`sessao-carregada` (ReferenceError engolido por `setTimeout`).
-- **`aplicativos.html` → `abrir-affinity` envolto em `.btn-flatpak-wrapper` (rodada 3).** Padronização do HTML.
-- **`aplicativos.html` → `comandoRemocao` do Rclone Manager remove só `r-clone-manager`, preserva `rclone` (CLI) (rodada 3).** O CLI pode ter sido instalado pelo próprio Rclone Manager ou pelo usuário.
-- **`gaming.html` → `gamemode-presets-apply` usa `aplicarEstadoInstalavel` (rodada 2).** Lixeira funciona; `comandoRemocao` restaura `MangoHud.conf` / `gamemode.ini` do `.fap-backup`.
-- **`ajustes-manutencao.html` → `executarUpgradeReboot` bloqueia a sessão e desabilita o botão (rodada 2).** Antes, o usuário podia clicar em "Cancelar upgrade" durante o reboot.
-- **`estado-fedora.html` → `grep -c ... || true` no AVC count (rodada 1).** Duplicava linha `TOTAL_AVC=0` no log.
+- **`aplicativos.html` → Opera migrado de `APPS_FLATPAK` para `APPS_RPM_REPO`.** O repositório oficial da Opera Software (`rpm.opera.com/rpm`) é YUM/DNF válido. `registrarAppRemovivel` muda para `tipo: 'dnf'`, `pacotes: ['opera-stable']`, `reposRemover: ['/etc/yum.repos.d/opera.repo']`. `_MAPA_ORIGEM` muda de `'flathub'` para `'fabricante'`. `_CMD_ABRIR_RPM_REPO['instalar-opera'] = 'opera'`. `SESSOES` remove `flatpakId`. Botão muda de `instalarFlatpak` para `instalarRpmRepo`.
+- **Rodada 1 — `repoSetup` via `tee` + heredoc (FALHOU em runtime).** O comando final era `FAP_OPERA_REPO && dnf install -y opera-stable`. O delimitador `FAP_OPERA_REPO` precisa estar **sozinho na linha** para o bash fechar o heredoc. Com ` && dnf install` na mesma linha, o bash não reconhece o delimitador e o heredoc consome o `dnf install` até o fim do arquivo (aviso: "here-document ... delimitado pelo fim do arquivo"). O `tee` escrevia o `.repo` com sucesso e o comando terminava com `exit 0`, mas o `dnf install` **nunca rodava** — Opera não instalado, sem erro visível.
+- **Rodada 2 — `instalarRpmRepo` com `\n&&` (FALHOU em runtime).** A tentativa de forçar o `&&` a começar em uma linha nova gerou `FAP_OPERA_REPO\n&& dnf install`. O bash rejeita `&&` no início de linha (`erro de sintaxe próximo ao token inesperado '&&'`). **Não há posição válida** para o `&&` com heredoc fechado — o delimitador precisa estar sozinho na linha, e o `&&` precisa estar na mesma linha que o comando que **abre** o heredoc.
+- **Rodada 3 — solução final: `printf` + `tee` (FUNCIONA).** O `repoSetup` usa `printf '[opera]\nname=...\n...' | sudo tee /etc/yum.repos.d/opera.repo > /dev/null`, uma linha só, sem heredoc. O `\n` literal no `printf` (escape de string JS `\\n`) vira newline real na saída do comando. Funciona com ` && ` em sequência — o comando final é uma linha só. `instalarRpmRepo` volta a usar `repoSetup + ' && sudo dnf install -y ' + info.pacote` (sem `\n`). **Regra de manutenção para `APPS_RPM_REPO`:** `repoSetup` deve ser **uma linha só**; para conteúdo multi-linha, usar `printf` + `tee` (nunca heredoc).
 
-### 🟡 Corrigido — Infraestrutura
+### 🟡 Corrigido — Avidemux: DNF → Flathub
 
-- **`scripts/verificar-deps-container.sh` — NOVO (rodada 3).** Script idempotente de verificação de deps do container (gcc, make, pkgconf-pkg-config, `webkit2gtk4.1-devel`, `gtk3-devel`). Compartilhado entre `install.sh` e `iniciar_fap.sh`. Retorna 0 rapidamente (~6ms) se o binário `fap-container` já existe; senão checa `command -v` + `pkg-config --exists` e instala o que falta via `sudo dnf install`.
-- **`install.sh` / `iniciar_fap.sh` → `instalar_dependencias_container` delega para `scripts/verificar-deps-container.sh` (rodada 3).** Fallback inline mantido para instalações antigas (pré-v1.5.8).
-- **`install.sh` → `scripts/verificar-deps-container.sh` adicionado em `ARQUIVOS_PRINCIPAIS` e `reaplicar_permissoes` (rodada 3).**
-- **`iniciar_fap.sh` → `while [ -f "$SERVER_PID_FILE" ]` no final (Fase B2/rodada 2).** Antes `while true` — travava para sempre se o arquivo sumisse (node morto com container aberto, SIGKILL).
-- **`iniciar_fap.sh` → `.fap.pid` em `--debug` sem `tee` (Fase B2/rodada 4).** O `node server.js 2>&1 | tee -a "$LOG_FILE" &` gravava o PID do `tee` (não do node) no `.fap.pid`. `install.sh --update` matava o `tee`, deixando o node órfão. Correção: `nohup node server.js >> "$LOG_FILE" 2>&1 &` também em `--debug`.
-- **`install.sh` → `_matar_servidor_fap` com `sudo pkill -9 -f "fap-cmd-"` + `sudo pkill -9 -f "pkexec /tmp/fap-cmd-"` (Fase I/rodada 4).** Limpa órfãos root do pkexec (sem `NOPASSWD: /usr/bin/kill`).
-- **`scripts/fap-cleanup.sh` → `[1/9]` com `pkill -9 -f "fap-cmd-"` + `pkill -9 -f "pkexec /tmp/fap-cmd-"` (Fase I/rodada 4).** Mesmo motivo do `install.sh`.
-- **`install.sh` → `_matar_servidor_fap` com `setsid -f` + retry SIGTERM→SIGKILL (rodada 1).** O `nohup bash -c "sleep 3 && kill ..."` anterior podia ser morto junto com o install.sh.
-- **`Makefile` → `check-basico` inclui `scripts/fap-cleanup.sh` e `scripts/verificar-deps-container.sh` no `bash -n` (rodada 3).**
-- **`Makefile` → novo check: extrair `<script>` de cada `*.html` (root) e rodar `node --check` (Fase H/rodada 4).** O `}` faltando em `hardware.html` (dentro de um `<script>` inline) passou batido em todas as versões anteriores. Sem isso, um erro de sintaxe JS em HTML de sessão quebra a sessão silenciosamente (o `eval.call` do `guiado.html` engole o erro).
-- **`scripts/fap-cleanup.sh` verifica `fap-container-compat.desktop` na verificação final (rodada 1).**
+- **`aplicativos.html` → `instalar-avidemux` migrado de DNF para Flathub (`org.avidemux.Avidemux`).** O botão "Abrir Avidemux" usava `gtk-launch org.avidemux.Avidemux` (app-id de Flathub) para o pacote **DNF** `avidemux`, cujo `.desktop` é `avidemux.desktop` — `gtk-launch` falhava silenciosamente (setsid retornava 0, botão mostrava "🚀 opened!" mesmo sem abrir nada). Migrado para `flatpak install flathub org.avidemux.Avidemux -y`; `_MAPA_ORIGEM` mudou de `'fedora'` para `'flathub'`; `registrarAppRemovivel` mudou para `tipo: 'flatpak'`; botão chama `instalarFlatpak`.
 
-### 🟢 Melhorado
+### 🟡 Corrigido — Firefox e Thunderbird: revertida a proteção contra remoção + "Abrir" restaurado
 
-- **`install.sh` → `_matar_servidor_fap` rename cosmético.** `atras` → `ar`.
-- **`READMEs` → "Fedora 44 e 45 são oficialmente suportados" (rodada 2).** Removida contradição anterior ("Fedora 44 is maintained as legacy").
-- **`scripts/fap-cleanup.sh` → `[1/9]` agora também limpa `fap-cmd-*` e `pkexec /tmp/fap-cmd-*` (rodada 4).**
-  - **Textos PT-BR de Secure Boot — "enrolled" → "registrado(a)".** Os fallbacks PT-BR em `script.js` (`_renderizarBadgeSecureBoot`, `_renderizarPainelSecureBoot`, `_prepararSecureBoot`) e em `estado-fedora.html` (`secureboot_desc`) usavam "enrolled"/"enrollment", que soa estranho em português brasileiro. Tradução aplicada:
-  - **`enrolled`** (estado) → **"registrada no firmware"** (longo) / **"registrada"** (curto)
-  - **`enrollment`** (processo) → **"registro no firmware"** (longo) / **"registro"** (curto)
-  - **`enrole`** (verbo) → **"registre"**
-  - **`enrollada`** → **"registrada"**
+- **`aplicativos.html` → `registrarAppRemovivel('instalar-firefox')` e `('instalar-thunderbird')` sem `permitirRemocaoPreExistente: false`.** O bloqueio foi adicionado ao Firefox na **mesma** v1.5.9 (correção B7) e **revertido** após revisão: Firefox e Thunderbird são **apps de usuário** instalados por padrão no Fedora Workstation, não itens críticos do sistema como CUPS/Samba/drivers/virtualização. Bloquear a lixeira fazia o botão virar "✅ Já estava ativo" (cinza, sem abrir), fugindo ao padrão do FAP. **Comportamento correto (restaurado):** botão "🚀 Abrir Firefox" / "🚀 Abrir Thunderbird" (verde) + lixeira, com tooltip de pré-existente. Se o `dnf remove` for recusado por dependentes (`gnome-shell`, `fedora-workstation-repositories`), o log mostra o motivo; senão, remove e o auto-reset (`_estaRealmenteInstalado === false`) volta o botão para "📦 Instalar Firefox" / "📦 Instalar Thunderbird".
+- **`aplicativos.html` → `_registrarAbrir('instalar-firefox', ...)` e `_registrarAbrir('instalar-thunderbird', ...)` explícitos, fora do `_registrarAbrirEmMassa`.** Os dois são skipados no loop de massa (registros explícitos com `textoKey`/`textoFallback` próprios), logo abaixo do `_registrarAbrirEmMassa()`. O `_CMD_ABRIR_DNF` ganhou `'instalar-firefox': 'firefox'` e `'instalar-thunderbird': 'thunderbird'`. O `server.js` ganhou `'thunderbird'` em `_BINARIOS_ABRIR_WHITELIST` (o `firefox` já estava) — sem isso, o "Abrir Thunderbird" cairia em `pkexec`.
 
-  **Mantido literal:** `"Enroll MOK"` → `"Continue"` → `"Yes"` no passo 3 do painel — é o texto exato do menu do firmware que o usuário precisa buscar na tela azul. Traduzir confundiria. **`locales/en.json` e `es.json` NÃO foram tocados** — "enrolled" é o termo técnico correto nessas línguas.
-  - **`_executarRemocaoApp` sem `--skip-broken` + filtra pacotes instalados (Fase K).** O `--skip-broken` (v1.5.1) foi adicionado para "ignorar pacotes não instalados" no `dnf remove`. Mas no DNF5 (Fedora 45) isso é **alias de `strict=0`** (depsolve), **não** de "ignore uninstalled". Pode também ser rejeitado pelo subcomando `remove` no DNF5, causando "Argumento desconhecido". Sintoma: Avidemux, Ardour e outros apps DNF falhavam na lixeira, exibindo erro no log. Flatpak funcionava (está na whitelist, sem pkexec, sem `--skip-broken`). Correção: filtrar `info.pacotes` por `SystemState.pacoteInstalado()` antes de montar o comando; se sobrar zero, alerta "não instalado" (mais claro que erro do dnf).
-  - **`_executarRemocaoApp` libera a sessão quando `sucesso === false` (Fase K).** O `return` dentro do `if (!sucesso)` deixava `_bloquearSessao` ativo permanentemente — todos os botões da sessão ficavam cinzas/inativos após uma falha de remoção. Correção: `_liberarSessao(idComando) + _liberarOutrasSessoes() + _atualizarBloqueioNavegacao()` antes do `return`. O `catch` já cobria exceções, mas o retorno limpo do `aguardarConclusaoReal` não era coberto.
-  - **`_executarRemocaoApp` sem delay de 1-2s no popup de confirmação (Fase K).** O `await SystemState.carregar(true)` estava **antes** do `confirm()`. Esse `await` faz `fetch('/system-state?refresh=1')`, que re-roda 10 comandos no servidor (`dnf repolist`, `rpm -qa`, `flatpak list`, `systemctl is-active` × 6, `sysctl -n` × 5, `grubby`, `test -f` × 8, `timedatectl`, `localectl`, `lspci -nn`). Total: 1-2s de delay **antes** do popup aparecer — perceptível e reportado. Correção: usar só dados em memória nos checks pré-confirm (`marcadoPeloFap` do `.progresso.json`, `instaladoNoSistema` do cache, `visualDizInstalado` do DOM). O refresh de verdade só acontece **depois** do `confirm`, e só quando necessário (`dnf` sem `comandoRemocao` custom — para o filtro `pacotesInstalados`). **Trade-off:** perde o alerta "não instalado" pré-confirm no cenário raro de "app removido por fora com FAP aberto". O `Fix 2` cobre com log claro.
-  - **`_executarRemocaoApp` sem delay de 1-2s no popup de confirmação (Fase K).** O `await SystemState.carregar(true)` estava ANTES do `confirm()`. Esse `await` faz `fetch('/system-state?refresh=1')`, que re-roda 10 comandos no servidor (`dnf repolist`, `rpm -qa`, `flatpak list`, `systemctl is-active` × 6, `sysctl -n` × 5, `grubby`, `test -f` × 8, `timedatectl`, `localectl`, `lspci -nn`). Total: 1-2s de delay **antes** do popup aparecer — perceptível e reportado. Correção: usar só dados em memória nos checks pré-confirm (`marcadoPeloFap` do `.progresso.json`, `instaladoNoSistema` do cache, `visualDizInstalado` do DOM). O refresh de verdade só acontece **depois** do `confirm`, e só quando necessário (`dnf` sem `comandoRemocao` custom — para o filtro `pacotesInstalados`).
-  - **`scripts/validar-botoes.js` — NOVO (v1.5.8-11112026).** Validador estático de contratos de botões, sem dependências. Executa em ~2s via `make check-buttons` (ou `make check-basico`, que o inclui). Pega botões que quebram silenciosamente ("cliquei e não aconteceu nada") **sem precisar clicar em nenhum**. Cobre 7 regras:
-  1. Todo `data-comando` no HTML tem entrada em `SESSOES` (exceto transientes `open-*`, `abrir-*` e `resetar-progresso-fap`).
-  2. Todo `idComando` em `SESSOES` tem botão no HTML (exceto flags puros `nvidia-secureboot-prepare` e `pos-upgrade-concluido`).
-  3. Todo `onclick="fnName(...)"` referencia função definida em `script.js` ou no `<script>` inline da própria sessão.
-  4. Todo `data-logbox="X"` tem `id="X"` no mesmo HTML.
-  5. Todo `registrarAppRemovivel(id, {...})` tem `nome` + (`appId` OU `pacotes[]` OU `comandoRemocao`).
-  6. Todo `_registrarAbrir(id, { textoKey })` tem a chave em `locales/en.json` **e** `locales/es.json`.
-  7. `data-comando` é único em todos os HTMLs (sem duplicata entre sessões).
-  
-  **Bug real detectado pelo validador na 1ª execução:** `instalar-avidemux` estava em `aplicativos.html` e no `registrarAppRemovivel`, mas **faltava em `SESSOES`**. Efeito prático: o botão "Avidemux" nunca progredia (o `isExecutado` sempre retornava `false`), e o `_limparIdsOrfaos` removia o id do `.progresso.json` a cada ~5s. Adicionado em `SESSOES` com `textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_avidemux'` (a chave já existia em `en.json` e `es.json`).
+### 🟡 Corrigido — `.fap-badge-info`: popup vazio em PT-BR, exclamação solta, links externos
+
+- **`script.js` → `_registrarInfoBadge` com `tituloFallback`, `corpoFallback`, `acaoFallback`.** Em PT-BR, o `i18n.js` não carrega JSON (o HTML é o fallback natural). Mas o badge de info é gerado dinamicamente (não existe no HTML da sessão), então o texto PT-BR precisa vir via `*Fallback`. Sem isso, o popup abria **vazio** em PT-BR (o `_abrirPopoverInfo` passava `''` como fallback do `_tVars`), e o botão de ação mostrava o literal `'Executar'`.
+- **`style.css` → `.fap-popover-titulo .fap-badge-info` com reset.** O `.fap-badge-info` (que tem `position: absolute` no wrapper do botão) ancoreava no `.fap-popover` (`position: fixed`) e ficava solto sobre o título/corpo do popup, atrapalhando a leitura. Correção: reset de `position`/`transform`/`animation`/`box-shadow`/`hover`/`::before` no contexto `.fap-popover-titulo`. Análogo ao reset já existente para `.fap-badge-origem`.
+- **`script.js` → handler global de `<a target="_blank">`.** No WebKitGTK, `<a target="_blank">` dispara `NEW_WINDOW_ACTION`, que o `decide_policy` do container **não trata** (só `NAVIGATION_ACTION`). Resultado: o clique era silenciosamente ignorado. Correção: `document.addEventListener('click', ...)` intercepta `<a target="_blank">`, roda `preventDefault`/`stopPropagation` e roteia para `abrirFerramentaExterna('xdg-open ' + href, ...)`. Usa `a.href` (URL resolvido/decodificado pelo navegador, com `&` real) em vez de `a.getAttribute('href')` (cru, com `&amp;`). Esquemas perigosos (`javascript:`, `data:`, `vbscript:`, `file:`, `blob:`) e URLs não-http(s) são ignorados. **Cobre popup do RustDesk, changelog e qualquer `<a target="_blank">` futuro.**
+- **`script.js` → `verificarSelinuxRustDesk` usa `_getLogBox('instalar-rustdesk')`.** Antes usava `_getLogBox('rustdesk-selinux-info')`, que retornava `null` (não existe `[data-comando="rustdesk-selinux-info"][data-logbox]` nem `id="log-rustdesk-selinux-info"`). O log do `verificar` ficava vazio — só o toast. Correção: usa `instalar-rustdesk`, que tem `data-logbox="log-sessao-aplicativos"`.
+- **`script.js` → `SESSOES.aplicativos.comandos` sem `'rustdesk-selinux-info'`.** Marcador era dead code (o `verificarSelinuxRustDesk` faz `fetch('/rustdesk-selinux-check')` direto, sem `executarComandoGenerico`). A presença dele quebrava a regra 2 do `validar-botoes.js` (todo idComando em `SESSOES` precisa de `<button data-comando="...">` — o badge de info é um `<span>`).
+
+### 🟡 Corrigido — URLs: quoting defensivo + `_REDIRECT_ABRIR_PADRAO` expandido
+
+- **`script.js` → `_shellQuote` + `_quotarUrlsNaoQuotadas`.** O `abrirFerramentaExterna` recebe string que vira comando shell (via `POST /executar` → `spawn`/`exec`). URLs com metacaracteres (`&`, `$`, backtick, `>`, `;`) eram interpretadas pelo bash — `https://x.com/?a=1&b=2` virava dois comandos. Correção: `_quotarUrlsNaoQuotadas(comando)` escaneia o comando e cita URLs (`https?://...`) não-quoteadas com `_shellQuote` (aspas simples, com escape `'\''` para aspas internas). Respeita aspas já existentes. Aplicado no topo do `abrirFerramentaExterna`.
+- **`server.js` → `_REDIRECT_ABRIR_PADRAO` expandido para aceitar `'[^']*'` e `"[^"]*"` como argumentos.** URLs com `>` no query string (raro, mas possível) caíam fora do padrão antigo (`(?:\s+[^>\n]+)?`) e o comando ia parar em `pkexec`. Agora aceita argumentos entre aspas simples ou duplas, sem quebrar o PoC original (`setsid -f bash -c 'rm -rf ~' > …` continua bloqueado — `bash` não está em `_BINARIOS_ABRIR_WHITELIST`).
+
+### 🟢 Melhorado — alinhamento com o padrão do Fedora (pkexec + HOME)
+
+- **`server.js` → `_construirScripts` não exporta mais `HOME=<home-do-usuário>` incondicionalmente.** Antes, o script gerado para o `pkexec` sempre exportava `HOME=<home-do-usuário>`. Como o `pkexec` roda como `root`, o `dnf` (via pkexec) escrevia cache em `~/.cache/dnf/` e `~/.cache/libdnf5/` com dono `root` no home do usuário. Isso **não é o padrão do Fedora** — `sudo dnf` / `pkexec dnf` usam `HOME=/root` (implícito) e `/var/cache/dnf/` (system).
+- **Alinhamento:** o `export HOME=<home-do-usuário>` agora é condicional a `IDS_COM_HOME_DO_USUARIO.has(idComando)`. A constante está **vazia** por enquanto — reservada para scripts EXTERNOS (baixados de URL) que usam `$HOME` **dentro do arquivo** (`install.sh`, `fap-cleanup.sh`, etc.). Comandos inline com `$HOME`/`~` na string **não** precisam: o `_substituirCaminhosUsuario` troca o caminho na string antes do pkexec.
+- **Estado atual:** `desinstalar-fap` e `atualizar-fap` (que rodam `install.sh` baixado) estão em `IDS_SEM_AUTENTICACAO` — rodam como **usuário**, nunca via pkexec, então nunca chegam ao `_construirScripts`. O `install.sh --uninstall` continua funcionando (o `SUDO_ASKPASS` cobre os `sudo` internos).
+- **Efeito colateral:** `dnf` via pkexec passa a usar `/var/cache/dnf/` (system). Botões existentes não mudam de comportamento — todos os comandos atuais usam caminho absoluto na string (substituído por `_substituirCaminhosUsuario`).
+- **Resíduos antigos:** `~/.cache/dnf/` e `~/.cache/libdnf5/` de versões anteriores do FAP (donos `root`) podem ser removidos com:
+  ```bash
+  sudo rm -rf ~/.cache/dnf ~/.cache/libdnf5
+  ```
+  Ou via `scripts/fap-cleanup.sh` (o script já remove, mas só se o dono for `root` — cache legítimo do `dnf` do usuário é preservado).
+
+### 🟢 Melhorado — i18n
+
+- **`locales/en.json` + `es.json` → +6 chaves cada.** `rustdesk_selinux_titulo`, `rustdesk_selinux_corpo`, `rustdesk_selinux_acao`, `rustdesk_selinux_ok`, `rustdesk_selinux_ok_curto`, `rustdesk_selinux_avcs`, `rustdesk_selinux_avcs_curto`, `rustdesk_selinux_erro`. O `corpo` inclui link para `https://rustdesk.com/docs/en/client/linux/`.
+- **`locales/en.json` + `es.json` → +3 chaves em `comum`.** `badge_info_aria`, `badge_info_tooltip`, `fechar` — usadas pelo `_renderizarInfoBadge`/`_abrirPopoverInfo`. Sem elas, o `make check-basico` #43 falhava.
+- **`locales/en.json` + `es.json` → `btn_abrir_firefox` e `btn_abrir_thunderbird` restauradas.** Removidas na auditoria v1.5.9, voltaram com a reversão do Firefox/Thunderbird.
+- **11 chaves órfãs removidas de `en.json` + `es.json`.** `btn_modeset_on`, `btn_modeset_off`, `nvidia_modeset_titulo`, `nvidia_modeset_desc`, `texto_concluido_modeset_on`, `texto_concluido_modeset_off` (bloco NVIDIA modeset removido na v1.4.9); `btn_grub_padrao`, `grub_confirmar_padrao`, `grub_msg_aplicado` (substituídos por `btn_grub_restaurar_backup`/`grub_msg_aplicado_res`).
+
+### 🟢 Melhorado — limpeza e dead code
+
+- **`server.js`:** 15 entradas mortas removidas de `COMANDOS_SEM_AUTENTICACAO` e `_BINARIOS_ABRIR_WHITELIST` (13 apps ArtCraft individuais + `desktopeditors` + `lightworks` — abrem via `gtk-launch`; só `artcraft-launcher` é aberto). `thunderbird` **adicionado** à whitelist. Strings de erro do `_parseVainfo` traduzidas para EN (lingua franca para detalhes técnicos). 5 endpoints migrados para `_execReadOnly` (`/kernel-atual`, `/reboot-needed`, `/kernels`, `/check-package`, `/flatpak-installed`) — mesmo vetor do fix de `fastfetch` da v1.5.6. `/kernels` paralelizado com `Promise.all`.
+- **`aplicativos.html`:** `_registrarAbrirEmMassa` skipa Firefox/Thunderbird no loop (registros explícitos abaixo do loop).
+- **`iniciar_fap.sh`:** bloco `pgrep -f "node .*$DIR/server\.js"` (dead code — cmdline real é `node server.js`, sem path) removido do `cleanup`. `return 0` dead code removidos após `_executar_terminal` em `abrir_no_terminal_nativo`.
+- **`install.sh`:** `. /etc/os-release` em subshell (não sobrescreve `$VERSION`, definido no topo com o `package.json`).
+- **`scripts/fap-cleanup.sh`:** remove `~/.cache/dnf` e `~/.cache/libdnf5` **se o dono for `root`** (resíduo das versões antigas do FAP). Cache legítimo do usuário é preservado.
+- **`ajustes-manutencao.html`:** botão "Aplicar GRUB" desabilita quando `mudancas === 0`. `executarGrubAplicarRecomendado` re-busca `/grub-info` antes de aplicar e aborta se `dualBoot` não for booleano (evita esconder Windows em dual-boot quando o fetch falhou). `executarUpgradeDownload` não instala mais `dnf-plugin-system-upgrade` cegamente (guard `dnf system-upgrade --help`). `_verificarCanalFedora` usa `dl.fedoraproject.org` + fallback. `_verificarAtualizacoesPendentes` paraleliza os dois `dnf`; client `_carregarUpgradeStatus` com `_sinalTimeout(60000)`.
+- **`hardware.html`:** `_detectarGpuPorVendor` repassa `secure_boot` + `secure_boot_mok`; `_atualizarSecaoNvidia` pré-popula caches (evita 2 fetches por load da Sessão 3). `vaapi-check-amd`/`vaapi-check-intel` não são mais desabilitados sem GPU do vendor. `serie` removida de `_detectarGpuNvidia`. `_escapeHTMLNvidia` removida (usa `_escapeHTML` global).
+- **`script.js`:** `_prepararSecureBoot` sem `_invalidarContadorSessoes`/`_atualizarProgressoGlobal` (no-ops — `nvidia-secureboot-prepare` é `sempreClicavel`). `_aplicarFiltroSessao` preserva `bloco-comando` com `.progress-container` visível (não esconde `dnf` rodando). `_sincronizarEstadoFlatpaks` com guard duplo — rejeita `bruto === null` **e** `bruto.error` preenchido.
+- **`sobre-fap.html`:** `desinstalarFAP` libera a sessão em **todos** os caminhos, esconde o `progress-container` após 3s e fecha o SSE em `finally`. `resetarProgressoFAP` limpa `fap_upgrade_finalizado`, `fap_ultima_verificacao` e `fap_versao_remota` do `localStorage`.
 
 ### 📌 Pendências de teste (hardware real)
 
-As correções abaixo foram validadas por **mock** (Fases A1/A2) ou em software, mas **ainda requerem validação em hardware real** — registradas como pendências no release:
+- **`/rustdesk-selinux-check` com AVC ativo.** Em máquina limpa, `journalctl -g "avc:.*rustdesk"` retorna 0 — testar em sistema com `avc: denied` histórico (Issue #6301 do GitHub do RustDesk tem relatos).
+- **Popup do RustDesk em PT/EN/ES.** Verificar que título/corpo/botão aparecem preenchidos em PT-BR (fallbacks), EN e ES; o `!` no cabeçalho alinhado; o link abre no navegador padrão.
+- **Link com `&` no query string.** Testar que `setsid -f xdg-open 'https://httpbin.org/get?a=1&b=2'` (com aspas simples) abre correto no navegador, sem `pkexec`.
+- **PoC do `>` continua bloqueado.** `POST /executar` com `rpm -q kernel>~/.bashrc` → `PrecisaAuth=true`.
+- **Opera RPM.** Instalar em VM limpa; verificar `/etc/yum.repos.d/opera.repo` com 7 linhas exatas, `dnf remove opera-stable` na lixeira, popover do badge de origem mostrando `Fabricante`. **Regressão Brave/Vivaldi/Edge** (mesma `instalarRpmRepo`).
+- **NTSYNC pós-correção.** Desfazer (`rm /etc/modules-load.d/ntsync.conf`, `dnf remove -y wine-ntsync`, `modprobe -r ntsync`), reclicar, verificar persistência.
+- **Secure Boot log na Sessão 12.** VM limpa: clicar "Preparar Secure Boot", verificar output visível em tempo real.
+- **Firefox e Thunderbird (após reversão).** Botão "🚀 Abrir X" + lixeira, tooltip de pré-existente, remoção + auto-reset para "📦 Instalar X", reinstalação.
+- **Alinhamento com o padrão do Fedora.** Instalar um pacote via pkexec → verificar que `~/.cache/dnf/` e `~/.cache/libdnf5/` **não** são criados (ou são user-owned, se o `dnf` foi usado como usuário). `/var/cache/dnf/` populado (dono `root`). `scripts/fap-cleanup.sh` remove resíduos root-owned e preserva user-owned.
+- **`install.sh --update` com `.git` quebrado.** Verificar que a Sessão 13 não trava e o SSE fecha.
 
-- **NVIDIA Blackwell (RTX 5060, GB206).** Fluxo `akmod-nvidia-open` + polling + reversão automática.
-- **NVIDIA Ada, Ampere, Turing.** Fluxo `akmod-nvidia` + `xorg-x11-drv-nvidia-cuda`.
-- **NVIDIA Kepler, Fermi.** Bloqueio correto (não instala).
-- **Enrollment MOK end-to-end.** Secure Boot ativo + `kmodgenca` + `mokutil --import` + reboot + MOK Management + `modinfo nvidia`.
-- **Intel legado (`libva-intel-driver`).** Haswell/Ivy Bridge/Sandy Bridge.
-- **Drivers 470xx/390xx.** Desabilitados por design.
-- **`_matarArvoreProcessos` em pkexec real.** Confirmar que os filhos root órfãos são logados e limpos por `install.sh --update/--uninstall`.
-- **Fase combinada de Secure Boot.** (1) `kmodgenca -a` (chave A), (2) `mokutil --import` + reboot + enroll (chave A), (3) `kmodgenca -f` (chave B), (4) `mokutil --import public_key.der` (chave B pending). Esperado: painel/badge mostram a mensagem combinada. Validado por mock (Fase A1), falta validação em hardware real.
+### ✅ Validação estática (11–12/11/2026)
 
-### ✅ Validação de software (11/11/2026)
+- `make check-basico`: **11/11 checks passando**.
+- `node scripts/validar-botoes.js`: **170 data-comando, 13 sessões, 402 funções, 99 registrarAppRemovivel, 32 _registrarAbrir, 0 duplicatas**.
+- `bash -n` em 6 `.sh`, `node --check` em 5 `.js` + 15 `<script>` inline de sessões: OK.
+- `CHANGELOG.md` vs `package.json`: strings `v1.5.9-11122026` batem.
+- **947 chaves i18n** presentes em `en.json` + `es.json` (936 originais + 6 `rustdesk_selinux_*` + 3 `comum.*` + 2 `btn_abrir_*`, − 11 órfãs removidas).
 
-**Fases A–J executadas em ambiente real (Fedora 45 + KDE):**
+### Arquivos tocados
 
-| Fase | Escopo | Resultado |
-|---|---|---|
-| A1 | Badge Secure Boot — 8 estados (incluindo combinado) | ✅ 8/8 |
-| A2 | Painel Secure Boot — 8 estados | ✅ (mesma ordem do badge) |
-| B1 | Fechar container → terminal fecha sozinho | ✅ |
-| B2 | Node morto (SIGKILL) + container aberto → terminal fecha sem travar | ✅ 3/3 |
-| C | Rclone Manager remove `r-clone-manager`, preserva CLI `rclone` | ✅ |
-| D | Popover omite "Comando exato" nos 7 apps não-determinísticos | ✅ |
-| F | `verificar-deps-container.sh` idempotente (6ms com binário, 74ms sem) | ✅ 5/5 |
-| G | PoC `rpm -q kernel>~/.bashrc` bloqueado; `rpm -q kernel` e `2>&1` passam | ✅ 6/6 |
-| H | Zero `_unknown` em `localStorage`; cache legacy removido | ✅ 2/2 |
-| I | `_matarArvoreProcessos` mata árvore (mesmo UID); filhos root do pkexec logados | ✅ **com ressalva** (documentada) |
-| J | `setLang(mesmo idioma)` é no-op | ✅ 3/3 |
-| **Extra** | Fix estrutural da corrida i18n (não catalogado no briefing original) | ✅ V1–V5 |
-
-`make check-basico`: **11/11 checks passando.**
-
-### 🔧 Correções pós-auditoria (mesma versão)
-
-Rodada de auditoria completa (27 achados) executada sobre a v1.5.8-11112026. Todas as correções são incrementais — nenhuma muda arquitetura, nenhuma regride os checks do `make check-basico`. Os 11 checks seguem passando e `scripts/validar-botoes.js` continua reportando 170 data-comando, 13 sessões, 402 funções, 99 `registrarAppRemovivel`, 32 `_registrarAbrir` e 0 duplicatas.
-
-#### 🔴 Crítico — funcionalidade
-
-- **`server.js` → `_BINARIOS_ABRIR_WHITELIST` inclui `kate`.** Antes, "Abrir Kate" caía em `precisaAutenticacao=true` e disparava `pkexec` — único caso entre todos os apps DNF com `.desktop` (os demais binários já estavam na whitelist). Correção: uma entrada adicionada.
-- **`script.js` → `_sincronizarEstadoFlatpaks` com guard duplo.** Quando o `server.js` responde `200` com `{ flatpaks_installed: [], error: "..." }` (catch do `/system-state`), o guard antigo deixava passar (array vazio é `Array.isArray` válido) e o loop desmarcava em massa todos os flatpaks instalados via FAP. Correção: rejeita também quando `bruto.error` é string não vazia.
-- **`ajustes-manutencao.html` → `executarGrubAplicarRecomendado` re-busca `/grub-info` e aborta se `dualBoot` não for booleano.** Antes, se `_grubInfoCache` fosse `null` (fetch falhou), `info.dualBoot` virava `undefined` → `osProber = 'true'` (desabilitava) → `grub2-mkconfig` regenerava o `grub.cfg` sem a entrada do Windows. Usuário de dual-boot perdia o Windows até clicar "Reverter" (se percebesse). Correção: sempre re-busca antes de aplicar; aborta com mensagem clara se leitura falhou; chave i18n `grub_info_indisponivel` adicionada em EN/ES.
-
-#### 🟡 Corrigido — médio
-
-- **`aplicativos.html` → Avidemux migrado de DNF para Flathub.** Botão agora chama `instalarFlatpak` (não `instalarDnf`); entrada em `APPS_FLATPAK`; saiu de `_CMD_ABRIR_DNF`; `registrarAppRemovivel` mudou para `tipo: 'flatpak'`; `_MAPA_ORIGEM` mudou de `'fedora'` para `'flathub'`; `SESSOES` ganhou `flatpakId: 'org.avidemux.Avidemux'`. Resolve o bug de "Abrir Avidemux" (`gtk-launch org.avidemux.Avidemux` falhava silenciosamente para o pacote DNF, que não tem esse `.desktop`).
-- **`sobre-fap.html` → `desinstalarFAP` libera a sessão em todos os caminhos.** Antes, se o `install.sh` falhasse em background (rede, `git clone`, `npm install`), a Sessão 13 ficava com todos os botões desabilitados até reload manual. Correção: `_liberarSessao` + reabilitação do próprio botão + esconde `progress-container` após 3s + `_atualizarBloqueioNavegacao` antes do `alert`.
-- **`server.js` → `_verificarCanalFedora` com fontes canônicas do Fedora.** Antes, `mirrors.kernel.org` hardcoded (mirror dos EUA) — redes corporativas com proxy/firewall restritivo ficavam travadas em `waiting_ga` mesmo após o GA. Correção: tenta `dl.fedoraproject.org` e depois `download.fedoraproject.org` (fallback só para erro de rede/servidor, não 4xx).
-- **`server.js` → `_verificarAtualizacoesPendentes` paraleliza os dois `dnf`.** Antes, `dnf check-update` (até 30s) e `dnf needs-restarting` (até 10s) rodavam sequencialmente. Combinado com `_verificarCanalFedora` (2 hosts após B3) e demais checks, o pior caso passava de 35s. Correção: `Promise.all` reduz para 30s; client (`_carregarUpgradeStatus`) com `_sinalTimeout(60000)` cobre a margem.
-- **`server.js` → 5 endpoints migrados para `_execReadOnly`.** `/kernel-atual`, `/reboot-needed`, `/kernels`, `/check-package`, `/flatpak-installed` ainda usavam `exec` com `shell: '/bin/bash'`. Mesmo vetor do que foi corrigido na v1.5.6 (`.bashrc` com `fastfetch` poluindo stdout). Todos agora usam `execFile --noprofile --norc` via `_execReadOnly`. `/kernels` também foi paralelizado (`Promise.all`) e `/check-package` passou a inspecionar `exit=$?` do `rpm -q` (locale-independente).
-- **`ajustes-manutencao.html` → `executarUpgradeDownload` sem `dnf install -y dnf-plugin-system-upgrade` cego.** No DNF5 (Fedora 41+), o subcomando `system-upgrade` já vem em `dnf5-plugins`. O pacote `dnf-plugin-system-upgrade` (era DNF4) **não existe mais nos repos do Fedora 44/45** — o `&&` abortava a cadeia antes mesmo do download. Correção: guard de detecção (`dnf system-upgrade --help`) — só instala o plugin antigo se o subcomando não responder.
-- **`aplicativos.html` → `instalar-firefox` com `permitirRemocaoPreExistente: false`.** Firefox é o navegador padrão do Fedora Workstation e dependência de `gnome-shell` e outros pacotes. Sem a flag, a lixeira removia o Firefox pré-existente por clique acidental. Correção: flag + `motivoBloqueio` + chave `mitigacao.firefox_preexistente` em EN/ES.
-- **`sobre-fap.html` → "Reset progress" limpa `fap_upgrade_finalizado`, `fap_ultima_verificacao` e `fap_versao_remota`.** Antes, o reset deixava a área de upgrade travada em `no_upgrade_needed` para sempre e o badge do GitHub podia ficar 12h mostrando informação obsoleta. Correção: `localStorage.removeItem` × 3 antes do `DELETE /progress`. `fap_tema`/`fap_lang`/`fap_sessao_ativa` não entram (são preferências, não estado de progresso).
-- **`hardware.html` → `_detectarGpuPorVendor` repassa `secure_boot` + `secure_boot_mok`; `_atualizarSecaoNvidia` popula os caches globais antes de `_aplicarEstadoNvidia`.** Antes, `_detectarSecureBoot()` (em `script.js`) fazia um **segundo** `fetch('/hardware-scan')` bypassando o cache de 5s do `_fetchHardwareScan` — 2 scans completos por load da Sessão 3. Correção: reusa o JSON do primeiro scan; `executarNvidiaDriver` também se beneficia (cache já populado).
-- **`sobre-fap.html` → `desinstalarFAP` fecha o SSE em todos os caminhos (`finally`).** Antes, a conexão `EventSource` ficava aberta até o node morrer (via `_encerrarGraciosamente`), ocupando slot em `sseClients` e buffer de replay (2000 mensagens). Correção: `finally { sseConnections[idComando].close() }`.
-
-#### 🔵 Limpeza — cosmético
-
-- **`server.js` → 15 entradas mortas removidas de `COMANDOS_SEM_AUTENTICACAO` e `_BINARIOS_ABRIR_WHITELIST`.** Os 13 apps ArtCraft individuais (`photocraft`, `vectorcraft`, ..., `soundcraft`) e `desktopeditors`/`lightworks` (abrem via `gtk-launch`, já na whitelist) nunca são chamados pelo FAP — só `artcraft-launcher` é aberto.
-- **`server.js` → strings de erro do `_parseVainfo` traduzidas para EN.** Antes, `'vainfo não encontrado...'` e `'Nenhum perfil VA-API...'` vazavam em PT-BR no painel EN/ES. Inglês como lingua franca para detalhes técnicos, consistente com o resto do código.
-- **`locales/en.json` + `es.json` → 11 chaves órfãs removidas.** `btn_modeset_on`, `btn_modeset_off`, `nvidia_modeset_titulo`, `nvidia_modeset_desc`, `texto_concluido_modeset_on`, `texto_concluido_modeset_off` (bloco NVIDIA modeset removido na v1.4.9); `btn_grub_padrao`, `grub_confirmar_padrao`, `grub_msg_aplicado` (substituídos por `btn_grub_restaurar_backup`/`grub_msg_aplicado_res`); `btn_abrir_firefox`, `btn_abrir_thunderbird` (`_ABRIR_REGISTRY` deletado).
-- **`aplicativos.html` → `_registrarAbrirEmMassa` skipa Firefox/Thunderbird no loop.** Antes, registrava e deletava logo depois. Skip no loop é mais direto; `delete _ABRIR_REGISTRY['instalar-firefox']` e `delete _ABRIR_REGISTRY['instalar-thunderbird']` removidos.
-- **`iniciar_fap.sh` → bloco `pgrep -f "node .*$DIR/server\.js"` removido do `cleanup`.** Nunca casava (cmdline real = `node server.js`, sem path). Dead code. A limpeza efetiva continua no `lsof -t -i:3000` mais abaixo.
-- **`iniciar_fap.sh` → `return 0` removidos após `_executar_terminal` em `abrir_no_terminal_nativo`.** A função faz `exit 0` internamente — os `return 0` dos callers eram dead code.
-- **`install.sh` → `. /etc/os-release` em subshell.** Antes, sobrescrevia `$VERSION` (definido no topo com `package.json`). Não quebrava hoje (banner é impresso antes), mas qualquer uso futuro de `$VERSION` após `verificar_sistema` herdaria o valor errado.
-- **`ajustes-manutencao.html` → botão "Aplicar GRUB" desabilita quando `mudancas === 0`.** Antes, clicava, reescrevia o arquivo com os mesmos valores, e o resultado era idêntico. Correção: `disabled=true` + `title` com a mensagem de "nada a alterar". Só desabilita se `!isExecutado('grub-aplicar-recomendado')` (não sobrescreve estado "aplicado").
-- **`hardware.html` → `vaapi-check-amd`/`vaapi-check-intel` não são mais desabilitados sem GPU do vendor.** O `vainfo` é read-only e informativo mesmo em máquina Intel-only / NVIDIA-only / AMD-only. Skip no loop de desabilitar.
-- **`hardware.html` → `serie` removida de `_detectarGpuNvidia`.** Dead property (`geracao.nome` duplicado; `_renderizarPanelNvidia` usa `info.geracao.nome`).
-- **`hardware.html` → `_escapeHTMLNvidia` removida.** Duplicava `_escapeHTML` (global) com mesma implementação e regex. Chamadas em `_renderizarPanelNvidia`/`_renderizarPanelDriverStatus` agora usam `_escapeHTML`.
-- **`script.js` → `_prepararSecureBoot` sem `_invalidarContadorSessoes`/`_atualizarProgressoGlobal`.** `nvidia-secureboot-prepare` é `sempreClicavel` → o contador nunca muda; as duas chamadas eram no-ops. `SystemState.invalidar/carregar(true)` continua (necessário para reler `public_key.der`).
-- **`script.js` → `_aplicarFiltroSessao` preserva `bloco-comando` com progresso ativo.** Antes, filtrar durante uma execução escondia o `.progress-container` visível — o usuário "sumia" com o bloco mesmo com `dnf` rodando. Correção: mantém o bloco se algum `.progress-container` filho está visível. O contador do banner continua contando só matches reais.
-
-#### 📌 Pendências de teste adicionais (hardware real)
-
-As correções abaixo só foram validadas estaticamente — precisam de Fedora 44 ou 45 limpos (VM ou hardware):
-
-- **Abrir Kate** (A1): confirmar que `setsid -f kate` não dispara `pkexec`.
-- **Aplicar GRUB recomendado em dual-boot** (A3): `confirm` mostra "Sim"; Windows continua no menu após `grub2-mkconfig`.
-- **Instalar e abrir Avidemux via Flathub** (B1): `flatpak install flathub org.avidemux.Avidemux`; "Abrir" via `gtk-launch org.avidemux.Avidemux` funciona.
-- **Desinstalar FAP com `git` quebrado** (B2): sessão 13 não trava; botão reabilitado; log mostra "em andamento".
-- **Baixar upgrade 44→45 em Fedora 44 limpo** (B6): não falha com "No match for argument dnf-plugin-system-upgrade".
-- **Tentar remover Firefox pré-existente** (B7): lixeira escondida; tooltip com `motivoBloqueio`.
-- **`/system-state` retornando erro** (A2): `_sincronizarEstadoFlatpaks` skipa; `.progresso.json` intacto.
-- **`dnf check-update` + `dnf needs-restarting` em paralelo** (B4): tempo total ≤ 30s em cache frio; client não aborta.
-- **5 endpoints migrados para `_execReadOnly`** (B5): `/kernel-atual`, `/reboot-needed`, `/kernels`, `/check-package`, `/flatpak-installed` funcionam sem poluição de `fastfetch` no `.bashrc`.
-- **2 fetches de `/hardware-scan`** (B9): abrir Sessão 3 → `lspci`/`lsusb`/`dnf repolist`/`rpm -q`/`mokutil` rodam **uma** vez (não duas).
-- **SSE do uninstall** (B10): `ss -tnp | grep :3000` após desinstalar → sem conexões penduradas.
-- **`_execReadOnly` registra `ChildProcess`** (B5 + Fase I): SIGINT durante `/system-info` mata a árvore (`dnf`/`lspci`/`rpm` não ficam órfãos).
+| Arquivo | Tipo de mudança |
+|---|---|
+| `style.css` | +bloco `.fap-badge-info`; +reset no `.fap-popover-titulo` |
+| `script.js` | +`_INFO_BADGES_REGISTRY` +`_registrarInfoBadge` (com `*Fallback`) +`_renderizarInfoBadge` +`_renderizarInfoBadgesFixas` +`_abrirPopoverInfo` +`_shellQuote` +`_quotarUrlsNaoQuotadas` +handler `<a target="_blank">`; `_MAPA_ORIGEM` (Opera, Avidemux); `_MAPA_MOTIVO_BLOQUEIO` (Firefox removido); `SESSOES.aplicativos.comandos` (Opera sem flatpakId, Avidemux sem pacotes, `rustdesk-selinux-info` removido); `_renderizarPainelSecureBoot` (logbox); `_prepararSecureBoot`; `_aplicarFiltroSessao`; `_sincronizarEstadoFlatpaks`; `abrirFerramentaExterna` |
+| `server.js` | +`GET /rustdesk-selinux-check`; 5 endpoints migrados para `_execReadOnly`; `_BINARIOS_ABRIR_WHITELIST` (kate, opera, thunderbird; 13 ArtCraft removidos); `_REDIRECT_ABRIR_PADRAO` expandido; `_parseVainfo` traduzido para EN; `_construirScripts` com `IDS_COM_HOME_DO_USUARIO` (HOME condicional) |
+| `aplicativos.html` | +`_registrarInfoBadge('instalar-rustdesk', ...)`; +`verificarSelinuxRustDesk()`; Opera migrado (com `printf` + `tee`); Avidemux migrado; Firefox/Thunderbird sem `permitirRemocaoPreExistente` + `_registrarAbrir` explícito; `_registrarAbrirEmMassa` skipa Firefox/Thunderbird; `_CMD_ABRIR_DNF` com firefox/thunderbird |
+| `estado-fedora.html` | −log oculto da Sessão 12 |
+| `gaming.html` | `executarNTSync` async/await |
+| `ajustes-manutencao.html` | `_verificarCanalFedora` (2 hosts); `_verificarAtualizacoesPendentes` (paralelo); `_carregarUpgradeStatus` (60s); `executarUpgradeDownload` (guard); `executarGrubAplicarRecomendado` (re-busca); `_renderizarPreviewGrub` (desabilita); botão GRUB desabilitado em `mudancas === 0` |
+| `sobre-fap.html` | `desinstalarFAP` (libera sessão, esconde progress, fecha SSE); `resetarProgressoFAP` (limpa 3 chaves) |
+| `hardware.html` | `_detectarGpuPorVendor`; `_atualizarSecaoNvidia`; `vaapi-check-*`; `serie` removida; `_escapeHTMLNvidia` removida |
+| `iniciar_fap.sh` | `pgrep` dead code removido; `return 0` dead code removidos |
+| `install.sh` | `. /etc/os-release` em subshell |
+| `scripts/fap-cleanup.sh` | +rm de `~/.cache/dnf` e `~/.cache/libdnf5` (só root-owned) |
+| `locales/en.json` | +6 `rustdesk_selinux_*`; +3 `comum.*`; +2 `btn_abrir_*`; −11 órfãs |
+| `locales/es.json` | +6 `rustdesk_selinux_*`; +3 `comum.*`; +2 `btn_abrir_*`; −11 órfãs |
+| `package.json` | bump `1.5.9-11122026` |
+| `CHANGELOG.md` | seção atual substituída |
