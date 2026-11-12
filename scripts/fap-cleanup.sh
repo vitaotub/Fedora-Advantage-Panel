@@ -152,15 +152,46 @@ sudo -u "$REAL_USER" gtk-update-icon-cache -f -t "$REAL_HOME/.local/share/icons/
 echo "  OK"
 
 # ============================================================
-# [5/9] CACHES WEBKITGTK E CONFIG DO APP
+# [5/9] CACHES WEBKITGTK, DNF/LIBDNF5 ÓRFÃOS E CONFIG DO APP
 # ============================================================
-echo "[5/9] Removendo caches WebKitGTK e config do FAP..."
+#
+# `~/.cache/dnf/` e `~/.cache/libdnf5/` podem ter sido criados
+# por versões do FAP anteriores à v1.5.9, que exportavam
+# `HOME=<home-do-usuário>` no script do pkexec. Resultado: o
+# `dnf` (rodando como root) escrevia cache com dono `root` no
+# home do usuário.
+#
+# A v1.5.9 alinha o FAP com o padrão do Fedora: `dnf` via pkexec
+# usa `/var/cache/dnf/` (system), não o cache do usuário. Mas os
+# arquivos antigos ficam órfãos (não são mais lidos, mas ocupam
+# espaço e o usuário não consegue apagar sem `sudo`).
+#
+# Como este script roda como root (via `sudo`), o `rm -rf`
+# remove os arquivos `root-owned` sem precisar de `sudo -u`.
+#
+# ATENÇÃO: `~/.cache/dnf/` e `~/.cache/libdnf5/` também são
+# usados pelo `dnf` quando o PRÓPRIO USUÁRIO o executa (ex.:
+# `dnf search`). Se o dono do diretório for o usuário (não
+# `root`), é cache LEGÍTIMO e NÃO deve ser apagado.
+echo "[5/9] Removendo caches WebKitGTK, dnf/libdnf5 órfãos e config do FAP..."
 rm -rf "$REAL_HOME/.cache/fap-container"
 rm -rf "$REAL_HOME/.local/share/fap-container"
 rm -rf "$REAL_HOME/.config/fap-container"
 rm -rf "$REAL_HOME/.cache/fof-container"
 rm -rf "$REAL_HOME/.local/share/fof-container"
 rm -rf "$REAL_HOME/.config/fof-container"
+# Caches do dnf/libdnf5 criados por versões antigas do FAP
+# (root-owned no home do usuário). Só remove se o dono for `root`
+# — se for user-owned, é cache legítimo do `dnf` do usuário e é
+# preservado.
+for cache_dnf in "$REAL_HOME/.cache/dnf" "$REAL_HOME/.cache/libdnf5"; do
+    if [ -e "$cache_dnf" ]; then
+        dono_cache=$(stat -c '%U' "$cache_dnf" 2>/dev/null || echo "")
+        if [ "$dono_cache" = "root" ]; then
+            rm -rf "$cache_dnf"
+        fi
+    fi
+done
 echo "  OK"
 
 # ============================================================
