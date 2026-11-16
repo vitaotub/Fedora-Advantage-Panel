@@ -9,20 +9,6 @@ const PORT = parseInt(process.env.PORT, 10) || 3000;
 const ARQUIVO_PROGRESSO = path.join(__dirname, '.progresso.json');
 const ARQUIVO_CHANGELOG = path.join(__dirname, 'CHANGELOG.md');
 
-// ============================================================
-// VERSÃO DO FAP — fonte única: package.json
-// ============================================================
-//
-// A versão do FAP é definida em UM lugar só: o campo "version" do
-// package.json. O Node resolve `require('./package.json')` relativo
-// ao arquivo que faz o require, então funciona independente do CWD
-// do processo.
-//
-// Se por algum motivo o package.json estiver ausente ou corrompido,
-// caímos em 'unknown' — o endpoint /info continua respondendo, e o
-// botão "Atualizar FAP" mostra o badge de forma conservadora (com
-// 'unknown' em vez da versão local, `temAtualizacao()` retorna
-// false e nenhum badge aparece). Isso evita falsos positivos.
 let FAP_VERSION = 'unknown';
 try {
     FAP_VERSION = require('./package.json').version || 'unknown';
@@ -32,62 +18,6 @@ try {
 
 const LANGS_SUPORTADOS = ['pt-BR', 'en', 'es'];
 const LOCALES_DIR = path.join(__dirname, 'locales');
-
-// ============================================================
-// WHITELIST DE COMANDOS SEM AUTENTICAÇÃO
-// ============================================================
-//
-// Comandos que rodam sem pedir senha. Critérios:
-// - São read-only (consultas) ou abrem GUIs já instaladas.
-// - Não permitem escalação de privilégio nem execução arbitrária.
-// - NÃO fazem sentido rodando como root (Flatpak, por exemplo).
-//
-// NÃO INCLUIR:
-// - 'which' / 'test' — qualquer coisa depois do verbo passaria
-//   sem auth. Um comando como `which foo; rm -rf ~` seria aceito.
-// - 'waydroid' (prefixo puro) — cobriria `waydroid init`, que
-//   precisa de root. Só liberamos os subcomandos de leitura/abrir.
-// - 'bash <(curl ...)' — executava qualquer URL. Update/uninstall
-//   agora exigem autenticação (pkexec). O install.sh invoca
-//   sudo internamente e o usuário vê o comando na janela de senha
-//   antes de autorizar — comportamento correto.
-// - 'vainfo' / 'vdpauinfo' / 'env LIBVA_DRIVER_NAME=nvidia vainfo'
-//   — a verificação de aceleração VA-API agora usa o endpoint
-//   `/vaapi-check` (que roda via `_execReadOnly`, bypassando
-//   `/executar`). As entradas antigas na whitelist eram dead code
-//   e foram removidas na v1.5.8 (rodada 3).
-//
-// SOBRE O FLATPAK:
-// - Flatpak NUNCA deve rodar via pkexec. Rodar como root
-//   quebra o session bus (D-BUS), porque o `pkexec` aponta
-//   DBUS_SESSION_BUS_ADDRESS para o bus do root, não do usuário.
-// - O Polkit do Fedora já resolve a autenticação automaticamente
-//   quando o usuário está no grupo wheel (o caso comum). Não há
-//   necessidade de o FAP intermediar.
-// - O tratamento especial em `executarComandoComStream` já seta
-//   XDG_RUNTIME_DIR e DBUS_SESSION_BUS_ADDRESS corretos.
-//
-// SOBRE `systemctl --user`:
-// - Mesma lógica do Flatpak: é um comando do contexto do USUÁRIO,
-//   não do sistema. Rodar via pkexec apontaria XDG_RUNTIME_DIR para
-//   /run/user/0 (do root), e o systemctl do usuário não encontraria
-//   o bus correto — o comando falharia silenciosamente.
-// - A whitelist faz ele rodar como o usuário real, com o env
-//   correto ajustado por `_precisaEnvUserContext()`.
-//
-// SOBRE AS ENTRADAS `setsid -f <app>`:
-// - Todos os botões "Abrir X" usam `setsid -f <comando>` para que
-//   o app ganhe uma sessão própria, desacoplada do FAP. Isso
-//   resolve o bug em que o app era morto junto quando o usuário
-//   fechava o FAP (mesmo PGID).
-// - Estes comandos são read-only do ponto de vista do sistema —
-//   apenas abrem GUIs já instaladas, como se o usuário clicasse
-//   no atalho do menu. Whitelist explícita para não permitir
-//   `setsid -f rm -rf ~` ou similar.
-// - Cada app aberto via `abrirFerramentaExterna` precisa de uma
-//   entrada própria. Os que usam `gtk-launch` já estão cobertos
-//   pela entrada única `'setsid -f gtk-launch'`; os que usam o
-//   binário direto (vlc, krita, gimp, ...) precisam da sua.
 
 const COMANDOS_SEM_AUTENTICACAO = [
     'rpm -q',
@@ -101,10 +31,8 @@ const COMANDOS_SEM_AUTENTICACAO = [
 'corectrl',
 'lact',
 
-// --- setsid -f: abertura de GUI em sessão própria ---
-// App aberto via `gtk-launch` (cobre a maioria).
 'setsid -f gtk-launch',
-// Apps com binário próprio (não usam gtk-launch).
+
 'setsid -f corectrl',
 'setsid -f lact',
 'setsid -f rclone-manager',
@@ -115,7 +43,7 @@ const COMANDOS_SEM_AUTENTICACAO = [
 'setsid -f okular',
 'setsid -f artcraft-launcher',
 'setsid -f sealert',
-// Players de mídia, editores gráficos e de vídeo/áudio.
+
 'setsid -f vlc',
 'setsid -f krita',
 'setsid -f inkscape',
@@ -133,49 +61,21 @@ const COMANDOS_SEM_AUTENTICACAO = [
 'setsid -f ardour8',
 'setsid -f lmms',
 'setsid -f audacity',
-// Navegadores via repo oficial do fabricante.
+
 'setsid -f chromium-browser',
 'setsid -f opera',
 'setsid -f brave-browser',
 'setsid -f vivaldi-stable',
 'setsid -f microsoft-edge-stable',
 
-// Flatpak roda como usuário; a autenticação (quando necessária)
-// é resolvida pelo Polkit do sistema, não pelo FAP.
 'flatpak install',
 'flatpak uninstall',
 'flatpak update',
 'flatpak remote-add',
-// systemctl --user roda como usuário (serviço do usuário, não do
-// sistema). Mesma lógica do Flatpak: precisa do bus do usuário.
+
 'systemctl --user'
 ];
 
-// ============================================================
-// WHITELIST POR idComando — atualização/desinstalação do FAP
-// ============================================================
-//
-// O comando de atualização (`bash <(curl ...) --update`) contém
-// process substitution (`<(`), que é bloqueado por
-// `_CARACTERES_ENCADEAMENTO` — então ele nunca passaria pela
-// whitelist de prefixo.
-//
-// Por outro lado, rodar esse comando via pkexec é um problema
-// real: o `install.sh --update` faz `git pull` e `npm install`
-// em `~/.local/share/fedora-advantage-panel`. Rodando como root,
-// esses arquivos passam a pertencer ao root — e a PRÓXIMA
-// atualização (rodando como usuário) falha por permissão.
-//
-// A solução correta é rodar o update/desinstalação como USUÁRIO,
-// e resolver as operações privilegiadas via `SUDO_ASKPASS` (o
-// sudo do Fedora usa automaticamente o askpass quando não há
-// TTY e a variável está setada). Isso é feito em
-// `_criarAskpassHelper()` + `executarComandoComStream`.
-//
-// Por segurança, não liberamos QUALQUER comando com estes
-// idComandos: casamos o comando contra um regex ESTRITO. Um
-// cliente malicioso não pode reusar o id `atualizar-fap` para
-// rodar `rm -rf ~`.
 const IDS_SEM_AUTENTICACAO = new Set([
     'atualizar-fap',
     'desinstalar-fap',
@@ -183,39 +83,15 @@ const IDS_SEM_AUTENTICACAO = new Set([
     'nvidia-vaapi-env-remove'
 ]);
 
-// ============================================================
-// ids que precisam de HOME DO USUÁRIO em scripts externos (v1.5.9)
-// ============================================================
-//
-// O `_construirScripts` exporta HOME=<home-do-usuário> APENAS para
-// os IDs desta lista. Para o resto, o `HOME` é herdado do `pkexec`
-// (= /root, padrão do Fedora), e o `dnf` usa `/var/cache/dnf/`
-// (system) em vez de `~/.cache/dnf/` (root-owned no home do
-// usuário).
-//
-// EXCEÇÃO: scripts EXTERNOS baixados de URL (`install.sh`,
-// `fap-cleanup.sh`, etc.) que usam `$HOME` DENTRO do arquivo. O
-// `_substituirCaminhosUsuario` só troca `$HOME`/`~` NA STRING
-// do comando — não dentro do arquivo baixado. Esses IDs precisam
-// do HOME do usuário exportado.
-//
-// Comandos INLINE com `$HOME`/`~` na string (GameMode presets,
-// Rclone Manager `comandoRemocao`, etc.) NÃO precisam entrar
-// aqui — `_substituirCaminhosUsuario` cobre.
-//
-// Estado atual: VAZIO. `desinstalar-fap` e `atualizar-fap` (que
-// rodam `install.sh` baixado) estão em `IDS_SEM_AUTENTICACAO` —
-// rodam como usuário, nunca via pkexec, então nunca chegam ao
-// `_construirScripts`.
 const IDS_COM_HOME_DO_USUARIO = new Set([]);
 
 const PADROES_UPDATE_WHITELIST = [
     /^bash <\(curl -s https:\/\/raw\.githubusercontent\.com\/vitaotub\/Fedora-Advantage-Panel\/main\/install\.sh\) --update$/,
     /^setsid -f bash -c 'bash <\(curl -s https:\/\/raw\.githubusercontent\.com\/vitaotub\/Fedora-Advantage-Panel\/main\/install\.sh\) --uninstall -y'$/,
-    // nvidia-vaapi-env: escreve arquivo de env do usuário (sem sudo)
+
     /^mkdir -p ~\/\.config\/environment\.d && tee ~\/\.config\/environment\.d\/99-fap-nvidia-vaapi\.conf <<'FAPEOF'[\s\S]*FAPEOF$/,
-    // nvidia-vaapi-env-remove: remove arquivo de env do usuário (sem sudo)
-    /^rm -f ~\/\.config\/environment\.d\/99-fap-nvidia-vaapi\.conf$/
+
+/^rm -f ~\/\.config\/environment\.d\/99-fap-nvidia-vaapi\.conf$/
 ];
 
 function _idSemAuthValido(idComando, comando) {
@@ -226,23 +102,6 @@ function _idSemAuthValido(idComando, comando) {
     }
     return false;
 }
-
-// ============================================================
-// SUDO_ASKPASS — helper gráfico para sudo sem TTY
-// ============================================================
-//
-// Quando o update/desinstalação do FAP roda como usuário (que é o
-// comportamento correto), o `install.sh` faz várias chamadas a
-// `sudo` internamente. Como o processo não tem TTY (é filho do
-// node), o sudo padrão falharia esperando senha.
-//
-// O sudo do Fedora (>= 1.8.x) usa SUDO_ASKPASS automaticamente
-// quando: (a) não há TTY disponível, OU (b) a flag -A foi passada.
-// Só precisamos apontar SUDO_ASKPASS para um helper que devolva a
-// senha na stdout.
-//
-// Criamos o helper uma única vez (idempotente) em /tmp, com
-// prefixo `fap-`, para que a limpeza de logs antigos o encontre.
 
 let _askpassHelperPath = null;
 
@@ -276,33 +135,14 @@ function _criarAskpassHelper() {
     }
 }
 
-// ============================================================
-// COMANDOS QUE RODAM NO CONTEXTO DO USUÁRIO
-// ============================================================
-//
-// Estes comandos NÃO devem herdar o env do processo Node (que pode
-// ter sido iniciado com variáveis erradas, ou que apontam para o
-// diretório de outro usuário). `executarComandoComStream` ajusta
-// XDG_RUNTIME_DIR, DBUS_SESSION_BUS_ADDRESS e HOME para esses.
-//
-// Antes, isso era um `if (comando.includes('flatpak'))` hardcoded.
-// Agora é uma lista extensível — qualquer comando novo que precise
-// do bus do usuário entra aqui, sem precisar editar o bloco de
-// execução.
-
 const COMANDOS_USER_CONTEXT = [
-'flatpak',
+    'flatpak',
 'systemctl --user',
 'pw-metadata',
 'pw-cli',
 'pactl',
 'wpctl',
-// gtk-launch abre o app via D-Bus do usuário. Sem
-// DBUS_SESSION_BUS_ADDRESS e XDG_RUNTIME_DIR corretos, a
-// chamada falha silenciosamente (o app nunca abre).
-// Cobre todos os botões "Abrir X" baseados em .desktop —
-// tanto flatpaks (gtk-launch <appId>) quanto pacotes dnf
-// (gtk-launch <nome>).
+
 'gtk-launch'
 ];
 
@@ -312,45 +152,8 @@ function _precisaEnvUserContext(comando) {
     });
 }
 
-// Caracteres de encadeamento de shell que permitem burlar a whitelist.
-// Cobre: ; ` | $( ) <( ) >( ) && & (background, não 2>&1) e quebras de linha.
-// O padrão `(?:^|\s)&(?:\s|$)` casa `&` como operador de background
-// (com espaço antes e depois), mas NÃO casa `2>&1` (onde `&` está colado).
-//
-// Sem esta validação, um comando como "rpm -q kernel; rm -rf ~" passaria
-// pelo startsWith("rpm -q ") e executaria o `rm` sem autenticação.
-// `>` sozinho (redirecionamento de arquivo) e `>>` (append) são
-// vetores de sobrescrita de arquivo (ex.: `rpm -q kernel > ~/.bashrc`).
-// Bloqueia-os, MAS permite `>&N` (dup de fd, ex.: `2>&1`) e `>N`
-// (redirect para fd N), que são sintaxe de redirect legítima.
-// Caracteres de encadeamento de shell que permitem burlar a whitelist.
-// Cobre: ; ` | $( ) <( ) >( ) && & (background, não 2>&1) e quebras de linha.
-//
-// `>` NÃO é tratado aqui: o regex original `(?:^|\s)>>?(?![&\d])` só
-// bloqueava `>` quando precedido por espaço. Variantes como
-// `rpm -q kernel>~/.bashrc` (sem espaço) passavam pela whitelist de
-// prefixo e o bash do `exec` interpretava `>` como redirect,
-// sobrescrevendo arquivos do usuário. `_temRedirectInvalido()` faz o
-// check correto (whitelist exata de dup-fd + bloqueio de qualquer
-// outro `>`). A ordem importa: `_cmdSemAutenticacao` chama
-// `_temRedirectInvalido` DEPOIS de `_CARACTERES_ENCADEAMENTO`.
 const _CARACTERES_ENCADEAMENTO = /[\n\r;`|]|\$\(|&&|<\(|>\(|(?:^|\s)&(?:\s|$)/;
 
-// Detecta redirect `>` como vetor de sobrescrita de arquivo.
-//
-// Remove PRIMEIRO as duplicações de fd legítimas (sintaxe padrão do
-// bash):
-//   • 2>&1 — stderr para stdout
-//   • 1>&2 — stdout para stderr
-//   • >&2  — forma curta de 1>&2
-//
-// Qualquer `>` remanescente bloqueia. Isso cobre `>`, `>>`, `2>`,
-// `2>>`, `>&file`, `2>&file`, todos vetores de escrita arbitrária
-// em CWD/HOME (ex.: `~/.bashrc`, `~/.profile`, `~/.zshrc`).
-//
-// O `_ehRedirectAbrirValido` (chamado ANTES) tem regex exato que
-// fixa `> /tmp/fap-open-*.log 2>&1 < /dev/null` — o único `>`
-// legítimo que o FAP usa.
 function _temRedirectInvalido(texto) {
     var semDupFd = String(texto || '')
     .replace(/2>&1/g, '  ')
@@ -362,9 +165,6 @@ function _temRedirectInvalido(texto) {
 function _cmdSemAutenticacao(comando) {
     const trimmed = (comando || '').trim();
 
-    // Exceção: padrão interno de abrir app (redirect legítimo).
-    // Só passa se o binário estiver na whitelist E o formato casar
-    // exatamente com `setsid -f <bin> > /tmp/fap-open-*.log 2>&1 < /dev/null`.
     if (_ehRedirectAbrirValido(trimmed)) {
         return true;
     }
@@ -373,7 +173,6 @@ function _cmdSemAutenticacao(comando) {
         return false;
     }
 
-    // NOVO: bloqueia `>` como redirect (exceto 2>&1, 1>&2, >&2).
     if (_temRedirectInvalido(trimmed)) {
         return false;
     }
@@ -385,22 +184,6 @@ function _cmdSemAutenticacao(comando) {
     });
 }
 
-// Exceção estrita: o comando gerado por `abrirFerramentaExterna`
-// usa `> /tmp/fap-open-*.log 2>&1 < /dev/null` para desacoplar o
-// app do FAP (setsid) e capturar a saída num arquivo previsível.
-// Esse padrão é gerado pelo próprio FAP, não é entrada de usuário
-// — o idLog é sanitizado em `/^[a-zA-Z0-9_-]+$/`. Whitelist exata
-// do formato esperado para permitir o redirect sem afrouxar o
-// chain check geral.
-// Whitelist de binários que podem aparecer em `setsid -f <binario>`.
-// Espelha as entradas `setsid -f <binario>` de
-// COMANDOS_SEM_AUTENTICACAO, mais `xdg-open` (usado por
-// abrirFerramentaExterna para links externos).
-//
-// O regex antigo usava `[^>\n]+` no lugar do binário — o que
-// aceitava `setsid -f bash -c 'rm -rf ~' > /tmp/fap-open-x.log
-// 2>&1 < /dev/null` como "abertura de app" e passava sem auth.
-// A whitelist bloqueia isso.
 const _BINARIOS_ABRIR_WHITELIST = new Set([
     'gtk-launch', 'xdg-open', 'sealert',
     'corectrl', 'lact', 'rclone-manager', 'steam', 'heroic', 'rustdesk',
@@ -409,36 +192,19 @@ const _BINARIOS_ABRIR_WHITELIST = new Set([
     'jstest-gtk', 'freecad', 'librecad', 'kdenlive', 'pitivi', 'shotcut',
     'blender', 'ardour8', 'lmms', 'audacity',
     'chromium-browser', 'opera', 'brave-browser', 'vivaldi-stable',
-    'microsoft-edge-stable'
+    'microsoft-edge-stable',
+
+    'lightworks'
 ]);
 
-// Regex captura o binário no grupo 1 para consulta na whitelist.
-// `(?:\s+[^>\n]+)?` cobre argumentos opcionais (appIds, URLs, etc.)
-// sem permitir `>` (que indica redirect extra, vetor de XSS).
-// ============================================================
-// REGEX DE ABERTURA DE APP — RESPEITA ASPAS (v1.5.9 — pós-teste)
-// ============================================================
-//
-// Antes: `(?:\s+[^>\n]+)?` aceitava argumentos que não contivessem
-// `>`. URLs com `>` no query string (raro, mas possível) caíam
-// fora do padrão e o comando ia parar em `pkexec` — regressão
-// introduzida quando o `abrirFerramentaExterna` passou a quotar
-// URLs (o quote envolve a URL em aspas simples, mas o `>` dentro
-// das aspas continuava sendo `>` para o regex antigo).
-//
-// Agora: aceita três formas por argumento:
-//   • `'[^']*'`       — aspas simples sem aspas internas
-//   • `"[^"]*"`       — aspas duplas sem aspas internas
-//   • `[^>\n'"]+`     — sem aspas, sem `>` (comportamento antigo)
-//
-// Combinado com o `_quotarUrlsNaoQuotadas` no `script.js`, URLs
-// com caracteres perigosos (`>`, `&`, `$`, backtick) são
-// envolvidas em aspas simples e caem no primeiro ramo — sem
-// `pkexec`, e sem abrir buraco para `>` fora de aspas (o PoC
-// original `rpm -q kernel>~/.bashrc` continua bloqueado).
+const _REDIRECT_FLATPAK_RUN_PADRAO = /^setsid\s+-f\s+flatpak\s+run\s+([a-zA-Z0-9][a-zA-Z0-9._-]*)\s>\s+\/tmp\/fap-open-[\w.\-]+\.log\s+2>&1\s+<\s+\/dev\/null$/;
+
 const _REDIRECT_ABRIR_PADRAO = /^setsid\s+-f\s+(\S+)(?:\s+(?:'[^']*'|"[^"]*"|[^>\n'"]+))*\s>\s+\/tmp\/fap-open-[\w.\-]+\.log\s+2>&1\s+<\s+\/dev\/null$/;
 
 function _ehRedirectAbrirValido(trimmed) {
+
+    if (_REDIRECT_FLATPAK_RUN_PADRAO.test(trimmed)) return true;
+
     var m = trimmed.match(_REDIRECT_ABRIR_PADRAO);
     if (!m) return false;
     return _BINARIOS_ABRIR_WHITELIST.has(m[1]);
@@ -476,60 +242,17 @@ function _substituirCaminhosUsuario(comando) {
     .replace(/\$USER\b/g, USUARIO_REAL);
 }
 
-// ============================================================
-// ACEITA GET E HEAD (v1.5.6)
-// ============================================================
-//
-// `curl -I` envia HEAD, não GET. A versão anterior do server.js
-// só tratava GET nos arquivos estáticos e nos locales. O HEAD
-// caía no handler de 404 (que retorna `text/plain`), enganando
-// ferramentas de debug: `curl -I /script.js` mostrava
-// `Content-Type: text/plain; charset=utf-8` em vez de
-// `text/javascript; charset=utf-8`.
-//
-// O navegador (WebKitGTK) usa GET, então o FAP funcionava
-// normalmente. Só ferramentas de debug eram afetadas. Correção
-// cosmética, mas alinhada com a RFC 9110: servidores DEVEM
-// responder a HEAD com os mesmos headers de GET, sem o body.
 function _aceitaGetOuHead(req) {
     return req.method === 'GET' || req.method === 'HEAD';
 }
 
 const sseClients = new Map();
 
-// ============================================================
-// BUFFER DE REPLAY DO SSE
-// ============================================================
-
 const sseBuffers = new Map();
 const SSE_BUFFER_MAX = 2000;
 const SSE_BUFFER_TTL_MS = 10000;
 
-// Âncora de `total` por idComando (v1.5.1 — cosmético).
-// Quando o `dnf` roda múltiplas operações em sequência (ex.:
-// `dnf install X && dnf remove Y`), o total muda de M para M'
-// e a barra pularia de 100% para 1%. Ancoramos no primeiro M
-// observado e ignoramos chunks com M diferente (operação
-// secundária). Limpo em `POST /executar`.
 const _progressoTotalAtual = new Map();
-
-// ============================================================
-// RASTREAMENTO DE PROCESSOS FILHOS
-// ============================================================
-//
-// Todo comando disparado pelo FAP é registrado neste Set. No SIGINT
-// (Ctrl+C no terminal), o handler percorre o Set e mata a árvore de
-// cada processo — não só o pai direto.
-//
-// O motivo de precisar matar a árvore: entre o bash que o Node
-// criou e o comando real (dnf, apt, etc.) há camadas (pkexec,
-// script root). Matar só o bash deixa o dnf órfão.
-//
-// A solução tem duas partes:
-//   1. `detached: true` no spawn/exec — o bash vira líder de sessão
-//      e todos os descendentes herdam o mesmo PGID.
-//   2. `process.kill(-pid, 'SIGTERM')` no SIGINT — o `-` antes do
-//      PID envia o sinal para o grupo inteiro.
 
 const _processosAtivos = new Set();
 
@@ -539,20 +262,6 @@ function _registrarProcesso(proc) {
     return proc;
 }
 
-// ============================================================
-// LISTAGEM RECURSIVA DE DESCENDENTES (Fase I)
-// ============================================================
-//
-// O `pkexec` quebra o grupo via `setsid()`: o filho root vira
-// líder de uma NOVA sessão, e `process.kill(-pidRaiz)` não o
-// alcança. Precisamos listar os descendentes explicitamente
-// ANTES de matar — depois que o bash pai morre, os netos viram
-// órfãos (`ppid` = 1) e `pgrep -P` não os acha mais.
-//
-// `spawnSync` (não async) é de propósito: precisamos do snapshot
-// completo antes de começar a matar. Se fosse async, o primeiro
-// SIGTERM podia matar o bash pai e perder os netos antes de
-// listá-los.
 function _listarDescendentes(pidRaiz, maxProfundidade) {
     var todos = [pidRaiz];
     var nivel = [pidRaiz];
@@ -582,35 +291,22 @@ function _matarArvoreProcessos(proc) {
 
     var pidRaiz = proc.pid;
 
-    // 1. Snapshot dos descendentes ANTES de matar.
     var alvos = _listarDescendentes(pidRaiz, 5);
 
-    // 2. SIGTERM em todos (mais fundo primeiro).
     for (var i = alvos.length - 1; i >= 0; i--) {
-        try { process.kill(alvos[i], 'SIGTERM'); } catch (e) { /* ESRCH/EPERM */ }
+        try { process.kill(alvos[i], 'SIGTERM'); } catch (e) {  }
     }
 
-    // 3. SIGTERM no grupo inteiro.
-    try { process.kill(-pidRaiz, 'SIGTERM'); } catch (e) { /* ESRCH/EPERM */ }
+    try { process.kill(-pidRaiz, 'SIGTERM'); } catch (e) {  }
 
-    // 4. pkill de fap-cmd-* como usuário. Cobre os scripts
-    //    temporários criados pelo pkexec (`/tmp/fap-cmd-*.sh`).
-    //    O pkexec pode ter deixado processos root que este `pkill`
-    //    (rodando como usuário) não alcança — mas o bash que
-    //    invocou e o script em si rodam como usuário.
     try {
         spawnSync('pkill', ['-9', '-f', 'fap-cmd-'], { timeout: 1000 });
-    } catch (e) { /* ignora */ }
+    } catch (e) {  }
 
-    // 5. Aguarda efeito dos SIGTERMs/SIGKILLs antes de checar vivos.
     try {
         spawnSync('sleep', ['0.3'], { timeout: 1000 });
-    } catch (e) { /* ignora */ }
+    } catch (e) {  }
 
-    // 6. Vivos: `process.kill(pid, 0)` sem exceção = vivo (mesmo UID);
-    //    ESRCH = morto; EPERM = vivo em outro UID (root). Tratamos
-    //    EPERM como vivo — o pkexec cria filhos root que o usuário
-    //    não pode sinalizar sem `NOPASSWD: /usr/bin/kill`.
     var vivos = [];
     for (var j = 0; j < alvos.length; j++) {
         try {
@@ -626,18 +322,8 @@ function _matarArvoreProcessos(proc) {
         console.warn('[cleanup] Para limpar: sudo kill -9 ' + vivos.join(' '));
     }
 
-    // 7. SIGKILL de segurança no grupo.
-    try { process.kill(-pidRaiz, 'SIGKILL'); } catch (e) { /* ESRCH */ }
+    try { process.kill(-pidRaiz, 'SIGKILL'); } catch (e) {  }
 }
-
-// ============================================================
-// RATE LIMITING
-// ============================================================
-//
-// Impede que um script (XSS ou chamada manual) dispare centenas
-// de comandos em loop. Limite: 1 execução por idComando a cada
-// 1.5s. Após 60s de inatividade, entradas antigas são removidas
-// para não crescer indefinidamente.
 
 const _ultimaExecucao = new Map();
 const RATE_LIMIT_MS = 1500;
@@ -655,32 +341,9 @@ function _podeExecutar(idComando) {
     return true;
 }
 
-// ============================================================
-// HELPERS DE EXECUÇÃO READ-ONLY
-// ============================================================
-//
-// Para os endpoints informativos (system-info, top-processes,
-// disk-usage, journal-errors), usamos este helper em vez de
-// abrir conexão SSE. Comandos são simples, curtos, read-only.
-
 function _execReadOnly(comando, timeoutMs) {
     return new Promise(function(resolve) {
-        // ============================================================
-        // EXECFILE COM --noprofile --norc (v1.5.6)
-        // ============================================================
-        //
-        // Mesmo problema do `_exec` do `hardware-service.js`. O
-        // `bash -c` carrega o `.bashrc` do usuário (KDE, Fedora 45),
-        // e um `.bashrc` com `fastfetch` polui o stdout de todos os
-        // endpoints de diagnóstico (`/system-info`, `/top-processes`,
-        // `/disk-usage`, `/journal-errors`, `/kernel-atual`,
-        // `/reboot-needed`, `/check-package`, `/check-package-available`,
-        // `/hardware-detect-atomic`, `/grub-info`).
-        //
-        // Correção: `execFile` com `--noprofile --norc` — nenhum
-        // arquivo de inicialização é carregado. Combinado com
-        // `detached: true` (que isola o grupo de processos para o
-        // kill em timeout).
+
         var envLimpo = Object.assign({}, process.env, {
             BASH_ENV: '',
             ENV: ''
@@ -697,28 +360,11 @@ function _execReadOnly(comando, timeoutMs) {
                 resolve((stdout || '').trim());
             }
         });
-        // ============================================================
-        // REGISTRA O CHILD EM `_processosAtivos` (v1.5.8 rodada 3)
-        // ============================================================
-        //
-        // `detached: true` isola o filho em seu próprio PGID. O
-        // `timeout` do execFile só mata o filho direto — subprocessos
-        // (ex.: `dnf check-update` chamado por um script bash) ficam
-        // órfãos. O `_matarArvoreProcessos` no SIGINT percorre
-        // `_processosAtivos` e mata o GRUPO inteiro
-        // (`process.kill(-pid, 'SIGTERM')`). Sem o registro, o
-        // `_execReadOnly` ficava de fora do `_encerrarGraciosamente`.
-        //
-        // `_registrarProcesso` já adiciona o listener `close` para
-        // remover do Set — nenhum vazamento. O callback do execFile
-        // também é chamado normalmente (os dois listeners coexistem;
-        // o `close` do Node dispara para todos).
+
         if (child) _registrarProcesso(child);
     });
 }
 
-// Converte saída KEY=value (uma por linha) em objeto JS.
-// Usado pelos comandos que constroem a saída em bash.
 function _parseChaveValor(texto) {
     var obj = {};
     if (!texto) return obj;
@@ -732,44 +378,12 @@ function _parseChaveValor(texto) {
         return obj;
 }
 
-// ============================================================
-// PARSER DO VAINFO (endpoint /vaapi-check)
-// ============================================================
-//
-// `vainfo` imprime, para cada combinação suportada:
-//
-//   VAProfileH264Main               : VAEntrypointVLD
-//   VAProfileH264Main               : VAEntrypointEncSlice
-//   VAProfileVP9Profile0            : VAEntrypointVLD
-//
-// O parser agrupa entrypoints por perfil e calcula dois booleanos:
-//   • has_decoding — algum perfil tem VAEntrypointVLD
-//   • has_encoding — algum perfil tem VAEntrypointEncSlice/EncSliceLP
-//
-// Esses dois são suficientes para o frontend mostrar um status
-// verde/amarelo/vermelho sem interpretar o resto.
 function _parseVainfo(stdout) {
-    // ============================================================
-    // MENSAGENS EM INGLÊS (v1.5.8 — auditoria C8)
-    // ============================================================
-    //
-    // Antes, os `error` retornados eram strings PT-BR hardcoded.
-    // Como o cliente exibe `data.error` como detalhe técnico abaixo
-    // do título (que é traduzido), o PT-BR vazava em EN/ES. O
-    // painel mostrava:
-    //
-    //   ❌ Video acceleration is NOT active    (traduzido)
-    //   vainfo não encontrado. Instale o pacote libva-utils.  (PT-BR)
-    //
-    // Inglês como lingua franca para detalhes técnicos é
-    // consistente com o resto do código (comentários, logs do
-    // server, stack traces) e aceitável em PT-BR — o título do
-    // painel + os botões já dão o contexto traduzido.
+
     if (!stdout) {
         return { ok: false, error: 'vainfo returned no output', profiles: [] };
     }
 
-    // Detecção de "não instalado" (mensagem localizada do bash)
     if (/command not found|comando não encontrado|No such file/i.test(stdout)) {
         return {
             ok: false,
@@ -827,26 +441,6 @@ function _parseVainfo(stdout) {
     };
 }
 
-// ============================================================
-// CHANGELOG DINÂMICO (lê CHANGELOG.md)
-// ============================================================
-//
-// O arquivo CHANGELOG.md na raiz do repo tem seções por versão:
-//
-//   # Changelog
-//
-//   ## v1.0.0-09272026
-//   - Item A
-//   - Item B
-//
-//   ## v1.0.0-09232026
-//   - Item C
-//
-// O endpoint /changelog recebe a versão atual (FAP_VERSION) e
-// devolve {versao, corpo}, onde `corpo` já vem em HTML pronto.
-// Cache em memória por 12h — o CHANGELOG.md não muda entre
-// releases.
-
 const CHANGELOG_CACHE_TTL_MS = 12 * 60 * 60 * 1000;
 let _changelogCache = { versao: null, corpo: null, ts: 0 };
 
@@ -858,17 +452,7 @@ function _escapeHTML(s) {
 }
 
 function _inlineMd(s) {
-    // Escapa primeiro, depois aplica markdown. A ordem importa:
-    // se aplicássemos o markdown antes, os `<strong>` gerados
-    // seriam escapados na sequência.
-    //
-    // Sem isso, um CHANGELOG.md com `<script>alert(1)</script>`
-    // injetaria HTML/JS arbitrário no FAP via /changelog.
-    //
-    // Links com esquemas perigosos (javascript:, data:, vbscript:,
-    // file:) são rebaixados para texto puro. O CHANGELOG é editado
-    // pelo próprio projeto, mas se um dia aceitar PRs externos,
-    // isso evita que um link malicioso vire um vetor de XSS.
+
     var escaped = _escapeHTML(s);
     return escaped
     .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
@@ -972,40 +556,11 @@ function _lerChangelogVersao(versao) {
     return { versao: versaoLimpa, corpo: corpo };
 }
 
-// ============================================================
-// UPGRADE DO FEDORA — detecção de disponibilidade
-// ============================================================
-//
-// Consulta fontes oficiais para decidir se é seguro expor o botão
-// de upgrade na sessão 12 (Ajustes e Manutenção).
-//
-// Condições OBRIGATÓRIAS (bloqueantes) para 'ready':
-//   1. Fedora 45 GA confirmado em releases.json oficial
-//   2. Canal updates/45/ servindo (HEAD em repomd.xml)
-//   3. RPM Fusion 45 publicado (HEAD em repomd.xml do RPM Fusion)
-//   4. Sistema atual (44) completamente atualizado (dnf check-update
-//      retorna 0 E dnf needs-restarting retorna 0)
-//   5. Pelo menos 8 GB livres em /var
-//
-// Condições INFORMATIVAS (warnings): NVIDIA, Broadcom, Terra,
-// COPRs, Razer, xpadneo, Realtek — não bloqueiam, só avisam.
-//
-// Cache de 6h. O estado não muda rápido o suficiente para
-// justificar consultas mais frequentes — e o releases.json oficial
-// agradece.
-
 var _upgradeStatusCache = { dados: null, ts: 0 };
 var UPGRADE_CACHE_TTL_MS = 1 * 60 * 60 * 1000;
 var UPGRADE_TARGET_VERSION = '45';
 var UPGRADE_MIN_DISK_GB = 8;
 
-// Flag permanente: usuário já está na versão alvo (45+) ou superior.
-// Uma vez setada, `_calcularUpgradeStatus()` retorna o cache sem
-// executar subprocessos (cat /etc/fedora-release, dnf check-update)
-// nem consultar endpoints externos (releases.json, repomd.xml).
-// Reflete um fato do sistema (versão), que não muda sem reinstalação.
-// Resetada apenas quando o server.js é reiniciado — a primeira
-// consulta pós-restart re-detecta e re-seta.
 var _upgradeConcluidoPermanente = false;
 
 async function _verificarGaFedora(versao) {
@@ -1038,30 +593,7 @@ async function _verificarGaFedora(versao) {
 }
 
 async function _verificarCanalFedora(versao) {
-    // ============================================================
-    // FONTES CANÔNICAS DO FEDORA (v1.5.8)
-    // ============================================================
-    //
-    // Antes, usava `mirrors.kernel.org` (mirror dos EUA) como fonte
-    // única. Redes corporativas com proxy/firewall restritivo,
-    // países com bloqueio a domínios estrangeiros, ou simples
-    // indisponibilidade do mirror → a checagem falhava sempre, e o
-    // upgrade do Fedora 44 → 45 ficava travado em `waiting_ga`
-    // mesmo após o GA. O usuário via "Fedora 45 ainda não lançado"
-    // sem saber que o problema era o mirror.
-    //
-    // Correção: usa `dl.fedoraproject.org` (canônico do Fedora,
-    // sem redirect) com fallback em `download.fedoraproject.org`
-    // (round-robin). O segundo é tentado APENAS quando o primeiro
-    // falha por erro de rede/servidor (5xx, timeout, DNS) — não em
-    // 4xx, porque se o canal não existe no canônico, também não
-    // existe no round-robin.
-    //
-    // Ambos são HEAD (só headers, sem body) com timeout de 10s.
-    // O `Promise.all` do `_calcularUpgradeStatus` roda esta função
-    // em paralelo com as demais checagens, então o pior caso
-    // (primeiro falha por timeout, segundo responde) é 10s + RTT
-    // — dentro do limite dos demais checks (dnf check-update até 30s).
+
     var urls = [
         'https://dl.fedoraproject.org/pub/fedora/linux/updates/' + versao +
         '/Everything/x86_64/repodata/repomd.xml',
@@ -1077,30 +609,22 @@ async function _verificarCanalFedora(versao) {
             var resp = await fetch(urls[i], {
                 method: 'HEAD',
                 signal: AbortSignal.timeout(10000),
-                                   // Não seguir redirects para o HEAD — queremos saber
-                                   // se o ARQUIVO está lá no host canônico, não para
-                                   // onde ele redireciona.
+
                                    redirect: 'manual'
             });
 
-            // 2xx: canal existe.
             if (resp.status >= 200 && resp.status < 300) {
                 return { ok: true, status: resp.status };
             }
 
-            // 4xx: canal NÃO existe neste host. Não tenta o próximo
-            // — o segundo host tem a mesma árvore do canônico.
             if (resp.status >= 400 && resp.status < 500) {
                 return { ok: false, status: resp.status, motivo: 'HTTP ' + resp.status };
             }
 
-            // 3xx ou 5xx: pode ser redirect (download.fedoraproject.org
-            // redireciona para o mirror mais próximo) ou instabilidade
-            // do host. Registra e tenta o próximo.
             ultimoStatus = resp.status;
             ultimoErro = 'HTTP ' + resp.status;
         } catch (e) {
-            // Erro de rede (DNS, timeout, TLS): tenta o próximo.
+
             ultimoErro = e.message;
         }
     }
@@ -1110,22 +634,7 @@ async function _verificarCanalFedora(versao) {
 
 async function _verificarCanalRpmFusion(versao) {
     try {
-        // Verifica o repositório `releases/<versao>` (canal GA), não o
-        // `updates/<versao>` (canal de atualizações).
-        //
-        // Por que `releases` e não `updates`:
-        //   • O RPM Fusion publica o repo `releases/45` no mesmo dia
-        //     do Fedora GA.
-        //   • O canal `updates/45` só é populado depois que o primeiro
-        //     batch de atualizações é enviado — o que pode levar dias
-        //     ou semanas.
-        //   • O `dnf system-upgrade` do FAP usa o repo `releases/45`
-        //     como base (o `updates/45` é adicionado automaticamente
-        //     pelo `rpmfusion-*-release-45` depois do reboot).
-        //
-        // Portanto, verificar `releases/45` é o critério correto para
-        // saber se o RPM Fusion 45 está pronto para o upgrade. Foi o
-        // que destravou a UI na v1.4.4 (Fedora 45 GA em 03/11/2026).
+
         var url = 'https://download1.rpmfusion.org/free/fedora/releases/' + versao +
         '/Everything/x86_64/os/repodata/repomd.xml';
         var resp = await fetch(url, { method: 'HEAD', signal: AbortSignal.timeout(10000) });
@@ -1154,28 +663,7 @@ async function _detectarAtomic() {
 }
 
 async function _verificarAtualizacoesPendentes() {
-    // ============================================================
-    // PARALELIZA OS DOIS `dnf` (v1.5.8 — auditoria B4)
-    // ============================================================
-    //
-    // Antes, `dnf check-update` (até 30s) e `dnf needs-restarting`
-    // (até 10s) rodavam SEQUENCIALMENTE dentro desta função. O
-    // pior caso somava 40s. Como o `_calcularUpgradeStatus` chama
-    // esta função dentro de um `Promise.all` que também inclui
-    // `_verificarCanalFedora` (2 hosts × 10s = 20s) e demais
-    // checagens, o server podia passar de 35s — e o client
-    // (`_carregarUpgradeStatus`, `_sinalTimeout(35000)`) abortava
-    // antes da resposta chegar. A UI mostrava "Não foi possível
-    // verificar disponibilidade" mesmo com o server a milissegundos
-    // de responder.
-    //
-    // Correção: Promise.all reduz o pior caso para 30s (o mais
-    // lento dos dois). Os dois comandos são read-only e
-    // independentes — não há razão técnica para rodar em série.
-    //
-    // `Promise.all` NÃO rejeita em caso de erro em uma das
-    // promises (o `_execReadOnly` resolve com `''` em erro, nunca
-    // rejeita). Portanto é seguro: nunca cai no `catch` externo.
+
     var resultados = await Promise.all([
         _execReadOnly('dnf check-update --quiet > /dev/null 2>&1; echo "exit=$?"', 30000),
                                        _execReadOnly('dnf needs-restarting -r > /dev/null 2>&1; echo "exit=$?"', 10000)
@@ -1201,10 +689,7 @@ async function _verificarAtualizacoesPendentes() {
 }
 
 async function _verificarEspacoDisco() {
-    // Verifica /var E /var/tmp: o `dnf system-upgrade` usa /var/tmp
-    // como staging. Se estiver em outra partição (raro, mas possível),
-    // o `df /var` mede o espaço errado. Pegamos o MENOR livre entre
-    // os dois para garantir que o download cabe.
+
     var out = await _execReadOnly(
         "L1=$(df -BG /var 2>/dev/null | tail -1 | awk '{print $4}' | tr -d 'G'); " +
         "L2=$(df -BG /var/tmp 2>/dev/null | tail -1 | awk '{print $4}' | tr -d 'G'); " +
@@ -1217,13 +702,7 @@ async function _verificarEspacoDisco() {
 }
 
 async function _verificarDownloadConcluido() {
-    // Marcador oficial: `transaction.json` só é gravado quando o
-    // `dnf system-upgrade download` TERMINA com sucesso. A presença
-    // do diretório sozinha não basta — downloads interrompidos
-    // deixam arquivos parciais mas sem `transaction.json`.
-    //
-    // DNF5 (Fedora 41+) usa /usr/lib/sysimage/libdnf5/offline/.
-    // DNF4 (legado) usa /var/lib/dnf/system-upgrade/.
+
     var script =
     'if [ -f /usr/lib/sysimage/libdnf5/offline/transaction.json ]; then ' +
     '  echo "yes"; ' +
@@ -1240,12 +719,12 @@ return out.trim() === 'yes';
 async function _detectarComponentesTerceiros() {
     var script = [
         '(rpm -q akmod-nvidia >/dev/null 2>&1 || rpm -q akmod-nvidia-open >/dev/null 2>&1) && echo "nvidia=1" || echo "nvidia=0"',
-        'rpm -q akmod-wl 2>/dev/null | grep -q "^akmod-wl" && echo "broadcom=1" || echo "broadcom=0"',
-        '[ -f /etc/yum.repos.d/hardware:razer.repo ] && echo "razer=1" || echo "razer=0"',
-        'rpm -q xpadneo 2>/dev/null | grep -q "^xpadneo" && echo "xpadneo=1" || echo "xpadneo=0"',
-        'ls /etc/yum.repos.d/terra*.repo > /dev/null 2>&1 && echo "terra=1" || echo "terra=0"',
-        'rpm -q akmod-r8168 2>/dev/null | grep -q "^akmod-r8168" && echo "realtek=1" || echo "realtek=0"',
-        'COUNT=$(ls /etc/yum.repos.d/*copr*.repo 2>/dev/null | wc -l); echo "coprs_count=$COUNT"'
+                                                       'rpm -q akmod-wl 2>/dev/null | grep -q "^akmod-wl" && echo "broadcom=1" || echo "broadcom=0"',
+                                                       '[ -f /etc/yum.repos.d/hardware:razer.repo ] && echo "razer=1" || echo "razer=0"',
+                                                       'rpm -q xpadneo 2>/dev/null | grep -q "^xpadneo" && echo "xpadneo=1" || echo "xpadneo=0"',
+                                                       'ls /etc/yum.repos.d/terra*.repo > /dev/null 2>&1 && echo "terra=1" || echo "terra=0"',
+                                                       'rpm -q akmod-r8168 2>/dev/null | grep -q "^akmod-r8168" && echo "realtek=1" || echo "realtek=0"',
+                                                       'COUNT=$(ls /etc/yum.repos.d/*copr*.repo 2>/dev/null | wc -l); echo "coprs_count=$COUNT"'
     ].join('; ');
 
     var out = await _execReadOnly(script, 10000);
@@ -1263,8 +742,7 @@ async function _detectarComponentesTerceiros() {
 }
 
 async function _calcularUpgradeStatus() {
-    // Curto-circuito permanente: usuário já está no alvo (45+).
-    // NÃO spawna subprocesso algum, NÃO consulta rede.
+
     if (_upgradeConcluidoPermanente && _upgradeStatusCache.dados) {
         return _upgradeStatusCache.dados;
     }
@@ -1312,9 +790,7 @@ async function _calcularUpgradeStatus() {
 
     if (vAtualNum === vAlvoNum || vAtualNum > vAlvoNum) {
         resultado.status = 'no_upgrade_needed';
-        // Marca permanentemente: a partir daqui, esta área não
-        // faz mais nada. Nenhuma chamada subsequente (mesmo com
-        // ?refresh=1) executa subprocesso ou consulta rede.
+
         _upgradeConcluidoPermanente = true;
         _upgradeStatusCache = { dados: resultado, ts: agora };
         return resultado;
@@ -1326,7 +802,6 @@ async function _calcularUpgradeStatus() {
         return resultado;
     }
 
-    // Versão atual é 44, alvo é 45. Roda as checagens em paralelo.
     var resultados = await Promise.all([
         _verificarGaFedora(target),
                                        _verificarCanalFedora(target),
@@ -1362,7 +837,6 @@ async function _calcularUpgradeStatus() {
     resultado.checks.download_state = { downloaded: download };
     resultado.components = components;
 
-    // Warnings informativos — o client traduz pelo tipo.
     if (components.nvidia_driver)  resultado.warnings.push({ tipo: 'nvidia' });
     if (components.broadcom_wifi)  resultado.warnings.push({ tipo: 'broadcom' });
     if (components.terra_repo)     resultado.warnings.push({ tipo: 'terra' });
@@ -1384,10 +858,7 @@ async function _calcularUpgradeStatus() {
     } else if (!rpmfusionOk) {
         resultado.status = 'waiting_rpmfusion';
     } else if (checagemFalhou) {
-        // Diferencia "não consegui checar" (rede/repo quebrado) de
-        // "há updates pendentes". Antes, os dois viravam
-        // `outdated_current` e o usuário via "atualize primeiro" sem
-        // saber que a checagem em si falhou.
+
         resultado.status = 'check_failed';
     } else if (!sistemaOk) {
         resultado.status = 'outdated_current';
@@ -1401,18 +872,11 @@ async function _calcularUpgradeStatus() {
     return resultado;
 }
 
-// ============================================================
-// PROGRESSO
-// ============================================================
-
 function lerProgresso() {
     try {
         if (fs.existsSync(ARQUIVO_PROGRESSO)) {
             const dados = JSON.parse(fs.readFileSync(ARQUIVO_PROGRESSO, 'utf8'));
 
-            // Formato antigo (array puro) — converte para o formato
-            // atual. Nunca existiu sem objeto desde v1.0.0-09282026,
-            // mas mantemos a normalização por defesa.
             if (Array.isArray(dados)) {
                 return { executados: dados, pulados: [], origem: {} };
             }
@@ -1420,9 +884,7 @@ function lerProgresso() {
             return {
                 executados: Array.isArray(dados.executados) ? dados.executados : [],
                                                        pulados: Array.isArray(dados.pulados) ? dados.pulados : [],
-                                                       // `origem` é puramente de auditoria — ver comentário em
-                                                       // `salvarProgresso`. Pode não existir em arquivos antigos;
-                                                       // devolvemos `{}` para simplificar o `POST /progress`.
+
                                                        origem: (dados.origem && typeof dados.origem === 'object') ? dados.origem : {}
             };
         }
@@ -1437,27 +899,7 @@ function escreverProgresso(progresso) {
 }
 
 function salvarProgresso(idComando, origem) {
-    // Ids "transientes" não devem poluir o .progresso.json:
-    //
-    //   • `-open`   — abertura de app GUI (gerado por
-    //                 `abrirFerramentaExterna`). Não representa um
-    //                 estado persistente, só o ato de abrir o app
-    //                 nesta sessão.
-    //
-    //   • `-remove` — remoção de pacote/app via lixeira ou botão
-    //                 "desfazer tudo". Também é transiente: o que
-    //                 importa é que o comando de INSTALL associado
-    //                 seja desmarcado (o frontend faz isso via
-    //                 POST /progress). Gravar `-remove` só polui.
-    //
-    // Sem esse filtro, o arquivo engorda e o contador global de
-    // sessões concluídas oscila, porque `_limparIdsOrfaos` (frontend)
-    // remove esses ids no próximo boot.
-    // Ids transientes que NÃO devem poluir o .progresso.json:
-    //   • `open-*`      — abertura de app GUI (novo formato, único
-    //                     por clique em `abrirFerramentaExterna`).
-    //   • `*-open`      — formato legado, mantido por compat.
-    //   • `*-remove`    — remoção via lixeira ou "desfazer tudo".
+
     if (!idComando ||
         idComando.startsWith('open-') ||
         idComando.endsWith('-open') ||
@@ -1465,37 +907,24 @@ function salvarProgresso(idComando, origem) {
         idComando.endsWith('-revert')) {
         return;
         }
-    try {
-        const progresso = lerProgresso();
-        if (!progresso.executados.includes(idComando)) {
-            progresso.executados.push(idComando);
-        }
-        progresso.pulados = progresso.pulados.filter(id => id !== idComando);
-
-        // Campo `origem` é puramente de AUDITORIA — o FAP NUNCA lê
-        // este campo para decidir estado visual. Ele existe apenas
-        // para o usuário (ou um desenvolvedor) inspecionar o
-        // .progresso.json e ver "o que o FAP instalou" vs "o que já
-        // existia antes". A UI continua usando a heurística runtime
-        // `appJaInstaladoNoSistema()` (cruza `.progresso.json` com
-        // `/system-state`), que é auto-corretiva: se o usuário
-        // remove/instala algo por fora, a heurística percebe na
-        // próxima consulta — um valor fixo em `origem` não.
-        //
-        // Formato: objeto `{ idComando: "fap" | "preexistente" }`.
-        // Aditivo — `.progresso.json` antigo (sem esse campo)
-        // continua sendo lido normalmente.
-        if (origem === 'fap' || origem === 'preexistente') {
-            if (!progresso.origem || typeof progresso.origem !== 'object') {
-                progresso.origem = {};
+        try {
+            const progresso = lerProgresso();
+            if (!progresso.executados.includes(idComando)) {
+                progresso.executados.push(idComando);
             }
-            progresso.origem[idComando] = origem;
-        }
+            progresso.pulados = progresso.pulados.filter(id => id !== idComando);
 
-        escreverProgresso(progresso);
-    } catch (e) {
-        console.error("[Erro ao salvar progresso]:", e.message);
-    }
+            if (origem === 'fap' || origem === 'preexistente') {
+                if (!progresso.origem || typeof progresso.origem !== 'object') {
+                    progresso.origem = {};
+                }
+                progresso.origem[idComando] = origem;
+            }
+
+            escreverProgresso(progresso);
+        } catch (e) {
+            console.error("[Erro ao salvar progresso]:", e.message);
+        }
 }
 
 function removerProgresso(idComando) {
@@ -1522,14 +951,6 @@ function resetarProgresso() {
     }
 }
 
-// ============================================================
-// LIMPEZA DE LOGS ANTIGOS
-// ============================================================
-//
-// O iniciar_fap.sh cria um /tmp/fap-YYYYMMDD-HHMMSS.log por
-// sessão. Sem limpeza, /tmp acumula centenas de arquivos ao
-// longo do tempo. Remove os com mais de 7 dias.
-
 function _limparLogsAntigos() {
     try {
         const agora = Date.now();
@@ -1545,7 +966,7 @@ function _limparLogsAntigos() {
                     fs.unlinkSync(caminho);
                     removidos++;
                 }
-            } catch (e) { /* ignore */ }
+            } catch (e) {  }
         });
         if (removidos > 0) {
             console.log(`[Cleanup] ${removidos} log(s) antigo(s) removido(s) de /tmp`);
@@ -1554,10 +975,6 @@ function _limparLogsAntigos() {
         console.warn('[Cleanup] Falha ao limpar logs antigos:', e.message);
     }
 }
-
-// ============================================================
-// SSE — LOGS EM TEMPO REAL
-// ============================================================
 
 function enviarLog(idComando, mensagem, tipo = 'output', extra = {}) {
     const mensagemLimpa = _filtrarLog(mensagem);
@@ -1609,18 +1026,6 @@ function adicionarClienteSSE(idComando, res) {
     });
 }
 
-// ============================================================
-// PROGRESSO DE PACOTES (parser de [N/M] do DNF)
-// ============================================================
-//
-// O DNF imprime "[N/M]" durante transações (verificação, download,
-// instalação). Este parser extrai o N e M mais recentes de cada
-// chunk e envia um evento SSE do tipo "progress" para o frontend,
-// que usa esses números para atualizar a barra de progresso.
-//
-// Não substitui o log normal — o texto do DNF continua indo pelo
-// canal "output". É um evento adicional e paralelo.
-
 function _detectarProgressoPacotes(texto, idComando) {
     if (!texto) return null;
     var matches = [];
@@ -1638,12 +1043,6 @@ function _detectarProgressoPacotes(texto, idComando) {
     if (isNaN(atual) || isNaN(total) || total <= 0) return null;
     if (atual > total) return null;
 
-    // Ancora o `total` na primeira observação. Se o `dnf` emitir
-    // outra sequência `[N/M']` com M' diferente (ex.: sub-operação
-    // durante `%post`, ou `dnf` concatenado), ignoramos — a barra
-    // ficaria presa na operação principal, que é a que o usuário
-    // está acompanhando. A âncora é limpa em `POST /executar`
-    // (próxima execução começa do zero).
     if (idComando) {
         var ancorado = _progressoTotalAtual.get(idComando);
         if (ancorado === undefined) {
@@ -1670,10 +1069,6 @@ function enviarProgresso(idComando, atual, total) {
         client.write(`data: ${json}\n\n`);
     });
 }
-
-// ============================================================
-// DETECÇÃO DE DESKTOP E AUTENTICAÇÃO
-// ============================================================
 
 function detectarDesktop() {
     const desktop = (process.env.XDG_CURRENT_DESKTOP || '').toUpperCase();
@@ -1733,15 +1128,8 @@ function commandExists(cmd) {
     }
 }
 
-// ============================================================
-// EXECUÇÃO DE COMANDOS (com ou sem autenticação)
-// ============================================================
-
 function executarComandoComStream(comandoFinal, idComando, isReversao, callback) {
-    // Força line-buffering em comandos que tendem a bufferizar
-    // stdout quando não há TTY. Sem isso, o `flatpak install`
-    // imprime tudo de uma vez no final — o que faz o log parecer
-    // "travado" no começo e "explodir" no final.
+
     if (/^\s*(?:sudo\s+)?(?:stdbuf\b[^\n]*?)?flatpak\s+/.test(comandoFinal) &&
         !/^\s*stdbuf\b/.test(comandoFinal)) {
         comandoFinal = 'stdbuf -oL -eL ' + comandoFinal;
@@ -1756,10 +1144,6 @@ function executarComandoComStream(comandoFinal, idComando, isReversao, callback)
 
         const env = { ...process.env };
 
-        // Comandos que rodam no contexto do usuário (flatpak,
-        // systemctl --user, ferramentas do PipeWire) precisam do
-        // bus e runtime corretos. Sem isso, o comando falha
-        // silenciosamente ao tentar falar com o serviço do usuário.
         if (_precisaEnvUserContext(comandoFinal)) {
             let uid = 1000;
             try {
@@ -1777,10 +1161,6 @@ function executarComandoComStream(comandoFinal, idComando, isReversao, callback)
             console.log(`[USER-CTX] HOME=${env.HOME}`);
         }
 
-        // Update/uninstall do FAP: roda como usuário, mas precisa
-        // do SUDO_ASKPASS configurado porque o install.sh faz
-        // várias chamadas a `sudo` internamente — e o processo
-        // do node não tem TTY.
         if (IDS_SEM_AUTENTICACAO.has(idComando)) {
             const askpass = _criarAskpassHelper();
             if (askpass) {
@@ -1796,10 +1176,7 @@ function executarComandoComStream(comandoFinal, idComando, isReversao, callback)
             maxBuffer: 1024 * 1024 * 50,
             timeout: 1800000,
             env: env,
-            // detached: cria sessão própria (setsid). Isso faz todos
-            // os descendentes compartilharem o PGID do bash,
-            // permitindo que process.kill(-pid, ...) alcance a
-            // árvore inteira no SIGINT.
+
             detached: true
         }, (error, stdout, stderr) => {
             if (stdout) {
@@ -1810,16 +1187,7 @@ function executarComandoComStream(comandoFinal, idComando, isReversao, callback)
             if (stderr) {
                 const stderrFiltrado = stderr.replace(/\[sudo\] password for .+: /g, '');
                 if (stderrFiltrado.trim()) {
-                    // stderr NÃO significa erro. O `dnf`, `flatpak` e
-                    // a maioria das ferramentas CLI escrevem logs
-                    // informativos (download, progresso, avisos de
-                    // GPG, etc.) em stderr por convenção Unix. Marcar
-                    // tudo como 'error' pinta o log inteiro de
-                    // vermelho mesmo quando tudo deu certo.
-                    //
-                    // Só o próprio server.js emite 'error' — quando
-                    // o comando termina com código != 0 (bloco
-                    // abaixo).
+
                     enviarLog(idComando, stderrFiltrado, 'output');
                 }
             }
@@ -1850,8 +1218,7 @@ function executarComandoComStream(comandoFinal, idComando, isReversao, callback)
         shell: '/bin/bash',
         env: process.env,
         stdio: ['pipe', 'pipe', 'pipe'],
-        // Mesmo motivo do exec acima: garante que o kill alcance
-        // os descendentes via PGID.
+
         detached: true
     }));
 
@@ -1871,11 +1238,7 @@ function executarComandoComStream(comandoFinal, idComando, isReversao, callback)
             erros += texto;
             const textoFiltrado = texto.replace(/\[sudo\] password for .+: /g, '');
             if (textoFiltrado.trim()) {
-                // Mesmo motivo do bloco anterior: stderr é canal de
-                // log, não de erro. O pkexec repassa stdout/stderr do
-                // script, e o dnf escreve progresso em stderr. Marcar
-                // como 'error' deixava o log inteiro vermelho mesmo em
-                // sucesso. Enviamos como 'output'.
+
                 enviarLog(idComando, textoFiltrado, 'output');
             }
         });
@@ -1908,35 +1271,6 @@ function executarComandoComStream(comandoFinal, idComando, isReversao, callback)
         });
 }
 
-// ============================================================
-// AUTENTICAÇÃO SEGURA (pkexec / fallback kdialog+zenity)
-// ============================================================
-//
-// ============================================================
-// NOTA: kdesu DESABILITADO
-// ============================================================
-//
-// O kdesu do Plasma 6 tem dois problemas que o tornam inviável
-// para o FAP:
-//
-//   1. O client `kdesu` NÃO retorna depois que a autenticação
-//      tem sucesso — fica pendurado esperando o kdesud daemon
-//      mandar um sinal de conclusão que nunca chega. Um `exec`
-//      bloqueante trava o server.js por 5 minutos.
-//
-//   2. O script é executado pelo kdesud num contexto onde o
-//      redirecionamento de saída falha silenciosamente — o
-//      comando roda (o Terra é instalado, por exemplo), mas
-//      nada chega ao arquivo de output.
-//
-// O pkexec NÃO tem nenhum desses problemas: bloqueia até o
-// comando terminar, retorna o exit code correto, e o stdout/stderr
-// flui normalmente pelo pipe do processo. No Fedora KDE, o
-// `polkit-kde-agent-1` (instalado por padrão) faz o pkexec abrir
-// o diálogo nativo do KDE — mesma UX do kdesu, sem os bugs.
-//
-// Por isso: usamos pkexec sempre. O branch kdesu foi removido.
-
 function _construirScripts(timestamp, random, comandoCorrigido, descricao, idComando) {
     const scriptTemp = `/tmp/fap-cmd-${timestamp}-${random}.sh`;
     const homeDir = HOME_DIR_USUARIO;
@@ -1945,58 +1279,7 @@ function _construirScripts(timestamp, random, comandoCorrigido, descricao, idCom
     .replace(/\r\n/g, '\n')
     .replace(/\r/g, '\n');
 
-    // ============================================================
-    // HOME CONDICIONAL (v1.5.9 — alinhamento com o padrão do Fedora)
-    // ============================================================
-    //
-    // Antes, o script SEMPRE exportava HOME=<home-do-usuário>. Como
-    // o `pkexec` roda como root, o `dnf` (via pkexec) escrevia
-    // cache em `~/.cache/dnf/` e `~/.cache/libdnf5/` com dono
-    // `root` no home do usuário — efeito colateral indesejado.
-    //
-    // O padrão do Fedora é: `sudo dnf` / `pkexec dnf` usam
-    // `HOME=/root` (implícito, herdado do /etc/passwd do root), e
-    // o `dnf` usa `/var/cache/dnf/` (system), não o cache do
-    // usuário.
-    //
-    // A v1.5.9 alinha o FAP: o `export HOME=<user>` só acontece
-    // quando o `idComando` está em `IDS_COM_HOME_DO_USUARIO` —
-    // reservado para scripts EXTERNOS baixados de URL que usam
-    // `$HOME` DENTRO do arquivo (o `_substituirCaminhosUsuario`
-    // não alcança esses).
-    //
-    // Comandos inline com `$HOME`/`~` na string (GameMode presets,
-    // Rclone Manager `comandoRemocao`, etc.) NÃO precisam do
-    // export — o caminho absoluto já está na string do comando.
-    //
-    // Estado atual: `IDS_COM_HOME_DO_USUARIO` está vazia.
-    // `desinstalar-fap` e `atualizar-fap` (que rodam `install.sh`
-    // baixado) estão em `IDS_SEM_AUTENTICACAO` — rodam como
-    // usuário, nunca via pkexec, então nunca chegam aqui.
     const precisaHomeDoUsuario = IDS_COM_HOME_DO_USUARIO.has(idComando);
-
-    // ============================================================
-    // ESTRUTURA DO SCRIPT
-    // ============================================================
-    //
-    // O script NÃO redireciona stdout/stderr para um arquivo. O
-    // processo Node (que invoca o pkexec) captura a saída via pipe
-    // diretamente — mesma estratégia que sempre funcionou no modo
-    // "sem autenticação".
-    //
-    // Por que não usar arquivo:
-    //   • O redirecionamento `>> arquivo` falha com "Permissão
-    //     negada" quando o script roda via pkexec no Fedora com
-    //     SELinux enforcing — o processo no contexto root não
-    //     consegue escrever no arquivo pré-criado pelo usuário
-    //     em /tmp.
-    //   • O pipe já é o mecanismo usado em todo o resto do FAP,
-    //     e funciona consistentemente.
-    //   • Sem arquivo, não há corrida entre o comando terminar e
-    //     o reader ler a última linha.
-    //
-    // O `exit $?` no final propaga o código de saída real do
-    // comando para o pkexec, que repassa para o Node.
 
     const scriptLines = [
         '#!/bin/bash',
@@ -2013,10 +1296,7 @@ function _construirScripts(timestamp, random, comandoCorrigido, descricao, idCom
                                                        'export WAYLAND_DISPLAY=' + (process.env.WAYLAND_DISPLAY || ''),
                                                        'export XDG_RUNTIME_DIR=' + (process.env.XDG_RUNTIME_DIR || '/run/user/' + (process.getuid ? process.getuid() : 1000)),
                                                        'export DBUS_SESSION_BUS_ADDRESS=' + (process.env.DBUS_SESSION_BUS_ADDRESS || ''),
-                                                       // HOME só é exportado para scripts externos que
-                                                       // dependem dele internamente (IDS_COM_HOME_DO_USUARIO).
-                                                       // Para o resto, HOME é herdado do pkexec (= /root,
-                                                       // padrão do Fedora) — o dnf usa /var/cache/dnf/.
+
                                                        precisaHomeDoUsuario ? ('export HOME=' + homeDir) : '# HOME herdado do pkexec (padrão do Fedora)',
                                                        'export USER=' + USUARIO_REAL,
                                                        'export LOGNAME=' + USUARIO_REAL,
@@ -2075,36 +1355,19 @@ async function executarComAutenticacaoSegura(comandoOriginal, idComando, isRever
         }
     }
 
-    // ============================================================
-    // ORDEM CRÍTICA: declara comandoCorrigido ANTES de qualquer uso
-    // ============================================================
-    //
-    // A versão anterior declarava `comandoCorrigido` DEPOIS dos
-    // `enviarLog`/`fs.writeFileSync` que o usavam. Como `const`
-    // tem TDZ (Temporal Dead Zone), isso disparava
-    // `ReferenceError: Cannot access 'comandoCorrigido' before
-    // initialization` toda vez que um comando precisava de
-    // autenticação — o usuário via "Autenticação cancelada" sem
-    // o pkexec nem ser invocado.
     const comandoSemSudo = comandoOriginal.replace(/sudo\s+(?!-)/g, '');
     const comandoCorrigido = _substituirCaminhosUsuario(comandoSemSudo);
 
     enviarLog(idComando, `🔐 Autenticando para: ${descricao}\n`, 'info');
 
-    // Mostra o script COMPLETO no log antes do pkexec. O usuário precisa
-    // ver o que está autorizando — o diálogo nativo do polkit não exibe
-    // o conteúdo, apenas o caminho do script.
     enviarLog(idComando, '─── Conteúdo do script que será executado ───\n', 'info');
     enviarLog(idComando, comandoCorrigido + '\n', 'info');
     enviarLog(idComando, '────────────────────────────────────────────\n', 'info');
 
-    // Auditoria em arquivo: se o usuário quiser revisar depois, o
-    // histórico fica em /tmp/fap-audit-*.log (removido pela limpeza
-    // de logs antigos do server.js).
     try {
         const auditPath = '/tmp/fap-audit-' + Date.now() + '-' + Math.random().toString(36).slice(2) + '.log';
         fs.writeFileSync(auditPath, `[${new Date().toISOString()}] ${descricao}\n\n${comandoCorrigido}\n`, { mode: 0o600 });
-    } catch (e) { /* auditoria é best-effort */ }
+    } catch (e) {  }
 
     const hasPkexec = commandExists('pkexec');
     const hasZenity = commandExists('zenity');
@@ -2127,22 +1390,12 @@ async function executarComAutenticacaoSegura(comandoOriginal, idComando, isRever
             return callback(err, "", "");
         }
 
-        // Limpa o script temp após 60s, caso o `rm -f` no comandoFinal
-        // não rode (ex.: usuário cancelou a autenticação).
         setTimeout(() => {
             if (fs.existsSync(scriptTemp)) {
                 try { fs.unlinkSync(scriptTemp); } catch (e) {}
             }
         }, 60000);
 
-        // O comando é executado via `executarComandoComStream`, que:
-        //   • captura stdout/stderr via pipe em tempo real
-        //   • emite eventos SSE para o frontend
-        //   • propaga o exit code do pkexec (que é o exit code do script)
-        //   • marca sucesso/falha no progresso corretamente
-        //
-        // É o MESMO mecanismo do modo sem autenticação — sempre
-        // funcionou, sem dependência de arquivo intermediário.
         const comandoFinal = `pkexec ${scriptTemp} && rm -f ${scriptTemp} || { rm -f ${scriptTemp}; exit 1; }`;
 
         executarComandoComStream(comandoFinal, idComando, isReversao, (err, stdout, stderr) => {
@@ -2152,8 +1405,6 @@ async function executarComAutenticacaoSegura(comandoOriginal, idComando, isRever
         return;
     }
 
-    // Fallback: kdialog/zenity pede a senha, e usamos spawn para
-    // passar via stdin. Evita o problema da senha exposta em `ps aux`.
     enviarLog(idComando, '⚠️ Usando fallback com zenity/kdialog...\n', 'warning');
 
     let promptSenha;
@@ -2179,8 +1430,7 @@ async function executarComAutenticacaoSegura(comandoOriginal, idComando, isRever
         const proc = _registrarProcesso(spawn('sudo', ['-S', 'sh', '-c', comandoCorrigido], {
             env: process.env,
             stdio: ['pipe', 'pipe', 'pipe'],
-            // Mesmo motivo dos outros spawns: matar a árvore inteira
-            // no SIGINT via PGID.
+
             detached: true
         }));
 
@@ -2201,9 +1451,7 @@ async function executarComAutenticacaoSegura(comandoOriginal, idComando, isRever
             erros += texto;
             const textoFiltrado = texto.replace(/\[sudo\] password for .+: /g, '');
             if (textoFiltrado.trim()) {
-                // stderr tratado como output. O `sudo` é só o
-                // wrapper — o que sai no stderr é o próprio
-                // comando, e a convenção Unix manda logs para lá.
+
                 enviarLog(idComando, textoFiltrado, 'output');
             }
         });
@@ -2245,14 +1493,7 @@ function procederComExecucao(comando, idComando, isReversao, res) {
     }));
 
     setImmediate(() => {
-        // Duas formas de rodar sem auth:
-        //   1. Comando read-only (whitelist de prefixo) — `_cmdSemAutenticacao`
-        //   2. idComando whitelisted + comando no formato exato — `_idSemAuthValido`
-        //
-        // A #2 existe só para `atualizar-fap` e `desinstalar-fap`, que
-        // são scripts que gerenciam seu próprio `sudo` internamente.
-        // Rodar como root (via pkexec) quebraria as permissões do
-        // diretório de instalação do usuário.
+
         const semAuth = _cmdSemAutenticacao(comando) || _idSemAuthValido(idComando, comando);
         const precisaAutenticacao = !semAuth;
 
@@ -2274,10 +1515,6 @@ function procederComExecucao(comando, idComando, isReversao, res) {
     });
 }
 
-// ============================================================
-// SERVIDORES DE ARQUIVOS ESTÁTICOS
-// ============================================================
-
 function servirArquivoEstatico(req, res, filePath) {
     const fullPath = path.join(__dirname, filePath);
 
@@ -2298,28 +1535,19 @@ function servirArquivoEstatico(req, res, filePath) {
 
         const mimeType = mimeTypes[ext] || 'application/octet-stream';
 
-        // `Content-Length` é obrigatório para HEAD (RFC 9110: a
-        // resposta a HEAD deve ter os mesmos headers que a
-        // resposta a GET, sem o body). Também ajuda em GET —
-        // o navegador sabe o tamanho antes de baixar.
         let tamanho = 0;
         try {
             tamanho = fs.statSync(fullPath).size;
-        } catch (e) { /* mantém 0 em caso de erro */ }
+        } catch (e) {  }
 
         res.writeHead(200, {
             'Content-Type': mimeType,
             'Content-Length': String(tamanho),
-            'Cache-Control': 'no-cache, no-store, must-revalidate',
-            'Pragma': 'no-cache',
-            'Expires': '0'
+                      'Cache-Control': 'no-cache, no-store, must-revalidate',
+                      'Pragma': 'no-cache',
+                      'Expires': '0'
         });
 
-        // HEAD: envia só os headers, sem o body. O cliente
-        // (curl -I, navegador, ferramentas de debug) usa os
-        // headers pra saber tipo, tamanho, cache, etc., sem
-        // baixar o conteúdo. O `res.end()` (sem argumentos)
-        // fecha a conexão.
         if (req.method === 'HEAD') {
             res.end();
             return;
@@ -2327,9 +1555,7 @@ function servirArquivoEstatico(req, res, filePath) {
 
         fs.createReadStream(fullPath).pipe(res);
     } else {
-        // 404 também respeita HEAD — `res.end('texto')` seria
-        // enviado mesmo em HEAD pelo Node.js, então verificamos
-        // manualmente.
+
         const corpo404 = 'Arquivo não encontrado';
         res.writeHead(404, {
             'Content-Type': 'text/plain; charset=utf-8',
@@ -2380,12 +1606,12 @@ function servirLocale(req, res, lang) {
     let tamanho = 0;
     try {
         tamanho = fs.statSync(arquivo).size;
-    } catch (e) { /* mantém 0 */ }
+    } catch (e) {  }
 
     res.writeHead(200, {
         'Content-Type': 'application/json; charset=utf-8',
         'Content-Length': String(tamanho),
-        'Cache-Control': 'no-cache'
+                  'Cache-Control': 'no-cache'
     });
     if (req.method === 'HEAD') {
         res.end();
@@ -2393,18 +1619,6 @@ function servirLocale(req, res, lang) {
     }
     fs.createReadStream(arquivo).pipe(res);
 }
-
-// ============================================================
-// PREVIEW DO GRUB — computa diff servidor-side (?preview=1)
-// ============================================================
-//
-// Parseia /etc/default/grub (já lido pelo handler /grub-info) e
-// retorna a lista de mudanças que o botão "Aplicar Recomendada"
-// faria. Cada item: { chave, atual (null se ausente), novo }.
-//
-// A lista de recomendações espelha exatamente o que
-// `executarGrubAplicarRecomendado` (frontend) grava no arquivo.
-// Se a lista mudar lá, atualizar aqui.
 
 function _computarPreviewGrub(info) {
     var atual = {};
@@ -2448,17 +1662,8 @@ function _computarPreviewGrub(info) {
     return { mudancas: mudancas, total: mudancas.length };
 }
 
-// ============================================================
-// SERVIDOR HTTP
-// ============================================================
-
 const server = http.createServer((req, res) => {
-    // Parse única no topo. `url` vira só o pathname (sem query),
-    // e `query` fica disponível para rotas que usam searchParams
-    // (como /stream?id=...).
-    //
-    // Sem isso, "guiado.html?session=sobre-fof" não casa com o
-    // `url === '/guiado.html'` e cai no 404.
+
     let parsedUrl;
     try {
         parsedUrl = new URL(req.url, 'http://' + (req.headers.host || 'localhost'));
@@ -2470,9 +1675,6 @@ const server = http.createServer((req, res) => {
     const url = parsedUrl.pathname;
     const query = parsedUrl.searchParams;
 
-    // ----------------------------------------------------------
-    // SSE — logs em tempo real
-    // ----------------------------------------------------------
     if (req.method === 'GET' && url.startsWith('/stream')) {
         const idComando = query.get('id');
 
@@ -2504,14 +1706,8 @@ const server = http.createServer((req, res) => {
         return;
     }
 
-    // ----------------------------------------------------------
-    // LOCALES (JSON de tradução)
-    // ----------------------------------------------------------
-    //
-    // v1.5.6: aceita GET e HEAD. O `curl -I` envia HEAD; sem isso,
-    // caía no handler de 404 (que retorna `text/plain`).
     if (_aceitaGetOuHead(req) && url.startsWith('/locales/')) {
-        // `url` já é pathname-only, então não há query para remover.
+
         let resto = url.substring('/locales/'.length);
 
         if (resto.endsWith('.json')) {
@@ -2535,23 +1731,6 @@ const server = http.createServer((req, res) => {
         return;
     }
 
-    // ----------------------------------------------------------
-    // /progress — GET (ler), POST (salvar), DELETE (resetar)
-    // ----------------------------------------------------------
-    //
-    // Bloco crítico. Sem ele, o `.progresso.json` do servidor
-    // dessincroniza do `progressCache`/localStorage do cliente:
-    //
-    //   • GET    → getProgress() no boot, _limparIdsOrfaos,
-    //              marcarComoExecutado, desmarcarComoExecutado
-    //   • POST   → saveProgress (ações da UI)
-    //   • DELETE → resetarProgressoFAP (Sessão 13)
-    //
-    // Sem isso, "Reset progress" não funciona (404), e o arquivo
-    // só é atualizado por `salvarProgresso` (server-side, após
-    // comando OK) — as remoções via lixeira ficam no localStorage
-    // mas não no arquivo.
-
     if (req.method === 'GET' && url === '/progress') {
         var progressoAtual = lerProgresso();
         res.writeHead(200, {
@@ -2567,7 +1746,7 @@ const server = http.createServer((req, res) => {
     }
 
     if (req.method === 'POST' && url === '/progress') {
-        // CSRF guard — mesma regra de /executar e /shutdown.
+
         var originProgress = req.headers.origin || '';
         var originProgressOk = !originProgress ||
         /^https?:\/\/(127\.0\.0\.1|localhost)(:\d+)?$/.test(originProgress);
@@ -2584,12 +1763,6 @@ const server = http.createServer((req, res) => {
             try {
                 const { executados, pulados } = JSON.parse(body);
 
-                // Filtro de IDs transientes — espelha `salvarProgresso`
-                // (defesa em profundidade). Sem isso, `open-*`,
-                // `*-open`, `*-remove` e `*-revert` entrariam no
-                // `.progresso.json` e o `_limparIdsOrfaos` (frontend)
-                // teria que removê-los na próxima passada — churn
-                // desnecessário.
                 function _idTransienteProgress(id) {
                     return !id ||
                     id.startsWith('open-') ||
@@ -2605,9 +1778,6 @@ const server = http.createServer((req, res) => {
                 progressoAtual.pulados = (pulados || []).filter(function(id) {
                     return !_idTransienteProgress(id);
                 });
-                // Preserva `origem` — é auditoria, não é resetado.
-                // (O cliente não envia `origem` no POST; só o
-                // server-side `salvarProgresso` grava esse campo.)
 
                 escreverProgresso(progressoAtual);
 
@@ -2623,7 +1793,7 @@ const server = http.createServer((req, res) => {
     }
 
     if (req.method === 'DELETE' && url === '/progress') {
-        // CSRF guard — mesma regra do POST.
+
         var originDelete = req.headers.origin || '';
         var originDeleteOk = !originDelete ||
         /^https?:\/\/(127\.0\.0\.1|localhost)(:\d+)?$/.test(originDelete);
@@ -2640,14 +1810,6 @@ const server = http.createServer((req, res) => {
         return;
     }
 
-    // ----------------------------------------------------------
-    // PÁGINAS E ARQUIVOS ESTÁTICOS
-    // ----------------------------------------------------------
-    //
-    // v1.5.6: todos os handlers usam `_aceitaGetOuHead(req)` em vez
-    // de `req.method === 'GET'`. O `curl -I` envia HEAD e precisa
-    // receber os headers corretos (Content-Type, Content-Length)
-    // em vez de cair no 404 genérico com `text/plain`.
     if (_aceitaGetOuHead(req) && (url === '/' || url === '/index.html')) {
         servirArquivoEstatico(req, res, 'index.html');
         return;
@@ -2658,16 +1820,6 @@ const server = http.createServer((req, res) => {
         return;
     }
 
-    // ----------------------------------------------------------
-    // SESSÕES — IDs semânticos (sem número)
-    // ----------------------------------------------------------
-    //
-    // O FAP usa IDs semânticos desde a v1.0.0-09282026: os arquivos
-    // são 'codecs.html', 'gaming.html', 'sobre-fap.html' etc, sem
-    // prefixo numérico. Este regex casa qualquer arquivo .html cujo
-    // nome comece com letra minúscula e contenha apenas letras,
-    // dígitos e hífen. Também impede path traversal (não aceita
-    // '/', '.', nem maiúsculas).
     if (_aceitaGetOuHead(req) && url.match(/^\/([a-z][a-z0-9-]*\.html)$/)) {
         const match = url.match(/^\/([a-z][a-z0-9-]*\.html)$/);
         if (match) {
@@ -2696,9 +1848,6 @@ const server = http.createServer((req, res) => {
         return;
     }
 
-    // ----------------------------------------------------------
-    // /status — healthcheck + progresso
-    // ----------------------------------------------------------
     if (req.method === 'GET' && url === '/status') {
         const progresso = lerProgresso();
         res.writeHead(200, { 'Content-Type': 'application/json' });
@@ -2715,9 +1864,6 @@ const server = http.createServer((req, res) => {
         return;
     }
 
-    // ----------------------------------------------------------
-    // /info — metadados do ambiente
-    // ----------------------------------------------------------
     if (req.method === 'GET' && url === '/info') {
         const desktop = detectarDesktop();
         const metodo = obterMetodoAutenticacao();
@@ -2736,14 +1882,6 @@ const server = http.createServer((req, res) => {
         return;
     }
 
-    // ----------------------------------------------------------
-    // /kernel-atual — apenas o kernel em execução
-    // ----------------------------------------------------------
-    //
-    // Endpoint dedicado para o fluxo de remoção de kernel. Antes, o
-    // frontend parseava o log compartilhado da sessão para descobrir
-    // o kernel atual — frágil, porque outra linha `output` podia se
-    // misturar se o usuário clicasse em outro botão ao mesmo tempo.
     if (req.method === 'GET' && url === '/kernel-atual') {
         _execReadOnly('uname -r', 3000).then(function(stdout) {
             var kernel = (stdout || '').trim();
@@ -2756,44 +1894,8 @@ const server = http.createServer((req, res) => {
         return;
     }
 
-    // ----------------------------------------------------------
-    // /reboot-needed — verifica se há reboot pendente
-    // ----------------------------------------------------------
-    //
-    // Roda `dnf needs-restarting -r` e devolve JSON estruturado.
-    // Usado pelo botão "Atualizar Fedora" da sessão 1 para avisar
-    // o usuário quando um reboot é necessário após o upgrade.
-    //
-    // Exit codes do `needs-restarting -r`:
-    //   0 → reboot não necessário
-    //   1 → reboot necessário
-    //   2+ / erro → falha na checagem (tratamos como "não necessário"
-    //              para não incomodar o usuário com falso positivo)
-    //
-    // Read-only, sem autenticação. Mesmo padrão de `/kernel-atual`.
     if (req.method === 'GET' && url === '/reboot-needed') {
-        // ============================================================
-        // STDOUT NÃO-SILENCIADO (v1.5.5)
-        // ============================================================
-        //
-        // Antes, o comando era `dnf needs-restarting -r > /dev/null
-        // 2>&1; echo "exit=$?"`. O `2>&1` no final só capturava o
-        // exit code. Se o próprio `dnf` falhasse (RPM DB lock,
-        // `dnf5-plugins` ausente, timeout), o código de saída seria
-        // != 0 e != 1, e o endpoint devolvia `{reboot: false}`
-        // silenciosamente — FALSO NEGATIVO (esconde o aviso quando
-        // na verdade não conseguiu verificar).
-        //
-        // Agora o stdout é preservado (para o `motivo`), e o JSON
-        // devolve `erro: true` quando o código não é 0 nem 1. O
-        // frontend usa isso para mostrar um aviso neutro em vez de
-        // esconder o banner.
-        //
-        // Timeout subiu de 10s → 15s: `dnf needs-restarting -r` em
-        // cache frio pode demorar 8–12s (lê o histórico do RPM +
-        // compara com o kernel em execução). O `_execReadOnly` mata
-        // o grupo (detached: true) em timeout, então não há risco
-        // de deixar `dnf` órfão.
+
         _execReadOnly('dnf needs-restarting -r 2>&1; echo "---EXIT=$?---"', 15000).then(function(stdout) {
             var out = (stdout || '');
             var m = out.match(/---EXIT=(\d+)---/);
@@ -2818,14 +1920,8 @@ const server = http.createServer((req, res) => {
         return;
     }
 
-    // ----------------------------------------------------------
-    // /kernels — lista de kernels instalados
-    // ----------------------------------------------------------
     if (req.method === 'GET' && url === '/kernels') {
-        // Paraleliza as duas consultas (o `rpm -q` e o `uname -r` são
-        // independentes; o aninhamento do `exec` original era só por
-        // conveniência). `Promise.all` reduz o pior caso de ~2×RTT
-        // para 1×RTT.
+
         Promise.all([
             _execReadOnly('rpm -q kernel-core --queryformat "%{VERSION}-%{RELEASE}.%{ARCH}\\n" 2>/dev/null', 5000),
                     _execReadOnly('uname -r', 3000)
@@ -2844,60 +1940,9 @@ const server = http.createServer((req, res) => {
         return;
     }
 
-    // ----------------------------------------------------------
-    // /grub-info — lê /etc/default/grub + detecta resolução + dual boot
-    // ----------------------------------------------------------
-    //
-    // Retorna a configuração atual do GRUB, a resolução detectada
-    // (para o GRUB_GFXMODE) e se o sistema tem dual boot (para o
-    // GRUB_DISABLE_OS_PROBER). Nada é alterado — é puramente leitura.
-    //
-    // DETECÇÃO DE RESOLUÇÃO — 4 camadas em ordem de confiabilidade:
-    //
-    //   1. /sys/class/drm/card*-*/mode  (arquivo singular)
-    //      Modo ATUAL do conector. Só existe quando o driver DRM
-    //      souber qual modo está setado. Funciona em alguns drivers
-    //      (i915 em certos casos, nouveau antigo), falha em outros
-    //      (amdgpu + Wayland/KWin, por exemplo).
-    //
-    //   2. /sys/class/drm/card*-*/modes (arquivo plural)
-    //      Lista de TODOS os modos suportados, em ordem de
-    //      preferência. O primeiro é o nativo do monitor. Existe
-    //      sempre que o conector está "connected" e tem EDID.
-    //      ESTA É A CAMADA QUE RESOLVE A MAIORIA DOS CASOS.
-    //
-    //   3. Parse de EDID cru via /sys/class/drm/card*-*/edid
-    //      Fallback para drivers que expõem o EDID mas não a
-    //      lista de modos. Extrai a resolução preferida
-    //      (Detailed Timing Descriptor 1) do EDID.
-    //
-    //      IMPORTANTE — offsets corretos do EDID (spec VESA 1.4,
-    //      seção 3.10.2 "Detailed Timing Descriptor"):
-    //        byte 54-55  = pixel clock (LSB, MSB)
-    //        byte 56     = H active, LSB (bits 0-7)
-    //        byte 57     = H blank, LSB
-    //        byte 58     = H active (bits 8-11) no nibble ALTO
-    //                      + H blank (bits 8-11) no nibble BAIXO
-    //        byte 59     = V active, LSB
-    //        byte 60     = V blank, LSB
-    //        byte 61     = V active (bits 8-11) no nibble ALTO
-    //                      + V blank (bits 8-11) no nibble BAIXO
-    //
-    //      A versão anterior deste script lia bytes 54/55 como se
-    //      fossem H active — mas esses bytes são pixel clock.
-    //      Também lia 58/59 como V active, quando 58 é H active
-    //      (nibble alto) e 59 é V active (LSB). O resultado era
-    //      um valor errado, que só aparecia quando as camadas 1
-    //      e 2 falhavam (raro, mas acontecia em GPUs exóticas).
-    //
-    //   4. 1024x768 — fallback final.
-    //
-    // Em todas as camadas, preferimos conectores com status
-    // "connected" para evitar pegar a resolução de uma saída
-    // sem monitor.
     if (req.method === 'GET' && url === '/grub-info') {
         const script = [
-            // Lê /etc/default/grub (world-readable por padrão)
+
             'if [ -r /etc/default/grub ]; then',
             '  echo "---GRUB_FILE_START---"',
             '  cat /etc/default/grub',
@@ -3019,7 +2064,6 @@ const server = http.createServer((req, res) => {
                 grubCfgPath: '/boot/grub2/grub.cfg'
             };
 
-            // Conteúdo do /etc/default/grub
             var match = stdout.match(/---GRUB_FILE_START---\n([\s\S]*?)\n---GRUB_FILE_END---/);
             if (match) {
                 info.grubContent = match[1];
@@ -3027,12 +2071,9 @@ const server = http.createServer((req, res) => {
                 info.grubReadable = false;
             }
 
-            // Resolução — o script já resolve a hierarquia das 3 camadas
-            // + fallback, e imprime sempre "DETECTED_RES=WxH".
             var resMatch = stdout.match(/DETECTED_RES=(\d+x\d+)/);
             if (resMatch) info.detectedRes = resMatch[1];
 
-            // Qual camada respondeu (útil para debug no console)
             var layerMatch = stdout.match(/MATCH_(LAYER[123]|FALLBACK)=/);
             if (layerMatch) {
                 console.log('[grub-info] Resolução detectada pela camada:', layerMatch[1]);
@@ -3047,8 +2088,6 @@ const server = http.createServer((req, res) => {
             var cfgMatch = stdout.match(/GRUB_CFG_PATH=(\S+)/);
             if (cfgMatch) info.grubCfgPath = cfgMatch[1];
 
-            // ?preview=1 — computa diff entre config atual e a
-            // recomendada, no servidor. O frontend só renderiza.
             if (query.get('preview') === '1' && info.grubContent) {
                 info.preview = _computarPreviewGrub(info);
             }
@@ -3073,13 +2112,6 @@ const server = http.createServer((req, res) => {
         return;
     }
 
-    // ----------------------------------------------------------
-    // /hardware-detect-atomic — detecta Fedora Atomic/Silverblue
-    // ----------------------------------------------------------
-    //
-    // Retorna JSON em vez de forçar o frontend a parsear stdout
-    // de um script bash. Lógica idêntica à que estava em
-    // estado-fedora.html (verificarAtomic), mas servidor-side.
     if (req.method === 'GET' && url === '/hardware-detect-atomic') {
         var scriptAtomic = [
             'IS_ATOMIC=false',
@@ -3114,19 +2146,6 @@ const server = http.createServer((req, res) => {
         return;
     }
 
-    // ----------------------------------------------------------
-    // /check-package — verifica se um pacote rpm está instalado
-    // ----------------------------------------------------------
-    //
-    // Usado pelo frontend para decidir se um app nativo de
-    // desktop (gnome-connections, krdc) já está presente no
-    // sistema. Se estiver, o FAP esconde o botão de instalar
-    // e mostra o "Abrir" direto.
-    //
-    // Validação do nome do pacote: só aceita letras, números,
-    // ponto, hífen e underscore. Isso é suficiente para nomes
-    // rpm válidos e bloqueia qualquer tentativa de injeção via
-    // query string.
     if (req.method === 'GET' && url === '/check-package') {
         var pkg = query.get('pkg');
         if (!pkg || !/^[a-zA-Z0-9._-]+$/.test(pkg)) {
@@ -3134,14 +2153,7 @@ const server = http.createServer((req, res) => {
             res.end(JSON.stringify({ error: 'pkg inválido' }));
             return;
         }
-        // Usa o padrão `exit=$?` para inspecionar o código de saída do
-        // `rpm -q` — em vez de tentar inferir pelo stdout (o
-        // `_execReadOnly` não propaga `error`). `rpm -q` retorna 0 se
-        // instalado, != 0 caso contrário (seja "not installed",
-        // "não instalado" ou DB lock). É locale-independente.
-        //
-        // `pkg` foi validado por `/^[a-zA-Z0-9._-]+$/` logo acima —
-        // sem shell metacharacters. `rpm -q ` + pkg é seguro.
+
         _execReadOnly('rpm -q ' + pkg + ' >/dev/null 2>&1; echo "exit=$?"', 3000).then(function(stdout) {
             var m = (stdout || '').match(/exit=(\d+)/);
             var codigo = m ? parseInt(m[1], 10) : -1;
@@ -3155,62 +2167,6 @@ const server = http.createServer((req, res) => {
         return;
     }
 
-    // ----------------------------------------------------------
-    // /check-package-available — instalado OU disponível em repo?
-    // ----------------------------------------------------------
-    //
-    // Diferente de `/check-package` (que só diz "instalado sim/não"),
-    // este endpoint diz "instalado / disponível / não disponível".
-    // Usado pelo `executarNvidiaDriver` para decidir se
-    // `akmod-nvidia-open` (Blackwell) ou `akmod-nvidia-580xx`
-    // (Maxwell/Pascal) existem no RPM Fusion ANTES de tentar
-    // instalar — caso contrário, o `dnf install` falha com
-    // "package not found" e deixa o sistema em estado ambíguo.
-    //
-    // ============================================================
-    // TRÊS PROBLEMAS EMPILHADOS (corrigidos na v1.5.1)
-    // ============================================================
-    //
-    //   1. DNF5 removeu `--all` do subcomando `list`. O comando
-    //      `dnf list --all --quiet <pkg>` erra imediatamente
-    //      ("Argumento desconhecido --all para o comando list"),
-    //      stdout vazio, e o `grep` nunca casa. O endpoint
-    //      retornava `not_available` para QUALQUER pacote, mesmo
-    //      os presentes nos repos ativos. Bloqueava a instalação
-    //      do driver NVIDIA em TODAS as gerações.
-    //
-    //   2. Pacotes NVIDIA vivem no sub-repositório
-    //      `rpmfusion-nonfree-nvidia-driver` (caminho
-    //      `nonfree/fedora/nvidia-driver/<ver>/x86_64/`), que
-    //      o RPM Fusion instala com `enabled=0` por padrão no
-    //      Fedora 44/45. Nenhum comando do dnf o encontra sem
-    //      `--enablerepo` explícito.
-    //
-    //   3. `--enablerepo` com LISTA de repos (`a,b,c`) aborta se
-    //      QUALQUER repo da lista não existir ("Nenhum repositório
-    //      correspondente para X"). O `rpmfusion-nonfree-tainted`
-    //      não vem na instalação padrão. Iterar um por um com
-    //      `|| true` cobre isso.
-    //
-    // Correção em 4 camadas (rápido → robusto → lento):
-    //
-    //   1. `rpm -q` — instalado? (instantâneo, sem repo access)
-    //   2. `dnf repoquery --available --quiet` — disponível nos
-    //      repos JÁ habilitados? Comando canônico do DNF5,
-    //      retorna um NEVRA por linha, sem cabeçalho, sem cor.
-    //      `head -1` limita a saída.
-    //   3. Loop de `--enablerepo` individual nos sub-repos NVIDIA
-    //      (otimista: o `executarNvidiaDriver` vai habilitá-los
-    //      durante o install, então a checagem deve ver o pacote).
-    //   4. `dnf --cacheonly list --available` — fallback final
-    //      sem rede, para o caso do `repoquery` falhar. O grep
-    //      cobre `pkg` e `pkg.arch` com regex ancorada, sem casar
-    //      `pkg-plus` como falso positivo.
-    //
-    // Timeout 60s (era 15s): `repoquery --available` em cache
-    // frio com RPM Fusion pode levar 30–45s. O `_execReadOnly`
-    // mata o GRUPO inteiro em timeout (detached: true), então não
-    // há risco de deixar `dnf` órfão segurando o lock do RPM.
     if (req.method === 'GET' && url === '/check-package-available') {
         var pkgCheck = query.get('pkg');
         if (!pkgCheck || !/^[a-zA-Z0-9._-]+$/.test(pkgCheck)) {
@@ -3222,21 +2178,16 @@ const server = http.createServer((req, res) => {
         var pkgEsc = pkgCheck.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
         var scriptAvail =
-        // --- 1. Instalado? ---
+
         'if rpm -q "' + pkgCheck + '" >/dev/null 2>&1; then ' +
         '  echo "status=installed"; exit 0; ' +
         'fi; ' +
 
-        // --- 2. repoquery nos repos habilitados ---
         'AVAIL=$(dnf repoquery --available --quiet "' + pkgCheck + '" 2>/dev/null | head -1); ' +
         'if [ -n "$AVAIL" ]; then ' +
         '  echo "status=available"; exit 0; ' +
         'fi; ' +
 
-        // --- 3. Loop de --enablerepo individual ---
-        // Cada repo é consultado SEPARADAMENTE. Se o repo não
-        // existir (ex.: `-tainted` sem o pacote -release-tainted),
-        // o dnf falha naquele repo e o loop continua.
         'for repo_nv in ' +
         '  "rpmfusion-nonfree-nvidia-driver" ' +
         '  "rpmfusion-nonfree" ' +
@@ -3247,7 +2198,6 @@ const server = http.createServer((req, res) => {
         '  fi; ' +
         'done; ' +
 
-        // --- 4. Fallback: cache-only list (sem --all, sem --quiet) ---
         'if dnf --cacheonly list --available "' + pkgCheck + '" 2>/dev/null ' +
         '  | grep -qE "^' + pkgEsc + '(\\.[a-z0-9_]+)?[[:space:]]"; then ' +
         '  echo "status=available"; exit 0; ' +
@@ -3279,18 +2229,6 @@ const server = http.createServer((req, res) => {
         return;
     }
 
-    // ----------------------------------------------------------
-    // /flatpak-installed — lista de app-ids Flatpak instalados
-    // ----------------------------------------------------------
-    //
-    // Usado pelo script.js para detectar Flatpaks que foram
-    // removidos fora do FAP (via GNOME Software, linha de
-    // comando, ou outro gerenciador) e restaurar o botão
-    // original para o usuário reinstalar.
-    //
-    // `--app` filtra só aplicativos (não runtimes).
-    // `--columns=application` retorna apenas os app-ids, uma por
-    // linha, sem cabeçalho — formato ideal para comparação.
     if (req.method === 'GET' && url === '/flatpak-installed') {
         _execReadOnly('flatpak list --app --columns=application 2>/dev/null', 5000).then(function(stdout) {
             const apps = (stdout || '').trim().split('\n').filter(Boolean);
@@ -3303,21 +2241,6 @@ const server = http.createServer((req, res) => {
         return;
     }
 
-    // ----------------------------------------------------------
-    // /rustdesk-selinux-check — conta AVCs do RustDesk nas últimas 24h
-    // ----------------------------------------------------------
-    //
-    // Read-only, sem auth. Usado pelo badge de exclamação do
-    // RustDesk (Sessão 6 → Acesso Remoto). Conta linhas
-    // `avc: denied` do journal que mencionem `rustdesk` no comm
-    // ou no path. `journalctl -g` (grep no journal) é a forma
-    // canônica e respeita permissões do usuário (o Fedora
-    // Workstation coloca o usuário no grupo `systemd-journal`,
-    // que lê o journal do sistema sem sudo).
-    //
-    // `wc -l` sem `-c` conta linhas. O `2>/dev/null` no
-    // `journalctl` cobre "No journal files were found" (raro,
-    // mas possível em containers).
     if (req.method === 'GET' && url === '/rustdesk-selinux-check') {
         _execReadOnly(
             'journalctl -g "avc:.*rustdesk" -S "24 hours ago" --no-pager 2>/dev/null | wc -l',
@@ -3337,22 +2260,8 @@ const server = http.createServer((req, res) => {
         return;
     }
 
-    // ----------------------------------------------------------
-    // /system-state — estado atual do Fedora do usuário
-    // ----------------------------------------------------------
-    //
-    // Devolve o estado REAL do sistema (repositórios ativos,
-    // pacotes instalados, etc.), independente do que o FAP já
-    // instalou. Usado pelo frontend no boot para atualizar os
-    // botões de repositório (Fase 1) e, futuramente, de apps e
-    // de itens de sistema.
-    //
-    // Read-only, sem autenticação. Cache de 5min em memória.
     if (req.method === 'GET' && url === '/system-state') {
-        // `?refresh=1` invalida o cache do server. Usado pelo
-        // frontend quando detecta `flatpaks_installed` vazio com
-        // Flathub ativo (timing: server consultou `/system-state`
-        // antes do `flatpak list` terminar no boot).
+
         if (query.get('refresh') === '1') {
             systemStateService.invalidarCache();
         }
@@ -3379,16 +2288,6 @@ const server = http.createServer((req, res) => {
         return;
     }
 
-    // ----------------------------------------------------------
-    // /hardware-scan — detecção de hardware e sugestão de drivers
-    // ----------------------------------------------------------
-    //
-    // Roda lspci, lsusb e rpm -q, cruza com hardware_map.json e
-    // devolve a lista de dispositivos detectados com estado de
-    // driver. Nada é instalado — é puramente read-only.
-    //
-    // Também devolve o estado dos repositórios (RPM Fusion) e do
-    // Secure Boot, para o frontend montar avisos contextuais.
     if (req.method === 'GET' && url === '/hardware-scan') {
         hardwareService.scanHardware().then(function (resultado) {
             res.writeHead(200, {
@@ -3404,18 +2303,6 @@ const server = http.createServer((req, res) => {
         return;
     }
 
-    // ----------------------------------------------------------
-    // /vaapi-check — verifica aceleração de vídeo (VA-API)
-    // ----------------------------------------------------------
-    //
-    // Roda `vainfo` e devolve JSON estruturado com os perfis
-    // suportados. Usado pelos botões "Verificar Aceleração" da
-    // sessão Hardware (AMD, Intel, NVIDIA). Read-only, sem auth.
-    //
-    // Para NVIDIA, seta `LIBVA_DRIVER_NAME=nvidia` — o driver
-    // proprietário expõe VDPAU nativamente, e o `nvidia-vaapi-driver`
-    // é um wrapper que o libva encontra por esse nome. AMD/Intel
-    // usam o auto-detect normal do libva.
     if (req.method === 'GET' && url === '/vaapi-check') {
         var vendorCheck = (query.get('vendor') || '').toLowerCase();
         if (['amd', 'intel', 'nvidia'].indexOf(vendorCheck) === -1) {
@@ -3447,15 +2334,6 @@ const server = http.createServer((req, res) => {
         return;
     }
 
-    // ----------------------------------------------------------
-    // /system-info — painel de diagnóstico
-    // ----------------------------------------------------------
-    //
-    // Campos de otimização (ksm_*, tcp_congestion, max_map_count,
-    // pipewire_quantum) usam fallback independente — se o sensor
-    // ou o comando não existir no sistema (KSM não compilado,
-    // PipeWire não instalado, etc.), o campo retorna um valor
-    // neutro e o painel continua funcional.
     if (req.method === 'GET' && url === '/system-info') {
         const script = `
         FEDORA=$(cat /etc/fedora-release 2>/dev/null || echo "")
@@ -3539,9 +2417,6 @@ const server = http.createServer((req, res) => {
         return;
     }
 
-    // ----------------------------------------------------------
-    // /top-processes — top 5 por CPU e por RAM
-    // ----------------------------------------------------------
     if (req.method === 'GET' && url === '/top-processes') {
         const scriptCpu = `ps -eo pcpu,comm --sort=-pcpu --no-headers 2>/dev/null | head -5`;
         const scriptRam = `ps -eo pmem,rss,comm --sort=-rss --no-headers 2>/dev/null | head -5`;
@@ -3580,9 +2455,6 @@ const server = http.createServer((req, res) => {
         return;
     }
 
-    // ----------------------------------------------------------
-    // /disk-usage — partições montadas
-    // ----------------------------------------------------------
     if (req.method === 'GET' && url === '/disk-usage') {
         const script = `df -B1 --output=source,size,used,avail,pcent,target 2>/dev/null | tail -n +2 | grep -v -E "^(tmpfs|devtmpfs|efivarfs|squashfs|overlay)" | grep -v -E "\\s/(run|sys|proc|dev)(/|$)"`;
 
@@ -3612,9 +2484,6 @@ const server = http.createServer((req, res) => {
         return;
     }
 
-    // ----------------------------------------------------------
-    // /journal-errors — erros agrupados das últimas 24h
-    // ----------------------------------------------------------
     if (req.method === 'GET' && url === '/journal-errors') {
         const script = `journalctl -p err -S "24 hours ago" -o short 2>/dev/null | grep -v "^-- " | tail -200`;
 
@@ -3655,9 +2524,6 @@ const server = http.createServer((req, res) => {
         return;
     }
 
-    // ----------------------------------------------------------
-    // /changelog — changelog da versão atual (parseado do CHANGELOG.md)
-    // ----------------------------------------------------------
     if (req.method === 'GET' && url === '/changelog') {
         var resultado = _lerChangelogVersao(FAP_VERSION);
         res.writeHead(200, {
@@ -3668,21 +2534,8 @@ const server = http.createServer((req, res) => {
         return;
     }
 
-    // ----------------------------------------------------------
-    // /fedora-upgrade-status — disponibilidade de upgrade (44 → 45)
-    // ----------------------------------------------------------
-    //
-    // Retorna o status consolidado do upgrade. Cache de 6h. Nada
-    // aqui altera o sistema — são só consultas.
     if (req.method === 'GET' && url === '/fedora-upgrade-status') {
-        // `?refresh=1` invalida o cache do servidor e força nova
-        // consulta às fontes oficiais. Mesmo padrão já usado em
-        // `/system-state`.
-        //
-        // NÃO invalida quando `_upgradeConcluidoPermanente` está
-        // ativo: o sistema já está no alvo, e a resposta
-        // `no_upgrade_needed` é imutável; refresh seria só
-        // desperdício de request local.
+
         if (query.get('refresh') === '1' && !_upgradeConcluidoPermanente) {
             _upgradeStatusCache = { dados: null, ts: 0 };
         }
@@ -3703,32 +2556,11 @@ const server = http.createServer((req, res) => {
         return;
     }
 
-    // ----------------------------------------------------------
-    // /executar — executa comando (POST)
-    // ----------------------------------------------------------
-    //
-    // IMPORTANTE: TODA a lógica (validação do body, rate limit,
-    // despacho) roda DENTRO do req.on('end'). Só assim `comando` e
-    // `idComando` estão definidos. Colocar `_podeExecutar(idComando)`
-    // ou `procederComExecucao(...)` fora do callback fazia o Node
-    // lançar ReferenceError (idComando não declarado no escopo do
-    // handler) antes do body chegar — o processo morria e o cliente
-    // via "Erro de conexão".
     if (req.method === 'POST' && url === '/executar') {
         let body = '';
         req.on('data', chunk => { body += chunk.toString(); });
         req.on('end', () => {
-            // CSRF guard: `/executar` NÃO valida Content-Type (aceita
-            // qualquer body), então um site malicioso pode fazer
-            // `fetch('http://localhost:3000/executar', { method:
-            // 'POST', mode: 'no-cors', body: JSON.stringify({...}) })`
-            // e disparar comandos sem interação do usuário.
-            //
-            // Mesma regra do /shutdown: Origin vazia (curl do
-            // install.sh --uninstall, único consumidor legítimo
-            // programático) OU Origin same-origin (o próprio FAP).
-            // Navegador de aba maliciosa envia Origin de outro host
-            // → bloqueado.
+
             var originExec = req.headers.origin || '';
             var originExecOk = !originExec ||
             /^https?:\/\/(127\.0\.0\.1|localhost)(:\d+)?$/.test(originExec);
@@ -3745,14 +2577,6 @@ const server = http.createServer((req, res) => {
             try {
                 const { comando, idComando } = JSON.parse(body);
 
-                // `isReversao` sempre foi `false` no fluxo HTTP. Toda a
-                // marcação de "revertido" é feita pelo frontend via
-                // POST /progress (removendo o id do array de
-                // executados). O parâmetro continua existindo como
-                // contrato interno de `executarComandoComStream` (que
-                // o usa para decidir entre salvar e remover progresso
-                // quando rodado internamente), mas o handler HTTP não
-                // o expõe.
                 const isReversao = false;
 
                 if (!comando || !idComando) {
@@ -3779,13 +2603,8 @@ const server = http.createServer((req, res) => {
                     }));
                 }
 
-                // Descarta o buffer de execuções anteriores do mesmo
-                // idComando. Sem isso, um novo cliente SSE recebia o
-                // replay da rodada anterior antes dos logs da nova.
                 sseBuffers.delete(idComando);
-                // Limpa a âncora de progresso: a próxima execução
-                // começa do zero, e o primeiro `[N/M']` define o
-                // total correto (ver `_detectarProgressoPacotes`).
+
                 _progressoTotalAtual.delete(idComando);
 
                 procederComExecucao(comando, idComando, isReversao, res);
@@ -3802,29 +2621,8 @@ const server = http.createServer((req, res) => {
         return;
     }
 
-    // ----------------------------------------------------------
-    // /shutdown — encerra o FAP graciosamente após desinstalação
-    // ----------------------------------------------------------
-    //
-    // Chamado pelo `install.sh --uninstall` (via `curl`) depois
-    // de remover os arquivos. A ordem é:
-    //
-    //   1. install.sh remove arquivos (server.js, sessões, etc.)
-    //   2. install.sh faz `curl -X POST /shutdown`
-    //   3. server.js mata o fap-container (janela fecha)
-    //   4. iniciar_fap.sh percebe o container fechado, mata o node
-    //   5. O terminal fecha
-    //
-    // Sem isso, o node e o container ficam "zumbis" até o usuário
-    // fechar a janela manualmente.
     if (req.method === 'POST' && url === '/shutdown') {
-        // CSRF guard: só aceita requests SEM Origin (curl do
-        // install.sh --uninstall, que é o único consumidor
-        // legítimo) ou COM Origin do próprio FAP. Navegador de
-        // aba maliciosa envia Origin de outro host → bloqueado.
-        // /executar não precisa disso porque exige
-        // Content-Type: application/json (não é "simple request",
-        // passa por preflight e o preflight falha no servidor).
+
         var originShutdown = req.headers.origin || '';
         var originOk = !originShutdown ||
         /^https?:\/\/(127\.0\.0\.1|localhost)(:\d+)?$/.test(originShutdown);
@@ -3838,14 +2636,10 @@ const server = http.createServer((req, res) => {
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ success: true, message: 'Shutdown iniciado' }));
 
-        // Mata o container primeiro (janela fecha). Depois o
-        // _encerrarGraciosamente mata as árvores de processos e
-        // fecha SSEs. Não usamos `pkill -f fap-container` sem
-        // qualificação para não matar containers de outros projetos.
         try {
             const containerPath = path.join(__dirname, 'fap-container');
             const result = spawnSync('pkill', ['-f', 'fap-container.*--url http://localhost:' + PORT],
-                { timeout: 3000 });
+                                     { timeout: 3000 });
             if (result.status === 0) {
                 console.log('[FAP] Container encerrado via pkill');
             } else {
@@ -3855,9 +2649,6 @@ const server = http.createServer((req, res) => {
             console.warn('[FAP] Falha ao encerrar container:', e.message);
         }
 
-        // Aguarda o container fechar antes de sair (o
-        // iniciar_fap.sh precisa ver o container fechado para
-        // matar o node e fechar o terminal).
         setTimeout(function() {
             _encerrarGraciosamente('SHUTDOWN');
         }, 500);
@@ -3865,16 +2656,9 @@ const server = http.createServer((req, res) => {
         return;
     }
 
-    // ----------------------------------------------------------
-    // 404
-    // ----------------------------------------------------------
     res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
     res.end('Página não encontrada');
 });
-
-// ============================================================
-// EVENTOS DO SERVIDOR
-// ============================================================
 
 server.on('error', (e) => {
     if (e.code === 'EADDRINUSE') {
@@ -3885,36 +2669,17 @@ server.on('error', (e) => {
     }
 });
 
-// ============================================================
-// ENCERRAMENTO GRACIOSO (SIGINT + SIGTERM)
-// ============================================================
-//
-// O servidor precisa responder aos dois sinais:
-//
-//   • SIGINT  — Ctrl+C no terminal onde o FAP foi iniciado
-//   • SIGTERM — `kill` enviado pelo cleanup() do iniciar_fap.sh
-//               quando o usuário fecha a janela do container
-//
-// Em ambos os casos, a ação é a MESMA: matar as árvores de
-// processos filho (para não deixar `dnf install` órfão segurando
-// o lock do rpm), fechar as conexões SSE, e sair.
-
 let _encerrando = false;
 
 function _encerrarGraciosamente(sinal) {
-    // Guarda contra múltiplos sinais (SIGINT seguido de SIGTERM,
-    // por exemplo). Só a primeira chamada executa.
+
     if (_encerrando) return;
     _encerrando = true;
 
     console.log(`\n🛑 Encerrando servidor (${sinal})...`);
 
-    // Mata a árvore de cada processo filho (grupo inteiro, não só
-    // o bash pai). Sem isso, o `dnf upgrade` continua rodando como
-    // órfão depois que o servidor morre.
     _processosAtivos.forEach(_matarArvoreProcessos);
 
-    // Limpa o askpass helper, se foi criado nesta sessão.
     if (_askpassHelperPath && fs.existsSync(_askpassHelperPath)) {
         try { fs.unlinkSync(_askpassHelperPath); } catch (e) {}
     }
@@ -3931,10 +2696,6 @@ function _encerrarGraciosamente(sinal) {
         process.exit(0);
     });
 
-    // Rede de segurança: se o server.close() não resolver em 3s
-    // (conexões penduradas, handles abertos), força a saída. Sem
-    // isso, o node poderia travar esperando conexões SSE que não
-    // fecharam.
     setTimeout(function() {
         console.log('⚠️ Forçando saída após timeout');
         process.exit(0);

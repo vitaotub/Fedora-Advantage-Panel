@@ -945,6 +945,33 @@ function abrirAppGenerico(idInstall) {
 _registrarAbrirEmMassa();
 
 // ============================================================
+// ABRIR TELEGRAM via `flatpak run` (v1.6.0)
+// ============================================================
+//
+// O Telegram Flatpak (`org.telegram.desktop`) tem um `.desktop` com
+// `DBusActivatable=true`. O `gtk-launch org.telegram.desktop` (padrão
+// usado por `_registrarAbrirEmMassa` → `abrirAppGenerico` para
+// `APPS_FLATPAK`) falha silenciosamente — o `setsid` desacopla,
+// retorna 0, mas a janela não abre. O atalho do menu iniciar usa
+// `/usr/bin/flatpak run org.telegram.desktop`.
+//
+// `_registrarAbrir` sobrescreve o registro do `_registrarAbrirEmMassa`
+// (o segundo prevalece). `abrirTelegram()` chama `flatpak run` via
+// `abrirFerramentaExterna`. O `server.js` ganhou
+// `_REDIRECT_FLATPAK_RUN_PADRAO` (regex restrito) — o comando
+// `setsid -f flatpak run org.telegram.desktop > /tmp/fap-open-*.log
+// 2>&1 < /dev/null` passa sem `pkexec`.
+_registrarAbrir('instalar-telegram', {
+    textoKey: 'sessoes.aplicativos.btn_abrir_telegram',
+    textoFallback: '🚀 Abrir Telegram',
+    onclick: 'abrirTelegram()'
+});
+
+function abrirTelegram() {
+    abrirFerramentaExterna('flatpak run org.telegram.desktop', 'instalar-telegram', 'Telegram');
+}
+
+// ============================================================
 // ABRIR FIREFOX (v1.5.9)
 // ============================================================
 //
@@ -1481,7 +1508,15 @@ async function instalarLightworks() {
 }
 
 function abrirLightworks() {
-    abrirFerramentaExterna('gtk-launch lightworks', 'instalar-lightworks', 'Lightworks');
+    // v1.6.0: o `.desktop` do Lightworks pode ter nome diferente de
+    // `lightworks.desktop` (ex.: `lightworks-2023.2.desktop`), então
+    // `gtk-launch lightworks` falhava silenciosamente (o log mostrava
+    // "aberto" mas a janela não aparecia). O atalho do menu iniciar
+    // usa `/usr/bin/lightworks` diretamente. Usamos o binário direto.
+    // `lightworks` foi re-adicionado à `_BINARIOS_ABRIR_WHITELIST` do
+    // `server.js` — sem isso, o `setsid -f lightworks > /tmp/...` cairia
+    // em `pkexec`.
+    abrirFerramentaExterna('lightworks', 'instalar-lightworks', 'Lightworks');
 }
 
 // ============================================================
