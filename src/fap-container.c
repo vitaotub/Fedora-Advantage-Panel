@@ -170,6 +170,32 @@ static gboolean on_permission_request(WebKitWebView *web_view,
                                           }
                                       }
 
+/* v1.6.1: valida o HOST exato da URI (GUri, GLib >= 2.66).
+ * A checagem anterior era só por prefixo de string, e
+ * "http://localhost:@outro-site.com/" também começa com
+ * "http://localhost:" (o host real ali é "outro-site.com").
+ * `file://` e `about:` seguem permitidos, como antes. */
+static gboolean fap_uri_e_local(const char *uri) {
+    if (uri == NULL) return FALSE;
+    if (g_str_has_prefix(uri, "file://") || g_str_has_prefix(uri, "about:"))
+        return TRUE;
+
+    GError *err = NULL;
+    GUri *u = g_uri_parse(uri, G_URI_FLAGS_NONE, &err);
+    if (u == NULL) {
+        if (err != NULL) g_error_free(err);
+        return FALSE;
+    }
+    const char *scheme = g_uri_get_scheme(u);
+    const char *host = g_uri_get_host(u);
+    gboolean ok = (scheme != NULL && host != NULL &&
+                   g_str_equal(scheme, "http") &&
+                   (g_str_equal(host, "localhost") || g_str_equal(host, "127.0.0.1")) &&
+                   g_uri_get_userinfo(u) == NULL);
+    g_uri_unref(u);
+    return ok;
+}
+
                                       gboolean on_webview_decide_policy(WebKitWebView *webview, WebKitPolicyDecision *decision,
                                                                         WebKitPolicyDecisionType type, gpointer user_data) {
                                           if (type == WEBKIT_POLICY_DECISION_TYPE_NAVIGATION_ACTION) {
@@ -180,10 +206,7 @@ static gboolean on_permission_request(WebKitWebView *web_view,
 
                                               g_print("[FAP] 🌐 Navegando para: %s\n", uri);
 
-                                              if (g_str_has_prefix(uri, "http://localhost:") ||
-                                                  g_str_has_prefix(uri, "http://127.0.0.1:") ||
-                                                  g_str_has_prefix(uri, "file://") ||
-                                                  g_str_has_prefix(uri, "about:")) {
+                                              if (fap_uri_e_local(uri)) {
                                                   webkit_policy_decision_use(decision);
                                               return TRUE;
                                                   }
