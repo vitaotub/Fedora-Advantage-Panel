@@ -157,9 +157,16 @@ registrarAppRemovivel('codecs-essenciais', {
     // appJaInstaladoNoSistema() retorna `false` sempre e o botão
     // fica em "Instalar" mesmo com os codecs presentes.
     pacotes: ['ffmpeg'],
+    // v1.6.1: `--skip-broken` foi REMOVIDO — o `dnf5 remove` não aceita
+    // essa opção ("argumento desconhecido"), então o remove nunca
+    // rodava e os pacotes *-freeworld ficavam instalados. Agora o
+    // próprio script filtra, via `rpm -q`, só os pacotes presentes
+    // (mesmo padrão do `instalar-rclone-manager`). Sem pacote
+    // presente, o remove é pulado e o `install` final roda normal.
     comandoRemocao:
         'sudo dnf swap ffmpeg ffmpeg-free --allowerasing -y; ' +
-        'sudo dnf remove -y ' +
+        'PKGS=""; ' +
+        'for p in ' +
         'gstreamer1-plugins-bad-freeworld ' +
         'gstreamer1-plugins-ugly ' +
         'libavcodec-freeworld ' +
@@ -171,8 +178,10 @@ registrarAppRemovivel('codecs-essenciais', {
         'xpra-codecs-freeworld ' +
         'ffmpegthumbnailer ' +
         'gstreamer1-plugin-openh264 ' +
-        'mozilla-openh264 ' +
-        '--skip-broken; ' +
+        'mozilla-openh264; do ' +
+        '  rpm -q "$p" >/dev/null 2>&1 && PKGS="$PKGS $p"; ' +
+        'done; ' +
+        'if [ -n "$PKGS" ]; then sudo dnf remove -y $PKGS; fi; ' +
         'sudo dnf install -y ' +
         'gstreamer1-plugins-good ' +
         'gstreamer1-plugins-bad-free ' +
