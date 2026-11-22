@@ -362,10 +362,6 @@ data-i18n="sessoes.diagnostico.btn_journal_check">
 // coletados via endpoints do server.js (/system-info,
 // /top-processes, /disk-usage, /journal-errors).
 
-function _t(chave, fallback) {
-    return (typeof tOr === 'function') ? tOr(chave, fallback) : fallback;
-}
-
 // ============================================================
 // REGISTRO DE APPS REMOVÍVEIS (lixeira unificada)
 // ============================================================
@@ -382,7 +378,10 @@ registrarAppRemovivel('coolercontrol-install', {
     nome: 'CoolerControl',
     comandoRemocao:
         'sudo systemctl disable --now coolercontrold.service 2>/dev/null || true; ' +
-        'sudo dnf remove -y coolercontrol liquidctl; ' +
+        // v1.6.2: filtra com `rpm -q` (DNF5 falha o `remove` inteiro se
+        // um dos pacotes não estiver instalado — ex.: só o coolercontrol).
+        'PKGS=""; for p in coolercontrol liquidctl; do rpm -q "$p" >/dev/null 2>&1 && PKGS="$PKGS $p"; done; ' +
+        'if [ -n "$PKGS" ]; then sudo dnf remove -y $PKGS; fi; ' +
         'sudo rm -f /etc/yum.repos.d/_copr:copr.fedorainfracloud.org:codifryed:CoolerControl.repo'
 });
 
@@ -780,14 +779,14 @@ async function verificarJournalErrors() {
         resumo.style.display = 'block';
 
         if (!data || !data.grupos || data.grupos.length === 0) {
-            conteudo.innerHTML = '<strong>✅ Nenhum erro relevante nas últimas 24 horas.</strong>';
+            conteudo.innerHTML = '<strong>' + _t('sessoes.diagnostico.journal_sem_erros', '✅ Nenhum erro relevante nas últimas 24 horas.') + '</strong>';
         } else {
-            var html = '<strong>Erros agrupados por origem (últimas 24h):</strong><ul style="margin-top: 0.5rem; padding-left: 1.25rem;">';
+            var html = '<strong>' + _t('sessoes.diagnostico.journal_agrupados', 'Erros agrupados por origem (últimas 24h):') + '</strong><ul style="margin-top: 0.5rem; padding-left: 1.25rem;">';
             data.grupos.forEach(function(g) {
                 html += '<li style="margin-bottom: 0.35rem;">' +
                     '<code>' + _escapeHTML(g.origem) + '</code> — ' +
-                    '<strong>' + g.contagem + ' ocorrência(s)</strong>' +
-                    (g.exemplo ? '<br><span style="font-size: 0.85em; color: var(--text-muted);">Exemplo: ' + _escapeHTML(g.exemplo) + '</span>' : '') +
+                    '<strong>' + _tVars('sessoes.diagnostico.journal_ocorrencias', '{n} ocorrência(s)', { n: g.contagem }) + '</strong>' +
+                    (g.exemplo ? '<br><span style="font-size: 0.85em; color: var(--text-muted);">' + _t('sessoes.diagnostico.journal_exemplo', 'Exemplo:') + ' ' + _escapeHTML(g.exemplo) + '</span>' : '') +
                     '</li>';
             });
             html += '</ul>';
@@ -839,16 +838,31 @@ function restaurarEstadoSessao() {
 
     restaurarEstadoSessao();
 
-    // Auto-refresh a cada 30s enquanto a sessão estiver visível
-    var _autoRefreshInterval = null;
+    // Auto-refresh a cada 30s enquanto a sessão estiver visível.
+    //
+    // v1.6.2: o script da sessão é reexecutado (eval) a CADA visita, e a
+    // variável do intervalo era local ao IIFE — então o guarda
+    // `if (_autoRefreshInterval) return` nunca barrava nada: cada visita
+    // empilhava um setInterval novo que nunca era limpo (N visitas =
+    // N atualizações simultâneas do painel a cada 30s, rodando mesmo
+    // com a sessão fechada). Agora o id fica em `window`, o anterior é
+    // cancelado antes de criar o novo, e o timer se encerra sozinho
+    // quando a sessão sai do DOM.
     function iniciarAutoRefresh() {
-        if (_autoRefreshInterval) return;
-        _autoRefreshInterval = setInterval(function() {
-            if (document.getElementById('sessao-diagnostico')) {
-                var rect = document.getElementById('sessao-diagnostico').getBoundingClientRect();
-                if (rect.height > 0 && rect.top < window.innerHeight) {
-                    atualizarPainelDiagnostico();
-                }
+        if (window._fapDiagIntervalo) {
+            clearInterval(window._fapDiagIntervalo);
+            window._fapDiagIntervalo = null;
+        }
+        window._fapDiagIntervalo = setInterval(function() {
+            var el = document.getElementById('sessao-diagnostico');
+            if (!el) {
+                clearInterval(window._fapDiagIntervalo);
+                window._fapDiagIntervalo = null;
+                return;
+            }
+            var rect = el.getBoundingClientRect();
+            if (rect.height > 0 && rect.top < window.innerHeight) {
+                atualizarPainelDiagnostico();
             }
         }, 30000);
     }

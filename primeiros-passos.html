@@ -18,33 +18,11 @@
 <span data-i18n="sessoes.primeiros-passos.descricao">Antes de qualquer configuração, atualize o sistema e habilite os repositórios essenciais. Estes passos são pré-requisito para todas as próximas sessões.</span>
 </div>
 
-<!-- Acórdeão: Atualizar o Fedora -->
-<details class="acordeao">
-<summary data-i18n="sessoes.primeiros-passos.atualizacao_titulo">🔄 Atualizar o Fedora</summary>
-<div class="acordeao-conteudo">
-
-<div class="bloco-comando">
-<div class="comando-info">
-<p data-i18n-html="sessoes.primeiros-passos.atualizacao_desc">
-Atualiza o índice de repositórios, sincroniza as chaves de segurança e baixa as versões mais recentes de todos os componentes do sistema.
-</p>
-<div class="grupo-botoes">
-<button class="btn-executar" onclick="executarAtualizacaoFedora()" data-comando="atualizacao-inicial" data-logbox="log-sessao-primeiros-passos" id="btn-atualizacao-inicial" data-i18n="sessoes.primeiros-passos.btn_atualizar">
-🔄 Atualizar Fedora
-</button>
+<!-- Aviso de atenção: manter o Fedora atualizado -->
+<div class="aviso-atencao" id="aviso-manter-atualizado">
+<strong data-i18n="sessoes.primeiros-passos.atencao_titulo">⚠️ Atenção: mantenha o Fedora sempre atualizado</strong>
+<p data-i18n="sessoes.primeiros-passos.atencao_texto">Manter o Fedora sempre atualizado é essencial. Algumas sessões e recursos do FAP funcionam melhor com o Fedora completamente atualizado. Um sistema desatualizado pode causar problemas com o próprio sistema, comprometer a segurança do usuário e afetar os inúmeros recursos que o FAP oferece. Atualize o sistema pela Central de Software ou pelo terminal (sudo dnf upgrade --refresh) antes de continuar.</p>
 </div>
-<div id="aviso-reboot-necessario" class="aviso-caixa" style="margin-top: 1rem; display: none;">
-🔄 <span data-i18n="sessoes.primeiros-passos.aviso_reboot_necessario">Reinicie o computador para aplicar as atualizações.</span>
-</div>
-</div>
-<div class="progress-container" id="progress-atualizacao-inicial">
-<div class="progress-bar"><div class="progress-fill" id="progress-fill-atualizacao-inicial"></div></div>
-<div class="progress-text"><span class="status" id="progress-status-atualizacao-inicial">⏳ Iniciando...</span><span class="percentage" id="progress-percent-atualizacao-inicial">0%</span></div>
-</div>
-</div>
-
-</div>
-</details>
 
 <!-- Acórdeão: Repositórios do Fedora (3 blocos temáticos) -->
 <details class="acordeao">
@@ -216,110 +194,6 @@ data-i18n="sessoes.primeiros-passos.btn_remover_fedora_flatpak">
 // ============================================================
 // SESSÃO: PRIMEIROS PASSOS
 // ============================================================
-
-function _t(chave, fallback) {
-    return (typeof tOr === 'function') ? tOr(chave, fallback) : fallback;
-}
-
-async function executarAtualizacaoFedora() {
-    var idComando = 'atualizacao-inicial';
-    var comando = 'sudo dnf upgrade --refresh -y';
-    var logBox = _getLogBox(idComando);
-    var btn = document.getElementById('btn-' + idComando);
-
-    if (!logBox) return;
-
-    // Guarda contra duplo clique enquanto a atualização está em
-    // andamento. O botão é sempreClicavel (pode ser reexecutado em
-    // outro momento), mas fica travado DURANTE a execução atual.
-    // Sem isso, o usuário podia disparar `dnf upgrade` duas vezes
-    // em paralelo — o que trava o banco do rpm.
-    if (btn && btn.disabled) return;
-
-    // Esconde o aviso de reboot antes de começar. Se o `dnf upgrade`
-    // terminar com sucesso e o `needs-restarting` indicar reboot
-    // pendente, ele será mostrado de novo no final.
-    var avisoReboot = document.getElementById('aviso-reboot-necessario');
-    if (avisoReboot) avisoReboot.style.display = 'none';
-
-    iniciarProgresso(idComando);
-    logBox.style.display = 'block';
-
-    var nomeAcao = _t('sessoes.primeiros-passos.btn_atualizar', '🔄 Atualizar Fedora');
-    _separadorLog(logBox, nomeAcao);
-
-    var header = document.createElement('div');
-    header.className = 'log-line info';
-    header.textContent = '🚀 ' + nomeAcao + '... (' + new Date().toLocaleTimeString() + ')';
-    logBox.appendChild(header);
-    logBox.scrollTop = logBox.scrollHeight;
-
-    conectarSSE(idComando, logBox);
-
-    if (btn) {
-        btn.disabled = true;
-        btn.textContent = '⏳ ' + nomeAcao.replace(/^[^\s]+\s/, '');
-        btn.style.opacity = '0.6';
-    }
-
-    _bloquearSessao(idComando);
-
-    try {
-        var response = await fetch(API_URL + '/executar', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ comando: comando, idComando: idComando })
-        });
-
-        if (!response.ok) {
-            var errorLine = document.createElement('div');
-            errorLine.className = 'log-line error';
-            errorLine.textContent = '❌ Erro HTTP: ' + response.status;
-            logBox.appendChild(errorLine);
-            logBox.scrollTop = logBox.scrollHeight;
-            completarProgresso(idComando, false);
-            return;
-        }
-
-        // Aguarda o SSE retornar 'end' — ou seja, o `dnf upgrade`
-        // terminar de verdade. Só então o botão volta a ficar ativo.
-        // O timeout é generoso (1 hora) porque uma atualização
-        // completa do Fedora pode demorar bastante em conexões
-        // lentas ou muitos pacotes.
-        var sucesso = await aguardarConclusaoReal(idComando, 3600000);
-
-        // sucesso === true  → terminou com código 0
-        // sucesso === false → terminou com erro
-        // sucesso === null  → timeout (não deveria acontecer em 1h)
-        // Em qualquer caso, o botão volta ao estado clicável.
-        if (btn) {
-            btn.disabled = false;
-            btn.textContent = nomeAcao;
-            btn.style.opacity = '1';
-        }
-
-        // Após sucesso, consulta /reboot-needed e mostra o aviso se
-        // um reboot for necessário. Sem isso, o usuário fechava o
-        // FAP sem saber que precisava reiniciar para aplicar o
-        // kernel/glibc/systemd atualizados.
-        if (sucesso) {
-            await _verificarRebootNecessario();
-        }
-    } catch (e) {
-        var errorLine2 = document.createElement('div');
-        errorLine2.className = 'log-line error';
-        errorLine2.textContent = '❌ Erro de conexão: ' + e.message;
-        logBox.appendChild(errorLine2);
-        logBox.scrollTop = logBox.scrollHeight;
-        completarProgresso(idComando, false);
-
-        if (btn) {
-            btn.disabled = false;
-            btn.textContent = nomeAcao;
-            btn.style.opacity = '1';
-        }
-    }
-}
 
 async function executarRPMFusion() {
     // ATENÇÃO: este é o ÚNICO comando desta lista que NÃO deve ter
@@ -683,23 +557,6 @@ async function restaurarEstadoSessao() {
     aplicarEstadoToggle('terra-extras-install', 'terra-extras-remove', false, terraExtrasJaAtivo);
 
     _atualizarVisibilidadeTerra();
-
-    // Sempre clicável: atualização
-    var btnAtualizacao = document.getElementById('btn-atualizacao-inicial');
-    if (btnAtualizacao) {
-        btnAtualizacao.disabled = false;
-        btnAtualizacao.textContent = _t('sessoes.primeiros-passos.btn_atualizar', '🔄 Atualizar Fedora');
-        btnAtualizacao.style.opacity = '1';
-        btnAtualizacao.style.backgroundColor = '';
-        btnAtualizacao.style.cursor = 'pointer';
-    }
-
-    // Verifica se há reboot pendente (de uma atualização anterior).
-    // Se o usuário atualizou, fechou o FAP sem reiniciar e voltou
-    // depois, `dnf needs-restarting -r` ainda retorna 1 até o
-    // reboot acontecer — então o aviso precisa aparecer mesmo sem
-    // o usuário ter clicado em "Atualizar" nesta sessão.
-    _verificarRebootNecessario();
 }
 
 // Aplica o estado visual de um botão one-shot (sem par revert)
@@ -709,81 +566,6 @@ async function restaurarEstadoSessao() {
 // - Senão, se jaAtivoNoSistema → cinza "✅ Já estava ativo" com
 //   tooltip (pré-existente, opção C).
 // - Senão → azul clicável original (comportamento atual).
-// ============================================================
-// VERIFICAÇÃO DE REBOOT PENDENTE
-// ============================================================
-//
-// Consulta /reboot-needed e mostra/esconde o aviso. Chamada em dois
-// momentos:
-//   1. No `onSucesso` do `executarAtualizacaoFedora` — logo após
-//      o `dnf upgrade` terminar, para o usuário saber na hora.
-//   2. No `restaurarEstadoSessao` — quando a sessão carrega, para
-//      cobrir o caso "atualizou, fechou o FAP sem reiniciar,
-//      voltou depois". `needs-restarting -r` continua retornando 1
-//      até o reboot acontecer.
-//
-// Falha de rede é silenciosa (não mostra aviso) — o usuário não
-// precisa ser incomodado se a consulta não puder ser feita.
-async function _verificarRebootNecessario() {
-    var aviso = document.getElementById('aviso-reboot-necessario');
-    if (!aviso) return;
-
-    try {
-        var r = await fetch(API_URL + '/reboot-needed', { cache: 'no-store' });
-        if (!r.ok) {
-            aviso.style.display = 'none';
-            return;
-        }
-        var data = await r.json();
-
-        // ============================================================
-        // TRÊS ESTADOS (v1.5.5)
-        // ============================================================
-        //
-        //   1. `data.erro === true`   → verificação falhou (dnf
-        //      indisponível, RPM DB lock, timeout). Aviso neutro
-        //      com instrução para o usuário verificar manualmente.
-        //
-        //   2. `data.reboot === true` → reboot necessário. Aviso
-        //      amarelo com ícone de recarga.
-        //
-        //   3. `reboot === false`     → nada pendente. Banner
-        //      escondido (comportamento padrão).
-        //
-        // O `innerHTML` é reescrito em (1) e (2) porque o banner
-        // começa no HTML da sessão com o texto fixo "Reinicie o
-        // computador...". Reutilizar o mesmo elemento com textos
-        // diferentes evita duplicar o `id` no DOM.
-        if (data && data.erro === true) {
-            aviso.style.display = 'block';
-            aviso.className = 'aviso-caixa';
-            aviso.innerHTML =
-                '⚠️ <span data-i18n="sessoes.primeiros-passos.aviso_reboot_nao_verificado">' +
-                _t('sessoes.primeiros-passos.aviso_reboot_nao_verificado',
-                   'Não foi possível verificar se é necessário reiniciar. Verifique no terminal: dnf needs-restarting -r') +
-                '</span>';
-            return;
-        }
-
-        if (data && data.reboot === true) {
-            aviso.style.display = 'block';
-            aviso.className = 'aviso-caixa';
-            aviso.innerHTML =
-                '🔄 <span data-i18n="sessoes.primeiros-passos.aviso_reboot_necessario">' +
-                _t('sessoes.primeiros-passos.aviso_reboot_necessario',
-                   'Reinicie o computador para aplicar as atualizações.') +
-                '</span>';
-            return;
-        }
-
-        // Estado (3): sem pendências (ou reboot falso, ou sem erro
-        // reportado por backend antigo).
-        aviso.style.display = 'none';
-    } catch (e) {
-        aviso.style.display = 'none';
-    }
-}
-
 function _aplicarEstadoOneShotOuPreExistente(idComando, jaAtivoNoSistema) {
     var btn = document.getElementById('btn-' + idComando);
     if (!btn) return;

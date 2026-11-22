@@ -80,6 +80,7 @@ LAUNCHERS
 </div>
 </div>
 
+</div>
 </details>
 
 <!-- ============================================================
@@ -158,6 +159,7 @@ COMPATIBILIDADE
 </div>
 </div>
 
+</div>
 </details>
 
 <!-- ============================================================
@@ -237,6 +239,7 @@ DESEMPENHO E MONITORAMENTO
 </div>
 </div>
 
+</div>
 </details>
 
 <!-- ============================================================
@@ -546,13 +549,6 @@ DICAS E TRUQUES
 // SESSÃO: GAMING
 // ============================================================
 
-function _t(chave, fallback) {
-    return (typeof tOr === 'function') ? tOr(chave, fallback) : fallback;
-}
-function _tVars(chave, fallback, vars) {
-    return (typeof tOr === 'function') ? tOr(chave, fallback, vars) : fallback;
-}
-
 // ------------------------------------------------------------
 // Flatpaks desta sessão
 // ------------------------------------------------------------
@@ -715,24 +711,43 @@ registrarAppRemovivel('gamemode-presets-apply', {
         'Continuar?'
 });
 
-// NTSYNC — Estado 2 com lixeira full-cleanup (mesmo comportamento
-// que o antigo botão "Desfazer tudo", agora acessível pela lixeira
-// ao lado do botão de instalar).
+// NTSYNC — "ativo" = módulo `ntsync` carregado de verdade (v1.6.2).
+//
+// No Fedora 44+ o pacote que entrega o NTSYNC é o `ntsync-autoload`
+// (instala /usr/lib/modules-load.d/ntsync.conf); `wine-ntsync` é só um
+// Provides dele e NUNCA aparece no `rpm -qa`. Por isso a checagem por
+// pacote (`wine-ntsync`) fazia o botão continuar "Instalar" mesmo com o
+// módulo ativo. Agora `detectar` consulta o módulo carregado
+// (`SystemState.moduloCarregado`, via /sys/module/ntsync e /dev/ntsync),
+// o que também reconhece NTSYNC ativado por fora do FAP.
+//
+// A lixeira DESFAZ o NTSYNC sem remover o pacote (o `ntsync-autoload` pode
+// ser exigido/recomendado por Wine/Steam e `dnf remove` arrastaria esses
+// apps): descarrega o módulo e mascara o carregamento automático com um
+// link para /dev/null em /etc/modules-load.d/ntsync.conf (idioma padrão do
+// systemd). O botão de ativar remove essa máscara antes de instalar.
 registrarAppRemovivel('ntsync-install', {
     tipo: 'dnf',
-    pacotes: ['wine-ntsync'],
+    pacotes: ['ntsync-autoload'],
     nome: 'NTSYNC',
+    detectar: function() { return SystemState.moduloCarregado('ntsync'); },
     comandoRemocao:
-        'sudo dnf remove -y wine-ntsync; ' +
+        'if sudo modprobe -r ntsync 2>/dev/null; then ' +
+        '  echo "✅ Módulo ntsync descarregado."; ' +
+        'else ' +
+        '  echo "⚠️ O módulo ntsync está em uso (Wine/Proton aberto?) — ele será descarregado no próximo reinício."; ' +
+        'fi; ' +
         'sudo rm -f /etc/modules-load.d/ntsync.conf; ' +
-        'sudo modprobe -r ntsync 2>/dev/null || true',
+        'sudo mkdir -p /etc/modules-load.d && ' +
+        'sudo ln -sf /dev/null /etc/modules-load.d/ntsync.conf && ' +
+        'echo "✅ Carregamento automático do ntsync desativado (o pacote ntsync-autoload foi mantido)."',
     confirmMsg:
-        '⚠️ Remover completamente o NTSYNC?\n\n' +
-        'Este botão remove:\n' +
-        '• O pacote wine-ntsync\n' +
-        '• O arquivo /etc/modules-load.d/ntsync.conf\n' +
-        '• O módulo ntsync do kernel (se carregado)\n\n' +
-        'Ação irreversível em relação aos pacotes.\n\n' +
+        '⚠️ Desativar o NTSYNC?\n\n' +
+        'Isto faz:\n' +
+        '• Descarrega o módulo ntsync do kernel (se não estiver em uso)\n' +
+        '• Impede o carregamento automático no boot\n\n' +
+        'O pacote ntsync-autoload é mantido (Wine/Steam podem depender dele). ' +
+        'Você pode ativar de novo pelo botão.\n\n' +
         'Continuar?'
 });
 
@@ -847,7 +862,7 @@ async function executarNTSync() {
     const idComando = 'ntsync-install';
     // Verifica com `modprobe -n` (dry-run) se o módulo existe no
     // kernel ANTES de instalar. Se não existir, aborta com
-    // mensagem clara — sem deixar `wine-ntsync` órfão. Se o
+    // mensagem clara — sem deixar `ntsync-autoload` órfão. Se o
     // `dnf install` passar mas o módulo não carregar, faz rollback
     // do pacote.
     const comando =
@@ -856,14 +871,16 @@ async function executarNTSync() {
         '  echo "   Nada foi instalado. Atualize o kernel e tente novamente."; ' +
         '  exit 1; ' +
         'fi; ' +
-        'sudo dnf install -y wine-ntsync || { echo "❌ Falha ao instalar wine-ntsync."; exit 1; }; ' +
+        // Remove a máscara deixada pela lixeira (link para /dev/null) ou o
+        // arquivo antigo da v1.6.1; o pacote reinstala o definitivo em /usr/lib.
+        'sudo rm -f /etc/modules-load.d/ntsync.conf; ' +
+        // `ntsync-autoload` é o RPM real; `wine-ntsync` é só um Provides dele.
+        'sudo dnf install -y ntsync-autoload || { echo "❌ Falha ao instalar ntsync-autoload."; exit 1; }; ' +
         'if ! sudo modprobe ntsync; then ' +
-        '  echo "❌ Módulo instalado mas não carregou. Fazendo rollback do pacote..."; ' +
-        '  sudo dnf remove -y wine-ntsync; ' +
-        '  echo "⚠️ wine-ntsync removido. Tente reiniciar e rodar novamente."; ' +
+        '  echo "❌ Pacote instalado, mas o módulo não carregou. Reinicie e tente novamente."; ' +
         '  exit 1; ' +
         'fi; ' +
-        'echo "ntsync" | sudo tee /etc/modules-load.d/ntsync.conf > /dev/null';
+        'echo "✅ NTSYNC ativo (módulo carregado e carregamento automático no boot)."';
     await executarComandoGenerico(idComando, comando,
         _t('sessoes.gaming.btn_ntsync', '⚡ NTSYNC'),
         async function() {

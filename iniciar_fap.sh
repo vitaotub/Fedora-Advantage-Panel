@@ -525,6 +525,12 @@ verificar_arquivos() {
         log_warning "A sessão 'Dispositivos e Periféricos' não conseguirá detectar hardware."
     fi
 
+    # apps_sobre.json alimenta o popup "Sobre o software" (quadrado "!").
+    # Não é crítico: sem ele o popup mostra "sem informações".
+    if [ ! -f "$DIR/apps_sobre.json" ]; then
+        log_warning "Arquivo apps_sobre.json não encontrado! O popup 'Sobre o software' ficará sem textos."
+    fi
+
     if [ ! -f "$DIR/index.html" ]; then
         log_error "Arquivo index.html não encontrado!"
         exit 1
@@ -732,9 +738,12 @@ limpar_perfis() {
 # SERVIDOR
 # ============================================================
 
+# v1.6.2: `-sTCP:LISTEN` — sem ele o `lsof -i:3000` também devolve os
+# CLIENTES conectados (navegador/container com o FAP aberto) e o
+# `kill -9` abaixo matava o processo errado (mesma correção do install.sh).
 liberar_porta() {
     if command -v lsof &> /dev/null; then
-        local port_pid=$(lsof -t -i:3000 2>/dev/null)
+        local port_pid=$(lsof -t -i:3000 -sTCP:LISTEN 2>/dev/null)
         if [ ! -z "$port_pid" ]; then
             log_warning "Porta 3000 ocupada. Liberando..."
             kill -9 $port_pid 2>/dev/null
@@ -985,6 +994,7 @@ Arquivos:
   server.js           Servidor Node.js
   hardware-service.js Detecção de hardware (endpoint /hardware-scan)
   hardware_map.json   Mapa de vendors PCI/USB → pacotes
+  apps_sobre.json     Textos do popup "Sobre o software" (PT/EN/ES)
   index.html          Landing page (botão único "Iniciar Configurações")
   guiado.html         Configuração passo a passo (13 sessões)
   CHANGELOG.md        Histórico de mudanças (lido em runtime)
@@ -1174,7 +1184,7 @@ fi
     # Libera a porta 3000 caso o node tenha ficado preso em algum
     # estado intermediário (raro, mas possível em crash).
     if command -v lsof &> /dev/null; then
-        local porta_pid=$(lsof -t -i:3000 2>/dev/null)
+        local porta_pid=$(lsof -t -i:3000 -sTCP:LISTEN 2>/dev/null)
         if [ -n "$porta_pid" ]; then
             kill -9 $porta_pid 2>/dev/null || true
             log_info "Porta 3000 liberada"

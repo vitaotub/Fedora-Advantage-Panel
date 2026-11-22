@@ -65,6 +65,7 @@ Thumbs.db
 # esses arquivos continuam sendo rastreados porque o `!` os
 # reabilita explicitamente.
 !hardware_map.json
+!apps_sobre.json
 !CHANGELOG.md
 !locales/
 !locales/en.json

@@ -56,15 +56,15 @@ ACORDEÃO 2: SUPLEMENTOS SEGUROS
 <div class="acordeao-conteudo">
 
 <div class="sessao-descricao" data-i18n="sessoes.dispositivos-perifericos.suplementos_desc">
-Estes pacotes complementam o <code>linux-firmware</code> padrão do Fedora. São seguros para instalar em qualquer sistema — não conflitam com drivers existentes e cobrem hardware que a Red Hat não distribui por questões de licenciamento ou por não fazer parte do escopo do Fedora.
+O <code>linux-firmware</code> do Fedora é dividido em subpacotes por fabricante e tipo de hardware. O botão abaixo garante que eles estejam instalados — útil em instalações mínimas ou quando as dependências fracas foram desativadas. São arquivos passivos, seguros em qualquer sistema.
 </div>
 
-<!-- linux-firmware-vendor -->
+<!-- Subpacotes de firmware do linux-firmware -->
 <div class="bloco-comando">
 <div class="comando-info">
-<h3 data-i18n="sessoes.dispositivos-perifericos.firmware_vendor_titulo">Firmwares adicionais de fabricantes</h3>
+<h3 data-i18n="sessoes.dispositivos-perifericos.firmware_vendor_titulo">Firmwares de hardware (Wi-Fi, Bluetooth, vídeo e áudio)</h3>
 <p data-i18n-html="sessoes.dispositivos-perifericos.firmware_vendor_desc">
-O pacote <code>linux-firmware-vendor</code> traz firmwares que não estão no pacote principal — chips Wi-Fi Realtek recentes (RTL8852), alguns modelos Intel, e firmwares de fabricantes que exigem redistribuição restrita. É complementar ao <code>linux-firmware</code>, não o substitui.
+Instala os subpacotes de firmware do <code>linux-firmware</code> para Wi-Fi e Bluetooth (Realtek, Intel, MediaTek, Atheros, Broadcom, NXP, Texas Instruments), placas de vídeo (AMD, Intel, NVIDIA) e áudio (Intel, Cirrus). O que já estiver instalado é mantido; o que não existir na sua versão do Fedora é ignorado.
 </p>
 <div class="grupo-botoes">
 <button class="btn-executar"
@@ -75,18 +75,9 @@ id="btn-firmware-vendor-install"
 data-i18n="sessoes.dispositivos-perifericos.btn_firmware_vendor_instalar">
 📦 Instalar firmwares adicionais
 </button>
-<button class="btn-executar vermelho"
-onclick="executarSuplementoRemover('firmware-vendor-remove')"
-data-comando="firmware-vendor-remove"
-data-logbox="log-sessao-dispositivos-perifericos"
-id="btn-firmware-vendor-remove"
-data-i18n="sessoes.dispositivos-perifericos.btn_firmware_vendor_reverter">
-↩️ Reverter
-</button>
 </div>
 </div>
 <div class="progress-container" id="progress-firmware-vendor-install"><div class="progress-bar"><div class="progress-fill" id="progress-fill-firmware-vendor-install"></div></div><div class="progress-text"><span class="status" id="progress-status-firmware-vendor-install">⏳ Iniciando...</span><span class="percentage" id="progress-percent-firmware-vendor-install">0%</span></div></div>
-<div class="progress-container" id="progress-firmware-vendor-remove"><div class="progress-bar"><div class="progress-fill" id="progress-fill-firmware-vendor-remove"></div></div><div class="progress-text"><span class="status" id="progress-status-firmware-vendor-remove">⏳ Iniciando...</span><span class="percentage" id="progress-percent-firmware-vendor-remove">0%</span></div></div>
 </div>
 
 </div>
@@ -237,13 +228,6 @@ data-i18n="sessoes.dispositivos-perifericos.btn_steam_devices_reverter">
 // A função global _marcarBotaoConcluido (em script.js) faz
 // exatamente a mesma coisa, evitando duplicação.
 
-function _t(chave, fallback) {
-    return (typeof tOr === 'function') ? tOr(chave, fallback) : fallback;
-}
-function _tVars(chave, fallback, vars) {
-    return (typeof tOr === 'function') ? tOr(chave, fallback, vars) : fallback;
-}
-
 // ============================================================
 // MAPA DE COMANDOS POR idComando
 // ============================================================
@@ -283,14 +267,32 @@ var DRIVER_COMMANDS = {
         '  echo "   Pode ser necessário reiniciar o computador."; ' +
         '  echo "   Verifique com: sudo dkms status"; ' +
         'fi',
-    'driver-openrazer-remove': 'sudo gpasswd -d $USER plugdev; sudo dnf remove -y polychromatic openrazer-driver openrazer-daemon openrazer-kmod-common',
+    // v1.6.2: (1) filtra com `rpm -q` — o DNF5 falha o `remove` INTEIRO com
+    // "No match for argument" se qualquer nome da lista não estiver
+    // instalado (o instalador usa `akmod-openrazer` OU o DKMS, e nem todo
+    // nome abaixo existe em toda máquina); (2) inclui os pacotes de módulo
+    // que o instalador realmente põe (`akmod-openrazer`,
+    // `openrazer-kernel-modules-dkms`, `kmod-openrazer*`), que a versão
+    // anterior deixava para trás.
+    'driver-openrazer-remove':
+        'sudo gpasswd -d $USER plugdev; ' +
+        'PKGS=""; ' +
+        'for p in polychromatic python3-openrazer openrazer-daemon openrazer-driver openrazer-kmod-common akmod-openrazer openrazer-kernel-modules-dkms; do ' +
+        '  rpm -q "$p" >/dev/null 2>&1 && PKGS="$PKGS $p"; ' +
+        'done; ' +
+        'PKGS="$PKGS $(rpm -qa --qf \'%{NAME}\\n\' \'kmod-openrazer*\' 2>/dev/null | sort -u | tr \'\\n\' \' \')"; ' +
+        'if [ -n "$(echo $PKGS)" ]; then sudo dnf remove -y $PKGS; else echo "ℹ️ Nenhum pacote OpenRazer instalado — nada a remover."; fi',
     'driver-xpadneo-install': 'sudo dnf install -y xpadneo',
     'driver-xpadneo-remove': 'sudo dnf remove -y xpadneo'
 };
 
 var SUPLEMENTO_COMMANDS = {
-    'firmware-vendor-install': 'sudo dnf install -y linux-firmware-vendor',
-    'firmware-vendor-remove': 'sudo dnf remove -y linux-firmware-vendor'
+    // Subpacotes de firmware do `linux-firmware` (Fedora). NÃO existe
+    // botão de reverter: `linux-firmware` exige esses subpacotes, então
+    // `dnf remove` removeria o próprio `linux-firmware` e deixaria
+    // Wi-Fi/vídeo sem firmware. O pacote antigo `linux-firmware-vendor`
+    // é do Asahi Linux (só cria /lib/firmware/vendor) e não era o certo.
+    'firmware-vendor-install': 'sudo dnf install -y --skip-unavailable realtek-firmware atheros-firmware brcmfmac-firmware mt7xxx-firmware mediatek-firmware iwlwifi-mvm-firmware iwlwifi-mld-firmware iwlwifi-dvm-firmware iwlbluetooth-firmware nxpwireless-firmware tiwilink-firmware libertas-firmware intel-audio-firmware cirrus-audio-firmware intel-gpu-firmware amd-gpu-firmware nvidia-gpu-firmware'
 };
 
 // ============================================================
@@ -304,12 +306,10 @@ var SUPLEMENTO_COMMANDS = {
 // `aplicarEstadoItemCompleto`/`aplicarEstadoToggle` detectem
 // corretamente o estado real.
 
-registrarAppRemovivel('firmware-vendor-install', {
-    tipo: 'dnf',
-    pacotes: ['linux-firmware-vendor'],
-    nome: 'Firmware adicional de fabricantes'
-});
-
+// Firmwares de hardware: botão de MÃO ÚNICA (sem lixeira). Instalar é inofensivo,
+// mas remover subpacotes de firmware arrastaria o `linux-firmware` (que os
+// exige) e deixaria Wi-Fi/Bluetooth/vídeo sem firmware. Usa
+// `aplicarEstadoOneShot`: "✅ Instalado" cinza, sem ícone de remover.
 registrarAppRemovivel('driver-openrazer-install', {
     tipo: 'dnf',
     // Pode vir como `akmod-openrazer` (preferido) ou como
@@ -375,8 +375,8 @@ async function executarHardwareScan() {
         _renderHardwareCards(data, resultado, aviso);
     } catch (e) {
         if (resultado) {
-            resultado.innerHTML = '<div class="aviso-caixa">❌ ' +
-                _tVars('comum.erro_conexao', 'Erro de conexão: {msg}', { msg: e.message }) +
+            resultado.innerHTML = '<div class="aviso-caixa">' +
+                _tVars('comum.erro_conexao', '❌ Erro de conexão: {msg}', { msg: e.message }) +
                 '</div>';
         }
     } finally {
@@ -438,6 +438,13 @@ function _buildCard(device) {
     var icon = _iconeCategoria(device.category);
     var tipo = device.type === 'PCI' ? 'PCI' : 'USB';
     var meta = tipo + ' • ' + _nomeCategoria(device.category);
+    if (device.count > 1) {
+        meta += ' • ' + _tVars('sessoes.dispositivos-perifericos.usb_qtd',
+            '{n} dispositivos detectados', { n: device.count });
+    }
+    if (device.detected_names && device.detected_names.length) {
+        meta += ' • ' + device.detected_names.join(', ');
+    }
     if (device.driver_in_use) {
         meta += ' • ' +
             _t('sessoes.dispositivos-perifericos.driver_atual', 'driver atual') +
@@ -447,7 +454,30 @@ function _buildCard(device) {
     var statusHtml = '';
     var acoesHtml = '';
 
-    if (device.driver_default_working) {
+    if (device.type === 'USB' && device.session_target) {
+        // v1.6.2: periférico USB reconhecido pelo mapa. A instalação é
+        // feita pelo bloco guiado da própria sessão (repo + pacote +
+        // grupos); aqui só levamos o usuário até ele.
+        statusHtml = device.installed
+            ? '<div class="bloco-info" style="border-left-color: #34d399;">✅ ' +
+              _t('sessoes.dispositivos-perifericos.ja_instalado', 'O driver sugerido já está instalado neste sistema.') +
+              '</div>'
+            : '<p>' + _t('sessoes.dispositivos-perifericos.usb_precisa_driver',
+                'Recursos extras deste periférico (iluminação, DPI, macros) dependem de um driver da comunidade.') + '</p>';
+        if (device.copr && !device.installed) {
+            statusHtml +=
+                '<div class="aviso-caixa" style="font-size: 0.85rem;">⚠️ ' +
+                _tVars('sessoes.dispositivos-perifericos.copr_necessario',
+                    'Este driver vive no repositório de comunidade <code>{copr}</code>. Habilite o repositório no acórdeão "Drivers da comunidade" antes de instalar.',
+                    { copr: _escapeHTML(device.copr) }) +
+                '</div>';
+        }
+        acoesHtml =
+            '<button class="btn-executar" onclick="irParaInstalacaoGuiada(\'' +
+            String(device.session_target).replace(/[^a-z0-9-]/gi, '') + '\')">➡️ ' +
+            _t('sessoes.dispositivos-perifericos.btn_ir_instalacao', 'Ir para a instalação guiada') +
+            '</button>';
+    } else if (device.driver_default_working) {
         // Hardware já funciona com driver padrão do Fedora
         statusHtml =
             '<div class="bloco-info" style="border-left-color: #34d399;">✅ ' +
@@ -484,7 +514,7 @@ function _buildCard(device) {
                 '<div class="aviso-caixa" style="font-size: 0.85rem;">⚠️ ' +
                 _tVars('sessoes.dispositivos-perifericos.copr_necessario',
                     'Este driver vive no repositório de comunidade <code>{copr}</code>. Habilite o repositório no acórdeão "Drivers da comunidade" antes de instalar.',
-                    { copr: device.copr }) +
+                    { copr: _escapeHTML(device.copr) }) +
                 '</div>';
         }
 
@@ -531,6 +561,19 @@ function _buildCard(device) {
     return card;
 }
 
+// Abre o acordeão que contém o botão `idBotao` (btn-<id>) e rola até ele.
+function irParaInstalacaoGuiada(idBotao) {
+    var alvo = document.getElementById('btn-' + idBotao);
+    if (!alvo) return;
+    var det = alvo.closest('details');
+    if (det) det.open = true;
+    var bloco = alvo.closest('.bloco-comando') || alvo;
+    bloco.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    var antes = bloco.style.outline;
+    bloco.style.outline = '2px solid #f59e0b';
+    setTimeout(function () { bloco.style.outline = antes; }, 2500);
+}
+
 function _buildProgressHtml(idComando) {
     return '<div class="progress-container" id="progress-' + idComando + '">' +
         '<div class="progress-bar"><div class="progress-fill" id="progress-fill-' + idComando + '"></div></div>' +
@@ -560,6 +603,7 @@ function _corCategoria(cat) {
     if (cat === 'gpu') return '#3c67e3';
     if (cat === 'wifi') return '#8b5cf6';
     if (cat === 'ethernet') return '#10b981';
+    if (cat === 'peripheral') return '#f59e0b';
     return '#6b7280';
 }
 
@@ -567,6 +611,7 @@ function _iconeCategoria(cat) {
     if (cat === 'gpu') return '🎮';
     if (cat === 'wifi') return '📶';
     if (cat === 'ethernet') return '🔌';
+    if (cat === 'peripheral') return '🖱️';
     return '💻';
 }
 
@@ -574,14 +619,8 @@ function _nomeCategoria(cat) {
     if (cat === 'gpu') return 'GPU';
     if (cat === 'wifi') return 'Wi-Fi';
     if (cat === 'ethernet') return 'Ethernet';
+    if (cat === 'peripheral') return _t('sessoes.dispositivos-perifericos.cat_periferico', 'Periférico');
     return cat;
-}
-
-function _escapeHTML(s) {
-    if (s == null) return '';
-    return String(s).replace(/[&<>"']/g, function (c) {
-        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
-    });
 }
 
 // ============================================================
@@ -740,30 +779,7 @@ async function executarSuplemento(idComando) {
     if (!cmd) return;
     await executarComandoGenerico(idComando, cmd,
         _t('sessoes.dispositivos-perifericos.instalando_suplemento', 'Instalando suplemento...'),
-        function() {
-            var idRevert = idComando.replace('-install', '-remove');
-            aplicarEstadoToggle(idComando, idRevert, true);
-        });
-}
-
-async function executarSuplementoRemover(idComando) {
-    var cmd = SUPLEMENTO_COMMANDS[idComando];
-    if (!cmd) return;
-
-    if (!confirm(_t('sessoes.dispositivos-perifericos.confirmar_reverter',
-        '⚠️ Atenção!\n\nVocê está prestes a reverter um driver.\n\nSe o dispositivo depende deste driver para funcionar (por exemplo, um adaptador Wi-Fi), você vai perder a funcionalidade após o reboot.\n\nTenha uma conexão alternativa disponível antes de continuar.\n\nContinuar?'))) return;
-
-    await executarComandoGenerico(idComando, cmd,
-        _t('sessoes.dispositivos-perifericos.revertendo_suplemento', 'Revertendo suplemento...'),
-        function() {
-            var idInstall = idComando.replace('-remove', '-install');
-            desmarcarComoExecutado(idInstall).then(function() {
-                aplicarEstadoToggle(idInstall, idComando, true);
-            }).catch(function(e) {
-                console.warn('[toggle] Erro ao limpar estado do install:', e);
-                aplicarEstadoToggle(idInstall, idComando, true);
-            });
-        });
+        function() { aplicarEstadoOneShot(idComando); });
 }
 
 // ============================================================
@@ -967,7 +983,7 @@ function aplicarEstadoItemCompleto(idRepoAtivar, idInstall, idRemove, repoJaAtiv
 async function restaurarEstadoSessao() {
     await SystemState.carregar();
 
-    aplicarEstadoToggle('firmware-vendor-install', 'firmware-vendor-remove', true);
+    aplicarEstadoOneShot('firmware-vendor-install');
     aplicarEstadoToggle('input-group-add', 'input-group-remove', true, SystemState.membroDoGrupo('input'));
     aplicarEstadoToggle('steam-devices-install', 'steam-devices-remove', true);
 

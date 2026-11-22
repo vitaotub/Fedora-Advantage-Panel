@@ -1423,29 +1423,6 @@ body.fap-tem-badge-atualizacao .header-controles {
  * `_sessaoAtualId` continuam funcionando.
  */
 
-.session-menu-wrapper {
-    position: sticky;
-    top: 0;
-    z-index: 100;
-    background-color: var(--bg-primary);
-    border-bottom: 1px solid var(--border);
-    padding: 0.75rem 1rem;
-    margin: -2rem -2rem 1.5rem -2rem;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
-    transition: background-color 0.3s ease, border-color 0.3s ease;
-}
-
-.session-menu {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.4rem;
-    max-width: 900px;
-    margin: 0 auto;
-    justify-content: center;
-    list-style: none;
-    padding: 0;
-}
-
 .session-menu-item {
     display: inline-flex;
     align-items: center;
@@ -1479,32 +1456,6 @@ body.fap-tem-badge-atualizacao .header-controles {
     font-weight: 600;
 }
 
-.session-menu-item .session-icon {
-    font-size: 0.95rem;
-    line-height: 1;
-    flex-shrink: 0;
-}
-
-.session-menu-item .session-label {
-    font-size: 0.78rem;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.session-menu-item .session-numero {
-    font-size: 0.65rem;
-    opacity: 0.7;
-    font-weight: 600;
-    padding: 0 0.25rem;
-    border-radius: 6px;
-    background-color: rgba(0, 0, 0, 0.15);
-}
-
-.session-menu-item.ativa .session-numero {
-    background-color: rgba(255, 255, 255, 0.2);
-    opacity: 1;
-}
-
 .session-menu-item.concluida::after {
     content: '✓';
     font-size: 0.7rem;
@@ -1535,31 +1486,15 @@ body.fap-tem-badge-atualizacao .header-controles {
 }
 
 @media (max-width: 900px) {
-    .session-menu-wrapper {
-        margin: -1rem -1rem 1rem -1rem;
-        padding: 0.6rem 0.75rem;
-    }
+    
 
-    .session-menu {
-        justify-content: flex-start;
-        flex-wrap: nowrap;
-        overflow-x: auto;
-        scrollbar-width: thin;
-        padding-bottom: 0.25rem;
-    }
+    
 
-    .session-menu::-webkit-scrollbar {
-        height: 4px;
-    }
+    
 
-    .session-menu::-webkit-scrollbar-thumb {
-        background-color: var(--border);
-        border-radius: 2px;
-    }
+    
 
-    .session-menu::-webkit-scrollbar-thumb:hover {
-        background-color: var(--accent);
-    }
+    
 
     .session-menu-item {
         flex-shrink: 0;
@@ -2418,6 +2353,92 @@ body.log-dock-visivel.log-dock-expandido .fap-main {
     padding-left: 2.75rem;
 }
 
+/* ============================================================
+ * BADGE "SOBRE O SOFTWARE" (.fap-badge-sobre) — v1.6.2
+ * ============================================================
+ * Quadrado cinza-azulado com "!" logo à direita do quadrado colorido
+ * de origem. Clique abre o popup com o que é o software, para que
+ * serve, quem o desenvolve e o site oficial. Quadrado (como o de
+ * origem) para não se confundir com o círculo amarelo/azul de aviso
+ * (.fap-badge-info), que continua existindo em alguns apps.
+ */
+.fap-badge-sobre {
+    position: absolute;
+    left: 26px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 16px;
+    height: 16px;
+    border-radius: 3px;
+    background-color: #64748b;
+    color: #ffffff;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 2;
+    transition: transform 0.1s ease, background-color 0.15s ease;
+    user-select: none;
+}
+
+.fap-badge-sobre::before {
+    content: '';
+    position: absolute;
+    inset: -4px;
+    border-radius: 5px;
+}
+
+.fap-badge-sobre:hover {
+    transform: translateY(-50%) scale(1.15);
+    background-color: #475569;
+}
+
+.fap-badge-sobre:focus-visible {
+    outline: 2px solid var(--text-main);
+    outline-offset: 2px;
+}
+
+.btn-flatpak-wrapper:has(.fap-badge-sobre) .btn-executar {
+    padding-left: 2.75rem;
+}
+
+/* Com o círculo de aviso também presente, ele passa para a 3ª posição. */
+.btn-flatpak-wrapper:has(.fap-badge-origem):has(.fap-badge-sobre):has(.fap-badge-info) .fap-badge-info {
+    left: 46px;
+}
+
+.btn-flatpak-wrapper:has(.fap-badge-sobre):has(.fap-badge-info) .btn-executar {
+    padding-left: 3.75rem;
+}
+
+/* No cabeçalho do popup o "!" é só ilustrativo. */
+.fap-popover-titulo .fap-badge-sobre {
+    position: static;
+    transform: none;
+    flex-shrink: 0;
+    cursor: default;
+}
+
+.fap-popover-titulo .fap-badge-sobre:hover {
+    transform: none;
+    background-color: #64748b;
+}
+
+.fap-popover a {
+    color: #60a5fa;
+    text-decoration: underline;
+    word-break: break-all;
+}
+
+.fap-popover-aviso {
+    font-size: 0.78rem;
+    opacity: 0.85;
+    font-style: italic;
+}
+
 /* ---- POPOVER "SOBRE ESTE APP" ---- */
 
 .fap-popover {
@@ -2756,65 +2777,6 @@ body.sidebar-colapsada .fap-log-dock {
 
 /* ---- CARD DE STATUS NA LANDING ---- */
 
-.fap-status-placeholder {
-    color: var(--text-muted);
-    font-size: 0.9rem;
-    margin: 0.75rem 0;
-}
-
-.fap-status-barras {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 1rem;
-    margin: 1.5rem 0;
-}
-
-.fap-status-barra {
-    display: flex;
-    flex-direction: column;
-    gap: 0.35rem;
-}
-
-.fap-status-barra-label {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-size: 0.85rem;
-    color: var(--text-main);
-    font-weight: 500;
-}
-
-.fap-status-barra-count {
-    font-size: 0.75rem;
-    color: var(--text-muted);
-    font-variant-numeric: tabular-nums;
-}
-
-.fap-status-barra-track {
-    width: 100%;
-    height: 8px;
-    background-color: var(--bg-secondary);
-    border-radius: 4px;
-    overflow: hidden;
-}
-
-.fap-status-barra-fill {
-    height: 100%;
-    background: linear-gradient(90deg, #7a7a7a, var(--success));
-    border-radius: 4px;
-    transition: width 0.5s ease;
-}
-
-.fap-status-barra-fill.completo {
-    background: linear-gradient(90deg, var(--success), #10b981);
-}
-
-@media (max-width: 600px) {
-    .fap-status-barras {
-        grid-template-columns: 1fr;
-    }
-}
-
 /* ---- RESPONSIVIDADE DO REDESIGN ---- */
 
 /*
@@ -2863,3 +2825,17 @@ body.sidebar-colapsada .fap-log-dock {
         align-self: flex-start;
     }
 }
+
+/* Aviso de atenção (amarelo) — Primeiros Passos: manter Fedora atualizado */
+.aviso-atencao {
+    background-color: transparent;
+    border: 2px solid #f59e0b;
+    border-radius: 8px;
+    padding: 0.9rem 1.1rem;
+    margin: 1rem 0;
+    color: #f59e0b;
+    font-size: 0.92rem;
+    line-height: 1.5;
+}
+.aviso-atencao p { margin: 0.5rem 0 0; color: inherit; }
+[data-tema="claro"] .aviso-atencao { border-color: #d97706; color: #b45309; }

@@ -2,7 +2,7 @@
 
 **🌐 Idioma:** Português (BR) | [English](README.en.md) | [Español](README.es.md)
 
-![Versão](https://img.shields.io/badge/Vers%C3%A3o-v1.6.1--11172026-orange?style=flat-square)
+![Versão](https://img.shields.io/badge/Vers%C3%A3o-v1.6.2--22112026-orange?style=flat-square)
 ![Fedora](https://img.shields.io/badge/Fedora-44%20%7C%2045-294172?style=flat-square&logo=fedora)
 ![Licença](https://img.shields.io/badge/Licen%C3%A7a-GPL--3.0-green?style=flat-square)
 ![Idiomas](https://img.shields.io/badge/Idiomas-PT--BR%20%7C%20EN%20%7C%20ES-3c67e3?style=flat-square)
@@ -61,22 +61,23 @@ bash <(curl -s https://raw.githubusercontent.com/vitaotub/Fedora-Advantage-Panel
 - **Ambiente de jogos** — Steam nativo, Heroic, Lutris, Wine, Proton-GE (ProtonUp-Qt), GameMode, MangoHud, Gamescope, vkBasalt, NTSYNC, emuladores (RetroArch, Dolphin, PCSX2, RPCS3, Duckstation).
 - **Produção e escritório** — OBS Studio + câmera virtual, EasyEffects, CUPS + Avahi, Samba, LocalSend, KeePassXC, Rclone Manager, ArtCraft Launcher.
 - **Acesso remoto com aviso SELinux** — RustDesk instala normalmente, e o FAP verifica se há bloqueios do SELinux (`avc: denied`) das últimas 24h, com link para a política oficial quando necessário. O FAP **não** instala política automaticamente (a política ampla enfraquece o SELinux globalmente).
-- **Virtualização** — QEMU/KVM + virt-manager, VirtualBox, GNOME Boxes, com avisos de Secure Boot.
+- **Virtualização** — QEMU/KVM + virt-manager, VirtualBox, com avisos de Secure Boot.
 - **Diagnóstico** — painel do sistema, top 5 processos, partições, journal, GSmartControl (SMART), CoolerControl (temperaturas + curvas de fan).
 - **Ajustes reversíveis** — `vm.max_map_count`, `vm.swappiness`, TCP BBR, realtime para áudio, dual-boot RTC, DNF paralelo, GRUB, kernels.
 - **Badge de informação** — ícone de exclamação clicável ao lado de apps que precisam de contexto (SELinux, notas de uso, avisos não-urgentes). Popup explica sem poluir a UI. Avisos urgentes (risco de dados, "não desligue") continuam em retângulo.
-- **Upgrade 44 → 45 guiado** — detecção automática de disponibilidade, warnings de terceiros (NVIDIA, Broadcom, COPRs, Terra), download, reboot agendado e ações pós-upgrade (`rpmconf`, `distro-sync`, relabel SELinux, rescue kernel).
 - **Multi-idioma** — PT-BR, EN e ES, com fallback PT-BR no HTML e JSON sob demanda.
 
 ## 🛡️ Segurança e transparência
 
 - **Nunca instala nada sem você ver.** Todo comando é visível no log em tempo real.
 - **Detecção de pré-existência.** Apps instalados antes do FAP aparecem como "Abrir" desde o início.
-- **Itens críticos protegidos.** Drivers proprietários, codecs, CUPS, Samba, virtualização: se já existiam, a lixeira não aparece (remover a base quebraria outros apps). Apps de usuário (como o Firefox) seguem o padrão do FAP: "Abrir" + lixeira, com aviso no tooltip de que já estavam instalados antes do FAP.
+- **Itens críticos protegidos.** Drivers proprietários, codecs, CUPS e Samba: se já existiam, a lixeira não aparece (remover a base quebraria outros apps). Apps de usuário (como o Firefox) seguem o padrão do FAP: "Abrir" + lixeira, com aviso no tooltip de que já estavam instalados antes do FAP.
 - **Backup antes de sobrescrever.** Presets de GameMode + MangoHud fazem backup dos arquivos do usuário antes de aplicar — e a lixeira restaura.
 - **Autenticação via `pkexec`.** Diálogo de senha nativo. O script a executar é logado **antes** do pkexec abrir — você vê o que está autorizando.
 - **Auditoria em arquivo.** Cada `pkexec` deixa trilha em `/tmp/fap-audit-*.log` (removida em 7 dias).
 - **Proteção contra CSRF local.** `/executar` e `/shutdown` rejeitam requisições com `Origin` de outros hosts. `/executar` também bloqueia `>` (redirecionamento de arquivo) que não seja dup-fd legítimo (`2>&1`, `1>&2`, `>&2`) — fecha o vetor de sobrescrita de `~/.bashrc`.
+- **Sobre o software.** Ao lado do quadrado colorido de origem, o quadrado "!" abre um popup com o que é o app, para que serve, quem o desenvolve e o site oficial (PT/EN/ES), com textos baseados no Flathub, nos sites/repositórios oficiais e nos pacotes do Fedora/RPM Fusion.
+- **Flatpak sempre como usuário.** Instalações do Flathub usam `--user` (sem root); se houver Flatpaks instalados no sistema, o FAP avisa e oferece a limpeza.
 - **Ciente de Secure Boot.** Ao instalar qualquer `akmod-*` com Secure Boot ativo, o FAP guia pelo enrollment MOK (kmodgenca + mokutil) antes de instalar. Se o usuário já tem uma chave enrolled (de qualquer origem), o FAP detecta e esconde as instruções.
 - **Não enfraquece o SELinux.** O FAP **não** instala políticas SELinux amplas para "resolver" bloqueios de apps (RustDesk, etc.). Ele detecta os AVCs (via `journalctl -g`), avisa e aponta para a documentação oficial — o usuário decide.
 - **Container nativo WebKitGTK.** Interface própria, sem depender de Firefox/Chromium.
@@ -131,18 +132,6 @@ bash <(curl -s https://raw.githubusercontent.com/vitaotub/Fedora-Advantage-Panel
 - **Para atualizar o FAP:** use o badge de atualização ou `./install.sh --update`. Nenhum dos dois precisa do cleanup.
 - **Para desinstalar normalmente:** use o botão "Desinstalar" em **Sobre o FAP** ou `./install.sh --uninstall`. O desinstalar padrão já cobre tudo que o FAP instalou e preserva o histórico e o clone de dev.
 - **Para limpar pacotes instalados pelo FAP:** o cleanup não remove pacotes (Flatpak, DNF, akmods) por design. Use o botão "Reverter" de cada sessão, ou remova manualmente com `flatpak uninstall <app>` / `sudo dnf remove <pkg>`.
-
-### O aviso "reinicie o computador" não aparece após atualizar
-
-`dnf needs-restarting -r` só retorna 1 quando um pacote crítico foi atualizado (kernel, glibc, systemd, dbus, openssl-libs, pam, selinux-policy, polkit). Se a sua atualização foi só de apps (Firefox, GIMP, VLC), o aviso **corretamente** não aparece. Para confirmar:
-
-```bash
-dnf needs-restarting -r; echo "Exit: $?"
-# Exit: 0 → não precisa reiniciar
-# Exit: 1 → precisa reiniciar (o aviso deve aparecer)
-```
-
-A partir da v1.5.5, se o próprio `dnf needs-restarting` falhar (RPM DB lock, `dnf5-plugins` ausente, timeout), o FAP mostra um banner neutro: *"Não foi possível verificar se é necessário reiniciar. Verifique no terminal: dnf needs-restarting -r"*.
 
 ## 🐛 Feedback
 

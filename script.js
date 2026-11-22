@@ -620,6 +620,11 @@ var SystemState = (function() {
             return _dados && _dados.kernel_params ? _dados.kernel_params[nome] : undefined;
         },
 
+        // Módulo de kernel carregado agora (ex.: 'ntsync'). v1.6.2.
+        moduloCarregado: function(nome) {
+            return _lista('kernel_modules_loaded').indexOf(nome) !== -1;
+        },
+
         servicoAtivo: function(nome) {
             return _lista('services_active').indexOf(nome) !== -1;
         },
@@ -661,11 +666,6 @@ var SystemState = (function() {
 // PRÉ-EXISTENTE
 // ============================================================
 
-function ehPreExistente(idComando, jaInstaladoNoSistema) {
-    if (!jaInstaladoNoSistema) return false;
-    return !isExecutado(idComando);
-}
-
 function appJaInstaladoNoSistema(idComando) {
     var info = APPS_REMOVIVEIS[idComando];
     if (!info) return false;
@@ -677,6 +677,12 @@ function appJaInstaladoNoSistema(idComando) {
     // definida no próprio registro (registrarAppRemovivel).
     if (info.ignorarPreExistente === true) {
         return false;
+    }
+
+    // Verificação REAL customizada (v1.6.2): itens cujo "ativo" não é
+    // simplesmente "pacote instalado" (ex.: NTSYNC = módulo carregado).
+    if (typeof info.detectar === 'function') {
+        try { return !!info.detectar(); } catch (e) { return false; }
     }
 
     if (info.modo === 'desfazerTudo') {
@@ -742,6 +748,9 @@ function _estaRealmenteInstalado(idComando) {
         return true;
         }
 
+        if (typeof info.detectar === 'function') {
+            try { return !!info.detectar(); } catch (e) { return true; }
+        }
         if (info.modo === 'desfazerTudo') {
             if (Array.isArray(info.pacotes)) {
                 for (var i = 0; i < info.pacotes.length; i++) {
@@ -911,7 +920,6 @@ var SESSOES = [
         nome: 'Primeiros Passos',
         nomeKey: 'sessoes.primeiros-passos.nome',
         comandos: {
-            'atualizacao-inicial': { sempreClicavel: true },
             'rpm-fusion': {
                 textoConcluido: '✅ RPM Fusion ativado',
                 textoConcluidoKey: 'sessoes.primeiros-passos.texto_concluido_rpm'
@@ -1045,12 +1053,8 @@ var SESSOES = [
     comandos: {
         'hw-scan': { sempreClicavel: true },
         'firmware-vendor-install': {
-            textoConcluido: '✅ Firmwares adicionais instalados',
+            textoConcluido: '✅ Firmwares de hardware instalados',
             textoConcluidoKey: 'sessoes.dispositivos-perifericos.texto_concluido_firmware_vendor'
-        },
-        'firmware-vendor-remove': {
-            textoConcluido: '✅ Firmwares revertidos',
-            textoConcluidoKey: 'sessoes.dispositivos-perifericos.texto_concluido_firmware_vendor_remove'
         },
         'driver-realtek-r8168-install': { sempreClicavel: true, textoConcluido: '✅ Driver Realtek r8168 instalado' },
         'driver-realtek-r8168-remove': { sempreClicavel: true },
@@ -1177,6 +1181,7 @@ var SESSOES = [
         // externo do AffinityOnLinux. Não tem `_MAPA_ORIGEM` (não instala
         // nada via FAP) nem `registrarAppRemovivel` (nada a remover).
         'abrir-affinity': { sempreClicavel: true },
+        'limpar-flatpak-sistema': { sempreClicavel: true },
         'instalar-remmina': { textoConcluido: '✅ Remmina instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_remmina' },
         'instalar-gnome-connections': { textoConcluido: '✅ GNOME Connections instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_gnome_connections' },
         'instalar-krdc': { textoConcluido: '✅ KRDC instalado', textoConcluidoKey: 'sessoes.aplicativos.texto_concluido_krdc' },
@@ -1251,7 +1256,7 @@ var SESSOES = [
             textoConcluidoKey: 'sessoes.gaming.texto_concluido_bottles',
             flatpakId: 'com.usebottles.bottles'
         },
-        'ntsync-install': { textoConcluido: '✅ NTSYNC instalado', textoConcluidoKey: 'sessoes.gaming.texto_concluido_ntsync' },
+        'ntsync-install': { textoConcluido: '✅ NTSYNC ativado', textoConcluidoKey: 'sessoes.gaming.texto_concluido_ntsync' },
         'gamemode-install': { textoConcluido: '✅ GameMode ativado', textoConcluidoKey: 'sessoes.gaming.texto_concluido_gamemode' },
         'mangohud-install': { textoConcluido: '✅ MangoHud instalado', textoConcluidoKey: 'sessoes.gaming.texto_concluido_mangohud' },
         'goverlay-install': { textoConcluido: '✅ Goverlay instalado', textoConcluidoKey: 'sessoes.gaming.texto_concluido_goverlay' },
@@ -1311,12 +1316,7 @@ var SESSOES = [
             textoConcluido: '✅ VirtualBox instalado',
             textoConcluidoKey: 'sessoes.virtualizacao.texto_concluido_virtualbox'
         },
-        'virtualbox-remove': { sempreClicavel: true },
-        'gnome-boxes-install': {
-            textoConcluido: '✅ GNOME Boxes instalado',
-            textoConcluidoKey: 'sessoes.virtualizacao.texto_concluido_boxes'
-        },
-        'gnome-boxes-remove': { sempreClicavel: true }
+        'virtualbox-remove': { sempreClicavel: true }
     }
 },
 {
@@ -1376,61 +1376,7 @@ var SESSOES = [
             sempreClicavel: true,
             textoConcluido: '✅ Padrão restaurado',
             textoConcluidoKey: 'sessoes.ajustes-manutencao.texto_concluido_grub_restaurar'
-        },
-        // Marcador de "ações pós-upgrade concluídas". Não tem botão
-        // no DOM — é um flag puro. O checkbox da área de upgrade
-        // chama `marcarComoExecutado('pos-upgrade-concluido')`, e o
-        // `_renderUpgradePosUpgrade` consulta `isExecutado` para
-        // decidir entre mostrar os botões ou a mensagem estática.
-        //
-        // `sempreClicavel: true` para NÃO contar no progresso da
-        // sessão 11 (que fica 0/15) e NÃO entrar no bloqueio entre
-        // sessões. O ID precisa estar aqui para o
-        // `_limparIdsOrfaos` (que filtra IDs fora de `SESSOES`)
-        // não remover o marcador do `.progresso.json` na próxima
-        // limpeza.
-        'pos-upgrade-limpeza': {
-            textoConcluido: '✅ Limpeza pós-upgrade feita',
-            textoConcluidoKey: 'sessoes.ajustes-manutencao.upgrade_pos_limpeza_concluido'
-        },
-        'pos-upgrade-rpmconf': {
-            textoConcluido: '✅ Configurações mescladas',
-            textoConcluidoKey: 'sessoes.ajustes-manutencao.upgrade_pos_rpmconf_concluido'
-        },
-        'pos-upgrade-distrosync': {
-            textoConcluido: '✅ Distro-sync feito',
-            textoConcluidoKey: 'sessoes.ajustes-manutencao.upgrade_pos_distrosync_concluido'
-        },
-        'pos-upgrade-fixfiles': {
-            textoConcluido: '✅ Relabel SELinux agendado',
-            textoConcluidoKey: 'sessoes.ajustes-manutencao.upgrade_pos_fixfiles_concluido'
-        },
-        'pos-upgrade-rescue': {
-            textoConcluido: '✅ dracut-config-rescue instalado',
-            textoConcluidoKey: 'sessoes.ajustes-manutencao.upgrade_pos_rescue_concluido'
-        },
-        'pos-upgrade-concluido': { sempreClicavel: true },
-
-        // IDs do fluxo de download/reboot/cancel do upgrade.
-        // Não têm `isExecutado` consultado pela UI (o estado é
-        // derivado de `/fedora-upgrade-status` no client + do
-        // `_upgradeConcluidoPermanente` no server), mas o
-        // `salvarProgresso` do server os grava em `.progresso.json`
-        // quando o comando termina com sucesso. Sem registrá-los
-        // aqui, `_limparIdsOrfaos` os remove a cada ~5s — churn
-        // desnecessário no arquivo.
-        //
-        // `sempreClicavel: true` mantém o mesmo padrão de
-        // `nvidia-secureboot-prepare` e evita que contem no
-        // progresso da sessão. Também melhora `_deveBloquearNavegacao`:
-        // `_sessaoDoComando('upgrade-f45-download')` passa a
-        // retornar `'ajustes-manutencao'`, então o bloqueio de
-        // navegação durante o download é acionado pelo caminho
-        // primário (via `_comandoDnfRodando`), não só pelo fallback
-        // que verifica `progress-container` visível.
-        'upgrade-f45-download': { sempreClicavel: true },
-        'upgrade-f45-reboot': { sempreClicavel: true },
-        'upgrade-f45-cancelar': { sempreClicavel: true }
+        }
     }
 },
 {
@@ -2001,17 +1947,21 @@ function _renderizarPainelSecureBoot(container, estado) {
     _secureBootMokCache.enrolled === null;
     if (mokIndeterminado) {
         html += '<div class="aviso-caixa" style="border-color: #f59e0b; color: #f59e0b; margin-bottom: 1rem;">';
-        html += '<strong>⚠️ Não foi possível verificar se a chave do akmods está registrada no firmware.</strong><br>';
-        html += '<span style="font-size: 0.85rem;">O arquivo <code>/etc/pki/akmods/certs/public_key.der</code> existe, mas o <code>mokutil --test-key</code> não retornou um resultado conclusivo. ';
-        html += 'Isso pode acontecer por uma falha transitória (D-Bus, efivars). ';
-        html += 'Se você já fez o registro, pode ignorar este aviso. ';
-        html += 'Caso contrário, siga os passos abaixo.</span>';
+        html += '<strong>⚠️ ' + _t('seguranca.secureboot_mok_indet_titulo',
+            'Não foi possível verificar se a chave do akmods está registrada no firmware.') + '</strong><br>';
+        html += '<span style="font-size: 0.85rem;">' + _t('seguranca.secureboot_mok_indet_desc',
+            'O arquivo <code>/etc/pki/akmods/certs/public_key.der</code> existe, mas o <code>mokutil --test-key</code> não retornou um resultado conclusivo. ' +
+            'Isso pode acontecer por uma falha transitória (D-Bus, efivars). ' +
+            'Se você já fez o registro, pode ignorar este aviso. ' +
+            'Caso contrário, siga os passos abaixo.') + '</span>';
         if (_secureBootMokCache.erro) {
-            html += '<div style="margin-top: 0.5rem; font-size: 0.75rem; color: var(--text-muted);">Detalhe: <code>' +
+            html += '<div style="margin-top: 0.5rem; font-size: 0.75rem; color: var(--text-muted);">' +
+            _t('seguranca.secureboot_mok_indet_detalhe', 'Detalhe:') + ' <code>' +
             _escapeHTML(_secureBootMokCache.erro) + '</code></div>';
         }
         html += '<div class="botoes-flex" style="margin-top: 0.75rem;">';
-        html += '<button class="btn-executar" onclick="(typeof _refreshEstadoSessao === \'function\') && _refreshEstadoSessao()">🔄 Verificar novamente</button>';
+        html += '<button class="btn-executar" onclick="(typeof _refreshEstadoSessao === \'function\') && _refreshEstadoSessao()">🔄 ' +
+            _t('seguranca.secureboot_mok_indet_btn', 'Verificar novamente') + '</button>';
         html += '</div>';
         html += '</div>';
     }
@@ -2157,10 +2107,11 @@ function _renderizarBadgeSecureBoot(container, estado, contexto) {
         var nomeSessaoSbIndet = _t('sessoes.estado-fedora.nome', 'Estado do Fedora');
         container.innerHTML =
         '<div class="aviso-caixa" style="margin: 0 0 1rem 0; font-size: 0.85rem; border-color: #f59e0b; color: #f59e0b;">' +
-        '⚠️ <strong>Não foi possível verificar se a chave do akmods está registrada no firmware.</strong> ' +
-        'O <code>mokutil --test-key</code> falhou. Se você já fez o registro, pode ignorar. ' +
-        'Caso contrário, verifique manualmente em <strong>' +
-        _escapeHTML(nomeSessaoSbIndet) + '</strong> → <strong>Secure Boot</strong>.' +
+        '⚠️ ' + _tVars('seguranca.secureboot_badge_mok_indet',
+            '<strong>Não foi possível verificar se a chave do akmods está registrada no firmware.</strong> ' +
+            'O <code>mokutil --test-key</code> falhou. Se você já fez o registro, pode ignorar. ' +
+            'Caso contrário, verifique manualmente em <strong>{sessao}</strong> → <strong>Secure Boot</strong>.',
+            { sessao: _escapeHTML(nomeSessaoSbIndet) }) +
         '</div>';
         return;
     }
@@ -3909,10 +3860,7 @@ var _MAPA_MOTIVO_BLOQUEIO = {
     'intel-media-install':      'mitigacao.intel_media_install',
     'libva-intel-install':      'mitigacao.libva_intel',
     'cups-install':             'mitigacao.cups_install',
-    'samba-install':            'mitigacao.samba_install',
-    'qemu-kvm-install':         'mitigacao.qemu_kvm_install',
-    'virtualbox-install':       'mitigacao.virtualbox_install',
-    'gnome-boxes-install':      'mitigacao.gnome_boxes_install'
+    'samba-install':            'mitigacao.samba_install'
 };
 
 function _traduzirMotivoBloqueio(idInstall, info) {
@@ -4182,6 +4130,26 @@ function _executarRemocaoPeloWrapper(idInstall) {
     _executarRemocaoApp(idInstall);
 }
 
+// v1.6.2: a remoção de um app pode arrastar OUTROS apps via dependência
+// (ex.: remover QEMU/KVM + libvirt remove o GNOME Boxes). Depois de uma
+// remoção — ou quando a lixeira descobre que o app já não está instalado —
+// relê o estado real e repinta os demais botões instaláveis da tela.
+function _ressincronizarAppsRegistrados(idExcecao) {
+    Object.keys(APPS_REMOVIVEIS).forEach(function(id) {
+        if (id === idExcecao) return;
+        var btn = document.getElementById('btn-' + id);
+        if (!btn || !btn.hasAttribute('data-estado')) return;
+        var info = APPS_REMOVIVEIS[id];
+        var idRem = (info && info.tipo === 'flatpak') ? id + '-revert' : _idRemocaoDe(id);
+        try {
+            if (isExecutado(id) && !_estaRealmenteInstalado(id)) {
+                desmarcarComoExecutado(id);
+            }
+            aplicarEstadoInstalavel(id, null, idRem);
+        } catch (e) { /* um botão com problema não pode travar os demais */ }
+    });
+}
+
 async function _executarRemocaoApp(idComando) {
     var info = APPS_REMOVIVEIS[idComando];
     if (!info) return;
@@ -4298,6 +4266,13 @@ async function _executarRemocaoApp(idComando) {
             try { return SystemState.pacoteInstalado(p); } catch (e) { return true; }
         });
         if (pacotesInstalados.length === 0) {
+            // O app já foi removido por fora (ex.: arrastado por outra
+            // remoção). Repinta o botão com o estado real antes do aviso.
+            try {
+                await desmarcarComoExecutado(idComando);
+                aplicarEstadoInstalavel(idComando, null, _idRemocaoDe(idComando));
+                _ressincronizarAppsRegistrados(idComando);
+            } catch (e) { /* segue para o aviso */ }
             alert(_tVars('comum.nao_instalado', '{nome} não está instalado.',
                          { nome: info.nome || idComando }));
             _liberarSessao(idComando);
@@ -4320,7 +4295,6 @@ async function _executarRemocaoApp(idComando) {
     }
 
     var logBox = _getLogBox(idComando);
-    var btn = document.getElementById('btn-' + idComando);
 
     if (logBox) {
         logBox.style.display = 'block';
@@ -4394,8 +4368,18 @@ async function _executarRemocaoApp(idComando) {
         // pacote ainda estaria na lista antiga). Com o cache
         // invalidado, o `SystemState.carregar()` no próximo
         // `restaurarEstadoSessao` verá o pacote ausente.
+        //
+        // v1.6.2: invalidar só o cache do CLIENTE não basta. O server
+        // guarda o `rpm -qa` por 60 s e, logo antes do `dnf remove`, o
+        // fluxo acima já tinha pedido `carregar(true)` — ou seja, o
+        // cache do server estava populado com o pacote AINDA instalado.
+        // Qualquer `carregar()` seguinte (restaurarEstadoSessao,
+        // sincronização periódica) recebia essa lista velha e o botão
+        // voltava a "Abrir" depois de desinstalar via dnf. Agora pedimos
+        // `?refresh=1` aqui, com o `dnf` já concluído, e só então repintamos.
         if (typeof SystemState !== 'undefined' && typeof SystemState.invalidar === 'function') {
             SystemState.invalidar();
+            try { await SystemState.carregar(true); } catch (e) { /* segue com cache vazio */ }
         }
 
         // `null` no segundo argumento: o "Abrir X" vem do registry
@@ -4409,6 +4393,7 @@ async function _executarRemocaoApp(idComando) {
         // — metadata errada que passaria despercebida até um refactor
         // reutilizar `idRem` no branch `else`.
         aplicarEstadoInstalavel(idComando, null, idRemocao);
+        _ressincronizarAppsRegistrados(idComando);
 
         if (logBox) {
             var successLine = document.createElement('div');
@@ -4754,7 +4739,6 @@ var _MAPA_ORIGEM = {
     // ---- Sessão 10 ----
     'qemu-kvm-install': 'fedora',
     'virtualbox-install': 'rpmfusion',
-    'gnome-boxes-install': 'fedora',
 
     // ---- Sessão 11 ----
     'gsmartcontrol-install': 'fedora',
@@ -5223,6 +5207,9 @@ function _renderizarBadgeOrigem(idInstall) {
         wrapper.insertBefore(badge, wrapper.firstChild);
     }
 
+    // Quadrado "!" (Sobre o software), logo à direita do quadrado de origem.
+    _renderizarBadgeSobre(idInstall, wrapper, badge);
+
     // Sempre reaplica o tooltip do badge. NÃO aplicamos tooltip
     // de origem no botão inteiro — a informação "de onde o pacote
     // vem" fica só no quadrado colorido. Passar o mouse no botão
@@ -5239,6 +5226,141 @@ function _renderizarBadgeOrigem(idInstall) {
         badge.setAttribute('title', textoOrig.tooltip);
         badge.setAttribute('aria-label', textoOrig.nome + ': ' + textoOrig.tooltip);
     }
+}
+
+// ============================================================
+// BADGE "SOBRE O SOFTWARE" (.fap-badge-sobre) — v1.6.2
+// ============================================================
+//
+// Quadrado com "!" ao lado do quadrado colorido de origem. O clique abre
+// um popup com o que é o software, para que serve, quem o desenvolve e o
+// site oficial. Os textos ficam em `apps_sobre.json` (rota /apps-sobre),
+// escritos a partir do Flathub, do site/repositório oficial do projeto ou
+// da página do pacote no Fedora/RPM Fusion, em PT/EN/ES. O arquivo é
+// carregado uma única vez, só quando o usuário abre o primeiro popup.
+var _APPS_SOBRE = null;
+var _appsSobrePromise = null;
+
+function _carregarAppsSobre() {
+    if (_APPS_SOBRE) return Promise.resolve(_APPS_SOBRE);
+    if (!_appsSobrePromise) {
+        _appsSobrePromise = fetch(API_URL + '/apps-sobre', { cache: 'no-store' })
+            .then(function(r) { return r.ok ? r.json() : { apps: {} }; })
+            .then(function(d) { _APPS_SOBRE = (d && d.apps) || {}; return _APPS_SOBRE; })
+            .catch(function() { _appsSobrePromise = null; return {}; });
+    }
+    return _appsSobrePromise;
+}
+
+function _idiomaSobre() {
+    var l = '';
+    try { l = (window.I18N && I18N.getLang && I18N.getLang()) || ''; } catch (e) { l = ''; }
+    if (l.indexOf('en') === 0) return 'en';
+    if (l.indexOf('es') === 0) return 'es';
+    return 'pt';
+}
+
+function _renderizarBadgeSobre(idInstall, wrapper, badgeOrigem) {
+    if (!wrapper || wrapper.querySelector('.fap-badge-sobre')) return;
+    var b = document.createElement('span');
+    b.className = 'fap-badge-sobre';
+    b.textContent = '!';
+    b.setAttribute('role', 'button');
+    b.setAttribute('tabindex', '0');
+    b.setAttribute('data-comando-sobre', idInstall);
+    var tip = _t('origem.sobre_tooltip', 'Sobre este software');
+    b.setAttribute('title', tip);
+    b.setAttribute('aria-label', tip);
+    b.addEventListener('click', function(e) {
+        e.stopPropagation();
+        _abrirPopoverSobre(idInstall, e.currentTarget);
+    });
+    b.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            e.stopPropagation();
+            _abrirPopoverSobre(idInstall, e.currentTarget);
+        }
+    });
+    if (badgeOrigem && badgeOrigem.parentNode === wrapper) {
+        wrapper.insertBefore(b, badgeOrigem.nextSibling);
+    } else {
+        wrapper.insertBefore(b, wrapper.firstChild);
+    }
+}
+
+function _abrirPopoverSobre(idComando, ancora) {
+    _fecharPopoverOrigem();
+    _carregarAppsSobre().then(function(todos) {
+        // Pode ter sido fechado/trocado durante o fetch.
+        _fecharPopoverOrigem();
+        var dados = todos && todos[idComando];
+        var info = APPS_REMOVIVEIS[idComando];
+        var nomeApp = (info && info.nome) || idComando;
+        var lg = _idiomaSobre();
+        var origem = _origemDoApp(idComando);
+
+        var popover = document.createElement('div');
+        popover.className = 'fap-popover';
+        popover.setAttribute('role', 'dialog');
+        popover.setAttribute('aria-label', _t('origem.sobre_titulo', 'Sobre o software') + ': ' + nomeApp);
+
+        var html = '<div class="fap-popover-header"><span class="fap-popover-titulo">';
+        if (origem) html += '<span class="fap-badge-origem" data-origem="' + _escapeHTML(origem) + '" aria-hidden="true"></span>';
+        html += '<span class="fap-badge-sobre" aria-hidden="true">!</span>';
+        html += _escapeHTML(nomeApp) + '</span>';
+        html += '<button type="button" class="fap-popover-close" aria-label="' + _escapeHTML(_t('comum.fechar', 'Fechar')) + '">✕</button></div>';
+        html += '<div class="fap-popover-body">';
+
+        function linha(rotulo, valorHtml) {
+            return '<div class="fap-popover-row"><span class="fap-popover-label">' + _escapeHTML(rotulo) +
+                   '</span><span class="fap-popover-value">' + valorHtml + '</span></div>';
+        }
+
+        if (!dados) {
+            html += '<div class="fap-popover-row"><span class="fap-popover-value">' +
+                    _escapeHTML(_t('origem.sobre_indisponivel', 'Ainda não há informações para este aplicativo.')) + '</span></div>';
+        } else {
+            if (dados.q && dados.q[lg]) html += linha(_t('origem.label_o_que', 'O que é'), _escapeHTML(dados.q[lg]));
+            if (dados.p && dados.p[lg]) html += linha(_t('origem.label_para_que', 'Para que serve'), _escapeHTML(dados.p[lg]));
+            if (dados.d) html += linha(_t('origem.label_desenvolvedor', 'Desenvolvido por'), _escapeHTML(dados.d));
+            if (dados.s && /^https:\/\//.test(dados.s)) {
+                html += linha(_t('origem.label_site', 'Site oficial'),
+                    '<a href="' + _escapeHTML(dados.s) + '" target="_blank" rel="noopener noreferrer">' + _escapeHTML(dados.s.replace(/^https:\/\/(www\.)?/, '').replace(/\/$/, '')) + '</a>');
+            }
+            if (dados.nc) {
+                html += '<div class="fap-popover-row"><span class="fap-popover-value fap-popover-aviso">' +
+                        _escapeHTML(_t('origem.sobre_nao_confirmado', 'Descrição não confirmada em página oficial; consulte o site oficial.')) + '</span></div>';
+            }
+        }
+        html += '</div>';
+        popover.innerHTML = html;
+
+        document.body.appendChild(popover);
+        _popoverAtual = popover;
+        _popoverAnchorBadge = ancora;
+        _posicionarPopover();
+
+        var onKey = function(e) { if (e.key === 'Escape') _fecharPopoverOrigem(); };
+        var onDocClick = function(e) {
+            if (!popover.contains(e.target) && e.target !== ancora) _fecharPopoverOrigem();
+        };
+        var onScrollResize = function() { _posicionarPopover(); };
+        var closeBtn = popover.querySelector('.fap-popover-close');
+        if (closeBtn) {
+            closeBtn.addEventListener('click', function(e) { e.stopPropagation(); _fecharPopoverOrigem(); });
+        }
+        document.addEventListener('keydown', onKey);
+        document.addEventListener('click', onDocClick, true);
+        window.addEventListener('scroll', onScrollResize, true);
+        window.addEventListener('resize', onScrollResize);
+        popover._cleanup = function() {
+            document.removeEventListener('keydown', onKey);
+            document.removeEventListener('click', onDocClick, true);
+            window.removeEventListener('scroll', onScrollResize, true);
+            window.removeEventListener('resize', onScrollResize);
+        };
+    });
 }
 
 function _renderizarBadgesFixas() {
@@ -5322,7 +5444,7 @@ function _abrirPopoverOrigem(idComando, event) {
     html += '<span class="fap-badge-origem" data-origem="' + origem + '" aria-hidden="true"></span>';
     html += _escapeHTML(nomeApp);
     html += '</span>';
-    html += '<button type="button" class="fap-popover-close" aria-label="Fechar">✕</button>';
+    html += '<button type="button" class="fap-popover-close" aria-label="' + _escapeHTML(_t('comum.fechar', 'Fechar')) + '">✕</button>';
     html += '</div>';
     html += '<div class="fap-popover-body">';
 

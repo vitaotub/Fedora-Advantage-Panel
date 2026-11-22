@@ -8,7 +8,7 @@
 // com o hardware_map.json e devolver uma lista de dispositivos
 // detectados com sugestões de driver.
 
-const { exec, execFile } = require('child_process');
+const { execFile } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 
@@ -196,12 +196,14 @@ async function _checkSecureBoot() {
 //   • vboxdrv            (Sessão 9 — akmod-VirtualBox)
 //   • wl                 (Sessão 4 — akmod-wl, Broadcom)
 //   • r8168              (Sessão 4 — akmod-r8168, Realtek Ethernet)
-//   • xpadneo            (Sessão 4 — xpadneo, DKMS)
+//   • hid_xpadneo        (Sessão 4 — xpadneo, DKMS)
 //   • v4l2loopback       (Sessão 5 — akmod-v4l2loopback, câmera virtual OBS)
 async function _akmodCarregado() {
     var modulos = [
         'nvidia', 'nvidia_drm', 'nvidia_modeset', 'nvidia_uvm',
-        'vboxdrv', 'wl', 'r8168', 'xpadneo', 'v4l2loopback'
+        // `hid_xpadneo` é o nome real do módulo carregado (o pacote é
+        // `xpadneo`); `xpadneo` fica por compatibilidade com builds antigos.
+        'vboxdrv', 'wl', 'r8168', 'hid_xpadneo', 'xpadneo', 'v4l2loopback'
     ];
     // Prefixo `MATCH:` no output do script. Mesmo que o `bash -c`
     // carregue algum arquivo de inicialização (defesa em
@@ -564,6 +566,34 @@ function _parseLinhaUsb(linha) {
     };
 }
 
+// Lista dispositivos USB: `lsusb` quando existe; senão lê o sysfs.
+// Só dispositivos de verdade (entradas "N-M"), ignorando hubs raiz "usbN".
+async function _listarUsb() {
+    var r = await _exec('lsusb');
+    if (r.ok && r.stdout) {
+        return r.stdout.split('\n').filter(Boolean)
+            .map(_parseLinhaUsb).filter(Boolean);
+    }
+    var lista = [];
+    try {
+        var base = '/sys/bus/usb/devices';
+        var entradas = fs.readdirSync(base);
+        for (var i = 0; i < entradas.length; i++) {
+            if (!/^\d+-[\d.]+$/.test(entradas[i])) continue;
+            var dir = base + '/' + entradas[i];
+            try {
+                var vid = fs.readFileSync(dir + '/idVendor', 'utf8').trim().toLowerCase();
+                var pid = fs.readFileSync(dir + '/idProduct', 'utf8').trim().toLowerCase();
+                if (!/^[0-9a-f]{4}$/.test(vid) || !/^[0-9a-f]{4}$/.test(pid)) continue;
+                var nome = '';
+                try { nome = fs.readFileSync(dir + '/product', 'utf8').trim(); } catch (e1) {}
+                lista.push({ vendor_id: vid, product_id: pid, name: nome || (vid + ':' + pid) });
+            } catch (e2) { /* dispositivo removido durante a leitura */ }
+        }
+    } catch (e3) { /* sysfs indisponível */ }
+    return lista;
+}
+
 // ============================================================
 // DETECÇÃO PRINCIPAL
 // ============================================================
@@ -608,6 +638,19 @@ async function scanHardware() {
             var isGpu = /VGA|3D|Display/i.test(parsed.category_raw);
             var isNet = /Network|Ethernet/i.test(parsed.category_raw);
             if (!isGpu && !isNet) continue;
+
+            // v1.6.2: a categoria do dispositivo vem da CLASSE PCI REAL
+            // (lspci), não do fabricante. Antes, qualquer placa de rede
+            // Intel (I225-V, AX200) virava "gpu" com `intel-media-driver`,
+            // um Wi-Fi Realtek virava "ethernet" com `akmod-r8168` e uma
+            // Ethernet Broadcom virava "wifi" com `akmod-wl`. O mapa por
+            // fabricante só vale quando a classe real bate com a categoria
+            // dele; caso contrário o dispositivo é ignorado (sem sugestão
+            // de driver errado).
+            var classeReal = isGpu
+                ? 'gpu'
+                : (/Ethernet/i.test(parsed.category_raw) ? 'ethernet' : 'wifi');
+            if (vendor.category !== classeReal) continue;
 
             candidatosPci.push({ parsed: parsed, vendor: vendor });
         }
@@ -661,7 +704,14 @@ async function scanHardware() {
                 copr: null,
                 notes: vendor.notes || null,
                 notes_key: vendor.notesKey || null,
-                needs_secure_boot_disabled: parsed.vendor_id === '10de'
+                // v1.6.2: o nome antigo (`needs_secure_boot_disabled`)
+                // nunca foi lido por ninguém e era enganoso — o FAP não
+                // exige DESATIVAR o Secure Boot, e sim registrar a chave
+                // do akmods. Agora indica se o driver sugerido é um
+                // `akmod-*` (módulo compilado localmente).
+                needs_signed_module: pacotesSugeridos.some(function(p) {
+                    return /^akmod-/.test(p);
+                })
             };
         }));
 
@@ -671,45 +721,70 @@ async function scanHardware() {
     }
 
     // ---------- USB ----------
-    var usb = await _exec('lsusb');
-    if (usb.ok) {
-        var linhasUsb = usb.stdout.split('\n').filter(Boolean);
+    // v1.6.2: (1) o mapa aceita chave exata "vid:pid" OU curinga de
+    // fabricante "vid:*" (um fabricante tem centenas de product IDs; listar
+    // um a um é inviável); (2) sem `usbutils` (Fedora mínimo) o `lsusb`
+    // não existe — cai para a leitura direta de /sys/bus/usb/devices;
+    // (3) vários dispositivos do mesmo item do mapa (ex.: teclado + mouse
+    // Razer) viram UM card com contagem, não N cards repetidos.
+    var listaUsb = await _listarUsb();
+    if (listaUsb.length) {
+        var grupos = {};
+        var ordem = [];
+        for (var k = 0; k < listaUsb.length; k++) {
+            var parsedUsb = listaUsb[k];
+            var chaveMapa = parsedUsb.vendor_id + ':' + parsedUsb.product_id;
+            var dev = mapa.usb_devices[chaveMapa];
+            if (!dev) {
+                chaveMapa = parsedUsb.vendor_id + ':*';
+                dev = mapa.usb_devices[chaveMapa];
+            }
+            if (!dev || typeof dev !== 'object') continue;
 
-        var candidatosUsb = [];
-        for (var k = 0; k < linhasUsb.length; k++) {
-            var parsedUsb = _parseLinhaUsb(linhasUsb[k]);
-            if (!parsedUsb) continue;
-
-            var dev = mapa.usb_devices[parsedUsb.vendor_id + ':' + parsedUsb.product_id];
-            if (!dev) continue;
-
-            candidatosUsb.push({ parsedUsb: parsedUsb, dev: dev });
+            if (!grupos[chaveMapa]) {
+                grupos[chaveMapa] = { dev: dev, itens: [] };
+                ordem.push(chaveMapa);
+            }
+            grupos[chaveMapa].itens.push(parsedUsb);
         }
 
-        var resultadosUsb = await Promise.all(candidatosUsb.map(async function(c) {
-            var parsedUsb = c.parsedUsb;
-            var dev = c.dev;
+        var resultadosUsb = await Promise.all(ordem.map(async function(chave) {
+            var g = grupos[chave];
+            var dev = g.dev;
+            var pacotesUsb = (dev.packages || (dev.package ? [dev.package] : [])).slice();
 
+            // "instalado" = QUALQUER um dos pacotes listados presente.
             var instaladoUsb = false;
-            if (dev.package) {
-                instaladoUsb = await _pacoteInstalado(dev.package);
+            for (var jp = 0; jp < pacotesUsb.length; jp++) {
+                if (await _pacoteInstalado(pacotesUsb[jp])) { instaladoUsb = true; break; }
             }
+
+            var nomes = g.itens.map(function(i) { return i.name; })
+                .filter(function(n, i, arr) { return n && arr.indexOf(n) === i; });
+            var nomeExibicao = dev.name || nomes[0] || chave;
 
             return {
                 type: 'USB',
-                category: dev.category,
+                category: dev.category || 'peripheral',
                 vendor: dev.vendor || 'Desconhecido',
-                name: dev.name,
-                device_id: parsedUsb.vendor_id + ':' + parsedUsb.product_id,
+                name: nomeExibicao,
+                detected_names: nomes,
+                count: g.itens.length,
+                device_id: g.itens[0].vendor_id + ':' + g.itens[0].product_id,
                 driver_in_use: null,
                 driver_default_working: false,
                 installed: instaladoUsb,
-                packages: dev.package ? [dev.package] : [],
-                repo_required: null,
+                packages: pacotesUsb,
+                repo_required: dev.repo_required || null,
                 copr: dev.copr || null,
+                // Id do bloco da própria sessão que faz a instalação guiada
+                // (repo + pacote + grupos). O frontend rola até ele.
+                session_target: dev.session_target || null,
                 notes: dev.notes || null,
                 notes_key: dev.notesKey || null,
-                needs_secure_boot_disabled: false
+                needs_signed_module: pacotesUsb.some(function(p) {
+                    return /^akmod-/.test(p);
+                })
             };
         }));
 

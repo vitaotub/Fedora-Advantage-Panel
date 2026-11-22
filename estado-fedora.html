@@ -187,7 +187,7 @@ data-i18n="sessoes.estado-fedora.btn_selinux_troubleshoot">
 <p data-i18n="sessoes.estado-fedora.setroubleshoot_desc">Instala o <strong>setroubleshoot</strong>, um pacote oficial do Fedora que analisa automaticamente cada AVC e sugere uma correção — em linguagem clara, sem jargão de SELinux. É o que transforma "usuário_u:role_r:tipo_t" em "o Apache não consegue ler arquivos em /var/www/html, você deve rodar tal comando".</p>
 
 <div class="info-extra" data-i18n-html="sessoes.estado-fedora.setroubleshoot_info">
-ℹ️ <strong>O que é instalado:</strong> <code>setroubleshoot-server</code> (motor de análise), <code>setools-console</code> (ferramentas CLI) e <code>policycoreutils-python-utils</code> (utilitários de política). Os avisos aparecem automaticamente no menu de notificações do desktop quando um AVC é gerado.
+ℹ️ <strong>O que é instalado:</strong> <code>setroubleshoot</code> (interface gráfica, usada pelo botão Abrir), <code>setroubleshoot-server</code> (motor de análise), <code>setools-console</code> (ferramentas CLI) e <code>policycoreutils-python-utils</code> (utilitários de política). Os avisos aparecem automaticamente no menu de notificações do desktop quando um AVC é gerado.
 </div>
 
 <div class="grupo-botoes">
@@ -277,20 +277,13 @@ data-i18n="sessoes.estado-fedora.btn_selinux_gui_install">
 // SESSÃO 12: ESTADO DO FEDORA
 // ============================================================
 
-function _t(chave, fallback) {
-return (typeof tOr === 'function') ? tOr(chave, fallback) : fallback;
-}
-function _tVars(chave, fallback, vars) {
-return (typeof tOr === 'function') ? tOr(chave, fallback, vars) : fallback;
-}
-
 // ============================================================
 // REGISTRO DE APPS REMOVÍVEIS (lixeira unificada)
 // ============================================================
 
 registrarAppRemovivel('selinux-setroubleshoot-install', {
 tipo: 'dnf',
-pacotes: ['setroubleshoot-server', 'setools-console', 'policycoreutils-python-utils'],
+pacotes: ['setroubleshoot', 'setroubleshoot-server', 'setools-console', 'policycoreutils-python-utils'],
 nome: 'setroubleshoot'
 });
 
@@ -386,7 +379,7 @@ body: JSON.stringify({ comando: comando, idComando: idComando })
 if (!response.ok) {
 var errorLine = document.createElement('div');
 errorLine.className = 'log-line error';
-errorLine.textContent = '❌ Erro HTTP: ' + response.status;
+errorLine.textContent = _tVars('comum.erro_http', '❌ Erro HTTP: {status}', { status: response.status });
 logBox.appendChild(errorLine);
 logBox.scrollTop = logBox.scrollHeight;
 return null;
@@ -398,7 +391,7 @@ return sucesso;
 } catch (e) {
 var errorLine2 = document.createElement('div');
 errorLine2.className = 'log-line error';
-errorLine2.textContent = '❌ Erro de conexão: ' + e.message;
+errorLine2.textContent = _tVars('comum.erro_conexao', '❌ Erro de conexão: {msg}', { msg: e.message });
 logBox.appendChild(errorLine2);
 logBox.scrollTop = logBox.scrollHeight;
 return null;
@@ -538,8 +531,10 @@ console.warn('[atomic-check] Erro:', e.message);
 if (logBox) {
 var linha = document.createElement('div');
 linha.className = 'log-line success';
-linha.textContent = '✅ Detecção: ' + (isAtomic ? 'Atomic' : 'Tradicional') +
-' (' + gerenciador + ')';
+linha.textContent = _tVars('sessoes.estado-fedora.deteccao_log', '✅ Detecção: {tipo} ({gerenciador})', {
+tipo: isAtomic ? _t('sessoes.estado-fedora.tipo_atomic', 'Atomic') : _t('sessoes.estado-fedora.tipo_tradicional', 'Tradicional'),
+gerenciador: gerenciador
+});
 logBox.appendChild(linha);
 logBox.scrollTop = logBox.scrollHeight;
 }
@@ -688,13 +683,24 @@ resultadoEl.innerHTML = msg;
 
 async function executarSetroubleshootInstall() {
 var idComando = 'selinux-setroubleshoot-install';
-var comando = 'sudo dnf install -y setroubleshoot-server setools-console policycoreutils-python-utils';
+var comando = 'sudo dnf install -y setroubleshoot setroubleshoot-server setools-console policycoreutils-python-utils';
 await executarComandoGenerico(idComando, comando,
 _t('sessoes.estado-fedora.btn_setroubleshoot_install', '📦 Instalar setroubleshoot'),
 function() { aplicarEstadoInstalavel(idComando, null); });
 }
 
-function abrirSetroubleshoot() {
+async function abrirSetroubleshoot() {
+    // O `sealert -b` precisa do pacote GUI `setroubleshoot`. Quem instalou
+    // só o `-server` (versões antigas do FAP) veria "aberto!" sem janela.
+    var temGui = true;
+    try { temGui = SystemState.pacoteInstalado('setroubleshoot'); } catch (e) { temGui = true; }
+    if (!temGui) {
+        if (confirm(_t('sessoes.estado-fedora.setroubleshoot_gui_faltando',
+            'A interface gráfica do setroubleshoot (pacote "setroubleshoot") não está instalada. Instalar agora?'))) {
+            await executarSetroubleshootInstall();
+        }
+        return;
+    }
     // `sealert -b` abre o browser do setroubleshoot (GUI que lista
     // os AVCs analisados). O daemon `setroubleshootd` (dbus-activated)
     // inicia automaticamente no primeiro uso.

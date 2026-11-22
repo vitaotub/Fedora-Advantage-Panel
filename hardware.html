@@ -521,13 +521,6 @@ data-i18n="sessoes.hardware.btn_vaapi_check_intel">
 // SESSÃO 3: HARDWARE
 // ============================================================
 
-function _t(chave, fallback) {
-    return (typeof tOr === 'function') ? tOr(chave, fallback) : fallback;
-}
-function _tVars(chave, fallback, vars) {
-    return (typeof tOr === 'function') ? tOr(chave, fallback, vars) : fallback;
-}
-
 // ------------------------------------------------------------
 // Avisos de reinicialização / logout
 // ------------------------------------------------------------
@@ -701,8 +694,8 @@ async function _executarVaapiCheck(vendor, idComando) {
         if (container) {
             container.className = 'aviso-caixa';
             container.style.borderColor = '#ef4444';
-            container.innerHTML = '❌ ' +
-                _tVars('comum.erro_conexao', 'Erro de conexão: {msg}', { msg: e.message });
+            container.innerHTML =
+                _tVars('comum.erro_conexao', '❌ Erro de conexão: {msg}', { msg: e.message });
         }
         if (logBox) {
             var err = document.createElement('div');
@@ -1245,11 +1238,11 @@ async function _renderizarPanelDriverStatus(info) {
             // vai dar o erro claro se o pacote não existir.
             panel.innerHTML =
                 '<div class="aviso-caixa" style="border-color: #f59e0b; color: #f59e0b;">' +
-                '⚠️ <strong>Não foi possível verificar a disponibilidade do driver <code>' +
-                _escapeHTML(info.geracao.pkg) + '</code> no RPM Fusion.</strong><br>' +
-                '<span style="font-size: 0.85rem;">Motivo: ' + _escapeHTML(disp.erro || 'desconhecido') +
-                '. O botão "Instalar Driver NVIDIA" continua habilitado — clique nele para tentar. ' +
-                'Se o pacote não existir, o <code>dnf install</code> mostrará o erro real no log.</span>' +
+                _tVars('sessoes.hardware.nvidia_verificacao_falhou',
+                    '⚠️ <strong>Não foi possível verificar a disponibilidade do driver <code>{pkg}</code> no RPM Fusion.</strong><br>' +
+                    '<span style="font-size: 0.85rem;">Motivo: {motivo}. O botão "Instalar Driver NVIDIA" continua habilitado — clique nele para tentar. ' +
+                    'Se o pacote não existir, o <code>dnf install</code> mostrará o erro real no log.</span>',
+                    { pkg: _escapeHTML(info.geracao.pkg), motivo: _escapeHTML(disp.erro || 'desconhecido') }) +
                 '</div>';
             // `return` obrigatório: sem ele, o `panel.innerHTML = ''`
             // no final sobrescreve o painel amarelo (regressão v1.5.1).
@@ -1262,6 +1255,50 @@ async function _renderizarPanelDriverStatus(info) {
 
     // Sem bloqueios
     panel.innerHTML = '';
+}
+
+// ------------------------------------------------------------
+// Secure Boot × instalação do driver NVIDIA (v1.6.2)
+// ------------------------------------------------------------
+//
+// Fonte única da decisão. Devolve:
+//   • null              — nada a avisar (SB desligado/indeterminado,
+//                         ou chave gerada E registrada, ou registro
+//                         pendente de reboot — instalar agora é seguro,
+//                         pois o módulo carrega após o MOK Management);
+//   • 'sem-chave'       — SB ativo e `public_key.der` não existe;
+//   • 'nao-registrada'  — chave existe, mas o firmware não a conhece
+//                         (nem há importação pendente): o akmod compila,
+//                         porém o módulo é recusado no boot.
+// `enrolled === null` (mokutil sem resposta conclusiva) NÃO bloqueia:
+// falha transitória não pode virar falso positivo.
+async function _nvidiaSecureBootBloqueio() {
+    var sb = await _detectarSecureBoot();
+    if (sb !== 'enabled') return null;
+
+    // Fonte primária: `/hardware-scan` (`chave_gerada`). Fallback:
+    // `SystemState` quando o cache ainda não foi populado.
+    var chaveLocal = false;
+    if (_secureBootMokCache && typeof _secureBootMokCache.chave_gerada === 'boolean') {
+        chaveLocal = _secureBootMokCache.chave_gerada;
+    } else {
+        try { chaveLocal = SystemState.arquivoPresente('/etc/pki/akmods/certs/public_key.der'); } catch (e) {}
+        if (!chaveLocal && SystemState.cacheIdade() < 60000) {
+            try {
+                SystemState.invalidar();
+                await SystemState.carregar(true);
+                chaveLocal = SystemState.arquivoPresente('/etc/pki/akmods/certs/public_key.der');
+            } catch (e) { /* mantém chaveLocal = false */ }
+        }
+    }
+    if (!chaveLocal) return 'sem-chave';
+
+    var mok = _secureBootMokCache;
+    if (mok && mok.pending_import !== true) {
+        if (mok.enrolled === false) return 'nao-registrada';
+        if (mok.enrolled === true && mok.current_key_not_enrolled === true) return 'nao-registrada';
+    }
+    return null;
 }
 
 async function _aplicarEstadoNvidia(info) {
@@ -1338,53 +1375,38 @@ async function _aplicarEstadoNvidia(info) {
 
     // Bloqueio 3: Secure Boot ativo sem chave preparada
     //
-    // v1.5.8: fonte PRIMÁRIA de `chaveLocal` é
-    // `_secureBootMokCache.chave_gerada` (do `/hardware-scan`,
-    // teste `test -f` direto — a mesma fonte usada por
-    // `_renderizarPainelSecureBoot` e `_renderizarBadgeSecureBoot`
-    // em script.js). `SystemState.arquivoPresente` fica como
-    // FALLBACK para quando o cache ainda não foi populado
-    // (primeira renderização, antes do fetch resolver).
-    //
-    // Motivo: `/system-state` testa com `sudo -n test -f || test -f`
-    // (funciona em `0750 root:akmods` se houver NOPASSWD),
-    // `/hardware-scan` usa `test -f` direto (falha sem permissão).
-    // Quando o usuário tem NOPASSWD e a chave existe, as duas fontes
-    // podem divergir. Alinhar com `/hardware-scan` evita que o
-    // painel mostre "chave já gerada" enquanto o backend reporta
-    // `chave_gerada: false`.
+    // v1.6.2: a decisão vive em `_nvidiaSecureBootBloqueio()` (usada
+    // também por `executarNvidiaDriver`, para os dois caminhos nunca
+    // divergirem). Aqui:
+    //   • 'sem-chave'      → desabilita o botão (instalar não adianta);
+    //   • 'nao-registrada' → mantém habilitado, mas avisa no tooltip e
+    //                        `executarNvidiaDriver` pede confirmação
+    //                        explícita (o `mokutil --test-key` pode errar
+    //                        em casos raros, então não bloqueamos de vez).
     if (!installFeito) {
         var btnInstall3 = document.getElementById('btn-nvidia-driver-install');
         if (btnInstall3) {
-            var sb = await _detectarSecureBoot();
-            if (sb === 'enabled') {
-                var chaveLocal = false;
-                if (_secureBootMokCache && typeof _secureBootMokCache.chave_gerada === 'boolean') {
-                    chaveLocal = _secureBootMokCache.chave_gerada;
-                } else {
-                    try { chaveLocal = SystemState.arquivoPresente('/etc/pki/akmods/certs/public_key.der'); } catch (e) {}
-                    if (!chaveLocal && SystemState.cacheIdade() < 60000) {
-                        try {
-                            SystemState.invalidar();
-                            await SystemState.carregar(true);
-                            chaveLocal = SystemState.arquivoPresente('/etc/pki/akmods/certs/public_key.der');
-                        } catch (e) { /* mantém chaveLocal = false */ }
-                    }
-                }
-                if (!chaveLocal) {
-                    btnInstall3.disabled = true;
-                    btnInstall3.style.opacity = '0.5';
-                    btnInstall3.style.cursor = 'not-allowed';
-                    // Nome traduzido da Sessão 12 — alinhado com o
-                    // badge (`_renderizarBadgeSecureBoot`). Se o
-                    // nome mudar no futuro, os dois acompanham.
-                    var nomeSessaoSb = _t('sessoes.estado-fedora.nome', 'Estado do Fedora');
-                    btnInstall3.title = _tVars('sessoes.hardware.nvidia_secureboot_bloqueio',
-                        'Secure Boot está ativo e a chave do akmods não foi preparada. ' +
-                        'Use o botão "Preparar Secure Boot" em {sessao} antes de instalar o driver.',
-                        { sessao: nomeSessaoSb });
-                    return;
-                }
+            var bloqueioSb = await _nvidiaSecureBootBloqueio();
+            var nomeSessaoSb = _t('sessoes.estado-fedora.nome', 'Estado do Fedora');
+            if (bloqueioSb === 'sem-chave') {
+                btnInstall3.disabled = true;
+                btnInstall3.style.opacity = '0.5';
+                btnInstall3.style.cursor = 'not-allowed';
+                btnInstall3.title = _tVars('sessoes.hardware.nvidia_secureboot_bloqueio',
+                    'Secure Boot está ativo e a chave do akmods não foi preparada. ' +
+                    'Use o botão "Preparar Secure Boot" em {sessao} antes de instalar o driver.',
+                    { sessao: nomeSessaoSb });
+                return;
+            }
+            if (bloqueioSb === 'nao-registrada') {
+                btnInstall3.disabled = false;
+                btnInstall3.style.opacity = '1';
+                btnInstall3.style.cursor = 'pointer';
+                btnInstall3.title = _tVars('sessoes.hardware.nvidia_secureboot_nao_registrada_curto',
+                    'Secure Boot está ativo e a chave do akmods ainda não está registrada no firmware. ' +
+                    'Conclua o registro em {sessao} → Secure Boot, senão o módulo não carrega no boot.',
+                    { sessao: nomeSessaoSb });
+                return;
             }
         }
     }
@@ -1762,16 +1784,25 @@ async function executarNvidiaDriver() {
         }
     }
 
-    // Bloqueio 4: Secure Boot ativo sem chave preparada
-    var secureBoot = await _detectarSecureBoot();
-    if (secureBoot === 'enabled') {
-        var chaveLocal = false;
-        try { chaveLocal = SystemState.arquivoPresente('/etc/pki/akmods/certs/public_key.der'); } catch (e) {}
-        if (!chaveLocal) {
-            alert(_tVars('sessoes.hardware.nvidia_secureboot_bloqueio',
-                'Secure Boot está ativo e a chave do akmods ainda não foi preparada. ' +
-                'Use o botão "Preparar Secure Boot" em {sessao} antes de instalar o driver.',
-                { sessao: _t('sessoes.estado-fedora.nome', 'Estado do Fedora') }));
+    // Bloqueio 4: Secure Boot ativo (v1.6.2 — mesma decisão do botão)
+    var bloqueioSb = await _nvidiaSecureBootBloqueio();
+    var nomeSessaoSbInst = _t('sessoes.estado-fedora.nome', 'Estado do Fedora');
+    if (bloqueioSb === 'sem-chave') {
+        alert(_tVars('sessoes.hardware.nvidia_secureboot_bloqueio',
+            'Secure Boot está ativo e a chave do akmods ainda não foi preparada. ' +
+            'Use o botão "Preparar Secure Boot" em {sessao} antes de instalar o driver.',
+            { sessao: nomeSessaoSbInst }));
+        return;
+    }
+    if (bloqueioSb === 'nao-registrada') {
+        // Não é bloqueio duro: o usuário pode ter registrado por fora e o
+        // `mokutil` estar errado. Mas o padrão é NÃO continuar.
+        if (!confirm(_tVars('sessoes.hardware.nvidia_secureboot_nao_registrada',
+            '⚠️ Secure Boot está ativo e a chave do akmods NÃO está registrada no firmware.\n\n' +
+            'O driver será compilado e assinado, mas o kernel vai RECUSAR o módulo no boot: a tela pode ficar sem o driver NVIDIA (ou sem aceleração).\n\n' +
+            'Recomendado: cancele, conclua o registro em {sessao} → Secure Boot (importar a chave + reiniciar + MOK Management) e instale depois.\n\n' +
+            'Instalar mesmo assim?',
+            { sessao: nomeSessaoSbInst }))) {
             return;
         }
     }
@@ -1814,8 +1845,17 @@ async function executarNvidiaDriver() {
     var tipo = geracao.tipo;
 
     var comando =
+        // Detecta GPU (defesa em profundidade — pkexec roda como root)
+        'LSPCI=$(command -v lspci 2>/dev/null || echo /usr/sbin/lspci); ' +
+        'if [ ! -x "$LSPCI" ]; then echo "❌ lspci não encontrado (instale pciutils)."; exit 1; fi; ' +
+        'GPU_MODEL=$("$LSPCI" -nn 2>/dev/null | grep -iE "10de:" | grep -iE "vga|3d|display" | head -1); ' +
+        'if [ -z "$GPU_MODEL" ]; then ' +
+        '  echo "❌ Nenhuma GPU NVIDIA detectada."; exit 1; ' +
+        'fi; ' +
+        'echo "🔍 GPU detectada: $GPU_MODEL"; ' +
+
         // ============================================================
-        // REBOOT DE SEGURANÇA (v1.5.9)
+        // REBOOT DE SEGURANÇA (v1.5.9, ajustado na v1.6.2)
         // ============================================================
         //
         // Agenda um reboot para daqui a 10 minutos. Se a tela apagar
@@ -1825,23 +1865,19 @@ async function executarNvidiaDriver() {
         // `sudo shutdown -c` no terminal — ou o reboot acontece mesmo
         // (custo: 1 reboot desnecessário).
         //
-        // `2>/dev/null || true` no final: se o `shutdown` falhar (raro,
-        // mas possível em containers/WSL ou se o systemd não estiver
-        // plenamente funcional), NÃO aborta a instalação do driver.
-        // O `;` (não `&&`) garante que o `dnf install` sempre roda.
+        // v1.6.2: (1) o agendamento só acontece DEPOIS de confirmar que
+        // há GPU NVIDIA (antes, "lspci ausente"/"sem GPU" abortavam o
+        // script mas deixavam o reboot agendado); (2) TODOS os caminhos
+        // de falha abaixo executam `shutdown -c` — antes, uma falha de
+        // `dnf install`, de `akmods` ou de `modinfo` revertia o driver e
+        // mesmo assim o computador reiniciava sozinho 10 min depois,
+        // possivelmente no meio do trabalho do usuário.
         //
-        // O `sudo` no início vira `shutdown -r +10` no script do
-        // pkexec (o `_substituirCaminhosUsuario` remove o `sudo `).
+        // `2>/dev/null || true`: se o `shutdown` falhar (raro), NÃO aborta
+        // a instalação. O `sudo` vira nada no script do pkexec
+        // (`_substituirCaminhosUsuario`).
         'sudo shutdown -r +10 2>/dev/null || true; ' +
         'echo "⏰ Reboot de segurança agendado para +10min (cancele com: sudo shutdown -c)."; ' +
-        // Detecta GPU (defesa em profundidade — pkexec roda como root)
-        'LSPCI=$(command -v lspci 2>/dev/null || echo /usr/sbin/lspci); ' +
-        'if [ ! -x "$LSPCI" ]; then echo "❌ lspci não encontrado (instale pciutils)."; exit 1; fi; ' +
-        'GPU_MODEL=$("$LSPCI" -nn 2>/dev/null | grep -iE "10de:" | grep -iE "vga|3d|display" | head -1); ' +
-        'if [ -z "$GPU_MODEL" ]; then ' +
-        '  echo "❌ Nenhuma GPU NVIDIA detectada."; exit 1; ' +
-        'fi; ' +
-        'echo "🔍 GPU detectada: $GPU_MODEL"; ' +
 
         // Habilita sub-repo NVIDIA (v1.5.1)
         'echo "📦 Verificando sub-repositório RPM Fusion NVIDIA..."; ' +
@@ -1865,7 +1901,7 @@ async function executarNvidiaDriver() {
         'sudo dnf install -y ' + pkg + ' ' + cuda + '; ' +
         'DNF_RC=$?; ' +
         'if [ $DNF_RC -ne 0 ]; then ' +
-        '  echo "❌ dnf install falhou (código $DNF_RC)."; exit 1; ' +
+        '  echo "❌ dnf install falhou (código $DNF_RC)."; sudo shutdown -c 2>/dev/null || true; exit 1; ' +
         'fi; ' +
 
         // Pausa o akmods automático e compila com prioridade baixa
@@ -1886,6 +1922,8 @@ async function executarNvidiaDriver() {
         '  sudo dnf remove -y ' + pkg + ' ' + cuda + ' 2>/dev/null || true; ' +
         '  sudo dracut -f 2>/dev/null || true; ' +
         '  echo "✅ Driver revertido. O nouveau foi restaurado."; ' +
+        '  sudo shutdown -c 2>/dev/null || true; ' +
+        '  echo "⏰ Reboot de segurança cancelado (a instalação falhou e foi revertida)."; ' +
         '  exit 1; ' +
         'fi; ' +
 
@@ -1896,6 +1934,8 @@ async function executarNvidiaDriver() {
         '  echo "--- Revertendo instalação ---"; ' +
         '  sudo dnf remove -y ' + pkg + ' ' + cuda + ' 2>/dev/null || true; ' +
         '  sudo dracut -f 2>/dev/null || true; ' +
+        '  sudo shutdown -c 2>/dev/null || true; ' +
+        '  echo "⏰ Reboot de segurança cancelado (a instalação falhou e foi revertida)."; ' +
         '  exit 1; ' +
         'fi; ' +
 
@@ -1970,9 +2010,29 @@ async function executarNvidiaDriverRemove() {
     // `dnf remove akmod-nvidia` NÃO expande para o pacote -open.
     // Sem ele, usuário Blackwell reverte pelo FAP mas o driver open
     // continua instalado.
+    //
+    // v1.6.2: filtra via `rpm -q` só o que está instalado. O DNF5 devolve
+    // "No match for argument" para pacote não instalado e o `remove`
+    // inteiro falhava — como o resto era encadeado com `&&`, o `autoremove`
+    // nunca rodava e a reversão ficava pela metade (um usuário Ampere,
+    // por exemplo, nunca tem `akmod-nvidia-open` nem `-580xx`).
+    // Também cancela um reboot de segurança ainda pendente da instalação,
+    // para o computador não reiniciar no meio da remoção.
     var comando =
-        'sudo dnf remove -y akmod-nvidia-open akmod-nvidia akmod-nvidia-580xx akmod-nvidia-470xx akmod-nvidia-390xx xorg-x11-drv-nvidia* nvidia-settings && ' +
-        'sudo dnf clean all && sudo dnf autoremove -y';
+        'sudo shutdown -c 2>/dev/null || true; ' +
+        'PKGS=""; ' +
+        'for p in akmod-nvidia-open akmod-nvidia akmod-nvidia-580xx akmod-nvidia-470xx akmod-nvidia-390xx nvidia-settings; do ' +
+        '  rpm -q "$p" >/dev/null 2>&1 && PKGS="$PKGS $p"; ' +
+        'done; ' +
+        'GLOBS=$(rpm -qa --qf "%{NAME}\\n" "xorg-x11-drv-nvidia*" "kmod-nvidia*" 2>/dev/null | sort -u | tr "\\n" " "); ' +
+        'PKGS="$PKGS $GLOBS"; ' +
+        'if [ -n "$(echo $PKGS)" ]; then ' +
+        '  echo "🗑️  Removendo:$PKGS"; ' +
+        '  sudo dnf remove -y $PKGS || exit 1; ' +
+        'else ' +
+        '  echo "ℹ️  Nenhum pacote do driver NVIDIA encontrado — nada a remover."; ' +
+        'fi; ' +
+        'sudo dnf clean all; sudo dnf autoremove -y';
 
     await executarComandoGenerico(idComando, comando,
         _t('sessoes.hardware.btn_nvidia_reverter', '↩️ Reverter pro nouveau'),
@@ -2020,6 +2080,31 @@ async function executarNvidiaVaapiUtils() {
 
 async function executarNvidiaVaapiEnv() {
     var idComando = 'nvidia-vaapi-env';
+
+    // v1.6.2: avisos antes de gravar variáveis GLOBAIS de sessão.
+    //  • `LIBVA_DRIVER_NAME=nvidia` vale para TODOS os aplicativos: em
+    //    notebook híbrido (Intel/AMD + NVIDIA) isso desliga o VA-API da
+    //    GPU integrada, que costuma ser a que decodifica o vídeo.
+    //  • `MOZ_DISABLE_RDD_SANDBOX=1` desativa o sandbox do processo de
+    //    decodificação do Firefox (exigência do libva-nvidia-driver).
+    var outraGpu = false;
+    try {
+        var infoOutra = await _detectarGpuPorVendor(['8086', '1002', '1022']);
+        outraGpu = !!(infoOutra && infoOutra.detected);
+    } catch (e) { /* sem detecção: só mostra o aviso do sandbox */ }
+
+    var msgEnv = _t('sessoes.hardware.nvidia_vaapi_env_confirmar',
+        'Este botão grava variáveis de ambiente para toda a sua sessão (vigoram após novo login):\n\n' +
+        '• MOZ_DISABLE_RDD_SANDBOX=1 — desativa o sandbox do processo de decodificação de vídeo do Firefox (exigido pelo libva-nvidia-driver; reduz a proteção desse processo).\n' +
+        '• LIBVA_DRIVER_NAME=nvidia — força o VA-API a usar a NVIDIA em TODOS os aplicativos.\n\n' +
+        'Para desfazer, use o botão Reverter.');
+    if (outraGpu) {
+        msgEnv += '\n\n' + _t('sessoes.hardware.nvidia_vaapi_env_hibrido',
+            '⚠️ Foi detectada também uma GPU Intel/AMD (notebook híbrido?). Com esta configuração, a decodificação por hardware da GPU integrada deixa de funcionar nos aplicativos. Só continue se você usa a NVIDIA como GPU principal para vídeo.');
+    }
+    msgEnv += '\n\n' + _t('sessoes.hardware.nvidia_vaapi_env_continuar', 'Continuar?');
+    if (!confirm(msgEnv)) return;
+
     var comando = "mkdir -p ~/.config/environment.d && tee ~/.config/environment.d/99-fap-nvidia-vaapi.conf <<'FAPEOF'\n" +
                   "NVD_BACKEND=direct\n" +
                   "LIBVA_DRIVER_NAME=nvidia\n" +

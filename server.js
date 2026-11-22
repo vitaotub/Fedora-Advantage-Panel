@@ -723,6 +723,53 @@ function _podeExecutar(idComando) {
 // disk-usage, journal-errors), usamos este helper em vez de
 // abrir conexão SSE. Comandos são simples, curtos, read-only.
 
+// v1.6.2: CPU INSTANTÂNEA por processo. `ps -o pcpu` devolve a média desde
+// o INÍCIO do processo (um navegador aberto há 3 h aparecia como "0%"
+// mesmo travando a máquina agora). Aqui lemos utime+stime de /proc/<pid>/stat
+// duas vezes, com um intervalo curto, e calculamos o delta — o mesmo que o
+// `top` faz. Resultado em % de UM núcleo (pode passar de 100 em multithread).
+function _lerTicksProcessos() {
+    const mapa = new Map();
+    let pids = [];
+    try { pids = fs.readdirSync('/proc').filter(function(n) { return /^[0-9]+$/.test(n); }); }
+    catch (e) { return mapa; }
+    for (let i = 0; i < pids.length; i++) {
+        try {
+            const stat = fs.readFileSync('/proc/' + pids[i] + '/stat', 'utf8');
+            // O nome (campo 2) fica entre parênteses e pode ter espaços/")":
+            // parseia a partir do ÚLTIMO ")".
+            const resto = stat.slice(stat.lastIndexOf(')') + 2).split(' ');
+            const ticks = (parseInt(resto[11], 10) || 0) + (parseInt(resto[12], 10) || 0);
+            const comm = stat.slice(stat.indexOf('(') + 1, stat.lastIndexOf(')'));
+            mapa.set(pids[i], { ticks: ticks, nome: comm });
+        } catch (e) { /* processo terminou durante a leitura */ }
+    }
+    return mapa;
+}
+
+function _amostrarCpuProcessos(intervaloMs) {
+    const CLK_TCK = 100; // padrão do kernel Linux (getconf CLK_TCK)
+    const antes = _lerTicksProcessos();
+    const t0 = Date.now();
+    return new Promise(function(resolve) {
+        setTimeout(function() {
+            const depois = _lerTicksProcessos();
+            const dt = Math.max(0.05, (Date.now() - t0) / 1000);
+            const lista = [];
+            depois.forEach(function(v, pid) {
+                const a = antes.get(pid);
+                if (!a) return; // processo novo: sem base para o delta
+                const pct = ((v.ticks - a.ticks) / CLK_TCK / dt) * 100;
+                if (pct > 0) lista.push({ nome: v.nome, cpu: pct });
+            });
+            lista.sort(function(x, y) { return y.cpu - x.cpu; });
+            resolve(lista.slice(0, 5).map(function(x) {
+                return { nome: x.nome, cpu: x.cpu.toFixed(1) };
+            }));
+        }, intervaloMs || 500);
+    });
+}
+
 function _execReadOnly(comando, timeoutMs) {
     return new Promise(function(resolve) {
         // ============================================================
@@ -734,7 +781,7 @@ function _execReadOnly(comando, timeoutMs) {
         // e um `.bashrc` com `fastfetch` polui o stdout de todos os
         // endpoints de diagnóstico (`/system-info`, `/top-processes`,
         // `/disk-usage`, `/journal-errors`, `/kernel-atual`,
-        // `/reboot-needed`, `/check-package`, `/check-package-available`,
+        // `/check-package`, `/check-package-available`,
         // `/hardware-detect-atomic`, `/grub-info`).
         //
         // Correção: `execFile` com `--noprofile --norc` — nenhum
@@ -935,7 +982,12 @@ function _inlineMd(s) {
     .replace(/`([^`]+)`/g, '<code>$1</code>')
     .replace(/\[([^\]]+)\]\(([^)]+)\)/g, function(match, texto, href) {
         var hrefTrim = String(href).trim();
-        if (/^(?:javascript|data|vbscript|file|blob):/i.test(hrefTrim)) {
+        // v1.6.2: lista de PERMITIDOS em vez de lista de bloqueados. Os
+        // navegadores ignoram tab/quebra de linha dentro do esquema
+        // (`java<TAB>script:` executava), o que furava a lista antiga.
+        // Só http(s), mailto, âncora (#) e caminho relativo viram link.
+        var hrefSemCtl = hrefTrim.replace(/[\u0000-\u0020\u007f-\u009f]/g, '');
+        if (!/^(?:https?:|mailto:|#|\/(?!\/))/i.test(hrefSemCtl)) {
             return texto;
         }
         return '<a href="' + hrefTrim + '" target="_blank" rel="noopener noreferrer">' + texto + '</a>';
@@ -1030,435 +1082,6 @@ function _lerChangelogVersao(versao) {
 
     _changelogCache = { versao: versaoLimpa, corpo: corpo, ts: Date.now() };
     return { versao: versaoLimpa, corpo: corpo };
-}
-
-// ============================================================
-// UPGRADE DO FEDORA — detecção de disponibilidade
-// ============================================================
-//
-// Consulta fontes oficiais para decidir se é seguro expor o botão
-// de upgrade na sessão 12 (Ajustes e Manutenção).
-//
-// Condições OBRIGATÓRIAS (bloqueantes) para 'ready':
-//   1. Fedora 45 GA confirmado em releases.json oficial
-//   2. Canal updates/45/ servindo (HEAD em repomd.xml)
-//   3. RPM Fusion 45 publicado (HEAD em repomd.xml do RPM Fusion)
-//   4. Sistema atual (44) completamente atualizado (dnf check-update
-//      retorna 0 E dnf needs-restarting retorna 0)
-//   5. Pelo menos 8 GB livres em /var
-//
-// Condições INFORMATIVAS (warnings): NVIDIA, Broadcom, Terra,
-// COPRs, Razer, xpadneo, Realtek — não bloqueiam, só avisam.
-//
-// Cache de 6h. O estado não muda rápido o suficiente para
-// justificar consultas mais frequentes — e o releases.json oficial
-// agradece.
-
-var _upgradeStatusCache = { dados: null, ts: 0 };
-var UPGRADE_CACHE_TTL_MS = 1 * 60 * 60 * 1000;
-var UPGRADE_TARGET_VERSION = '45';
-var UPGRADE_MIN_DISK_GB = 8;
-
-// Flag permanente: usuário já está na versão alvo (45+) ou superior.
-// Uma vez setada, `_calcularUpgradeStatus()` retorna o cache sem
-// executar subprocessos (cat /etc/fedora-release, dnf check-update)
-// nem consultar endpoints externos (releases.json, repomd.xml).
-// Reflete um fato do sistema (versão), que não muda sem reinstalação.
-// Resetada apenas quando o server.js é reiniciado — a primeira
-// consulta pós-restart re-detecta e re-seta.
-var _upgradeConcluidoPermanente = false;
-
-async function _verificarGaFedora(versao) {
-    try {
-        var resp = await fetch('https://fedoraproject.org/releases.json',
-                               { cache: 'no-store', signal: AbortSignal.timeout(10000) });
-        if (!resp.ok) return { ok: false, motivo: 'HTTP ' + resp.status };
-        var data = await resp.json();
-        if (!Array.isArray(data)) return { ok: false, motivo: 'formato inesperado' };
-
-        var release = data.find(function(r) {
-            return String(r.version) === String(versao);
-        });
-        if (!release) return { ok: false, motivo: 'versão ' + versao + ' ainda não anunciada' };
-
-        var agora = new Date();
-        if (release.release_date) {
-            var rd = new Date(release.release_date);
-            if (rd > agora) {
-                return { ok: false, motivo: 'release_date futura', release_date: release.release_date };
-            }
-        }
-        if (release.eol && new Date(release.eol) < agora) {
-            return { ok: false, motivo: 'versão em EOL' };
-        }
-        return { ok: true, release_date: release.release_date || null };
-    } catch (e) {
-        return { ok: false, motivo: e.message };
-    }
-}
-
-async function _verificarCanalFedora(versao) {
-    // ============================================================
-    // FONTES CANÔNICAS DO FEDORA (v1.5.8)
-    // ============================================================
-    //
-    // Antes, usava `mirrors.kernel.org` (mirror dos EUA) como fonte
-    // única. Redes corporativas com proxy/firewall restritivo,
-    // países com bloqueio a domínios estrangeiros, ou simples
-    // indisponibilidade do mirror → a checagem falhava sempre, e o
-    // upgrade do Fedora 44 → 45 ficava travado em `waiting_ga`
-    // mesmo após o GA. O usuário via "Fedora 45 ainda não lançado"
-    // sem saber que o problema era o mirror.
-    //
-    // Correção: usa `dl.fedoraproject.org` (canônico do Fedora,
-    // sem redirect) com fallback em `download.fedoraproject.org`
-    // (round-robin). O segundo é tentado APENAS quando o primeiro
-    // falha por erro de rede/servidor (5xx, timeout, DNS) — não em
-    // 4xx, porque se o canal não existe no canônico, também não
-    // existe no round-robin.
-    //
-    // Ambos são HEAD (só headers, sem body) com timeout de 10s.
-    // O `Promise.all` do `_calcularUpgradeStatus` roda esta função
-    // em paralelo com as demais checagens, então o pior caso
-    // (primeiro falha por timeout, segundo responde) é 10s + RTT
-    // — dentro do limite dos demais checks (dnf check-update até 30s).
-    var urls = [
-        'https://dl.fedoraproject.org/pub/fedora/linux/updates/' + versao +
-        '/Everything/x86_64/repodata/repomd.xml',
-        'https://download.fedoraproject.org/pub/fedora/linux/updates/' + versao +
-        '/Everything/x86_64/repodata/repomd.xml'
-    ];
-
-    var ultimoErro = null;
-    var ultimoStatus = null;
-
-    for (var i = 0; i < urls.length; i++) {
-        try {
-            var resp = await fetch(urls[i], {
-                method: 'HEAD',
-                signal: AbortSignal.timeout(10000),
-                                   // Não seguir redirects para o HEAD — queremos saber
-                                   // se o ARQUIVO está lá no host canônico, não para
-                                   // onde ele redireciona.
-                                   redirect: 'manual'
-            });
-
-            // 2xx: canal existe.
-            if (resp.status >= 200 && resp.status < 300) {
-                return { ok: true, status: resp.status };
-            }
-
-            // 4xx: canal NÃO existe neste host. Não tenta o próximo
-            // — o segundo host tem a mesma árvore do canônico.
-            if (resp.status >= 400 && resp.status < 500) {
-                return { ok: false, status: resp.status, motivo: 'HTTP ' + resp.status };
-            }
-
-            // 3xx ou 5xx: pode ser redirect (download.fedoraproject.org
-            // redireciona para o mirror mais próximo) ou instabilidade
-            // do host. Registra e tenta o próximo.
-            ultimoStatus = resp.status;
-            ultimoErro = 'HTTP ' + resp.status;
-        } catch (e) {
-            // Erro de rede (DNS, timeout, TLS): tenta o próximo.
-            ultimoErro = e.message;
-        }
-    }
-
-    return { ok: false, status: ultimoStatus, motivo: ultimoErro || 'todos os hosts falharam' };
-}
-
-async function _verificarCanalRpmFusion(versao) {
-    try {
-        // Verifica o repositório `releases/<versao>` (canal GA), não o
-        // `updates/<versao>` (canal de atualizações).
-        //
-        // Por que `releases` e não `updates`:
-        //   • O RPM Fusion publica o repo `releases/45` no mesmo dia
-        //     do Fedora GA.
-        //   • O canal `updates/45` só é populado depois que o primeiro
-        //     batch de atualizações é enviado — o que pode levar dias
-        //     ou semanas.
-        //   • O `dnf system-upgrade` do FAP usa o repo `releases/45`
-        //     como base (o `updates/45` é adicionado automaticamente
-        //     pelo `rpmfusion-*-release-45` depois do reboot).
-        //
-        // Portanto, verificar `releases/45` é o critério correto para
-        // saber se o RPM Fusion 45 está pronto para o upgrade. Foi o
-        // que destravou a UI na v1.4.4 (Fedora 45 GA em 03/11/2026).
-        var url = 'https://download1.rpmfusion.org/free/fedora/releases/' + versao +
-        '/Everything/x86_64/os/repodata/repomd.xml';
-        var resp = await fetch(url, { method: 'HEAD', signal: AbortSignal.timeout(10000) });
-        return { ok: resp.ok, status: resp.status };
-    } catch (e) {
-        return { ok: false, motivo: e.message };
-    }
-}
-
-async function _detectarVersaoAtualFedora() {
-    var out = await _execReadOnly(
-        '. /etc/os-release 2>/dev/null && [ "$ID" = "fedora" ] && echo "$VERSION_ID"',
-        3000
-    );
-    var match = out.match(/^(\d+)/m);
-    return match ? match[1] : null;
-}
-
-async function _detectarAtomic() {
-    var out = await _execReadOnly(
-        '[ -f /run/ostree-booted ] && echo "atomic" || ' +
-        '(command -v rpm-ostree > /dev/null 2>&1 && echo "atomic" || echo "tradicional")',
-                                  3000
-    );
-    return out.trim() === 'atomic';
-}
-
-async function _verificarAtualizacoesPendentes() {
-    // ============================================================
-    // PARALELIZA OS DOIS `dnf` (v1.5.8 — auditoria B4)
-    // ============================================================
-    //
-    // Antes, `dnf check-update` (até 30s) e `dnf needs-restarting`
-    // (até 10s) rodavam SEQUENCIALMENTE dentro desta função. O
-    // pior caso somava 40s. Como o `_calcularUpgradeStatus` chama
-    // esta função dentro de um `Promise.all` que também inclui
-    // `_verificarCanalFedora` (2 hosts × 10s = 20s) e demais
-    // checagens, o server podia passar de 35s — e o client
-    // (`_carregarUpgradeStatus`, `_sinalTimeout(35000)`) abortava
-    // antes da resposta chegar. A UI mostrava "Não foi possível
-    // verificar disponibilidade" mesmo com o server a milissegundos
-    // de responder.
-    //
-    // Correção: Promise.all reduz o pior caso para 30s (o mais
-    // lento dos dois). Os dois comandos são read-only e
-    // independentes — não há razão técnica para rodar em série.
-    //
-    // `Promise.all` NÃO rejeita em caso de erro em uma das
-    // promises (o `_execReadOnly` resolve com `''` em erro, nunca
-    // rejeita). Portanto é seguro: nunca cai no `catch` externo.
-    var resultados = await Promise.all([
-        _execReadOnly('dnf check-update --quiet > /dev/null 2>&1; echo "exit=$?"', 30000),
-                                       _execReadOnly('dnf needs-restarting -r > /dev/null 2>&1; echo "exit=$?"', 10000)
-    ]);
-
-    var check = resultados[0];
-    var restart = resultados[1];
-
-    var m = check.match(/exit=(\d+)/);
-    var codigo = m ? parseInt(m[1], 10) : -1;
-    var temUpdates = codigo === 100;
-    var checagemOk = (codigo === 0 || codigo === 100);
-
-    var mr = restart.match(/exit=(\d+)/);
-    var codigoR = mr ? parseInt(mr[1], 10) : -1;
-    var precisaReboot = (codigoR === 1);
-
-    return {
-        tem_updates: temUpdates,
-        precisa_reboot: precisaReboot,
-        checagem_ok: checagemOk
-    };
-}
-
-async function _verificarEspacoDisco() {
-    // Verifica /var E /var/tmp: o `dnf system-upgrade` usa /var/tmp
-    // como staging. Se estiver em outra partição (raro, mas possível),
-    // o `df /var` mede o espaço errado. Pegamos o MENOR livre entre
-    // os dois para garantir que o download cabe.
-    var out = await _execReadOnly(
-        "L1=$(df -BG /var 2>/dev/null | tail -1 | awk '{print $4}' | tr -d 'G'); " +
-        "L2=$(df -BG /var/tmp 2>/dev/null | tail -1 | awk '{print $4}' | tr -d 'G'); " +
-        "[ -z \"$L2\" ] && L2=$L1; " +
-        "if [ \"${L1:-0}\" -lt \"${L2:-0}\" ]; then echo $L1; else echo $L2; fi",
-        3000
-    );
-    var livre = parseFloat(out) || 0;
-    return { livre_gb: livre, suficiente: livre >= UPGRADE_MIN_DISK_GB };
-}
-
-async function _verificarDownloadConcluido() {
-    // Marcador oficial: `transaction.json` só é gravado quando o
-    // `dnf system-upgrade download` TERMINA com sucesso. A presença
-    // do diretório sozinha não basta — downloads interrompidos
-    // deixam arquivos parciais mas sem `transaction.json`.
-    //
-    // DNF5 (Fedora 41+) usa /usr/lib/sysimage/libdnf5/offline/.
-    // DNF4 (legado) usa /var/lib/dnf/system-upgrade/.
-    var script =
-    'if [ -f /usr/lib/sysimage/libdnf5/offline/transaction.json ]; then ' +
-    '  echo "yes"; ' +
-    'elif [ -f /var/lib/dnf/system-upgrade/transaction.json ]; then ' +
-    '  echo "yes"; ' +
-    'else ' +
-    '  echo "no"; ' +
-    'fi';
-
-var out = await _execReadOnly(script, 3000);
-return out.trim() === 'yes';
-}
-
-async function _detectarComponentesTerceiros() {
-    var script = [
-        '(rpm -q akmod-nvidia >/dev/null 2>&1 || rpm -q akmod-nvidia-open >/dev/null 2>&1) && echo "nvidia=1" || echo "nvidia=0"',
-        'rpm -q akmod-wl 2>/dev/null | grep -q "^akmod-wl" && echo "broadcom=1" || echo "broadcom=0"',
-        '[ -f /etc/yum.repos.d/hardware:razer.repo ] && echo "razer=1" || echo "razer=0"',
-        'rpm -q xpadneo 2>/dev/null | grep -q "^xpadneo" && echo "xpadneo=1" || echo "xpadneo=0"',
-        'ls /etc/yum.repos.d/terra*.repo > /dev/null 2>&1 && echo "terra=1" || echo "terra=0"',
-        'rpm -q akmod-r8168 2>/dev/null | grep -q "^akmod-r8168" && echo "realtek=1" || echo "realtek=0"',
-        'COUNT=$(ls /etc/yum.repos.d/*copr*.repo 2>/dev/null | wc -l); echo "coprs_count=$COUNT"'
-    ].join('; ');
-
-    var out = await _execReadOnly(script, 10000);
-    var raw = _parseChaveValor(out);
-
-    return {
-        nvidia_driver: raw.nvidia === '1',
-        broadcom_wifi: raw.broadcom === '1',
-        razer_repo: raw.razer === '1',
-        xpadneo: raw.xpadneo === '1',
-        terra_repo: raw.terra === '1',
-        realtek_ethernet: raw.realtek === '1',
-        coprs_count: parseInt(raw.coprs_count, 10) || 0
-    };
-}
-
-async function _calcularUpgradeStatus() {
-    // Curto-circuito permanente: usuário já está no alvo (45+).
-    // NÃO spawna subprocesso algum, NÃO consulta rede.
-    if (_upgradeConcluidoPermanente && _upgradeStatusCache.dados) {
-        return _upgradeStatusCache.dados;
-    }
-
-    var agora = Date.now();
-    if (_upgradeStatusCache.dados && (agora - _upgradeStatusCache.ts) < UPGRADE_CACHE_TTL_MS) {
-        return _upgradeStatusCache.dados;
-    }
-
-    var versaoAtual = await _detectarVersaoAtualFedora();
-    var isAtomic = await _detectarAtomic();
-    var target = UPGRADE_TARGET_VERSION;
-
-    var resultado = {
-        current_version: versaoAtual,
-        target_version: target,
-        is_atomic: isAtomic,
-        status: 'unknown',
-        checks: {
-            fedora_ga: { ok: false, release_date: null },
-            fedora_channel: { ok: false },
-            rpmfusion_channel: { ok: false },
-            is_current_up_to_date: { ok: false, tem_updates: false, precisa_reboot: false, checagem_ok: false },
-            disk_space: { ok: false, livre_gb: 0 },
-            download_state: { downloaded: false }
-        },
-        components: {},
-        warnings: []
-    };
-
-    if (!versaoAtual) {
-        resultado.status = 'unknown';
-        _upgradeStatusCache = { dados: resultado, ts: agora };
-        return resultado;
-    }
-
-    if (isAtomic) {
-        resultado.status = 'atomic';
-        _upgradeStatusCache = { dados: resultado, ts: agora };
-        return resultado;
-    }
-
-    var vAtualNum = parseInt(versaoAtual, 10) || 0;
-    var vAlvoNum = parseInt(target, 10) || 0;
-
-    if (vAtualNum === vAlvoNum || vAtualNum > vAlvoNum) {
-        resultado.status = 'no_upgrade_needed';
-        // Marca permanentemente: a partir daqui, esta área não
-        // faz mais nada. Nenhuma chamada subsequente (mesmo com
-        // ?refresh=1) executa subprocesso ou consulta rede.
-        _upgradeConcluidoPermanente = true;
-        _upgradeStatusCache = { dados: resultado, ts: agora };
-        return resultado;
-    }
-
-    if (vAtualNum < vAlvoNum - 1) {
-        resultado.status = 'unsupported';
-        _upgradeStatusCache = { dados: resultado, ts: agora };
-        return resultado;
-    }
-
-    // Versão atual é 44, alvo é 45. Roda as checagens em paralelo.
-    var resultados = await Promise.all([
-        _verificarGaFedora(target),
-                                       _verificarCanalFedora(target),
-                                       _verificarCanalRpmFusion(target),
-                                       _verificarAtualizacoesPendentes(),
-                                       _verificarEspacoDisco(),
-                                       _verificarDownloadConcluido(),
-                                       _detectarComponentesTerceiros()
-    ]);
-
-    var fedoraGa = resultados[0];
-    var fedoraChannel = resultados[1];
-    var rpmfusionChannel = resultados[2];
-    var updates = resultados[3];
-    var disk = resultados[4];
-    var download = resultados[5];
-    var components = resultados[6];
-
-    resultado.checks.fedora_ga = fedoraGa;
-    resultado.checks.fedora_channel = fedoraChannel;
-    resultado.checks.rpmfusion_channel = rpmfusionChannel;
-    resultado.checks.is_current_up_to_date = {
-        ok: updates.checagem_ok && !updates.tem_updates && !updates.precisa_reboot,
-        tem_updates: updates.tem_updates,
-        precisa_reboot: updates.precisa_reboot,
-        checagem_ok: updates.checagem_ok
-    };
-    resultado.checks.disk_space = {
-        ok: disk.suficiente,
-        livre_gb: disk.livre_gb,
-        min_gb: UPGRADE_MIN_DISK_GB
-    };
-    resultado.checks.download_state = { downloaded: download };
-    resultado.components = components;
-
-    // Warnings informativos — o client traduz pelo tipo.
-    if (components.nvidia_driver)  resultado.warnings.push({ tipo: 'nvidia' });
-    if (components.broadcom_wifi)  resultado.warnings.push({ tipo: 'broadcom' });
-    if (components.terra_repo)     resultado.warnings.push({ tipo: 'terra' });
-    if (components.razer_repo)     resultado.warnings.push({ tipo: 'razer' });
-    if (components.xpadneo)        resultado.warnings.push({ tipo: 'xpadneo' });
-    if (components.realtek_ethernet) resultado.warnings.push({ tipo: 'realtek' });
-    if (components.coprs_count > 0) resultado.warnings.push({ tipo: 'coprs', n: components.coprs_count });
-
-    var fedoraOk = fedoraGa.ok && fedoraChannel.ok;
-    var rpmfusionOk = rpmfusionChannel.ok;
-    var checagemFalhou = !updates.checagem_ok;
-    var sistemaOk = resultado.checks.is_current_up_to_date.ok;
-    var espacoOk = disk.suficiente;
-
-    if (download) {
-        resultado.status = 'downloaded';
-    } else if (!fedoraOk) {
-        resultado.status = 'waiting_ga';
-    } else if (!rpmfusionOk) {
-        resultado.status = 'waiting_rpmfusion';
-    } else if (checagemFalhou) {
-        // Diferencia "não consegui checar" (rede/repo quebrado) de
-        // "há updates pendentes". Antes, os dois viravam
-        // `outdated_current` e o usuário via "atualize primeiro" sem
-        // saber que a checagem em si falhou.
-        resultado.status = 'check_failed';
-    } else if (!sistemaOk) {
-        resultado.status = 'outdated_current';
-    } else if (!espacoOk) {
-        resultado.status = 'no_disk_space';
-    } else {
-        resultado.status = 'ready';
-    }
-
-    _upgradeStatusCache = { dados: resultado, ts: agora };
-    return resultado;
 }
 
 // ============================================================
@@ -1797,7 +1420,47 @@ function commandExists(cmd) {
 // EXECUÇÃO DE COMANDOS (com ou sem autenticação)
 // ============================================================
 
+// Flatpak SEMPRE em nível de usuário (--user). Se o remoto "flathub"
+// existir no sistema E no usuário, `flatpak install flathub X` pergunta
+// qual usar e, sem TTY, aborta com "Nenhum remoto escolhido". Instalar
+// como usuário é o padrão recomendado (sem root, sem polkit) e remove
+// a ambiguidade. Só reescreve comandos que citam o remoto flathub e que
+// não pedem --system/remote-delete/remote-modify explicitamente.
+const _FLATHUB_URL_USER = 'https://dl.flathub.org/repo/flathub.flatpakrepo';
+function _forcarFlatpakUsuario(cmd) {
+    if (typeof cmd !== 'string') return cmd;
+    // Só comandos simples: encadeados (&&, ;, |) passam por pkexec/root e
+    // nunca devem ser reescritos aqui.
+    if (_CARACTERES_ENCADEAMENTO.test(cmd.trim())) return cmd;
+    if (!/^\s*(?:sudo\s+)?flatpak\s+(?:install|remote-add)\b/.test(cmd)) return cmd;
+    if (/--system\b|--installation=/.test(cmd)) return cmd;
+    if (!/\bflathub\b/.test(cmd)) return cmd;
+    let out = cmd.replace(/^\s*sudo\s+(?:-\S+\s+)*/, '');
+    if (!/--user\b/.test(out)) out = out.replace(/^(\s*flatpak\s+(?:install|remote-add))\b/, '$1 --user');
+    return out.replace(/https:\/\/flathub\.org\/repo\/flathub\.flatpakrepo/g, _FLATHUB_URL_USER);
+}
+
+// Garante o remoto flathub do USUÁRIO antes de um `flatpak install --user flathub`.
+function _garantirFlathubUsuario() {
+    try {
+        const r = spawnSync('flatpak', ['remotes', '--user', '--columns=name'], { encoding: 'utf8', timeout: 8000 });
+        if (r.status === 0 && /^flathub\s*$/m.test(r.stdout || '')) return true;
+        const a = spawnSync('flatpak', ['remote-add', '--user', '--if-not-exists', 'flathub', _FLATHUB_URL_USER],
+                            { encoding: 'utf8', timeout: 60000 });
+        return a.status === 0;
+    } catch (e) {
+        return false;
+    }
+}
+
 function executarComandoComStream(comandoFinal, idComando, isReversao, callback) {
+    {
+        const _antes = comandoFinal;
+        comandoFinal = _forcarFlatpakUsuario(comandoFinal);
+        if (comandoFinal !== _antes && /^\s*flatpak\s+install\b/.test(comandoFinal)) {
+            _garantirFlathubUsuario();
+        }
+    }
     // Força line-buffering em comandos que tendem a bufferizar
     // stdout quando não há TTY. Sem isso, o `flatpak install`
     // imprime tudo de uma vez no final — o que faz o log parecer
@@ -2098,7 +1761,6 @@ async function executarComAutenticacaoSegura(comandoOriginal, idComando, isRever
     const desktop = detectarDesktop();
 
     const descricoesComandos = {
-        'dnf upgrade': 'Atualizar o sistema Fedora',
         'dnf install': 'Instalar pacotes',
         'dnf remove': 'Remover pacotes',
         'dnf autoremove': 'Remover dependências não utilizadas',
@@ -2466,6 +2128,38 @@ function servirLocale(req, res, lang) {
 // `executarGrubAplicarRecomendado` (frontend) grava no arquivo.
 // Se a lista mudar lá, atualizar aqui.
 
+// v1.6.2: o "Aplicar Recomendada" (espelha o cliente: ajustes-manutencao.html) reescreve o /etc/default/grub inteiro.
+// Antes, `GRUB_CMDLINE_LINUX` virava SEMPRE `"rhgb quiet"` — isso apagava
+// parâmetros de boot que o usuário/instalador colocou ali (`rd.luks.uuid=`
+// de disco criptografado, `resume=` de hibernação, `rd.lvm.lv=`,
+// `nvidia-drm.modeset=1`, `amdgpu.*`, `intel_iommu=`...), e um sistema
+// com LUKS pode não conseguir montar a raiz num kernel instalado depois.
+// Agora MANTÉM todos os parâmetros existentes e só garante `rhgb` e
+// `quiet`. Se o valor tiver aspas internas, crase, barra invertida ou `$`
+// (dentro de aspas duplas), não é seguro reescrever: devolve o original.
+function _mesclarCmdlineGrub(valorAtual) {
+    var padrao = '"rhgb quiet"';
+    if (typeof valorAtual !== 'string' || valorAtual.trim() === '') return padrao;
+    var raw = valorAtual.trim();
+    var q = '';
+    var inner = raw;
+    if (raw.length >= 2 && (raw[0] === '"' || raw[0] === "'") && raw[raw.length - 1] === raw[0]) {
+        q = raw[0];
+        inner = raw.slice(1, -1);
+    } else if (/["'`\\$\s]/.test(raw)) {
+        return raw;
+    }
+    if (inner.indexOf(q || '"') !== -1 || /[`\\]/.test(inner) || (q !== "'" && inner.indexOf('$') !== -1)) {
+        return raw;
+    }
+    var tokens = inner.split(/[ \t]+/).filter(Boolean);
+    ['rhgb', 'quiet'].forEach(function(t) {
+        if (tokens.indexOf(t) === -1) tokens.push(t);
+    });
+    var aspas = q || '"';
+    return aspas + tokens.join(' ') + aspas;
+}
+
 function _computarPreviewGrub(info) {
     var atual = {};
     (info.grubContent || '').split('\n').forEach(function(linha) {
@@ -2487,7 +2181,7 @@ function _computarPreviewGrub(info) {
         { chave: 'GRUB_DEFAULT',            novo: 'saved' },
         { chave: 'GRUB_DISABLE_SUBMENU',    novo: 'true' },
         { chave: 'GRUB_TERMINAL_OUTPUT',    novo: '"console"' },
-        { chave: 'GRUB_CMDLINE_LINUX',      novo: '"rhgb quiet"' },
+        { chave: 'GRUB_CMDLINE_LINUX',      novo: _mesclarCmdlineGrub(atual['GRUB_CMDLINE_LINUX']) },
         { chave: 'GRUB_DISABLE_RECOVERY',   novo: '"true"' }
     ];
 
@@ -2832,68 +2526,6 @@ const server = http.createServer((req, res) => {
                 'Cache-Control': 'no-cache, no-store, must-revalidate'
             });
             res.end(JSON.stringify({ kernel: kernel }));
-        });
-        return;
-    }
-
-    // ----------------------------------------------------------
-    // /reboot-needed — verifica se há reboot pendente
-    // ----------------------------------------------------------
-    //
-    // Roda `dnf needs-restarting -r` e devolve JSON estruturado.
-    // Usado pelo botão "Atualizar Fedora" da sessão 1 para avisar
-    // o usuário quando um reboot é necessário após o upgrade.
-    //
-    // Exit codes do `needs-restarting -r`:
-    //   0 → reboot não necessário
-    //   1 → reboot necessário
-    //   2+ / erro → falha na checagem (tratamos como "não necessário"
-    //              para não incomodar o usuário com falso positivo)
-    //
-    // Read-only, sem autenticação. Mesmo padrão de `/kernel-atual`.
-    if (req.method === 'GET' && url === '/reboot-needed') {
-        // ============================================================
-        // STDOUT NÃO-SILENCIADO (v1.5.5)
-        // ============================================================
-        //
-        // Antes, o comando era `dnf needs-restarting -r > /dev/null
-        // 2>&1; echo "exit=$?"`. O `2>&1` no final só capturava o
-        // exit code. Se o próprio `dnf` falhasse (RPM DB lock,
-        // `dnf5-plugins` ausente, timeout), o código de saída seria
-        // != 0 e != 1, e o endpoint devolvia `{reboot: false}`
-        // silenciosamente — FALSO NEGATIVO (esconde o aviso quando
-        // na verdade não conseguiu verificar).
-        //
-        // Agora o stdout é preservado (para o `motivo`), e o JSON
-        // devolve `erro: true` quando o código não é 0 nem 1. O
-        // frontend usa isso para mostrar um aviso neutro em vez de
-        // esconder o banner.
-        //
-        // Timeout subiu de 10s → 15s: `dnf needs-restarting -r` em
-        // cache frio pode demorar 8–12s (lê o histórico do RPM +
-        // compara com o kernel em execução). O `_execReadOnly` mata
-        // o grupo (detached: true) em timeout, então não há risco
-        // de deixar `dnf` órfão.
-        _execReadOnly('dnf needs-restarting -r 2>&1; echo "---EXIT=$?---"', 15000).then(function(stdout) {
-            var out = (stdout || '');
-            var m = out.match(/---EXIT=(\d+)---/);
-            var codigo = m ? parseInt(m[1], 10) : -1;
-            var reboot = (codigo === 1);
-            var erro = (codigo !== 0 && codigo !== 1);
-            var motivo = erro
-            ? 'dnf needs-restarting retornou código ' + codigo
-            : null;
-
-            res.writeHead(200, {
-                'Content-Type': 'application/json',
-                'Cache-Control': 'no-cache, no-store, must-revalidate'
-            });
-            res.end(JSON.stringify({
-                reboot: reboot,
-                erro: erro,
-                code: codigo,
-                motivo: motivo
-            }));
         });
         return;
     }
@@ -3384,6 +3016,71 @@ const server = http.createServer((req, res) => {
     }
 
     // ----------------------------------------------------------
+    // /apps-sobre — textos do popup "Sobre o software" (quadrado "!")
+    // ----------------------------------------------------------
+    //
+    // `apps_sobre.json` traz, por id de instalação, o que é o software,
+    // para que serve, quem o desenvolve e o site oficial (PT/EN/ES),
+    // escritos a partir do Flathub, do site/repositório oficial do
+    // projeto ou da página do pacote no Fedora/RPM Fusion. Arquivo
+    // estático lido em runtime (como o hardware_map.json).
+    if (req.method === 'GET' && url === '/apps-sobre') {
+        fs.readFile(path.join(__dirname, 'apps_sobre.json'), 'utf8', function(err, txt) {
+            if (err) {
+                res.writeHead(404, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ apps: {} }));
+                return;
+            }
+            res.writeHead(200, {
+                'Content-Type': 'application/json; charset=utf-8',
+                'Cache-Control': 'no-cache'
+            });
+            res.end(txt);
+        });
+        return;
+    }
+
+    // ----------------------------------------------------------
+    // /flatpak-diagnostico — Flatpaks em nível de SISTEMA (root)
+    // ----------------------------------------------------------
+    //
+    // O FAP instala Flatpaks sempre com --user. Flatpaks antigos
+    // instalados no sistema (root) deixam o remoto "flathub" duplicado
+    // e fazem `flatpak install flathub X` perguntar qual usar. Este
+    // endpoint lista o que existe em cada nível para a UI mostrar o
+    // aviso e oferecer a limpeza. Somente leitura.
+    if (req.method === 'GET' && url === '/flatpak-diagnostico') {
+        Promise.all([
+            _execReadOnly('flatpak list --system --app --columns=application,name 2>/dev/null', 8000),
+            _execReadOnly('flatpak list --user --app --columns=application 2>/dev/null', 8000),
+            _execReadOnly('flatpak remotes --system --columns=name 2>/dev/null', 5000),
+            _execReadOnly('flatpak remotes --user --columns=name 2>/dev/null', 5000)
+        ]).then(function(r) {
+            const linhas = function(t) { return (t || '').split('\n').map(function(l) { return l.trim(); }).filter(Boolean); };
+            const idValido = /^[A-Za-z0-9_][A-Za-z0-9_.-]*$/;
+            const sistema = linhas(r[0]).map(function(l) {
+                const partes = l.split('\t');
+                return { id: (partes[0] || '').trim(), nome: (partes[1] || partes[0] || '').trim() };
+            }).filter(function(a) { return idValido.test(a.id); });
+            const usuario = linhas(r[1]).filter(function(i) { return idValido.test(i); });
+            const remSistema = linhas(r[2]);
+            const remUsuario = linhas(r[3]);
+            res.writeHead(200, {
+                'Content-Type': 'application/json',
+                'Cache-Control': 'no-cache, no-store, must-revalidate'
+            });
+            res.end(JSON.stringify({
+                sistema: sistema,
+                usuario: usuario,
+                remotosSistema: remSistema,
+                remotosUsuario: remUsuario,
+                conflitoFlathub: remSistema.indexOf('flathub') !== -1 && remUsuario.indexOf('flathub') !== -1
+            }));
+        });
+        return;
+    }
+
+    // ----------------------------------------------------------
     // /rustdesk-selinux-check — conta AVCs do RustDesk nas últimas 24h
     // ----------------------------------------------------------
     //
@@ -3492,7 +3189,7 @@ const server = http.createServer((req, res) => {
     // suportados. Usado pelos botões "Verificar Aceleração" da
     // sessão Hardware (AMD, Intel, NVIDIA). Read-only, sem auth.
     //
-    // Para NVIDIA, seta `LIBVA_DRIVER_NAME=nvidia` — o driver
+    // Para NVIDIA, seta `LIBVA_DRIVER_NAME=nvidia` e `NVD_BACKEND=direct` — o driver
     // proprietário expõe VDPAU nativamente, e o `nvidia-vaapi-driver`
     // é um wrapper que o libva encontra por esse nome. AMD/Intel
     // usam o auto-detect normal do libva.
@@ -3504,9 +3201,17 @@ const server = http.createServer((req, res) => {
             return;
         }
 
+        // v1.6.2: o botão "Configurar Variáveis" da NVIDIA grava
+        // `LIBVA_DRIVER_NAME=nvidia` em `environment.d`, que o servidor
+        // herda após o próximo login. Sem limpar, o "Verificar" de AMD e
+        // Intel testaria o driver da NVIDIA e reportaria erro (ou sucesso
+        // falso) em notebooks híbridos. Para a NVIDIA, `NVD_BACKEND=direct`
+        // também é necessário — é o mesmo valor que o arquivo
+        // `99-fap-nvidia-vaapi.conf` grava; sem ele o teste não reflete o
+        // que os aplicativos veem.
         var cmdCheck = vendorCheck === 'nvidia'
-        ? 'LIBVA_DRIVER_NAME=nvidia vainfo 2>&1'
-        : 'vainfo 2>&1';
+        ? 'env LIBVA_DRIVER_NAME=nvidia NVD_BACKEND=direct vainfo 2>&1'
+        : 'env -u LIBVA_DRIVER_NAME -u NVD_BACKEND vainfo 2>&1';
 
         _execReadOnly(cmdCheck, 15000).then(function(stdout) {
             var parsed = _parseVainfo(stdout);
@@ -3623,22 +3328,14 @@ const server = http.createServer((req, res) => {
     // /top-processes — top 5 por CPU e por RAM
     // ----------------------------------------------------------
     if (req.method === 'GET' && url === '/top-processes') {
-        const scriptCpu = `ps -eo pcpu,comm --sort=-pcpu --no-headers 2>/dev/null | head -5`;
         const scriptRam = `ps -eo pmem,rss,comm --sort=-rss --no-headers 2>/dev/null | head -5`;
 
         Promise.all([
-            _execReadOnly(scriptCpu, 4000),
-                    _execReadOnly(scriptRam, 4000)
+            _amostrarCpuProcessos(500),
+            _execReadOnly(scriptRam, 4000)
         ]).then(function(resultados) {
-            const cpuOut = resultados[0] || '';
+            const cpu = resultados[0] || [];
             const ramOut = resultados[1] || '';
-
-            const cpu = cpuOut.split('\n').filter(Boolean).map(function(linha) {
-                const partes = linha.trim().split(/\s+/);
-                const pct = parseFloat(partes[0]) || 0;
-                const nome = partes.slice(1).join(' ') || '?';
-                return { nome: nome, cpu: pct.toFixed(1) };
-            });
 
             const ram = ramOut.split('\n').filter(Boolean).map(function(linha) {
                 const partes = linha.trim().split(/\s+/);
@@ -3745,41 +3442,6 @@ const server = http.createServer((req, res) => {
             'Cache-Control': 'no-cache, no-store, must-revalidate'
         });
         res.end(JSON.stringify(resultado));
-        return;
-    }
-
-    // ----------------------------------------------------------
-    // /fedora-upgrade-status — disponibilidade de upgrade (44 → 45)
-    // ----------------------------------------------------------
-    //
-    // Retorna o status consolidado do upgrade. Cache de 6h. Nada
-    // aqui altera o sistema — são só consultas.
-    if (req.method === 'GET' && url === '/fedora-upgrade-status') {
-        // `?refresh=1` invalida o cache do servidor e força nova
-        // consulta às fontes oficiais. Mesmo padrão já usado em
-        // `/system-state`.
-        //
-        // NÃO invalida quando `_upgradeConcluidoPermanente` está
-        // ativo: o sistema já está no alvo, e a resposta
-        // `no_upgrade_needed` é imutável; refresh seria só
-        // desperdício de request local.
-        if (query.get('refresh') === '1' && !_upgradeConcluidoPermanente) {
-            _upgradeStatusCache = { dados: null, ts: 0 };
-        }
-        _calcularUpgradeStatus().then(function(dados) {
-            res.writeHead(200, {
-                'Content-Type': 'application/json',
-                'Cache-Control': 'no-cache, no-store, must-revalidate'
-            });
-            res.end(JSON.stringify(dados));
-        }).catch(function(e) {
-            console.error('[fedora-upgrade-status] Erro:', e.message);
-            res.writeHead(200, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify({
-                status: 'unknown',
-                error: e.message
-            }));
-        });
         return;
     }
 
@@ -3927,7 +3589,6 @@ const server = http.createServer((req, res) => {
         // fecha SSEs. Não usamos `pkill -f fap-container` sem
         // qualificação para não matar containers de outros projetos.
         try {
-            const containerPath = path.join(__dirname, 'fap-container');
             const result = spawnSync('pkill', ['-f', 'fap-container.*--url http://localhost:' + PORT],
                 { timeout: 3000 });
             if (result.status === 0) {

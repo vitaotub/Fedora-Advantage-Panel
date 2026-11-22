@@ -54,7 +54,7 @@ WEBKIT_PKG := $(shell pkg-config --exists webkit2gtk-4.1 2>/dev/null && echo web
 TARGET = fap-container
 SRC = src/fap-container.c
 
-.PHONY: all clean install uninstall run version check check-basico check-buttons help
+.PHONY: all clean install uninstall run version check check-basico check-buttons check-html help
 
 all: $(TARGET)
 
@@ -109,6 +109,12 @@ check-buttons:
 	@echo "==> Checando contratos de botões..."
 	@node scripts/validar-botoes.js
 
+# Validador de estrutura HTML (v1.6.2): tags sem fechamento nas sessões.
+# O `check-basico` chama este alvo automaticamente.
+check-html:
+	@echo "==> Checando balanceamento de tags HTML..."
+	@node scripts/validar-html.js
+
 # Checagem de sintaxe JS/Bash/JSON + consistência de versão entre
 # package.json e CHANGELOG.md. Alvo principal de validação do projeto.
 check-basico:
@@ -121,7 +127,7 @@ check-basico:
 		bash -n "$$f" && echo "  OK: $$f" || exit 1; \
 	done
 	@echo "==> Checando JSON dos locales e do mapa de hardware..."
-	@for f in locales/*.json hardware_map.json; do \
+	@for f in locales/*.json hardware_map.json apps_sobre.json; do \
 		node -e "JSON.parse(require('fs').readFileSync('$$f','utf8'))" && echo "  OK: $$f" || exit 1; \
 	done
 	@echo "==> Checando sintaxe JavaScript dos <script> inline em HTML..."
@@ -267,6 +273,8 @@ check-basico:
 	"
 	@echo "==> Checando contratos de botões..."
 	@node scripts/validar-botoes.js
+	@echo "==> Checando balanceamento de tags HTML..."
+	@node scripts/validar-html.js
 	@echo ""
 	@echo "✅ Todos os checks básicos passaram."
 

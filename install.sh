@@ -75,7 +75,8 @@ _perguntar_sim_nao() {
     # ============================================================
     if [ -t 0 ]; then
         local resposta
-        read -p "$prompt (s/N): " -n 1 -r resposta
+        local dica="s/N"; [ "$default" = "s" ] && dica="S/n"
+        read -p "$prompt ($dica): " -n 1 -r resposta
         echo
         # Enter vazio respeita o default passado — antes, a função
         # ignorava `$default` no modo TTY e sempre retornava falso,
@@ -95,25 +96,14 @@ _perguntar_sim_nao() {
     # ou estar vazio (`< /dev/null`). Precisamos distinguir.
     # ============================================================
     #
-    # `read -t 0` retorna 0 se houver dados disponíveis no stdin
-    # (buffer não-vazio), e != 0 se não houver. Usamos isso como
-    # sonda: se houver dados, lemos normalmente; se não houver,
-    # caímos no default.
-    #
-    # Antes, a função assumia que "stdin não-TTY" == "sem dados",
-    # e respondia sempre com o default. Isso quebrava o fluxo do
-    # botão "Desinstalar FAP", que invoca:
-    #
-    #   setsid -f bash -c 'echo "s" | bash <(curl ...) --uninstall'
-    #
-    # O `echo "s" |` alimenta o stdin com "s\n", mas a função
-    # curto-circuitava para o default "n" antes de ler.
+    # v1.6.2: `read -t 0` NÃO lê nada — só testa se há dados — então a
+    # variável ficava vazia e a resposta virava SEMPRE "não" (o botão
+    # "Desinstalar FAP" nunca confirmava). Além disso, em `< /dev/null`
+    # o EOF conta como "dado disponível". Agora lemos de verdade a linha,
+    # com timeout curto: `echo "s" |` entrega "s" na hora; stdin vazio
+    # (EOF) ou mudo (sem produtor) cai no default sem travar.
     local resposta=""
-    if read -t 0 -n 1 -r resposta 2>/dev/null; then
-        # Havia 1 byte disponível no stdin (provavelmente o "s"
-        # do `echo "s" |`). Consumimos o resto da linha para não
-        # deixar lixo no buffer.
-        read -t 1 -r _resto 2>/dev/null || true
+    if read -t 3 -r resposta 2>/dev/null && [ -n "$resposta" ]; then
         [[ $resposta =~ ^[Ss]$ ]]
         return $?
     fi
@@ -214,6 +204,7 @@ ARQUIVOS_PRINCIPAIS=(
 "server.js"
 "hardware-service.js"
 "hardware_map.json"
+"apps_sobre.json"
 "system-state-service.js"
 "index.html"
 "guiado.html"
@@ -229,6 +220,7 @@ ARQUIVOS_PRINCIPAIS=(
 "scripts/fap-cleanup.sh"
 "scripts/verificar-deps-container.sh"
 "scripts/validar-botoes.js"
+"scripts/validar-html.js"
 )
 
 print_header() {
@@ -292,9 +284,9 @@ done
 
 # Scripts em `scripts/` — não entram no loop defensivo de `*.sh`
 # da raiz (que cobre só arquivos no top-level).
-# Inclui o `validar-botoes.js` (chamado por `make check-buttons`
+# Inclui o `validar-botoes.js` e o `validar-html.js` (chamados por `make check-buttons`/`check-html`
 # via `node`, mas o `+x` permite invocação direta).
-for script_aux in "scripts/fap-cleanup.sh" "scripts/verificar-deps-container.sh" "scripts/validar-botoes.js"; do
+for script_aux in "scripts/fap-cleanup.sh" "scripts/verificar-deps-container.sh" "scripts/validar-botoes.js" "scripts/validar-html.js"; do
     if [ -f "$INSTALL_DIR/$script_aux" ]; then
         chmod +x "$INSTALL_DIR/$script_aux" 2>/dev/null || true
         print_info "Permissão aplicada: $script_aux"
@@ -648,7 +640,7 @@ _migrar_via_update() {
     echo ""
     print_info "📁 Instalado em: $INSTALL_DIR"
     print_info ""
-    print_warning "⚠️  Feche o FOF antigo (esta janela) para concluir."
+    print_warning "Feche o FOF antigo (esta janela) para concluir."
     print_info ""
     print_info "Para abrir o FAP:"
     echo " - Terminal: digite 'fap' ou 'fap-compat'"
@@ -985,7 +977,9 @@ fi
 
 print_success "FAP instalado em: $INSTALL_DIR"
 print_success "Comando 'fap' disponível em: $BIN_DIR"
+if [ -L "$BIN_DIR/fap-compat" ]; then
 print_success "Comando 'fap-compat' disponível em: $BIN_DIR"
+fi
 }
 
 criar_atalhos() {
@@ -1072,15 +1066,20 @@ print_step "Configurando PATH..."
 if [[ ":$PATH:" != *":$HOME/.local/bin:"* ]]; then
 print_warning "~/.local/bin não está no PATH"
 
-if [ -f "$HOME/.bashrc" ]; then
-echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$HOME/.bashrc"
-print_success "Adicionado ao .bashrc"
-fi
-
-if [ -f "$HOME/.zshrc" ]; then
-echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$HOME/.zshrc"
-print_success "Adicionado ao .zshrc"
-fi
+# v1.6.2: não duplica a linha se ela já estiver no arquivo (reinstalações
+# antes do usuário abrir um terminal novo empilhavam linhas repetidas).
+local linha_path='export PATH="$HOME/.local/bin:$PATH"'
+local rc
+for rc in "$HOME/.bashrc" "$HOME/.zshrc"; do
+    if [ -f "$rc" ]; then
+        if grep -qF "$linha_path" "$rc"; then
+            print_info "$(basename "$rc") já tem a linha do PATH"
+        else
+            echo "$linha_path" >> "$rc"
+            print_success "Adicionado ao $(basename "$rc")"
+        fi
+    fi
+done
 
 print_info "Reinicie o terminal ou execute: source ~/.bashrc"
 else
@@ -1289,8 +1288,27 @@ _remover "$HOME/.config/fof-container" "Configurações FOF"
 # usá-los.
 _remover "$HOME/.config/environment.d/99-fap-nvidia-vaapi.conf" "Variáveis VA-API NVIDIA"
 _remover "$HOME/.config/pipewire/pipewire.conf.d/99-fap-quantum.conf" "Configuração PipeWire (baixa latência)"
-_remover "$HOME/.config/MangoHud/MangoHud.conf" "Preset MangoHud"
-_remover "$HOME/.config/gamemode.ini" "Preset GameMode"
+# v1.6.2: se existe `.fap-backup`, ele guarda o config ORIGINAL do usuário
+# (o FAP só o cria antes de sobrescrever). Antes, a desinstalação apagava o
+# preset E o backup — o config original do usuário era perdido. Agora o
+# backup é RESTAURADO (mesmo comportamento da lixeira da Sessão 8); só
+# quando não há backup o preset (criado pelo FAP) é removido.
+_restaurar_ou_remover_preset() {
+    local conf="$1" nome="$2"
+    if [ -f "${conf}.fap-backup" ]; then
+        if mv -f "${conf}.fap-backup" "$conf" 2>/dev/null; then
+            print_success "$nome: configuração original restaurada ($conf)"
+            removidos=$((removidos + 1))
+        else
+            print_warning "Não foi possível restaurar o backup de $conf"
+            falhas=$((falhas + 1))
+        fi
+    else
+        _remover "$conf" "$nome"
+    fi
+}
+_restaurar_ou_remover_preset "$HOME/.config/MangoHud/MangoHud.conf" "Preset MangoHud"
+_restaurar_ou_remover_preset "$HOME/.config/gamemode.ini" "Preset GameMode"
 # v1.5.6: os arquivos `.fap-backup` são criados pelo botão
 # "Aplicar Presets" da Sessão 8 (backup antes de sobrescrever um
 # config pré-existente do usuário). Se o usuário desinstala sem
@@ -1299,8 +1317,6 @@ _remover "$HOME/.config/gamemode.ini" "Preset GameMode"
 # pode ser removido com segurança — o original restaurado está
 # em `.conf` / `.ini`, e o `.fap-backup` só existe se o FAP foi
 # quem sobrescreveu.
-_remover "$HOME/.config/MangoHud/MangoHud.conf.fap-backup" "Backup do Preset MangoHud"
-_remover "$HOME/.config/gamemode.ini.fap-backup" "Backup do Preset GameMode"
 
 # ─── 7. Tunings de sistema aplicados pelo FAP (/etc/sysctl.d) ──
 #
@@ -1426,9 +1442,9 @@ fi
 # ============================================================
 echo ""
 if [ $falhas -eq 0 ]; then
-    print_success "✅ FAP completamente desinstalado! ($removidos caminhos removidos)"
+    print_success "FAP completamente desinstalado! ($removidos caminhos removidos)"
 else
-    print_warning "⚠️ Desinstalação parcial: $removidos removidos, $falhas falharam"
+    print_warning "Desinstalação parcial: $removidos removidos, $falhas falharam"
     print_info "Caminhos que não puderam ser removidos:"
     for c in "${caminho_falhou[@]}"; do
         echo "  - $c"
@@ -1572,7 +1588,7 @@ verificar_arquivos_instalados
 reaplicar_permissoes
 criar_atalhos
 
-print_success "✅ FAP atualizado para a versão mais recente!"
+print_success "FAP atualizado para a versão mais recente!"
 
 # ============================================================
 # ENCERRA O SERVIDOR ANTIGO APÓS A ATUALIZAÇÃO (v1.5.2)
@@ -1607,7 +1623,7 @@ Uso: $(basename "$0") [opções]
 Opções:
 --help, -h Mostra esta ajuda
 --update Atualiza uma instalação existente
---uninstall Desinstala o FAP do sistema
+--uninstall Desinstala o FAP do sistema (-y confirma sem perguntar)
 
 Após a instalação:
 - O comando 'fap' estará disponível no terminal
@@ -1645,6 +1661,15 @@ exit 0
 --update)
 atualizar
 exit 0
+;;
+"")
+;;
+*)
+# v1.6.2: antes, um argumento digitado errado (ex.: --updte) caía
+# silenciosamente numa instalação COMPLETA.
+print_error "Opção desconhecida: $1"
+echo "Use --help para ver as opções disponíveis."
+exit 2
 ;;
 esac
 

@@ -15,7 +15,7 @@
 
 <!-- Acórdeão principal — descrição da sessão -->
 <div class="acordeao-principal">
-<span data-i18n="sessoes.virtualizacao.descricao">Ferramentas para executar máquinas virtuais no Fedora. Cada opção atende um perfil diferente de uso — QEMU/KVM é a stack nativa (mais performática), VirtualBox oferece uma interface familiar para quem vem do Windows, e GNOME Boxes simplifica a experiência para iniciantes.</span>
+<span data-i18n="sessoes.virtualizacao.descricao">Ferramentas para executar máquinas virtuais no Fedora. Cada opção atende um perfil diferente de uso — QEMU/KVM é a stack nativa (mais performática), e VirtualBox oferece uma interface familiar para quem vem do Windows.</span>
 </div>
 
 <!-- Secure Boot: VirtualBox usa `akmod-VirtualBox`, que precisa de
@@ -87,35 +87,6 @@ data-i18n="sessoes.virtualizacao.btn_virtualbox">
 </div>
 </div>
 
-<!-- GNOME Boxes -->
-<div class="bloco-comando">
-<div class="comando-info">
-<h3 data-i18n="sessoes.virtualizacao.boxes_titulo">GNOME Boxes</h3>
-<p data-i18n-html="sessoes.virtualizacao.boxes_desc">
-Interface gráfica simplificada para criar e gerenciar máquinas virtuais. Usa QEMU/KVM por baixo, então é performático como o virt-manager — a diferença está na experiência: em vez de configurar CPU, RAM e disco separadamente, você aponta para um arquivo <code>.iso</code> e ele cuida do resto.
-</p>
-<div class="info-extra" data-i18n-html="sessoes.virtualizacao.boxes_info">
-ℹ️ <strong>Recomendado para:</strong> quem está começando com virtualização e quer testar uma distribuição Linux ou o Windows sem configurar nada manualmente. Se você já tem experiência, prefira o virt-manager — oferece mais controle sobre a VM.
-</div>
-<div class="botoes-flex">
-<div class="btn-flatpak-wrapper">
-<button class="btn-executar"
-onclick="executarGnomeBoxes()"
-data-comando="gnome-boxes-install"
-data-logbox="log-sessao-virtualizacao"
-id="btn-gnome-boxes-install"
-data-i18n="sessoes.virtualizacao.btn_boxes">
-📦 Instalar GNOME Boxes
-</button>
-</div>
-
-</div>
-</div>
-<div class="progress-container" id="progress-gnome-boxes-install">
-<div class="progress-bar"><div class="progress-fill" id="progress-fill-gnome-boxes-install"></div></div>
-<div class="progress-text"><span class="status" id="progress-status-gnome-boxes-install">⏳ Iniciando...</span><span class="percentage" id="progress-percent-gnome-boxes-install">0%</span></div>
-</div>
-</div>
 
 </div>
 </details>
@@ -129,72 +100,40 @@ data-i18n="sessoes.virtualizacao.btn_boxes">
 // SESSÃO: VIRTUALIZAÇÃO
 // ============================================================
 
-function _t(chave, fallback) {
-    return (typeof tOr === 'function') ? tOr(chave, fallback) : fallback;
-}
-
 // ------------------------------------------------------------
 // Registro de apps removíveis (lixeira)
 // ------------------------------------------------------------
 //
-// QEMU/KVM, VirtualBox e GNOME Boxes agora usam a lixeira global
+// QEMU/KVM e VirtualBox agora usam a lixeira global
 // (helper registrarAppRemovivel + atualizarIconeRemover).
 //
-// As VMs em /var/lib/libvirt/images e ~/.local/share/gnome-boxes
+// As VMs em /var/lib/libvirt/images
 // NÃO são tocadas pela remoção — são dados do usuário.
 
 registrarAppRemovivel('qemu-kvm-install', {
     tipo: 'dnf',
     pacotes: ['qemu-kvm', 'libvirt', 'virt-manager', 'virt-install', 'libvirt-daemon-config-network'],
     nome: 'QEMU/KVM',
-    confirmMsg: '⚠️ Tem certeza que deseja remover QEMU/KVM?\n\n' +
-                'As máquinas virtuais que você criou NÃO serão apagadas — apenas o software será removido do sistema.\n\n' +
+    // v1.6.2: apps já instalados mostram "Abrir" + lixeira (antes ficavam
+    // travados em "Já estava ativo"). Remoção filtra o que está instalado e
+    // desativa o libvirtd; discos das VMs nunca são tocados.
+    comandoRemocao:
+        'sudo systemctl disable --now libvirtd.service libvirtd.socket 2>/dev/null; ' +
+        'pk=$(rpm -q --qf \'%{NAME}\\n\' qemu-kvm libvirt virt-manager virt-install libvirt-daemon-config-network 2>/dev/null | grep -v \'^package \'); ' +
+        'if [ -n "$pk" ]; then sudo dnf remove -y $pk; else echo "Nada a remover."; fi',
+    confirmMsg: '⚠️ Remover QEMU/KVM, libvirt e virt-manager?\n\n' +
+                'As máquinas virtuais que você criou NÃO serão apagadas (os discos permanecem), mas deixam de rodar até reinstalar.\n' +
+                'O DNF também pode remover programas que dependem desses pacotes (ex.: GNOME Boxes) — confira a lista no log.\n\n' +
                 'Continuar?',
-    // MITIGAÇÃO (v1.1.2): pré-existente NÃO pode ser removido.
-    // QEMU/KVM + libvirt são a base de virtualização nativa.
-    // Remover derruba TODAS as VMs (que continuam existindo no
-    // disco, mas param de rodar).
-    permitirRemocaoPreExistente: false,
-    motivoBloqueio: 'O QEMU/KVM já estava configurado antes do FAP. ' +
-                    'Removê-lo desabilita a execução de máquinas virtuais ' +
-                    '(os discos das VMs permanecem intactos). ' +
-                    'Para reverter manualmente:\n\n' +
-                    '  sudo systemctl disable --now libvirtd\n' +
-                    '  sudo dnf remove qemu-kvm libvirt virt-manager \\\n' +
-                    '    virt-install libvirt-daemon-config-network'
 });
 
 registrarAppRemovivel('virtualbox-install', {
     tipo: 'dnf',
     pacotes: ['VirtualBox', 'akmod-VirtualBox', 'VirtualBox-kmod'],
     nome: 'VirtualBox',
-    confirmMsg: '⚠️ Tem certeza que deseja remover VirtualBox?\n\n' +
+    confirmMsg: '⚠️ Remover VirtualBox?\n\n' +
                 'As máquinas virtuais que você criou NÃO serão apagadas — apenas o software será removido do sistema.\n\n' +
                 'Continuar?',
-    // MITIGAÇÃO (v1.1.2): pré-existente NÃO pode ser removido.
-    // Mesma lógica do QEMU/KVM.
-    permitirRemocaoPreExistente: false,
-    motivoBloqueio: 'O VirtualBox já estava instalado antes do FAP. ' +
-                    'Removê-lo desabilita as VMs (os discos .vdi permanecem). ' +
-                    'Para reverter manualmente:\n\n' +
-                    '  sudo dnf remove VirtualBox akmod-VirtualBox \\\n' +
-                    '    VirtualBox-kmod'
-});
-
-registrarAppRemovivel('gnome-boxes-install', {
-    tipo: 'dnf',
-    pacotes: ['gnome-boxes'],
-    nome: 'GNOME Boxes',
-    confirmMsg: '⚠️ Tem certeza que deseja remover GNOME Boxes?\n\n' +
-                'As máquinas virtuais que você criou NÃO serão apagadas — apenas o software será removido do sistema.\n\n' +
-                'Continuar?',
-    // MITIGAÇÃO (v1.1.2): pré-existente NÃO pode ser removido.
-    // Mesma lógica do QEMU/KVM (Boxes usa QEMU/KVM por baixo).
-    permitirRemocaoPreExistente: false,
-    motivoBloqueio: 'O GNOME Boxes já estava instalado antes do FAP. ' +
-                    'Removê-lo desabilita as VMs (os discos permanecem). ' +
-                    'Para reverter manualmente:\n\n' +
-                    '  sudo dnf remove gnome-boxes'
 });
 
 // Rodada 2B: `Abrir X` vem do `_ABRIR_REGISTRY`.
@@ -207,11 +146,6 @@ _registrarAbrir('virtualbox-install', {
     textoKey: 'sessoes.virtualizacao.btn_abrir_virtualbox',
     textoFallback: '🚀 Abrir VirtualBox',
     onclick: 'abrirVirtualBox()'
-});
-_registrarAbrir('gnome-boxes-install', {
-    textoKey: 'sessoes.virtualizacao.btn_abrir_boxes',
-    textoFallback: '🚀 Abrir GNOME Boxes',
-    onclick: 'abrirGnomeBoxes()'
 });
 
 // ------------------------------------------------------------
@@ -237,14 +171,6 @@ async function executarVirtualBox() {
         function() { aplicarEstadoInstalavel(idComando, null); });
 }
 
-async function executarGnomeBoxes() {
-    var idComando = 'gnome-boxes-install';
-    var comando = 'sudo dnf install -y gnome-boxes';
-    await executarComandoGenerico(idComando, comando,
-        _t('sessoes.virtualizacao.btn_boxes', '📦 Instalar GNOME Boxes'),
-        function() { aplicarEstadoInstalavel(idComando, null); });
-}
-
 // ------------------------------------------------------------
 // ABRIR APPS
 // ------------------------------------------------------------
@@ -257,12 +183,8 @@ function abrirVirtualBox() {
     abrirFerramentaExterna('gtk-launch virtualbox', 'virtualbox-install', 'VirtualBox');
 }
 
-function abrirGnomeBoxes() {
-    abrirFerramentaExterna('gtk-launch org.gnome.Boxes', 'gnome-boxes-install', 'GNOME Boxes');
-}
-
 // NOTA: os helpers `atualizarBotaoAbrirVirtManager`,
-// `atualizarBotaoAbrirVirtualBox` e `atualizarBotaoAbrirGnomeBoxes`
+// e `atualizarBotaoAbrirVirtualBox`
 // foram REMOVIDOS. Eles só escondiam os botões "Abrir" originais,
 // mas esse trabalho já é feito por `aplicarEstadoInstalavel`
 // (em script.js) — que esconde o botão verde original e reusa o
@@ -276,7 +198,6 @@ function restaurarEstadoSessao() {
     // Rodada 2B: o "Abrir X" vem do registry; `idAbrir = null`.
     aplicarEstadoInstalavel('qemu-kvm-install', null);
     aplicarEstadoInstalavel('virtualbox-install', null);
-    aplicarEstadoInstalavel('gnome-boxes-install', null);
 
     // Secure Boot: VirtualBox compila `akmod-VirtualBox` via
     // `akmods`, então precisa de enrollment MOK com SB ativo.

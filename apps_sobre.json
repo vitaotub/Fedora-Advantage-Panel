@@ -1,0 +1,1477 @@
+{
+ "versao": 1,
+ "apps": {
+  "codecs-essenciais": {
+   "d": "FFmpeg · GStreamer (RPM Fusion)",
+   "s": "https://rpmfusion.org",
+   "q": {
+    "pt": "Conjunto do RPM Fusion que troca o ffmpeg-free pelo FFmpeg completo e adiciona bibliotecas e plugins GStreamer \"freeworld\", com codecs que o Fedora não distribui.",
+    "en": "RPM Fusion set that swaps ffmpeg-free for full FFmpeg and adds \"freeworld\" libraries and GStreamer plugins with codecs Fedora does not ship.",
+    "es": "Conjunto de RPM Fusion que cambia ffmpeg-free por FFmpeg completo y añade bibliotecas y plugins GStreamer \"freeworld\" con códecs que Fedora no distribuye."
+   },
+   "p": {
+    "pt": "Reproduzir, decodificar e converter vídeo e áudio em formatos como H.264 e H.265 em players, navegadores e editores.",
+    "en": "Playing, decoding and converting video and audio in formats such as H.264 and H.265 in players, browsers and editors.",
+    "es": "Reproducir, decodificar y convertir video y audio en formatos como H.264 y H.265 en reproductores, navegadores y editores."
+   }
+  },
+  "extras-tainted": {
+   "d": "RPM Fusion · VideoLAN (libdvdcss)",
+   "s": "https://rpmfusion.org",
+   "q": {
+    "pt": "Habilita os repositórios tainted (free e nonfree) do RPM Fusion e instala a libdvdcss, biblioteca do VideoLAN para decifrar DVDs.",
+    "en": "Enables RPM Fusion's tainted repositories (free and nonfree) and installs libdvdcss, the VideoLAN library for decrypting DVDs.",
+    "es": "Habilita los repositorios tainted (free y nonfree) de RPM Fusion e instala libdvdcss, la biblioteca de VideoLAN para descifrar DVD."
+   },
+   "p": {
+    "pt": "Permitir que players leiam DVDs de vídeo comerciais protegidos e dar acesso aos pacotes tainted do RPM Fusion.",
+    "en": "Letting players read copy-protected commercial video DVDs and giving access to RPM Fusion's tainted packages.",
+    "es": "Permitir que los reproductores lean DVD de video comerciales protegidos y dar acceso a los paquetes tainted de RPM Fusion."
+   }
+  },
+  "fontes-ms-all": {
+   "d": "Microsoft (fonts) · mscorefonts2",
+   "s": "https://mscorefonts2.sourceforge.net",
+   "q": {
+    "pt": "Instalador RPM (msttcore-fonts-installer) que baixa na hora as fontes essenciais da Microsoft para a web e as fontes ClearType e as ativa no sistema.",
+    "en": "An RPM installer (msttcore-fonts-installer) that downloads Microsoft's core web fonts and ClearType fonts at install time and activates them.",
+    "es": "Instalador RPM (msttcore-fonts-installer) que descarga en el momento las fuentes básicas de Microsoft para la web y las ClearType y las activa en el sistema."
+   },
+   "p": {
+    "pt": "Exibir documentos e páginas com Arial, Times New Roman, Verdana, Calibri e similares, mantendo a formatação original.",
+    "en": "Displaying documents and web pages with Arial, Times New Roman, Verdana, Calibri and similar fonts, keeping the original layout.",
+    "es": "Mostrar documentos y páginas con Arial, Times New Roman, Verdana, Calibri y similares, conservando el formato original."
+   }
+  },
+  "vulkan-amd": {
+   "d": "Mesa Project",
+   "s": "https://www.mesa3d.org",
+   "q": {
+    "pt": "Pacote mesa-vulkan-drivers do Mesa, que traz os drivers com suporte à API Vulkan (como o RADV para AMD), junto de ferramentas e loader Vulkan.",
+    "en": "Mesa's mesa-vulkan-drivers package, providing the drivers that support the Vulkan API (such as RADV for AMD), along with Vulkan tools and loader.",
+    "es": "Paquete mesa-vulkan-drivers de Mesa, que aporta los controladores con soporte de la API Vulkan (como RADV para AMD), junto con herramientas y loader Vulkan."
+   },
+   "p": {
+    "pt": "Executar jogos e aplicativos Vulkan, inclusive via Proton/Steam, com aceleração da GPU AMD.",
+    "en": "Running Vulkan games and applications, including through Proton/Steam, with AMD GPU acceleration.",
+    "es": "Ejecutar juegos y aplicaciones Vulkan, incluso mediante Proton/Steam, con aceleración de la GPU AMD."
+   }
+  },
+  "vaapi-amd": {
+   "d": "Mesa Project · RPM Fusion",
+   "s": "https://www.mesa3d.org",
+   "q": {
+    "pt": "Drivers VA-API baseados no Mesa do RPM Fusion, com decodificação e codificação H.264/H.265 por hardware, mais o libva-utils (vainfo).",
+    "en": "RPM Fusion's Mesa-based VA-API drivers, with H.264/H.265 hardware decoding and encoding, plus libva-utils (vainfo).",
+    "es": "Controladores VA-API basados en Mesa de RPM Fusion, con decodificación y codificación H.264/H.265 por hardware, más libva-utils (vainfo)."
+   },
+   "p": {
+    "pt": "Aliviar a CPU ao assistir ou gravar vídeo em H.264/H.265, deixando a GPU AMD fazer o trabalho, e verificar o suporte com o vainfo.",
+    "en": "Offloading H.264/H.265 video playback and recording from the CPU to the AMD GPU, and checking support with vainfo.",
+    "es": "Aliviar la CPU al ver o grabar video H.264/H.265, dejando que la GPU AMD haga el trabajo, y comprobar el soporte con vainfo."
+   }
+  },
+  "corectrl-install": {
+   "d": "CoreCtrl Project",
+   "s": "https://gitlab.com/corectrl/corectrl",
+   "q": {
+    "pt": "Aplicativo livre (GPL-3.0 ou posterior) para controlar o hardware do computador por meio de perfis de aplicativo.",
+    "en": "A free (GPL-3.0-or-later) application for controlling a computer's hardware through application profiles.",
+    "es": "Aplicación libre (GPL-3.0 o posterior) para controlar el hardware del equipo mediante perfiles de aplicación."
+   },
+   "p": {
+    "pt": "Ajustar GPU e CPU, como frequências, consumo e ventoinhas, com perfis automáticos por aplicativo ou jogo.",
+    "en": "Tuning GPU and CPU settings such as clocks, power and fans, with automatic per-application or per-game profiles.",
+    "es": "Ajustar GPU y CPU, como frecuencias, consumo y ventiladores, con perfiles automáticos por aplicación o juego."
+   }
+  },
+  "lact-install": {
+   "d": "Ilya Zlobintsev",
+   "s": "https://github.com/ilya-zlobintsev/LACT",
+   "q": {
+    "pt": "Aplicativo livre (MIT) para configurar e monitorar GPUs AMD, Nvidia ou Intel no Linux, com gráficos, curvas de ventoinha e overclock.",
+    "en": "A free (MIT) application to configure and monitor AMD, Nvidia or Intel GPUs on Linux, with charts, fan curves and overclocking.",
+    "es": "Aplicación libre (MIT) para configurar y monitorizar GPU AMD, Nvidia o Intel en Linux, con gráficos, curvas de ventilador y overclock."
+   },
+   "p": {
+    "pt": "Acompanhar temperatura, consumo e frequências da GPU e ajustar limites de energia, ventoinhas, clocks e undervolt, com perfis por processo.",
+    "en": "Tracking GPU temperature, power and clocks and adjusting power limits, fans, clocks and undervolt, with per-process profiles.",
+    "es": "Seguir temperatura, consumo y frecuencias de la GPU y ajustar límites de energía, ventiladores, clocks y undervolt, con perfiles por proceso."
+   }
+  },
+  "nvidia-driver-install": {
+   "d": "NVIDIA · RPM Fusion",
+   "s": "https://rpmfusion.org",
+   "q": {
+    "pt": "Driver gráfico proprietário da NVIDIA empacotado pelo RPM Fusion: o akmod compila o módulo de kernel, com variantes open, legadas, CUDA e nvidia-settings.",
+    "en": "NVIDIA's proprietary graphics driver packaged by RPM Fusion: the akmod builds the kernel module, with open, legacy, CUDA and nvidia-settings variants.",
+    "es": "Controlador gráfico propietario de NVIDIA empaquetado por RPM Fusion: el akmod compila el módulo de kernel, con variantes open, heredadas, CUDA y nvidia-settings."
+   },
+   "p": {
+    "pt": "Usar a GPU NVIDIA com aceleração 3D completa, em jogos, aplicativos gráficos e computação CUDA, no lugar do driver livre nouveau.",
+    "en": "Using the NVIDIA GPU with full 3D acceleration for games, graphics apps and CUDA compute, instead of the free nouveau driver.",
+    "es": "Usar la GPU NVIDIA con aceleración 3D completa en juegos, aplicaciones gráficas y cómputo CUDA, en lugar del controlador libre nouveau."
+   }
+  },
+  "nvidia-vaapi-install": {
+   "d": "elFarto (nvidia-vaapi-driver)",
+   "s": "https://github.com/elFarto/nvidia-vaapi-driver",
+   "q": {
+    "pt": "Implementação de VA-API que usa o decodificador NVDEC da NVIDIA como backend (pacote libva-nvidia-driver, licença MIT).",
+    "en": "A VA-API implementation that uses NVIDIA's NVDEC decoder as its backend (libva-nvidia-driver package, MIT license).",
+    "es": "Implementación de VA-API que usa el decodificador NVDEC de NVIDIA como backend (paquete libva-nvidia-driver, licencia MIT)."
+   },
+   "p": {
+    "pt": "Dar decodificação de vídeo por hardware em placas NVIDIA, sobretudo no Firefox.",
+    "en": "Providing hardware video decoding on NVIDIA cards, mainly in Firefox.",
+    "es": "Dar decodificación de video por hardware en tarjetas NVIDIA, sobre todo en Firefox."
+   }
+  },
+  "nvidia-vaapi-utils": {
+   "d": "Intel (libva-utils)",
+   "s": "https://github.com/intel/libva-utils",
+   "q": {
+    "pt": "Ferramentas de diagnóstico do VA-API, incluindo o vainfo, que informa o suporte a libva do sistema (libva-utils, licença MIT/BSD-3-Clause).",
+    "en": "VA-API diagnostic tools, including vainfo, which reports the system's libva support (libva-utils, MIT/BSD-3-Clause license).",
+    "es": "Herramientas de diagnóstico de VA-API, incluido vainfo, que informa el soporte de libva del sistema (libva-utils, licencia MIT/BSD-3-Clause)."
+   },
+   "p": {
+    "pt": "Verificar se a aceleração de vídeo por hardware está funcionando em placas NVIDIA, com vainfo e as ferramentas que o acompanham.",
+    "en": "Checking whether hardware video acceleration works on NVIDIA cards, using vainfo and its companion tools.",
+    "es": "Comprobar si la aceleración de video por hardware funciona en tarjetas NVIDIA, con vainfo y sus herramientas."
+   }
+  },
+  "intel-media-install": {
+   "d": "Intel · RPM Fusion",
+   "s": "https://github.com/intel/media-driver",
+   "q": {
+    "pt": "Driver VA-API em espaço de usuário para gráficos Intel com decodificação, codificação e pós-processamento de vídeo por hardware (intel-media-driver, MIT e BSD).",
+    "en": "A user-space VA-API driver for Intel graphics providing hardware video decoding, encoding and post-processing (intel-media-driver, MIT and BSD).",
+    "es": "Controlador VA-API en espacio de usuario para gráficos Intel con decodificación, codificación y posprocesado de video por hardware (intel-media-driver, MIT y BSD)."
+   },
+   "p": {
+    "pt": "Acelerar vídeo em GPUs Intel recentes, reduzindo o uso da CPU em reprodução, navegador e edição.",
+    "en": "Speeding up video on recent Intel GPUs, lowering CPU use in playback, browsing and editing.",
+    "es": "Acelerar el video en GPU Intel recientes, reduciendo el uso de la CPU en reproducción, navegador y edición."
+   }
+  },
+  "libva-intel-install": {
+   "d": "Intel · RPM Fusion",
+   "s": "https://github.com/intel/intel-vaapi-driver",
+   "q": {
+    "pt": "Driver VA-API legado para decodificação de vídeo por hardware em gráficos integrados Intel (libva-intel-driver, licenças MIT e EPL).",
+    "en": "A legacy VA-API driver for hardware video decoding on Intel integrated graphics (libva-intel-driver, MIT and EPL licenses).",
+    "es": "Controlador VA-API heredado para decodificación de video por hardware en gráficos integrados Intel (libva-intel-driver, licencias MIT y EPL)."
+   },
+   "p": {
+    "pt": "Acelerar vídeo em iGPUs Intel mais antigas que o intel-media-driver não atende.",
+    "en": "Accelerating video on older Intel iGPUs that intel-media-driver does not cover.",
+    "es": "Acelerar el video en iGPU Intel antiguas que intel-media-driver no cubre."
+   }
+  },
+  "intel-vaapi-utils": {
+   "d": "Intel (libva-utils)",
+   "s": "https://github.com/intel/libva-utils",
+   "q": {
+    "pt": "Ferramentas de diagnóstico do VA-API, incluindo o vainfo (libva-utils, licença MIT/BSD-3-Clause), mais o plugin GStreamer VA-API.",
+    "en": "VA-API diagnostic tools, including vainfo (libva-utils, MIT/BSD-3-Clause license), plus the GStreamer VA-API plugin.",
+    "es": "Herramientas de diagnóstico de VA-API, incluido vainfo (libva-utils, licencia MIT/BSD-3-Clause), más el plugin GStreamer VA-API."
+   },
+   "p": {
+    "pt": "Verificar se a aceleração de vídeo por hardware funciona em GPUs Intel e permitir que o GStreamer use esse recurso.",
+    "en": "Checking that hardware video acceleration works on Intel GPUs and letting GStreamer use it.",
+    "es": "Comprobar que la aceleración de video por hardware funciona en GPU Intel y permitir que GStreamer la use."
+   }
+  },
+  "firmware-vendor-install": {
+   "d": "kernel.org (linux-firmware) · Fedora",
+   "s": "https://packages.fedoraproject.org/pkgs/linux-firmware/",
+   "q": {
+    "pt": "Subpacotes de firmware do linux-firmware do Fedora: arquivos que o kernel carrega para Wi-Fi, Bluetooth, placas de vídeo e áudio de vários fabricantes.",
+    "en": "Firmware subpackages of Fedora's linux-firmware: files the kernel loads for Wi-Fi, Bluetooth, graphics cards and audio from several vendors.",
+    "es": "Subpaquetes de firmware de linux-firmware de Fedora: archivos que el kernel carga para Wi-Fi, Bluetooth, tarjetas gráficas y audio de varios fabricantes."
+   },
+   "p": {
+    "pt": "Fazer o hardware funcionar corretamente (Wi-Fi Realtek, Intel, MediaTek, GPUs AMD/Intel/NVIDIA, áudio Intel/Cirrus, entre outros).",
+    "en": "Making hardware work properly (Realtek, Intel and MediaTek Wi-Fi, AMD/Intel/NVIDIA GPUs, Intel/Cirrus audio, and more).",
+    "es": "Hacer que el hardware funcione correctamente (Wi-Fi Realtek, Intel y MediaTek, GPU AMD/Intel/NVIDIA, audio Intel/Cirrus, entre otros)."
+   }
+  },
+  "driver-realtek-r8168-install": {
+   "d": "Realtek · RPM Fusion",
+   "s": "https://rpmfusion.org",
+   "q": {
+    "pt": "O Realtek RTL8168 (associado à série RTL8111/RTL8168) é um controlador de rede (NIC) Gigabit Ethernet PCI Express de alta velocidade, comum em placas-mãe e notebooks.",
+    "en": "The Realtek RTL8168 (usually associated with the RTL8111/RTL8168 series) is a high-speed PCI Express (PCI-E) Gigabit Ethernet network interface controller (NIC), very common on motherboards and laptops.",
+    "es": "El Realtek RTL8168 (asociado a la serie RTL8111/RTL8168) es un controlador de interfaz de red (NIC) Gigabit Ethernet PCI Express de alta velocidad, muy común en placas base y portátiles."
+   },
+   "p": {
+    "pt": "O pacote akmod-r8168 compila o driver r8168 como alternativa ao r8169 do kernel, quando a placa de rede Realtek tem problemas de conexão ou desempenho.",
+    "en": "The akmod-r8168 package builds the r8168 driver as an alternative to the kernel r8169 driver when the Realtek network card has connection or performance problems.",
+    "es": "El paquete akmod-r8168 compila el controlador r8168 como alternativa al r8169 del kernel cuando la tarjeta de red Realtek tiene problemas de conexión o rendimiento."
+   }
+  },
+  "driver-broadcom-wl-install": {
+   "d": "Broadcom · RPM Fusion",
+   "s": "https://rpmfusion.org",
+   "q": {
+    "pt": "Pacote akmod do RPM Fusion que compila o módulo de kernel proprietário wl da Broadcom para placas Wi-Fi.",
+    "en": "RPM Fusion akmod package that builds Broadcom's proprietary wl kernel module for Wi-Fi cards.",
+    "es": "Paquete akmod de RPM Fusion que compila el módulo de kernel propietario wl de Broadcom para tarjetas Wi-Fi."
+   },
+   "p": {
+    "pt": "Fazer funcionar placas Wi-Fi Broadcom que não têm driver livre pronto no kernel.",
+    "en": "Getting Broadcom Wi-Fi cards working when the kernel has no ready free driver for them.",
+    "es": "Hacer funcionar tarjetas Wi-Fi Broadcom que no tienen un controlador libre listo en el kernel."
+   }
+  },
+  "driver-openrazer-install": {
+   "d": "OpenRazer community",
+   "s": "https://openrazer.github.io",
+   "q": {
+    "pt": "Conjunto livre (GPL) de drivers de kernel, daemon de usuário com serviços DBus e bindings Python para dispositivos Razer no Linux.",
+    "en": "A free (GPL) set of kernel drivers, a user-space daemon with DBus services and Python bindings for Razer devices on Linux.",
+    "es": "Conjunto libre (GPL) de controladores de kernel, daemon de usuario con servicios DBus y bindings de Python para dispositivos Razer en Linux."
+   },
+   "p": {
+    "pt": "Controlar iluminação RGB, DPI e outros recursos de teclados, mouses e acessórios Razer, com apps como Polychromatic e RazerGenie.",
+    "en": "Controlling RGB lighting, DPI and other features of Razer keyboards, mice and accessories, with apps such as Polychromatic and RazerGenie.",
+    "es": "Controlar iluminación RGB, DPI y otras funciones de teclados, ratones y accesorios Razer, con apps como Polychromatic y RazerGenie."
+   }
+  },
+  "driver-xpadneo-install": {
+   "d": "Florian Dollinger (atar-axis)",
+   "s": "https://github.com/atar-axis/xpadneo",
+   "q": {
+    "pt": "Driver Linux de código aberto para controles sem fio do Xbox One via Bluetooth, com rumble, gatilhos, bateria e mapeamento consistente de botões.",
+    "en": "An open source Linux driver for Xbox One wireless controllers over Bluetooth, with rumble, triggers, battery level and consistent button mapping.",
+    "es": "Controlador Linux de código abierto para mandos inalámbricos de Xbox One por Bluetooth, con vibración, gatillos, batería y mapeo coherente de botones."
+   },
+   "p": {
+    "pt": "Usar o controle do Xbox One por Bluetooth em jogos no Linux com todos os recursos, como vibração e nível de bateria.",
+    "en": "Using the Xbox One controller over Bluetooth in Linux games with all its features, such as rumble and battery level.",
+    "es": "Usar el mando de Xbox One por Bluetooth en juegos de Linux con todas sus funciones, como vibración y nivel de batería."
+   }
+  },
+  "steam-devices-install": {
+   "d": "Valve · Fedora",
+   "s": "https://store.steampowered.com",
+   "q": {
+    "pt": "Pacote com regras udev que dão ao usuário permissão de acesso a controles e dispositivos Valve (Steam Controller, Steam Deck, headsets VR) e a outros gamepads.",
+    "en": "Package with udev rules that grant users access to Valve controllers and devices (Steam Controller, Steam Deck, VR headsets) and other gamepads.",
+    "es": "Paquete con reglas udev que dan al usuario acceso a mandos y dispositivos de Valve (Steam Controller, Steam Deck, visores VR) y otros gamepads."
+   },
+   "p": {
+    "pt": "Permite que o Steam (por exemplo, em Flatpak) use o Steam Input e reconheça controles sem precisar de root.",
+    "en": "Lets Steam (e.g. the Flatpak version) use Steam Input and recognize controllers without root access.",
+    "es": "Permite que Steam (p. ej., en Flatpak) use Steam Input y reconozca mandos sin necesitar root."
+   }
+  },
+  "instalar-obs-studio": {
+   "d": "OBS Project",
+   "s": "https://obsproject.com",
+   "q": {
+    "pt": "Software livre e de código aberto para captura de vídeo, gravação e transmissão ao vivo, com cenas compostas por várias fontes.",
+    "en": "Free and open source software for video capture, recording and live streaming, built around scenes made of multiple sources.",
+    "es": "Software libre y de código abierto para captura de video, grabación y transmisión en vivo, basado en escenas con varias fuentes."
+   },
+   "p": {
+    "pt": "Gravar a tela ou câmera e transmitir ao vivo para plataformas de streaming, misturando áudio e vídeo.",
+    "en": "Recording the screen or camera and live streaming to platforms, mixing audio and video.",
+    "es": "Grabar la pantalla o la cámara y transmitir en vivo a plataformas, mezclando audio y video."
+   }
+  },
+  "instalar-easyeffects": {
+   "d": "Wellington Wallace (wwmm)",
+   "s": "https://github.com/wwmm/easyeffects",
+   "q": {
+    "pt": "Ferramenta de manipulação de áudio para PipeWire que aplica efeitos às entradas e saídas de som, como equalizador, limitador, compressor e reverb.",
+    "en": "Audio manipulation tool for PipeWire that applies effects to sound inputs and outputs, such as equalizer, limiter, compressor and reverb.",
+    "es": "Herramienta de manipulación de audio para PipeWire que aplica efectos a entradas y salidas de sonido, como ecualizador, limitador, compresor y reverb."
+   },
+   "p": {
+    "pt": "Ajustar o som do sistema e do microfone, por exemplo equalizando alto-falantes ou reduzindo ruído de voz.",
+    "en": "Tuning system and microphone sound, e.g. equalizing speakers or reducing voice noise.",
+    "es": "Ajustar el sonido del sistema y del micrófono, por ejemplo ecualizando altavoces o reduciendo ruido de voz."
+   }
+  },
+  "obs-cam": {
+   "d": "v4l2loopback project",
+   "s": "https://github.com/umlaeute/v4l2loopback",
+   "q": {
+    "pt": "Conjunto do akmod-v4l2loopback (módulo de kernel que cria dispositivos de vídeo virtuais, recompilado a cada kernel) e do v4l-utils (ferramentas como v4l2-ctl).",
+    "en": "Bundle of akmod-v4l2loopback (a kernel module creating virtual video devices, rebuilt for each kernel) and v4l-utils (tools such as v4l2-ctl).",
+    "es": "Conjunto de akmod-v4l2loopback (módulo de kernel que crea dispositivos de video virtuales, recompilado en cada kernel) y v4l-utils (herramientas como v4l2-ctl)."
+   },
+   "p": {
+    "pt": "Permite que o OBS exporte sua saída como webcam virtual para videochamadas e apps, e oferece diagnóstico de dispositivos de vídeo.",
+    "en": "Lets OBS expose its output as a virtual webcam for video calls and apps, and provides video device diagnostics.",
+    "es": "Permite que OBS exponga su salida como webcam virtual para videollamadas y aplicaciones, y ofrece diagnóstico de dispositivos de video."
+   }
+  },
+  "instalar-onlyoffice": {
+   "d": "ONLYOFFICE",
+   "s": "https://www.onlyoffice.com",
+   "q": {
+    "pt": "Suíte de escritório livre com editores de documentos, planilhas, apresentações e PDF, compatível com os formatos docx, xlsx e pptx.",
+    "en": "Free office suite with editors for documents, spreadsheets, presentations and PDF, compatible with docx, xlsx and pptx formats.",
+    "es": "Suite ofimática libre con editores de documentos, hojas de cálculo, presentaciones y PDF, compatible con los formatos docx, xlsx y pptx."
+   },
+   "p": {
+    "pt": "Criar e editar documentos do Office offline e colaborar com serviços como Nextcloud e ownCloud.",
+    "en": "Creating and editing Office documents offline and collaborating through services such as Nextcloud and ownCloud.",
+    "es": "Crear y editar documentos de Office sin conexión y colaborar con servicios como Nextcloud y ownCloud."
+   }
+  },
+  "instalar-obsidian": {
+   "d": "Obsidian",
+   "s": "https://obsidian.md",
+   "q": {
+    "pt": "Aplicativo de base de conhecimento que trabalha sobre uma pasta local de arquivos Markdown, com tags, LaTeX, diagramas Mermaid e plugins.",
+    "en": "Knowledge base app that works on a local folder of Markdown files, with tags, LaTeX, Mermaid diagrams and plugins.",
+    "es": "Aplicación de base de conocimiento que trabaja sobre una carpeta local de archivos Markdown, con etiquetas, LaTeX, diagramas Mermaid y plugins."
+   },
+   "p": {
+    "pt": "Anotar e conectar ideias em notas interligadas, para estudo, documentação pessoal e organização de conhecimento.",
+    "en": "Writing and linking ideas as interconnected notes for study, personal documentation and knowledge organization.",
+    "es": "Anotar y conectar ideas en notas enlazadas para estudio, documentación personal y organización del conocimiento."
+   }
+  },
+  "instalar-joplin": {
+   "d": "Laurent Cozic (laurent22)",
+   "s": "https://joplinapp.org",
+   "q": {
+    "pt": "Aplicativo de código aberto para notas e listas de tarefas, com cadernos, notas em Markdown e sincronização com serviços como Nextcloud, Dropbox e OneDrive.",
+    "en": "Open source note-taking and to-do app with notebooks, Markdown notes and sync with services such as Nextcloud, Dropbox and OneDrive.",
+    "es": "Aplicación de código abierto para notas y listas de tareas, con cuadernos, notas en Markdown y sincronización con servicios como Nextcloud, Dropbox y OneDrive."
+   },
+   "p": {
+    "pt": "Organizar muitas notas e tarefas em cadernos e mantê-las sincronizadas entre dispositivos.",
+    "en": "Organizing many notes and tasks in notebooks and keeping them synced across devices.",
+    "es": "Organizar muchas notas y tareas en cuadernos y mantenerlas sincronizadas entre dispositivos."
+   }
+  },
+  "instalar-haruna": {
+   "d": "George Florea Bănuș · KDE",
+   "s": "https://haruna.kde.org",
+   "q": {
+    "pt": "Reprodutor de vídeo de código aberto, do ecossistema KDE, com muitas opções de configuração.",
+    "en": "Open source video player from the KDE ecosystem with many configuration options.",
+    "es": "Reproductor de video de código abierto, del ecosistema KDE, con muchas opciones de configuración."
+   },
+   "p": {
+    "pt": "Assistir vídeos locais e em rede com controle fino de reprodução e aparência.",
+    "en": "Watching local and network videos with fine control over playback and appearance.",
+    "es": "Ver videos locales y en red con control detallado de la reproducción y la apariencia."
+   }
+  },
+  "instalar-vlc": {
+   "d": "VideoLAN",
+   "s": "https://www.videolan.org/vlc/",
+   "q": {
+    "pt": "Reprodutor e framework multimídia livre e multiplataforma que lê a maioria dos arquivos, DVDs, CDs de áudio e protocolos de streaming.",
+    "en": "Free cross-platform multimedia player and framework that plays most files, DVDs, audio CDs and streaming protocols.",
+    "es": "Reproductor y framework multimedia libre y multiplataforma que reproduce la mayoría de archivos, DVD, CD de audio y protocolos de streaming."
+   },
+   "p": {
+    "pt": "Reproduzir praticamente qualquer vídeo ou áudio, local ou em transmissão.",
+    "en": "Playing practically any video or audio, local or streamed.",
+    "es": "Reproducir prácticamente cualquier video o audio, local o en transmisión."
+   }
+  },
+  "instalar-spotify": {
+   "d": "Spotify",
+   "s": "https://www.spotify.com",
+   "q": {
+    "pt": "Cliente desktop do serviço de streaming de música Spotify.",
+    "en": "Desktop client for the Spotify music streaming service.",
+    "es": "Cliente de escritorio del servicio de música en streaming Spotify."
+   },
+   "p": {
+    "pt": "Ouvir músicas e podcasts, descobrir novas faixas, criar e compartilhar playlists e seguir artistas.",
+    "en": "Listening to music and podcasts, discovering tracks, and creating and sharing playlists and following artists.",
+    "es": "Escuchar música y podcasts, descubrir canciones, crear y compartir listas y seguir artistas."
+   }
+  },
+  "instalar-plex": {
+   "d": "Plex",
+   "s": "https://www.plex.tv",
+   "q": {
+    "pt": "Cliente Plex para desktop Linux, com interface semelhante à versão web e motor de reprodução mais avançado.",
+    "en": "Plex client for Linux desktops, with an interface like the web version and a more capable playback engine.",
+    "es": "Cliente de Plex para escritorio Linux, con una interfaz similar a la versión web y un motor de reproducción más potente."
+   },
+   "p": {
+    "pt": "Reproduzir filmes, séries e músicas de um servidor Plex ou dos serviços Plex.",
+    "en": "Playing movies, shows and music from a Plex server or Plex services.",
+    "es": "Reproducir películas, series y música desde un servidor Plex o los servicios de Plex."
+   }
+  },
+  "instalar-stremio": {
+   "d": "Stremio",
+   "s": "https://www.stremio.com",
+   "q": {
+    "pt": "Aplicativo de mídia para assistir a filmes e séries, que reúne conteúdo de várias fontes em uma interface única.",
+    "en": "Media app for watching movies and shows, bringing content from various sources into one interface.",
+    "es": "Aplicación multimedia para ver películas y series, que reúne contenido de varias fuentes en una sola interfaz."
+   },
+   "p": {
+    "pt": "Descobrir e assistir a filmes e séries em vários dispositivos, com suporte a 4K HDR.",
+    "en": "Discovering and watching movies and shows across devices, with 4K HDR support.",
+    "es": "Descubrir y ver películas y series en varios dispositivos, con soporte para 4K HDR."
+   }
+  },
+  "instalar-pinta": {
+   "d": "Pinta project",
+   "s": "https://www.pinta-project.com",
+   "q": {
+    "pt": "Programa de edição de imagens, desenho e pintura digital com interface simples, camadas ilimitadas e mais de 35 efeitos.",
+    "en": "Image editing, drawing and digital painting program with a simple interface, unlimited layers and over 35 effects.",
+    "es": "Programa de edición de imágenes, dibujo y pintura digital con interfaz sencilla, capas ilimitadas y más de 35 efectos."
+   },
+   "p": {
+    "pt": "Retocar fotos, desenhar e fazer edições de imagem leves.",
+    "en": "Retouching photos, drawing and doing light image edits.",
+    "es": "Retocar fotos, dibujar y hacer ediciones de imagen ligeras."
+   }
+  },
+  "instalar-cura": {
+   "d": "UltiMaker",
+   "s": "https://ultimaker.com/software/ultimaker-cura",
+   "q": {
+    "pt": "Fatiador (slicer) que prepara modelos 3D para impressão, com perfis testados para impressoras e materiais.",
+    "en": "Slicer that prepares 3D models for printing, with tested profiles for printers and materials.",
+    "es": "Slicer que prepara modelos 3D para impresión, con perfiles probados para impresoras y materiales."
+   },
+   "p": {
+    "pt": "Converter modelos 3D em instruções de impressão para impressoras 3D.",
+    "en": "Converting 3D models into print instructions for 3D printers.",
+    "es": "Convertir modelos 3D en instrucciones de impresión para impresoras 3D."
+   }
+  },
+  "instalar-upscayl": {
+   "d": "Upscayl",
+   "s": "https://upscayl.org",
+   "q": {
+    "pt": "Ampliador de imagens com inteligência artificial, livre e de código aberto.",
+    "en": "Free and open source AI image upscaler.",
+    "es": "Ampliador de imágenes con inteligencia artificial, libre y de código abierto."
+   },
+   "p": {
+    "pt": "Aumentar a resolução e a nitidez de imagens de baixa qualidade.",
+    "en": "Increasing resolution and sharpness of low-quality images.",
+    "es": "Aumentar la resolución y la nitidez de imágenes de baja calidad."
+   }
+  },
+  "instalar-xnviewmp": {
+   "d": "XnSoft",
+   "s": "https://www.xnview.com",
+   "q": {
+    "pt": "Visualizador, organizador e conversor de imagens compatível com JPEG, PNG, TIFF, WEBP, PSD, RAW, HEIC, PDF e muitos outros formatos.",
+    "en": "Image viewer, organizer and converter supporting JPEG, PNG, TIFF, WEBP, PSD, RAW, HEIC, PDF and many other formats.",
+    "es": "Visor, organizador y conversor de imágenes compatible con JPEG, PNG, TIFF, WEBP, PSD, RAW, HEIC, PDF y muchos otros formatos."
+   },
+   "p": {
+    "pt": "Ver, converter, redimensionar e organizar coleções de imagens.",
+    "en": "Viewing, converting, resizing and organizing image collections.",
+    "es": "Ver, convertir, redimensionar y organizar colecciones de imágenes."
+   }
+  },
+  "instalar-freecad": {
+   "d": "FreeCAD project",
+   "s": "https://www.freecad.org",
+   "q": {
+    "pt": "Modelador 3D paramétrico livre e multiplataforma, em que o histórico do modelo permite alterar o projeto ajustando parâmetros.",
+    "en": "Free cross-platform parametric 3D modeler whose model history lets you change a design by adjusting parameters.",
+    "es": "Modelador 3D paramétrico libre y multiplataforma cuyo historial permite modificar el diseño ajustando parámetros."
+   },
+   "p": {
+    "pt": "Projetar peças e objetos para engenharia mecânica, design de produtos e arquitetura.",
+    "en": "Designing parts and objects for mechanical engineering, product design and architecture.",
+    "es": "Diseñar piezas y objetos para ingeniería mecánica, diseño de producto y arquitectura."
+   }
+  },
+  "instalar-opera": {
+   "d": "Opera",
+   "s": "https://www.opera.com",
+   "q": {
+    "pt": "Navegador web que reúne desempenho e segurança com recursos integrados como VPN, bloqueador de anúncios e integração com redes sociais; instalado pelo repositório RPM da Opera.",
+    "en": "Web browser combining speed and security with built-in extras such as a VPN, ad blocker and social media integration; installed from Opera's RPM repository.",
+    "es": "Navegador web que combina rendimiento y seguridad con extras integrados como VPN, bloqueador de anuncios e integración con redes sociales; se instala desde el repositorio RPM de Opera."
+   },
+   "p": {
+    "pt": "Navegar na web com o pacote opera-stable, obtido do repositório oficial rpm.opera.com.",
+    "en": "Browsing the web with the opera-stable package from the official rpm.opera.com repository.",
+    "es": "Navegar por la web con el paquete opera-stable del repositorio oficial rpm.opera.com."
+   }
+  },
+  "instalar-zoom": {
+   "d": "Zoom Video Communications",
+   "s": "https://zoom.us",
+   "q": {
+    "pt": "Cliente de videoconferência, reuniões online, webinars e mensagens em grupo, distribuído no Flathub como pacote Flatpak.",
+    "en": "A video conferencing client for online meetings, webinars and group messaging, distributed on Flathub as a Flatpak.",
+    "es": "Cliente de videoconferencia para reuniones en línea, seminarios web y mensajería grupal, distribuido en Flathub como Flatpak."
+   },
+   "p": {
+    "pt": "Participar ou hospedar reuniões de vídeo, aulas e webinars e conversar em grupo com colegas, clientes ou alunos.",
+    "en": "Joining or hosting video meetings, classes and webinars, and chatting in groups with colleagues, clients or students.",
+    "es": "Participar o alojar reuniones de video, clases y seminarios web, y conversar en grupo con colegas, clientes o alumnos."
+   }
+  },
+  "instalar-discord": {
+   "d": "Discord Inc.",
+   "s": "https://discord.com",
+   "q": {
+    "pt": "Aplicativo proprietário de mensagens, chamadas de voz e vídeo organizado em servidores com canais por assunto, baseado em Electron.",
+    "en": "A proprietary messaging, voice and video app organized into servers with topic channels, built on Electron.",
+    "es": "Aplicación propietaria de mensajería, voz y video organizada en servidores con canales por tema, basada en Electron."
+   },
+   "p": {
+    "pt": "Conversar por texto, voz e vídeo, compartilhar a tela e gerir comunidades online, grupos de jogos e equipes.",
+    "en": "Chatting by text, voice and video, sharing your screen and running online communities, gaming groups and teams.",
+    "es": "Conversar por texto, voz y video, compartir pantalla y gestionar comunidades en línea, grupos de juegos y equipos."
+   }
+  },
+  "instalar-telegram": {
+   "d": "Telegram (telegramdesktop)",
+   "s": "https://desktop.telegram.org",
+   "q": {
+    "pt": "Cliente oficial para computador do serviço de mensagens Telegram, de código aberto (GPL v3), sincronizado com a conta do celular.",
+    "en": "The official desktop client for the Telegram messaging service, open source (GPL v3), kept in sync with your phone account.",
+    "es": "Cliente oficial de escritorio del servicio de mensajería Telegram, de código abierto (GPL v3), sincronizado con la cuenta del móvil."
+   },
+   "p": {
+    "pt": "Trocar mensagens, arquivos e chamadas, participar de grupos e canais do Telegram diretamente no computador.",
+    "en": "Sending messages and files, making calls and joining Telegram groups and channels directly from the computer.",
+    "es": "Enviar mensajes y archivos, hacer llamadas y participar en grupos y canales de Telegram desde el ordenador."
+   }
+  },
+  "instalar-kdenlive": {
+   "d": "KDE community",
+   "s": "https://kdenlive.org",
+   "q": {
+    "pt": "Editor de vídeo livre e de código aberto (GPL) feito em C++/Qt, baseado no framework MLT e no FFmpeg, com linha do tempo multipista.",
+    "en": "A free, open source (GPL) video editor written in C++/Qt, built on the MLT framework and FFmpeg, with a multitrack timeline.",
+    "es": "Editor de video libre y de código abierto (GPL) escrito en C++/Qt, basado en el framework MLT y FFmpeg, con línea de tiempo multipista."
+   },
+   "p": {
+    "pt": "Montar e finalizar vídeos com cortes, efeitos, títulos, legendas e correção de áudio e cor, de projetos pessoais a produções maiores.",
+    "en": "Assembling and finishing videos with cuts, effects, titles, subtitles and audio/color work, from personal projects to larger productions.",
+    "es": "Montar y finalizar videos con cortes, efectos, títulos, subtítulos y ajustes de audio y color, desde proyectos personales hasta producciones mayores."
+   }
+  },
+  "instalar-shotcut": {
+   "d": "Meltytech, LLC",
+   "s": "https://shotcut.org",
+   "q": {
+    "pt": "Editor de vídeo livre e multiplataforma que usa o FFmpeg e edita arquivos nativos sem precisar importá-los, com painéis encaixáveis.",
+    "en": "A free cross-platform video editor that uses FFmpeg and edits native files without importing them, with dockable panels.",
+    "es": "Editor de video libre y multiplataforma que usa FFmpeg y edita archivos nativos sin importarlos, con paneles acoplables."
+   },
+   "p": {
+    "pt": "Editar vídeos com muitos formatos e resoluções (até 4K), aplicar filtros e capturar tela, webcam e áudio.",
+    "en": "Editing videos in many formats and resolutions (up to 4K), applying filters and capturing screen, webcam and audio.",
+    "es": "Editar videos en muchos formatos y resoluciones (hasta 4K), aplicar filtros y capturar pantalla, webcam y audio."
+   }
+  },
+  "instalar-openshot": {
+   "d": "OpenShot Studios, LLC",
+   "s": "https://www.openshot.org",
+   "q": {
+    "pt": "Editor de vídeo livre (GPL v3 ou superior) para Linux, Mac e Windows, com linha do tempo de arrastar e soltar.",
+    "en": "A free video editor (GPL v3 or later) for Linux, Mac and Windows, with a drag-and-drop timeline.",
+    "es": "Editor de video libre (GPL v3 o superior) para Linux, Mac y Windows, con línea de tiempo de arrastrar y soltar."
+   },
+   "p": {
+    "pt": "Cortar, juntar e editar vídeos de forma simples, incluindo animações e efeitos 3D feitos com o Blender.",
+    "en": "Cutting, joining and editing videos in a simple way, including animations and 3D effects powered by Blender.",
+    "es": "Cortar, unir y editar videos de forma sencilla, incluyendo animaciones y efectos 3D con Blender."
+   }
+  },
+  "instalar-avidemux": {
+   "d": "Avidemux project",
+   "s": "https://avidemux.sourceforge.net",
+   "q": {
+    "pt": "Editor de vídeo livre (GPL) voltado a corte, filtragem e codificação, com suporte a diversos formatos e codecs.",
+    "en": "A free (GPL) video editor focused on cutting, filtering and encoding, supporting many formats and codecs.",
+    "es": "Editor de video libre (GPL) orientado a corte, filtrado y codificación, con soporte para muchos formatos y códecs."
+   },
+   "p": {
+    "pt": "Cortar trechos, aplicar filtros e converter vídeos entre formatos, com automação por projetos, fila de tarefas e scripts.",
+    "en": "Trimming clips, applying filters and converting videos between formats, with automation via projects, job queue and scripts.",
+    "es": "Recortar fragmentos, aplicar filtros y convertir videos entre formatos, con automatización mediante proyectos, cola de trabajos y scripts."
+   }
+  },
+  "instalar-drift": {
+   "d": "CutWire Studios",
+   "s": "https://github.com/CutWire-Studios/Drift",
+   "q": {
+    "pt": "Editor de vídeo desktop livre e de código aberto, voltado a iniciantes, feito com Qt 6 e FFmpeg.",
+    "en": "A free, open source, beginner-friendly desktop video editor built with Qt 6 and FFmpeg.",
+    "es": "Editor de video de escritorio libre y de código abierto, pensado para principiantes, hecho con Qt 6 y FFmpeg."
+   },
+   "p": {
+    "pt": "Editar vídeos com linha do tempo, efeitos, correção de cor, legendas, textos e formas, com prévia 3D.",
+    "en": "Editing videos with a timeline, effects, color grading, subtitles, text and shapes, plus a 3D preview.",
+    "es": "Editar videos con línea de tiempo, efectos, corrección de color, subtítulos, textos y formas, con vista previa 3D."
+   }
+  },
+  "instalar-blender": {
+   "d": "Blender Foundation / Blender Institute",
+   "s": "https://www.blender.org",
+   "q": {
+    "pt": "Suíte livre e de código aberto (GPL) de criação 3D, com modelagem, animação, simulação, renderização, composição e edição de vídeo.",
+    "en": "A free, open source (GPL) 3D creation suite covering modeling, animation, simulation, rendering, compositing and video editing.",
+    "es": "Suite libre y de código abierto (GPL) de creación 3D que abarca modelado, animación, simulación, renderizado, composición y edición de video."
+   },
+   "p": {
+    "pt": "Criar modelos 3D, animações, efeitos visuais, arte e jogos, inclusive em uso comercial.",
+    "en": "Creating 3D models, animations, visual effects, art and games, including for commercial work.",
+    "es": "Crear modelos 3D, animaciones, efectos visuales, arte y juegos, incluso para uso comercial."
+   }
+  },
+  "instalar-audacity": {
+   "d": "Muse Group",
+   "s": "https://www.audacityteam.org",
+   "q": {
+    "pt": "Editor e gravador de áudio livre e de código aberto para Windows, macOS e Linux.",
+    "en": "A free, open source audio recorder and editor for Windows, macOS and Linux.",
+    "es": "Grabador y editor de audio libre y de código abierto para Windows, macOS y Linux."
+   },
+   "p": {
+    "pt": "Gravar áudio, cortar e mixar trechos, reduzir ruído, ajustar tom e andamento, aplicar efeitos e converter formatos como MP3, FLAC e WAV.",
+    "en": "Recording audio, cutting and mixing clips, reducing noise, adjusting pitch and tempo, applying effects and converting formats like MP3, FLAC and WAV.",
+    "es": "Grabar audio, cortar y mezclar fragmentos, reducir ruido, ajustar tono y tempo, aplicar efectos y convertir formatos como MP3, FLAC y WAV."
+   }
+  },
+  "instalar-thunderbird": {
+   "d": "MZLA Technologies (Thunderbird)",
+   "s": "https://www.thunderbird.net",
+   "q": {
+    "pt": "Cliente de e-mail livre e multiplataforma que também gerencia feeds de notícias, chat e newsgroups, com dados armazenados localmente.",
+    "en": "A free cross-platform email client that also handles news feeds, chat and newsgroups, keeping data stored locally.",
+    "es": "Cliente de correo libre y multiplataforma que también gestiona feeds de noticias, chat y grupos de noticias, con datos guardados localmente."
+   },
+   "p": {
+    "pt": "Enviar, receber, organizar e pesquisar e-mails de várias contas em um só aplicativo, ampliável com extensões.",
+    "en": "Sending, receiving, sorting and searching email from several accounts in one app, extensible with add-ons.",
+    "es": "Enviar, recibir, organizar y buscar correos de varias cuentas en una sola aplicación, ampliable con complementos."
+   }
+  },
+  "instalar-okular": {
+   "d": "KDE",
+   "s": "https://okular.kde.org",
+   "q": {
+    "pt": "Visualizador universal de documentos do KDE (GPLv2+), que abre PDF, EPUB, DjVu, quadrinhos, imagens e Markdown.",
+    "en": "KDE's universal document viewer (GPLv2+), opening PDF, EPUB, DjVu, comics, images and Markdown.",
+    "es": "Visor universal de documentos de KDE (GPLv2+), que abre PDF, EPUB, DjVu, cómics, imágenes y Markdown."
+   },
+   "p": {
+    "pt": "Ler documentos, anotar e destacar texto, navegar por índice e miniaturas e visualizar, verificar ou assinar PDFs.",
+    "en": "Reading documents, annotating and highlighting text, navigating by contents and thumbnails, and viewing, verifying or signing PDFs.",
+    "es": "Leer documentos, anotar y resaltar texto, navegar por índice y miniaturas, y ver, verificar o firmar PDF."
+   }
+  },
+  "instalar-kate": {
+   "d": "KDE",
+   "s": "https://kate-editor.org",
+   "q": {
+    "pt": "Editor de texto do KDE baseado em Qt e KDE Frameworks, multiplataforma, com abas, divisão de visão e plugins.",
+    "en": "KDE's text editor built on Qt and KDE Frameworks, cross-platform, with tabs, split views and plugins.",
+    "es": "Editor de texto de KDE basado en Qt y KDE Frameworks, multiplataforma, con pestañas, vistas divididas y complementos."
+   },
+   "p": {
+    "pt": "Editar texto e código com realce de sintaxe para mais de 400 linguagens, multicursor, busca em projetos, terminal embutido e suporte a LSP.",
+    "en": "Editing text and code with syntax highlighting for 400+ languages, multi-cursor, project search, embedded terminal and LSP support.",
+    "es": "Editar texto y código con resaltado de sintaxis para más de 400 lenguajes, multicursor, búsqueda en proyectos, terminal integrada y soporte LSP."
+   }
+  },
+  "instalar-foliate": {
+   "d": "John Factotum",
+   "s": "https://github.com/johnfactotum/foliate",
+   "q": {
+    "pt": "Leitor de e-books para o GNOME, simples e moderno, com modos paginado e rolagem e temas de cores.",
+    "en": "A simple, modern e-book reader for GNOME with paginated and scrolled modes and color themes.",
+    "es": "Lector de libros electrónicos para GNOME, simple y moderno, con modos paginado y desplazamiento y temas de color."
+   },
+   "p": {
+    "pt": "Ler EPUB, Mobipocket, Kindle, FB2, CBZ e PDF com marcadores, anotações, busca no livro e consulta a dicionário.",
+    "en": "Reading EPUB, Mobipocket, Kindle, FB2, CBZ and PDF with bookmarks, annotations, in-book search and dictionary lookup.",
+    "es": "Leer EPUB, Mobipocket, Kindle, FB2, CBZ y PDF con marcadores, anotaciones, búsqueda en el libro y consulta de diccionario."
+   },
+   "nc": 1
+  },
+  "instalar-mpv": {
+   "d": "mpv project",
+   "s": "https://mpv.io",
+   "q": {
+    "pt": "Reprodutor de mídia livre, multiplataforma e de linha de comando, com pequeno controle na tela, que lê muitos formatos, codecs e legendas.",
+    "en": "A free, cross-platform, command-line media player with a small on-screen controller, supporting many formats, codecs and subtitles.",
+    "es": "Reproductor multimedia libre, multiplataforma y de línea de comandos, con un pequeño control en pantalla, compatible con muchos formatos, códecs y subtítulos."
+   },
+   "p": {
+    "pt": "Assistir vídeos e ouvir áudio com saída de alta qualidade (OpenGL/Vulkan), decodificação por GPU e extensão por scripts.",
+    "en": "Watching video and playing audio with high-quality output (OpenGL/Vulkan), GPU decoding and script-based extensions.",
+    "es": "Ver videos y reproducir audio con salida de alta calidad (OpenGL/Vulkan), decodificación por GPU y extensión mediante scripts."
+   }
+  },
+  "instalar-krita": {
+   "d": "KDE",
+   "s": "https://krita.org",
+   "q": {
+    "pt": "Aplicativo livre (GPL v3) de pintura digital e ilustração do KDE, com mais de dez motores de pincel e suporte a RGB e CMYK.",
+    "en": "KDE's free (GPL v3) digital painting and illustration application, with over ten brush engines and RGB and CMYK support.",
+    "es": "Aplicación libre (GPL v3) de pintura digital e ilustración de KDE, con más de diez motores de pincel y soporte RGB y CMYK."
+   },
+   "p": {
+    "pt": "Criar arte conceitual, quadrinhos, texturas e pinturas digitais, além de animação desenhada à mão.",
+    "en": "Creating concept art, comics, textures and digital paintings, as well as hand-drawn animation.",
+    "es": "Crear arte conceptual, cómics, texturas y pinturas digitales, además de animación dibujada a mano."
+   }
+  },
+  "instalar-inkscape": {
+   "d": "Inkscape community",
+   "s": "https://inkscape.org",
+   "q": {
+    "pt": "Editor de gráficos vetoriais livre e de código aberto que usa o SVG como formato principal, para Linux, Windows e macOS.",
+    "en": "A free, open source vector graphics editor that uses SVG as its main format, for Linux, Windows and macOS.",
+    "es": "Editor de gráficos vectoriales libre y de código abierto que usa SVG como formato principal, para Linux, Windows y macOS."
+   },
+   "p": {
+    "pt": "Criar ilustrações, logotipos, tipografia, diagramas e fluxogramas, importando e exportando SVG, PDF, EPS, AI e PNG.",
+    "en": "Creating illustrations, logos, typography, diagrams and flowcharts, importing and exporting SVG, PDF, EPS, AI and PNG.",
+    "es": "Crear ilustraciones, logotipos, tipografía, diagramas y diagramas de flujo, importando y exportando SVG, PDF, EPS, AI y PNG."
+   }
+  },
+  "instalar-gimp": {
+   "d": "GIMP community",
+   "s": "https://www.gimp.org",
+   "q": {
+    "pt": "GIMP (GNU Image Manipulation Program) é um editor de imagens livre, distribuído sob a GNU GPL.",
+    "en": "GIMP (GNU Image Manipulation Program) is a free image editor distributed under the GNU GPL.",
+    "es": "GIMP (GNU Image Manipulation Program) es un editor de imágenes libre distribuido bajo la GNU GPL."
+   },
+   "p": {
+    "pt": "Retocar fotos, compor imagens e criar arte original em formato raster.",
+    "en": "Retouching photos, compositing images and authoring original raster artwork.",
+    "es": "Retocar fotos, componer imágenes y crear arte original en formato ráster."
+   }
+  },
+  "instalar-darktable": {
+   "d": "darktable project",
+   "s": "https://www.darktable.org",
+   "q": {
+    "pt": "Aplicativo livre (GPL v3 ou superior) de fluxo de trabalho fotográfico e revelação de arquivos RAW, com banco de dados de negativos digitais.",
+    "en": "A free (GPL v3 or later) photography workflow application and raw developer, with a database of digital negatives.",
+    "es": "Aplicación libre (GPL v3 o superior) de flujo de trabajo fotográfico y revelado RAW, con una base de datos de negativos digitales."
+   },
+   "p": {
+    "pt": "Organizar grandes volumes de fotos e revelar e aprimorar imagens RAW de forma não destrutiva, com suporte a captura tethered.",
+    "en": "Managing large photo collections and developing and enhancing raw images non-destructively, with tethered shooting support.",
+    "es": "Gestionar grandes volúmenes de fotos y revelar y mejorar imágenes RAW de forma no destructiva, con soporte de captura tethered."
+   }
+  },
+  "instalar-librecad": {
+   "d": "LibreCAD community",
+   "s": "https://librecad.org",
+   "q": {
+    "pt": "Programa de CAD 2D livre e de código aberto (GPL v2) para Windows, macOS e Linux.",
+    "en": "A free, open source (GPL v2) 2D CAD program for Windows, macOS and Linux.",
+    "es": "Programa de CAD 2D libre y de código abierto (GPL v2) para Windows, macOS y Linux."
+   },
+   "p": {
+    "pt": "Criar e editar desenhos técnicos e projetos em duas dimensões.",
+    "en": "Creating and editing two-dimensional technical drawings and designs.",
+    "es": "Crear y editar dibujos técnicos y diseños en dos dimensiones."
+   }
+  },
+  "instalar-pitivi": {
+   "d": "Pitivi project",
+   "s": "https://www.pitivi.org",
+   "q": {
+    "pt": "Editor de vídeo livre e de código aberto para Linux, com interface simples e intuitiva.",
+    "en": "A free, open source video editor for Linux with a simple, intuitive interface.",
+    "es": "Editor de video libre y de código abierto para Linux, con una interfaz sencilla e intuitiva."
+   },
+   "p": {
+    "pt": "Montar e editar filmes e vídeos com ferramentas que o usuário pode possuir e melhorar.",
+    "en": "Assembling and editing films and videos with tools users can own and improve.",
+    "es": "Montar y editar películas y videos con herramientas que el usuario puede poseer y mejorar."
+   }
+  },
+  "instalar-ardour": {
+   "d": "Paul Davis · Robin Gareus",
+   "s": "https://ardour.org",
+   "q": {
+    "pt": "Estação de trabalho de áudio digital (DAW) profissional para áudio e MIDI, licenciada sob GPL v2. No Fedora o pacote chama-se ardour8.",
+    "en": "A professional digital audio workstation (DAW) for audio and MIDI, licensed under GPL v2. In Fedora the package is named ardour8.",
+    "es": "Estación de trabajo de audio digital (DAW) profesional para audio y MIDI, con licencia GPL v2. En Fedora el paquete se llama ardour8."
+   },
+   "p": {
+    "pt": "Gravar e editar áudio multipista, usar plugins e produzir música, trilhas e mixagens, inclusive com linha do tempo de vídeo.",
+    "en": "Multitrack audio recording and editing, using plugins and producing music, soundtracks and mixes, including a video timeline.",
+    "es": "Grabar y editar audio multipista, usar plugins y producir música, bandas sonoras y mezclas, incluida una línea de tiempo de video."
+   }
+  },
+  "instalar-lmms": {
+   "d": "LMMS project",
+   "s": "https://lmms.io",
+   "q": {
+    "pt": "Estação de trabalho de áudio digital livre e multiplataforma (GPL-2.0) para produção musical.",
+    "en": "A free, cross-platform digital audio workstation (GPL-2.0) for music production.",
+    "es": "Estación de trabajo de audio digital libre y multiplataforma (GPL-2.0) para producción musical."
+   },
+   "p": {
+    "pt": "Compor, arranjar e mixar músicas com editor de padrões, piano roll, mixer, automação e suporte a SoundFont2, VST2, LADSPA, LV2 e MIDI.",
+    "en": "Composing, arranging and mixing music with a pattern editor, piano roll, mixer, automation and SoundFont2, VST2, LADSPA, LV2 and MIDI support.",
+    "es": "Componer, arreglar y mezclar música con editor de patrones, piano roll, mezclador, automatización y soporte SoundFont2, VST2, LADSPA, LV2 y MIDI."
+   }
+  },
+  "instalar-chromium": {
+   "d": "Chromium Project",
+   "s": "https://www.chromium.org",
+   "q": {
+    "pt": "Navegador web de código aberto que serve de base a vários navegadores; o projeto busca uma web mais segura, rápida e estável.",
+    "en": "An open source web browser project that serves as the base for several browsers, aiming at a safer, faster and more stable web.",
+    "es": "Proyecto de navegador web de código abierto que sirve de base a varios navegadores, con el objetivo de una web más segura, rápida y estable."
+   },
+   "p": {
+    "pt": "Navegar na internet com um navegador sem as marcas e serviços proprietários do Chrome.",
+    "en": "Browsing the web with a browser free of Chrome's proprietary branding and services.",
+    "es": "Navegar por internet con un navegador sin las marcas y servicios propietarios de Chrome."
+   }
+  },
+  "instalar-remmina": {
+   "d": "Remmina project",
+   "s": "https://remmina.org",
+   "q": {
+    "pt": "Cliente de área de trabalho remota em GTK (GPL) e seus plugins RDP e VNC, reunindo vários protocolos em uma só interface.",
+    "en": "A GTK remote desktop client (GPL) with its RDP and VNC plugins, unifying several protocols in one interface.",
+    "es": "Cliente de escritorio remoto en GTK (GPL) con sus plugins RDP y VNC, que reúne varios protocolos en una sola interfaz."
+   },
+   "p": {
+    "pt": "Conectar-se e administrar várias máquinas remotas via RDP, VNC, SSH e outros protocolos.",
+    "en": "Connecting to and managing many remote machines over RDP, VNC, SSH and other protocols.",
+    "es": "Conectarse y administrar muchas máquinas remotas mediante RDP, VNC, SSH y otros protocolos."
+   }
+  },
+  "instalar-gnome-connections": {
+   "d": "GNOME Project",
+   "s": "https://apps.gnome.org/Connections/",
+   "q": {
+    "pt": "Aplicativo do GNOME para ver e usar outros computadores remotamente por VNC e RDP.",
+    "en": "A GNOME app for viewing and using other computers remotely over VNC and RDP.",
+    "es": "Aplicación de GNOME para ver y usar otros equipos de forma remota mediante VNC y RDP."
+   },
+   "p": {
+    "pt": "Acessar áreas de trabalho Linux e Windows ou máquinas virtuais, ou dar suporte a outros usuários.",
+    "en": "Accessing Linux and Windows desktops or virtual machines, or helping users who need support.",
+    "es": "Acceder a escritorios Linux y Windows o máquinas virtuales, o dar soporte a otros usuarios."
+   }
+  },
+  "instalar-krdc": {
+   "d": "KDE",
+   "s": "https://apps.kde.org/krdc/",
+   "q": {
+    "pt": "Cliente de área de trabalho remota do KDE que usa os protocolos VNC e RDP.",
+    "en": "KDE's remote desktop client, using the VNC and RDP protocols.",
+    "es": "Cliente de escritorio remoto de KDE que usa los protocolos VNC y RDP."
+   },
+   "p": {
+    "pt": "Ver ou controlar a sessão de área de trabalho de outro computador que execute um servidor compatível.",
+    "en": "Viewing or controlling the desktop session of another computer running a compatible server.",
+    "es": "Ver o controlar la sesión de escritorio de otro equipo que ejecute un servidor compatible."
+   }
+  },
+  "instalar-brave": {
+   "d": "Brave Software, Inc.",
+   "s": "https://brave.com",
+   "q": {
+    "pt": "Navegador web focado em privacidade, com o bloqueador Shields, mecanismo de busca próprio, assistente Leo e VPN integrados.",
+    "en": "A privacy-focused web browser with built-in Shields blocker, its own search engine, the Leo assistant and a VPN.",
+    "es": "Navegador web centrado en la privacidad, con el bloqueador Shields, buscador propio, asistente Leo y VPN integrados."
+   },
+   "p": {
+    "pt": "Navegar bloqueando anúncios, rastreadores e fingerprinting por padrão, com suporte a extensões da Chrome Web Store.",
+    "en": "Browsing while blocking ads, trackers and fingerprinting by default, with Chrome Web Store extension support.",
+    "es": "Navegar bloqueando anuncios, rastreadores y fingerprinting por defecto, con soporte de extensiones de Chrome Web Store."
+   }
+  },
+  "instalar-vivaldi": {
+   "d": "Vivaldi Technologies",
+   "s": "https://vivaldi.com",
+   "q": {
+    "pt": "Navegador web personalizável de uma empresa independente (Noruega e Islândia), com bloqueador de anúncios e rastreadores, Workspaces, e-mail, calendário e leitor de feeds integrados.",
+    "en": "A customizable web browser from an independent company (Norway and Iceland), with built-in ad/tracker blocker, Workspaces, mail, calendar and feed reader.",
+    "es": "Navegador web personalizable de una empresa independiente (Noruega e Islandia), con bloqueador de anuncios y rastreadores, Workspaces, correo, calendario y lector de feeds integrados."
+   },
+   "p": {
+    "pt": "Navegar com muito controle sobre a interface e as abas, sem coleta de dados de uso e sem assistente de IA que filtre o conteúdo.",
+    "en": "Browsing with extensive control over the interface and tabs, without usage data collection or a content-filtering AI assistant.",
+    "es": "Navegar con gran control sobre la interfaz y las pestañas, sin recopilación de datos de uso ni asistente de IA que filtre contenido."
+   }
+  },
+  "instalar-edge": {
+   "d": "Microsoft",
+   "s": "https://www.microsoft.com/edge",
+   "q": {
+    "pt": "Navegador web proprietário da Microsoft, com Copilot, proteção contra phishing e malware, VPN integrada e sincronização entre dispositivos.",
+    "en": "Microsoft's proprietary web browser, with Copilot, phishing and malware protection, a built-in VPN and cross-device sync.",
+    "es": "Navegador web propietario de Microsoft, con Copilot, protección contra phishing y malware, VPN integrada y sincronización entre dispositivos."
+   },
+   "p": {
+    "pt": "Navegar na web sincronizando senhas, favoritos e configurações e usando as integrações com Bing e Microsoft 365.",
+    "en": "Browsing the web while syncing passwords, favorites and settings and using Bing and Microsoft 365 integrations.",
+    "es": "Navegar por la web sincronizando contraseñas, favoritos y ajustes y usando las integraciones con Bing y Microsoft 365."
+   }
+  },
+  "instalar-rustdesk": {
+   "d": "RustDesk",
+   "s": "https://rustdesk.com",
+   "q": {
+    "pt": "Software de acesso remoto escrito em Rust, com cliente de código aberto, conexão ponto a ponto criptografada e opção de servidor próprio.",
+    "en": "Remote access software written in Rust, with an open source client, encrypted peer-to-peer connections and a self-hosted server option.",
+    "es": "Software de acceso remoto escrito en Rust, con cliente de código abierto, conexión punto a punto cifrada y opción de servidor propio."
+   },
+   "p": {
+    "pt": "Controlar computadores à distância ou dar suporte remoto, mantendo o controle dos dados via servidor próprio.",
+    "en": "Controlling computers remotely or giving remote support, keeping control of data through a self-hosted server.",
+    "es": "Controlar equipos a distancia o dar soporte remoto, manteniendo el control de los datos mediante un servidor propio."
+   }
+  },
+  "instalar-lightworks": {
+   "d": "",
+   "s": "https://lwks.com",
+   "q": {
+    "pt": "Software profissional de edição de vídeo não linear (NLE) para edição e masterização de vídeo digital em vários formatos, disponível para Windows, Mac e Linux.",
+    "en": "Professional non-linear video editing (NLE) software for editing and mastering digital video in many formats, available for Windows, Mac and Linux.",
+    "es": "Software profesional de edición de video no lineal (NLE) para editar y masterizar video digital en varios formatos, disponible para Windows, Mac y Linux."
+   },
+   "p": {
+    "pt": "Editar e finalizar vídeos digitais. Um dos primeiros desenvolvedores de sistemas NLE para computador (desde 1989), premiado com um EMMY em 2017.",
+    "en": "Editing and finishing digital video. One of the first developers of NLE systems for computers (since 1989), awarded an EMMY in 2017.",
+    "es": "Editar y finalizar video digital. Uno de los primeros desarrolladores de sistemas NLE para computadora (desde 1989), premiado con un EMMY en 2017."
+   }
+  },
+  "instalar-rclone-manager": {
+   "d": "Zarestia Dev Team",
+   "s": "https://github.com/Zarestia-Dev/rclone-manager",
+   "q": {
+    "pt": "Interface gráfica multiplataforma (GPLv3) para gerenciar remotos do Rclone, com gerenciador de arquivos, fluxos visuais, montagem e monitor de transferências.",
+    "en": "A cross-platform graphical interface (GPLv3) for managing Rclone remotes, with a file manager, visual workflows, mounting and a transfer monitor.",
+    "es": "Interfaz gráfica multiplataforma (GPLv3) para gestionar remotos de Rclone, con gestor de archivos, flujos visuales, montaje y monitor de transferencias."
+   },
+   "p": {
+    "pt": "Transferir, montar, servir e automatizar arquivos em armazenamento na nuvem de forma mais fácil que pela linha de comando.",
+    "en": "Transferring, mounting, serving and automating files on cloud storage more easily than through the command line.",
+    "es": "Transferir, montar, servir y automatizar archivos en almacenamiento en la nube más fácilmente que por línea de comandos."
+   }
+  },
+  "instalar-artcraft-launcher": {
+   "d": "",
+   "s": "https://github.com/storytold/craft-launcher",
+   "q": {
+    "pt": "Lançador que instala e atualiza o ArtCraft, um conjunto de aplicativos desenvolvidos com IA que imitam os principais softwares da Adobe, Microsoft e Autodesk.",
+    "en": "Launcher that installs and updates ArtCraft, a set of AI-developed applications that imitate the main software from Adobe, Microsoft and Autodesk.",
+    "es": "Lanzador que instala y actualiza ArtCraft, un conjunto de aplicaciones desarrolladas con IA que imitan los principales programas de Adobe, Microsoft y Autodesk."
+   },
+   "p": {
+    "pt": "Ter alternativas a programas como Photoshop, After Effects, AutoCAD e Microsoft Office, reunidas e mantidas atualizadas em um só lugar.",
+    "en": "Having alternatives to programs such as Photoshop, After Effects, AutoCAD and Microsoft Office, gathered and kept up to date in one place.",
+    "es": "Contar con alternativas a programas como Photoshop, After Effects, AutoCAD y Microsoft Office, reunidas y actualizadas en un solo lugar."
+   }
+  },
+  "instalar-firefox": {
+   "d": "Mozilla",
+   "s": "https://www.mozilla.org/firefox/",
+   "q": {
+    "pt": "Navegador web livre desenvolvido pela Mozilla Corporation, parte do Projeto Mozilla, cuja missão é manter a internet aberta e acessível a todos.",
+    "en": "A free web browser developed by Mozilla Corporation, part of the Mozilla Project, whose mission is to keep the internet open and accessible to all.",
+    "es": "Navegador web libre desarrollado por Mozilla Corporation, parte del Proyecto Mozilla, cuya misión es mantener internet abierta y accesible para todos."
+   },
+   "p": {
+    "pt": "Navegar na web no dia a dia; é o navegador padrão do Fedora.",
+    "en": "Everyday web browsing; it is Fedora's default browser.",
+    "es": "Navegar por la web a diario; es el navegador predeterminado de Fedora."
+   }
+  },
+  "instalar-vscode": {
+   "d": "Microsoft Corporation",
+   "s": "https://code.visualstudio.com",
+   "q": {
+    "pt": "Editor de código da Microsoft (build proprietário) distribuído no Flathub como Flatpak, reempacotado pela comunidade.",
+    "en": "Microsoft's code editor (proprietary build) distributed on Flathub as a Flatpak, repackaged by the community.",
+    "es": "Editor de código de Microsoft (compilación propietaria) distribuido en Flathub como Flatpak, reempaquetado por la comunidad."
+   },
+   "p": {
+    "pt": "Editar, compilar e depurar código, combinando simplicidade com as ferramentas de que desenvolvedores precisam.",
+    "en": "Editing, building and debugging code, combining simplicity with the tools developers need.",
+    "es": "Editar, compilar y depurar código, combinando sencillez con las herramientas que necesitan los desarrolladores."
+   }
+  },
+  "instalar-drawy": {
+   "d": "KDE",
+   "s": "https://apps.kde.org/drawy",
+   "q": {
+    "pt": "Quadro branco infinito do KDE (GPL-3.0 ou superior) para criar ideias, diagramas e anotações visuais.",
+    "en": "KDE's infinite whiteboard (GPL-3.0 or later) for creating ideas, diagrams and visual notes.",
+    "es": "Pizarra infinita de KDE (GPL-3.0 o posterior) para crear ideas, diagramas y notas visuales."
+   },
+   "p": {
+    "pt": "Fazer brainstorming com formas, setas, textos e imagens, com suporte a mesa digitalizadora, e exportar o resultado como imagem.",
+    "en": "Brainstorming with shapes, arrows, text and images, with tablet support, and exporting the result as an image.",
+    "es": "Hacer lluvia de ideas con formas, flechas, textos e imágenes, con soporte para tableta, y exportar el resultado como imagen."
+   }
+  },
+  "instalar-gear-lever": {
+   "d": "Lorenzo Paderi (mijorus)",
+   "s": "https://gearlever.mijorus.it/",
+   "q": {
+    "pt": "Utilitário para gerenciar arquivos AppImage: organiza, gera entradas de menu e metadados e atualiza os apps.",
+    "en": "A utility for managing AppImage files: organizes them, generates desktop entries and metadata, and updates apps.",
+    "es": "Utilidad para gestionar archivos AppImage: los organiza, genera entradas de menú y metadatos y actualiza las apps."
+   },
+   "p": {
+    "pt": "Integrar AppImages ao menu de aplicativos, atualizá-los no lugar e manter várias versões lado a lado.",
+    "en": "Integrating AppImages into the app menu, updating them in place and keeping several versions side by side.",
+    "es": "Integrar AppImages en el menú de aplicaciones, actualizarlos en el sitio y mantener varias versiones a la vez."
+   }
+  },
+  "instalar-packet": {
+   "d": "nozwock",
+   "s": "https://github.com/nozwock/packet",
+   "q": {
+    "pt": "Aplicativo para enviar e receber arquivos sem fio com aparelhos Android via Quick Share ou com outros dispositivos com Packet.",
+    "en": "An app to send and receive files wirelessly with Android devices via Quick Share or other devices running Packet.",
+    "es": "Aplicación para enviar y recibir archivos de forma inalámbrica con dispositivos Android mediante Quick Share u otros con Packet."
+   },
+   "p": {
+    "pt": "Transferir arquivos entre o computador e o celular Android na mesma rede Wi-Fi, com Bluetooth ativado.",
+    "en": "Transferring files between the computer and an Android phone on the same Wi-Fi network, with Bluetooth enabled.",
+    "es": "Transferir archivos entre el ordenador y un móvil Android en la misma red Wi-Fi, con Bluetooth activado."
+   }
+  },
+  "cups-install": {
+   "d": "OpenPrinting (CUPS)",
+   "s": "https://openprinting.github.io/cups/",
+   "q": {
+    "pt": "Conjunto de pacotes de impressão: CUPS (camada de impressão portátil), filtros, Avahi (descoberta na rede), system-config-printer e Ghostscript.",
+    "en": "A set of printing packages: CUPS (portable printing layer), filters, Avahi (network discovery), system-config-printer and Ghostscript.",
+    "es": "Conjunto de paquetes de impresión: CUPS (capa de impresión portátil), filtros, Avahi (descubrimiento en red), system-config-printer y Ghostscript."
+   },
+   "p": {
+    "pt": "Detectar, configurar e usar impressoras locais e de rede no Fedora.",
+    "en": "Detecting, configuring and using local and network printers on Fedora.",
+    "es": "Detectar, configurar y usar impresoras locales y de red en Fedora."
+   }
+  },
+  "samba-install": {
+   "d": "Samba project",
+   "s": "https://www.samba.org",
+   "q": {
+    "pt": "Suíte de interoperabilidade com Windows (servidor e cliente SMB/CIFS), com samba, samba-client e cifs-utils para montar compartilhamentos.",
+    "en": "The Windows interoperability suite (SMB/CIFS server and client), with samba, samba-client and cifs-utils for mounting shares.",
+    "es": "Suite de interoperabilidad con Windows (servidor y cliente SMB/CIFS), con samba, samba-client y cifs-utils para montar recursos compartidos."
+   },
+   "p": {
+    "pt": "Compartilhar pastas e impressoras e acessar compartilhamentos de máquinas Windows na rede.",
+    "en": "Sharing folders and printers and accessing shares from Windows machines on the network.",
+    "es": "Compartir carpetas e impresoras y acceder a recursos compartidos de equipos Windows en la red."
+   }
+  },
+  "keepassxc-install": {
+   "d": "KeePassXC Team",
+   "s": "https://keepassxc.org",
+   "q": {
+    "pt": "Gerenciador de senhas multiplataforma e de código aberto (GPLv3) que guarda os dados em arquivo criptografado offline.",
+    "en": "A cross-platform, open source (GPLv3) password manager that keeps data in an offline encrypted file.",
+    "es": "Gestor de contraseñas multiplataforma y de código abierto (GPLv3) que guarda los datos en un archivo cifrado sin conexión."
+   },
+   "p": {
+    "pt": "Guardar senhas, URLs, anexos e notas com segurança e preenchê-los automaticamente em apps e sites (Auto-Type).",
+    "en": "Securely storing passwords, URLs, attachments and notes and auto-filling them into apps and websites (Auto-Type).",
+    "es": "Guardar de forma segura contraseñas, URLs, adjuntos y notas y rellenarlos automáticamente en apps y sitios (Auto-Type)."
+   }
+  },
+  "localsend-install": {
+   "d": "Tien Do Nam",
+   "s": "https://localsend.org",
+   "q": {
+    "pt": "Aplicativo para enviar arquivos e mensagens pela rede local, sem servidores externos.",
+    "en": "An app for sending files and messages over the local network, with no external servers.",
+    "es": "Aplicación para enviar archivos y mensajes por la red local, sin servidores externos."
+   },
+   "p": {
+    "pt": "Compartilhar arquivos com dispositivos próximos na mesma rede, como celulares e outros computadores.",
+    "en": "Sharing files with nearby devices on the same network, such as phones and other computers.",
+    "es": "Compartir archivos con dispositivos cercanos en la misma red, como móviles y otros ordenadores."
+   }
+  },
+  "warpinator-install": {
+   "d": "Linux Mint",
+   "s": "https://github.com/linuxmint/warpinator",
+   "q": {
+    "pt": "Aplicativo do Linux Mint para conectar vários computadores numa rede local e trocar arquivos, com descoberta automática e conexões criptografadas.",
+    "en": "A Linux Mint app that connects several computers on a local network to exchange files, with automatic discovery and encrypted connections.",
+    "es": "Aplicación de Linux Mint que conecta varios ordenadores en una red local para intercambiar archivos, con descubrimiento automático y conexiones cifradas."
+   },
+   "p": {
+    "pt": "Enviar e receber arquivos entre computadores da mesma rede de forma simples.",
+    "en": "Sending and receiving files between computers on the same network in a simple way.",
+    "es": "Enviar y recibir archivos entre ordenadores de la misma red de forma sencilla."
+   }
+  },
+  "steam-install": {
+   "d": "Valve",
+   "s": "https://www.steampowered.com/",
+   "q": {
+    "pt": "Instalador do Steam, serviço de distribuição de software com loja online, instalação e atualização automáticas, conquistas e saves na nuvem.",
+    "en": "The installer for Steam, a software distribution service with an online store, automatic installs and updates, achievements and cloud saves.",
+    "es": "Instalador de Steam, servicio de distribución de software con tienda en línea, instalación y actualización automáticas, logros y guardados en la nube."
+   },
+   "p": {
+    "pt": "Comprar, baixar e jogar jogos e conversar com amigos, com sincronização de saves e capturas de tela.",
+    "en": "Buying, downloading and playing games and chatting with friends, with synced saves and screenshots.",
+    "es": "Comprar, descargar y jugar juegos y chatear con amigos, con sincronización de guardados y capturas."
+   }
+  },
+  "heroic-install": {
+   "d": "Heroic Games Launcher project",
+   "s": "https://heroicgameslauncher.com/",
+   "q": {
+    "pt": "Lançador de jogos de código aberto para Epic Games Store (via Legendary), GOG e Amazon Games, com suporte a Wine e Proton.",
+    "en": "An open source games launcher for Epic Games Store (via Legendary), GOG and Amazon Games, with Wine and Proton support.",
+    "es": "Lanzador de juegos de código abierto para Epic Games Store (vía Legendary), GOG y Amazon Games, con soporte para Wine y Proton."
+   },
+   "p": {
+    "pt": "Instalar e jogar sua biblioteca Epic, GOG e Amazon no Linux, com fila de downloads e saves na nuvem.",
+    "en": "Installing and playing your Epic, GOG and Amazon library on Linux, with a download queue and cloud saves.",
+    "es": "Instalar y jugar tu biblioteca de Epic, GOG y Amazon en Linux, con cola de descargas y guardados en la nube."
+   }
+  },
+  "lutris-install": {
+   "d": "Lutris team",
+   "s": "https://lutris.net",
+   "q": {
+    "pt": "Plataforma de preservação de jogos que reúne emuladores, reimplementações de engines e camadas de compatibilidade numa interface central.",
+    "en": "A video game preservation platform that combines emulators, engine re-implementations and compatibility layers in one interface.",
+    "es": "Plataforma de preservación de videojuegos que combina emuladores, reimplementaciones de motores y capas de compatibilidad en una interfaz central."
+   },
+   "p": {
+    "pt": "Instalar e iniciar jogos de várias épocas e sistemas a partir de um só lugar.",
+    "en": "Installing and launching games from many eras and systems from one place.",
+    "es": "Instalar y lanzar juegos de distintas épocas y sistemas desde un solo lugar."
+   }
+  },
+  "wine-install": {
+   "d": "WineHQ",
+   "s": "https://www.winehq.org/",
+   "q": {
+    "pt": "Camada de compatibilidade que permite rodar programas Windows em sistemas UNIX; no Fedora, o metapacote instala a configuração completa.",
+    "en": "A compatibility layer that runs Windows programs on UNIX systems; on Fedora the meta-package installs the complete setup.",
+    "es": "Capa de compatibilidad que permite ejecutar programas de Windows en sistemas UNIX; en Fedora el metapaquete instala la configuración completa."
+   },
+   "p": {
+    "pt": "Executar aplicativos e jogos do Windows no Fedora sem precisar de uma máquina virtual.",
+    "en": "Running Windows applications and games on Fedora without a virtual machine.",
+    "es": "Ejecutar aplicaciones y juegos de Windows en Fedora sin necesidad de una máquina virtual."
+   }
+  },
+  "winetricks-install": {
+   "d": "Winetricks project",
+   "s": "https://github.com/Winetricks/winetricks",
+   "q": {
+    "pt": "Ferramenta auxiliar do Wine com correções automáticas para jogos e apps suportados.",
+    "en": "A helper tool for Wine with automated fixes for supported games and apps.",
+    "es": "Herramienta auxiliar de Wine con correcciones automáticas para juegos y apps compatibles."
+   },
+   "p": {
+    "pt": "Instalar DLLs e componentes ausentes e ajustar configurações do Wine para fazer programas Windows funcionarem.",
+    "en": "Installing missing DLLs and components and tweaking Wine settings to get Windows programs working.",
+    "es": "Instalar DLLs y componentes que faltan y ajustar la configuración de Wine para que funcionen programas de Windows."
+   }
+  },
+  "bottles-install": {
+   "d": "Bottles Contributors",
+   "s": "https://usebottles.com",
+   "q": {
+    "pt": "Aplicativo para executar software do Windows no Linux, organizando-o em ambientes (garrafas) por categoria.",
+    "en": "An app for running Windows software on Linux, organizing it into categorized environments (bottles).",
+    "es": "Aplicación para ejecutar software de Windows en Linux, organizándolo en entornos (botellas) por categoría."
+   },
+   "p": {
+    "pt": "Instalar e gerenciar programas e jogos do Windows, com ferramentas de otimização por ambiente.",
+    "en": "Installing and managing Windows programs and games, with per-environment optimization tools.",
+    "es": "Instalar y gestionar programas y juegos de Windows, con herramientas de optimización por entorno."
+   }
+  },
+  "ntsync-install": {
+   "d": "Linux kernel · Wine",
+   "s": "https://packages.fedoraproject.org/pkgs/wine/ntsync-autoload/",
+   "q": {
+    "pt": "Pacote que adiciona uma configuração modules-load.d para carregar na inicialização o módulo ntsync do kernel (primitivas de sincronização NT).",
+    "en": "A package that adds a modules-load.d file so the kernel's ntsync module (NT synchronization primitives) loads at boot.",
+    "es": "Paquete que añade un archivo modules-load.d para cargar al arranque el módulo ntsync del kernel (primitivas de sincronización NT)."
+   },
+   "p": {
+    "pt": "Melhorar a compatibilidade e o desempenho de jogos e apps Windows no Wine e no Proton que usam NTSYNC.",
+    "en": "Improving compatibility and performance of Windows games and apps in Wine and Proton that use NTSYNC.",
+    "es": "Mejorar la compatibilidad y el rendimiento de juegos y apps de Windows en Wine y Proton que usan NTSYNC."
+   }
+  },
+  "gamemode-install": {
+   "d": "Feral Interactive",
+   "s": "https://github.com/FeralInteractive/gamemode",
+   "q": {
+    "pt": "Daemon e biblioteca que permitem a jogos pedir otimizações temporárias do sistema, como governador de CPU, prioridade de E/S e modo de GPU.",
+    "en": "A daemon and library that lets games request temporary system optimizations such as CPU governor, I/O priority and GPU mode.",
+    "es": "Daemon y biblioteca que permiten a los juegos pedir optimizaciones temporales del sistema, como gobernador de CPU, prioridad de E/S y modo de GPU."
+   },
+   "p": {
+    "pt": "Melhorar o desempenho em jogos ativando os ajustes só enquanto o jogo está em execução.",
+    "en": "Improving game performance by applying tweaks only while the game is running.",
+    "es": "Mejorar el rendimiento en juegos aplicando los ajustes solo mientras el juego se ejecuta."
+   }
+  },
+  "mangohud-install": {
+   "d": "flightlessmango",
+   "s": "https://github.com/flightlessmango/MangoHud",
+   "q": {
+    "pt": "Overlay para Vulkan e OpenGL que mostra FPS, temperaturas e uso de CPU e GPU (licença MIT).",
+    "en": "A Vulkan and OpenGL overlay that shows FPS, temperatures and CPU/GPU load (MIT license).",
+    "es": "Overlay para Vulkan y OpenGL que muestra FPS, temperaturas y uso de CPU y GPU (licencia MIT)."
+   },
+   "p": {
+    "pt": "Monitorar o desempenho do hardware na tela enquanto se joga.",
+    "en": "Monitoring hardware performance on screen while gaming.",
+    "es": "Monitorear el rendimiento del hardware en pantalla mientras se juega."
+   }
+  },
+  "goverlay-install": {
+   "d": "benjamimgois",
+   "s": "https://github.com/benjamimgois/goverlay",
+   "q": {
+    "pt": "Interface gráfica para configurar o MangoHud, o vkBasalt e o OptiScaler (GPL-3.0 ou superior).",
+    "en": "A graphical interface for configuring MangoHud, vkBasalt and OptiScaler (GPL-3.0 or later).",
+    "es": "Interfaz gráfica para configurar MangoHud, vkBasalt y OptiScaler (GPL-3.0 o posterior)."
+   },
+   "p": {
+    "pt": "Ajustar sem editar arquivos o monitoramento de desempenho, os efeitos visuais e o upscaling em jogos.",
+    "en": "Tuning performance monitoring, visual effects and upscaling in games without editing config files.",
+    "es": "Ajustar sin editar archivos el monitoreo de rendimiento, los efectos visuales y el escalado en juegos."
+   }
+  },
+  "gamescope-install": {
+   "d": "Valve",
+   "s": "https://github.com/ValveSoftware/gamescope",
+   "q": {
+    "pt": "Micro-compositor da Valve, usado na sessão do SteamOS, que recebe os quadros do jogo via Wayland/Xwayland e os envia direto à tela.",
+    "en": "Micro-compositor from Valve, used in the SteamOS session, that receives game frames via Wayland/Xwayland and sends them straight to the display.",
+    "es": "Micro-compositor de Valve, usado en la sesión de SteamOS, que recibe los fotogramas del juego vía Wayland/Xwayland y los envía directo a la pantalla."
+   },
+   "p": {
+    "pt": "Executar jogos com resolução e taxa de atualização virtuais, escalonamento (FSR, NIS), limite de FPS e janela sem borda, útil em ultrawide e multi-monitor.",
+    "en": "Run games with a virtual resolution and refresh rate, upscaling (FSR, NIS), FPS limits and borderless windows, useful on ultrawide and multi-monitor setups.",
+    "es": "Ejecutar juegos con resolución y tasa de refresco virtuales, escalado (FSR, NIS), límite de FPS y ventana sin bordes, útil en ultrawide y multimonitor."
+   }
+  },
+  "vkbasalt-install": {
+   "d": "Philip Rebohle (DadSchoorse)",
+   "s": "https://github.com/DadSchoorse/vkBasalt",
+   "q": {
+    "pt": "Camada de pós-processamento Vulkan para Linux que aplica efeitos de imagem em jogos sem alterar o jogo.",
+    "en": "Vulkan post-processing layer for Linux that applies image effects to games without modifying them.",
+    "es": "Capa de posprocesado Vulkan para Linux que aplica efectos de imagen a los juegos sin modificarlos."
+   },
+   "p": {
+    "pt": "Melhorar a imagem com nitidez (CAS), antisserrilhado (FXAA, SMAA), LUTs de cor e shaders ReShade FX em jogos Vulkan, incluindo via DXVK/VKD3D.",
+    "en": "Improve image quality with sharpening (CAS), anti-aliasing (FXAA, SMAA), color LUTs and ReShade FX shaders in Vulkan games, including via DXVK/VKD3D.",
+    "es": "Mejorar la imagen con nitidez (CAS), antialiasing (FXAA, SMAA), LUTs de color y shaders ReShade FX en juegos Vulkan, incluso vía DXVK/VKD3D."
+   }
+  },
+  "protonup-qt-install": {
+   "d": "DavidoTek",
+   "s": "https://davidotek.github.io/protonup-qt",
+   "q": {
+    "pt": "Ferramenta gráfica (Python/Qt) para instalar e gerenciar camadas de compatibilidade como GE-Proton e Wine-GE.",
+    "en": "Graphical tool (Python/Qt) to install and manage compatibility layers such as GE-Proton and Wine-GE.",
+    "es": "Herramienta gráfica (Python/Qt) para instalar y gestionar capas de compatibilidad como GE-Proton y Wine-GE."
+   },
+   "p": {
+    "pt": "Instalar e atualizar GE-Proton e Luxtorpeda para o Steam e Wine-GE para o Lutris, sem fazer isso manualmente.",
+    "en": "Install and update GE-Proton and Luxtorpeda for Steam and Wine-GE for Lutris without doing it by hand.",
+    "es": "Instalar y actualizar GE-Proton y Luxtorpeda para Steam y Wine-GE para Lutris sin hacerlo a mano."
+   }
+  },
+  "controller-test-install": {
+   "d": "Ingo Ruhnke (Grumbel)",
+   "s": "https://github.com/Grumbel/jstest-gtk",
+   "q": {
+    "pt": "Testador de joysticks simples baseado em GTK+, que lista os controles conectados e mostra botões e eixos acionados.",
+    "en": "Simple GTK+-based joystick tester that lists connected controllers and shows pressed buttons and axes.",
+    "es": "Probador de joysticks simple basado en GTK+ que lista los mandos conectados y muestra los botones y ejes accionados."
+   },
+   "p": {
+    "pt": "Testar controles e gamepads, remapear eixos e botões e calibrar o joystick.",
+    "en": "Test controllers and gamepads, remap axes and buttons, and calibrate the joystick.",
+    "es": "Probar mandos y gamepads, reasignar ejes y botones y calibrar el joystick."
+   }
+  },
+  "retroarch-install": {
+   "d": "libretro",
+   "s": "https://www.retroarch.com/",
+   "q": {
+    "pt": "Frontend para emuladores, motores de jogo e reprodutores de mídia, com interface gráfica e configurações unificadas.",
+    "en": "Frontend for emulators, game engines and media players, with a graphical interface and unified settings.",
+    "es": "Frontend para emuladores, motores de juego y reproductores multimedia, con interfaz gráfica y ajustes unificados."
+   },
+   "p": {
+    "pt": "Rodar jogos clássicos de vários consoles por meio de núcleos libretro, com shaders, netplay, rewind e runahead.",
+    "en": "Run classic games from many consoles through libretro cores, with shaders, netplay, rewind and runahead.",
+    "es": "Ejecutar juegos clásicos de muchas consolas mediante núcleos libretro, con shaders, netplay, rewind y runahead."
+   }
+  },
+  "dolphin-install": {
+   "d": "Dolphin Emulator Project",
+   "s": "https://dolphin-emu.org",
+   "q": {
+    "pt": "Emulador de GameCube e Wii (e Triforce) de código aberto.",
+    "en": "Open-source emulator for GameCube and Wii (and Triforce).",
+    "es": "Emulador de código abierto de GameCube y Wii (y Triforce)."
+   },
+   "p": {
+    "pt": "Jogar títulos de GameCube e Wii no PC com saída em HD, controles de PC, velocidade turbo e multijogador em rede.",
+    "en": "Play GameCube and Wii titles on a PC with HD output, PC controller support, turbo speed and online multiplayer.",
+    "es": "Jugar títulos de GameCube y Wii en el PC con salida HD, mandos de PC, velocidad turbo y multijugador en red."
+   }
+  },
+  "pcsx2-install": {
+   "d": "PCSX2 Team",
+   "s": "https://pcsx2.net",
+   "q": {
+    "pt": "Emulador gratuito e de código aberto do PlayStation 2.",
+    "en": "Free, open-source PlayStation 2 emulator.",
+    "es": "Emulador gratuito y de código abierto de PlayStation 2."
+   },
+   "p": {
+    "pt": "Jogar jogos de PS2 no computador, emulando o hardware do console com interpretadores e recompiladores de CPU MIPS.",
+    "en": "Play PS2 games on a computer by emulating the console hardware with MIPS CPU interpreters and recompilers.",
+    "es": "Jugar juegos de PS2 en el ordenador emulando el hardware de la consola con intérpretes y recompiladores de CPU MIPS."
+   }
+  },
+  "rpcs3-install": {
+   "d": "RPCS3 Developers",
+   "s": "https://rpcs3.net/",
+   "q": {
+    "pt": "Emulador e depurador experimental e de código aberto do PlayStation 3, escrito em C++.",
+    "en": "Experimental open-source PlayStation 3 emulator and debugger written in C++.",
+    "es": "Emulador y depurador experimental de código abierto de PlayStation 3, escrito en C++."
+   },
+   "p": {
+    "pt": "Executar jogos comerciais de PS3 no PC usando Vulkan ou OpenGL.",
+    "en": "Run commercial PS3 games on a PC using Vulkan or OpenGL.",
+    "es": "Ejecutar juegos comerciales de PS3 en el PC usando Vulkan u OpenGL."
+   }
+  },
+  "duckstation-install": {
+   "d": "Stenzek",
+   "s": "https://www.duckstation.org/",
+   "q": {
+    "pt": "Emulador do PlayStation 1 (PSX) focado em jogabilidade, velocidade e manutenção a longo prazo.",
+    "en": "PlayStation 1 (PSX) emulator focused on playability, speed and long-term maintainability.",
+    "es": "Emulador de PlayStation 1 (PSX) centrado en jugabilidad, velocidad y mantenimiento a largo plazo."
+   },
+   "p": {
+    "pt": "Jogar jogos de PlayStation no computador com alta precisão, rodando bem até em hardware modesto.",
+    "en": "Play PlayStation games on a computer with high accuracy, running well even on low-end hardware.",
+    "es": "Jugar juegos de PlayStation en el ordenador con alta precisión, funcionando bien incluso en hardware modesto."
+   }
+  },
+  "qemu-kvm-install": {
+   "d": "QEMU · KVM · libvirt · virt-manager",
+   "s": "https://www.qemu.org/",
+   "q": {
+    "pt": "Conjunto de virtualização nativa do Linux: QEMU com aceleração KVM, o serviço libvirt, o gerenciador gráfico virt-manager e o virt-install.",
+    "en": "Linux's native virtualization stack: QEMU with KVM acceleration, the libvirt service, the virt-manager GUI and virt-install.",
+    "es": "Pila de virtualización nativa de Linux: QEMU con aceleración KVM, el servicio libvirt, la interfaz virt-manager y virt-install."
+   },
+   "p": {
+    "pt": "Criar e executar máquinas virtuais com desempenho próximo ao hardware real, por interface gráfica ou linha de comando (virsh, virt-install).",
+    "en": "Create and run virtual machines with near-native performance, via GUI or command line (virsh, virt-install).",
+    "es": "Crear y ejecutar máquinas virtuales con rendimiento cercano al nativo, por interfaz gráfica o línea de comandos (virsh, virt-install)."
+   },
+   "nc": 1
+  },
+  "virtualbox-install": {
+   "d": "Oracle",
+   "s": "https://www.virtualbox.org/",
+   "q": {
+    "pt": "Virtualizador de uso geral para hardware x86 e AMD64/Intel64, empacotado no RPM Fusion com módulos de kernel via akmod.",
+    "en": "General-purpose virtualizer for x86 and AMD64/Intel64 hardware, packaged in RPM Fusion with kernel modules via akmod.",
+    "es": "Virtualizador de propósito general para hardware x86 y AMD64/Intel64, empaquetado en RPM Fusion con módulos de kernel vía akmod."
+   },
+   "p": {
+    "pt": "Criar e executar máquinas virtuais com diversos sistemas convidados (Windows, Linux, Solaris, OpenBSD etc.) para uso doméstico ou corporativo.",
+    "en": "Create and run virtual machines with many guest systems (Windows, Linux, Solaris, OpenBSD, etc.) for home or enterprise use.",
+    "es": "Crear y ejecutar máquinas virtuales con muchos sistemas invitados (Windows, Linux, Solaris, OpenBSD, etc.) para uso doméstico o empresarial."
+   }
+  },
+  "gsmartcontrol-install": {
+   "d": "Alexander Shaduri",
+   "s": "https://gsmartcontrol.shaduri.dev",
+   "q": {
+    "pt": "Interface gráfica para o smartctl que inspeciona a saúde de HDs e SSDs.",
+    "en": "Graphical front end to smartctl that inspects the health of hard drives and SSDs.",
+    "es": "Interfaz gráfica de smartctl que inspecciona el estado de discos duros y SSD."
+   },
+   "p": {
+    "pt": "Ver atributos SMART, executar autotestes e avaliar se um disco está falhando.",
+    "en": "View SMART attributes, run self-tests and assess whether a drive is failing.",
+    "es": "Ver atributos SMART, ejecutar autotests y evaluar si un disco está fallando."
+   }
+  },
+  "coolercontrol-install": {
+   "d": "CoolerControl project (codifryed)",
+   "s": "https://gitlab.com/coolercontrol/coolercontrol",
+   "q": {
+    "pt": "Aplicativo para controle de refrigeração no Linux, com daemon (coolercontrold) e interface gráfica; usa liquidctl para dispositivos de refrigeração líquida.",
+    "en": "Linux cooling control application with a daemon (coolercontrold) and GUI; uses liquidctl for liquid-cooling devices.",
+    "es": "Aplicación de control de refrigeración para Linux, con demonio (coolercontrold) e interfaz gráfica; usa liquidctl para dispositivos de refrigeración líquida."
+   },
+   "p": {
+    "pt": "Monitorar temperaturas e controlar ventoinhas, bombas e perfis de refrigeração de CPU, GPU e coolers líquidos.",
+    "en": "Monitor temperatures and control fans, pumps and cooling profiles for CPU, GPU and liquid coolers.",
+    "es": "Monitorizar temperaturas y controlar ventiladores, bombas y perfiles de refrigeración de CPU, GPU y coolers líquidos."
+   }
+  },
+  "selinux-setroubleshoot-install": {
+   "d": "SELinux Project · Red Hat",
+   "s": "https://packages.fedoraproject.org/pkgs/setroubleshoot/setroubleshoot",
+   "q": {
+    "pt": "Conjunto de ferramentas SELinux: setroubleshoot e setroubleshoot-server (análise de negações), setools-console (consulta de políticas) e policycoreutils-python-utils (semanage etc.).",
+    "en": "SELinux toolset: setroubleshoot and setroubleshoot-server (denial analysis), setools-console (policy queries) and policycoreutils-python-utils (semanage, etc.).",
+    "es": "Conjunto de herramientas SELinux: setroubleshoot y setroubleshoot-server (análisis de denegaciones), setools-console (consultas de políticas) y policycoreutils-python-utils (semanage, etc.)."
+   },
+   "p": {
+    "pt": "Diagnosticar bloqueios do SELinux, explicar a causa e sugerir correções, além de inspecionar e ajustar a política pela linha de comando.",
+    "en": "Diagnose SELinux denials, explain the cause and suggest fixes, and inspect and adjust policy from the command line.",
+    "es": "Diagnosticar bloqueos de SELinux, explicar la causa y sugerir soluciones, además de inspeccionar y ajustar la política desde la línea de comandos."
+   }
+  },
+  "selinux-gui-install": {
+   "d": "SELinux Project · Red Hat",
+   "s": "https://packages.fedoraproject.org/pkgs/policycoreutils/policycoreutils-gui",
+   "q": {
+    "pt": "Interface gráfica (system-config-selinux) para administrar o SELinux, distribuída no pacote policycoreutils-gui.",
+    "en": "Graphical interface (system-config-selinux) for administering SELinux, shipped in the policycoreutils-gui package.",
+    "es": "Interfaz gráfica (system-config-selinux) para administrar SELinux, distribuida en el paquete policycoreutils-gui."
+   },
+   "p": {
+    "pt": "Alternar modo do SELinux e gerenciar booleanos, contextos de arquivo, portas e usuários sem usar a linha de comando.",
+    "en": "Switch SELinux mode and manage booleans, file contexts, ports and users without the command line.",
+    "es": "Cambiar el modo de SELinux y gestionar booleanos, contextos de archivo, puertos y usuarios sin usar la línea de comandos."
+   }
+  }
+ }
+}

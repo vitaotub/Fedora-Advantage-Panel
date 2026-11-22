@@ -303,16 +303,6 @@ function _iconeSessao(id) {
 }
 
 // ------------------------------------------------------------
-// i18n helpers locais
-// ------------------------------------------------------------
-function _t(chave, fallback) {
-    return (typeof tOr === 'function') ? tOr(chave, fallback) : fallback;
-}
-function _tVars(chave, fallback, vars) {
-    return (typeof tOr === 'function') ? tOr(chave, fallback, vars) : fallback;
-}
-
-// ------------------------------------------------------------
 // Carregar uma sessão específica no container
 // ------------------------------------------------------------
 async function carregarSessao(index) {

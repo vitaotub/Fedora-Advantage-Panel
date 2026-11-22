@@ -16,9 +16,8 @@
 //
 // Nenhum comando aqui requer senha (todos são read-only).
 
-const { exec, execFile } = require('child_process');
+const { execFile } = require('child_process');
 const fs = require('fs');
-const path = require('path');
 
 // 60s: alinhado com o throttle do cliente (`_sincronizarEstadoFlatpaks`
 // roda a cada 30s, com cache local). Se o usuário instalar/remover um
@@ -346,6 +345,26 @@ async function _detectarLocaleLang() {
     return match ? match[1] : '';
 }
 
+// Módulos de kernel que o FAP habilita e que precisam de verificação
+// REAL (não só do pacote): o NTSYNC é entregue pelo RPM `ntsync-autoload`
+// (o nome `wine-ntsync` é só um Provides), e desfazê-lo mantém o pacote.
+// "Ativo" = módulo carregado (/sys/module/<nome>) ou dispositivo presente.
+const MODULOS_FAP = {
+    ntsync: ['/sys/module/ntsync', '/dev/ntsync']
+};
+
+function _detectarModulosCarregados() {
+    var ativos = [];
+    Object.keys(MODULOS_FAP).forEach(function(nome) {
+        for (var i = 0; i < MODULOS_FAP[nome].length; i++) {
+            try {
+                if (fs.existsSync(MODULOS_FAP[nome][i])) { ativos.push(nome); break; }
+            } catch (e) { /* ignora */ }
+        }
+    });
+    return ativos;
+}
+
 async function _detectarArquivosConfig() {
     var home = process.env.HOME || ('/home/' + (process.env.USER || 'user'));
 
@@ -462,7 +481,8 @@ async function scanSystemState() {
         config_files_present: resultados[6],
         local_rtc: resultados[7],
         locale_lang: resultados[8],
-        hardware_vendors: resultados[9]
+        hardware_vendors: resultados[9],
+        kernel_modules_loaded: _detectarModulosCarregados()
     };
 
     _cache = { dados: dados, ts: agora };

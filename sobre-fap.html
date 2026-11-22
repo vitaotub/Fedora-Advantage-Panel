@@ -138,10 +138,6 @@ MANUTENÇÃO DO FAP
 // SESSÃO: SOBRE O FAP
 // ============================================================
 
-function _t(chave, fallback) {
-    return (typeof tOr === 'function') ? tOr(chave, fallback) : fallback;
-}
-
 // ------------------------------------------------------------
 // ATUALIZAR FAP
 // ------------------------------------------------------------
@@ -222,7 +218,7 @@ async function desinstalarFAP() {
         if (!response.ok) {
             var errorLine = document.createElement('div');
             errorLine.className = 'log-line error';
-            errorLine.textContent = '❌ Erro HTTP: ' + response.status;
+            errorLine.textContent = _tVars('comum.erro_http', '❌ Erro HTTP: {status}', { status: response.status });
             logBox.appendChild(errorLine);
             logBox.scrollTop = logBox.scrollHeight;
             completarProgresso(idComando, false);
@@ -254,7 +250,7 @@ async function desinstalarFAP() {
         // Mostra o comando para o usuário acompanhar manualmente
         var cmdLine = document.createElement('div');
         cmdLine.className = 'log-line info';
-        cmdLine.textContent = '📋 Para acompanhar: tail -f /tmp/fap-install-*.log';
+        cmdLine.textContent = _t('sessoes.sobre-fap.log_acompanhar', '📋 Para acompanhar: tail -f /tmp/fap-install-*.log');
         logBox.appendChild(cmdLine);
 
         // Limpa localStorage (o FAP vai sumir; não adianta manter
@@ -328,7 +324,7 @@ async function desinstalarFAP() {
     } catch (e) {
         var errorLine2 = document.createElement('div');
         errorLine2.className = 'log-line error';
-        errorLine2.textContent = '❌ Erro de conexão: ' + e.message;
+        errorLine2.textContent = _tVars('comum.erro_conexao', '❌ Erro de conexão: {msg}', { msg: e.message });
         logBox.appendChild(errorLine2);
         logBox.scrollTop = logBox.scrollHeight;
         completarProgresso(idComando, false);
@@ -458,7 +454,7 @@ async function resetarProgressoFAP() {
         if (logBox) {
             var erro = document.createElement('div');
             erro.className = 'log-line error';
-            erro.textContent = '❌ ' + _tVars('comum.erro_conexao', 'Erro de conexão: {msg}', { msg: e.message });
+            erro.textContent = _tVars('comum.erro_conexao', '❌ Erro de conexão: {msg}', { msg: e.message });
             logBox.appendChild(erro);
             logBox.scrollTop = logBox.scrollHeight;
         }
@@ -509,13 +505,11 @@ async function carregarChangelog() {
             // explícito cobre esse caso.
             var versaoExibida = versaoAtual || 'desconhecida';
             container.innerHTML = '<p style="color: var(--text-muted); font-size: 0.9rem;">' +
-                'ℹ️ Nenhuma entrada de changelog encontrada para a versão <strong>v' +
-                versaoExibida + '</strong>.</p>';
+                _tVars('sessoes.sobre-fap.changelog_vazio', 'ℹ️ Nenhuma entrada de changelog encontrada para a versão <strong>v{versao}</strong>.', { versao: _escapeHTML(versaoExibida) }) + '</p>';
         }
     } catch (e) {
         container.innerHTML = '<p style="color: var(--text-muted); font-size: 0.9rem;">' +
-            '⚠️ Não foi possível carregar o changelog do servidor. ' +
-            'Consulte o <a href="#" onclick="abrirChangelogCompleto(); return false;">changelog completo no GitHub</a>.</p>';
+            _t('sessoes.sobre-fap.changelog_erro', '⚠️ Não foi possível carregar o changelog do servidor. Consulte o <a href="#" onclick="abrirChangelogCompleto(); return false;">changelog completo no GitHub</a>.') + '</p>';
     }
 }
 
@@ -648,7 +642,7 @@ async function _verificarVersaoParaBotaoAtualizar() {
         btn.disabled = true;
         btn.style.opacity = '0.5';
         btn.style.cursor = 'not-allowed';
-        btn.title = 'Você já está na versão mais recente (v' + versaoLocal + ')';
+        btn.title = _tVars('sessoes.sobre-fap.versao_mais_recente', 'Você já está na versão mais recente (v{versao})', { versao: versaoLocal });
     }
 }
 

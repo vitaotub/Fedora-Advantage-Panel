@@ -17,6 +17,23 @@
 <span data-i18n="sessoes.aplicativos.descricao">Softwares recomendados para uso no dia-a-dia.</span>
 </div>
 
+<!-- Aviso de Flatpaks instalados em nível de SISTEMA (root). Fica oculto
+     e só aparece se /flatpak-diagnostico encontrar apps no sistema. -->
+<div class="aviso-caixa" id="aviso-flatpak-sistema" style="display:none; border-color:#f59e0b;">
+<strong id="fp-sys-titulo"></strong>
+<p id="fp-sys-desc" style="margin:8px 0;"></p>
+<p id="fp-sys-conflito" style="margin:4px 0; display:none;"></p>
+<ul id="fp-sys-lista" style="margin:8px 0 8px 20px;"></ul>
+<div class="grupo-botoes">
+<button class="btn-executar" type="button" onclick="limparFlatpaksSistema()" data-comando="limpar-flatpak-sistema" data-logbox="log-sessao-aplicativos" id="btn-limpar-flatpak-sistema"></button>
+</div>
+<small id="fp-sys-dica" style="opacity:.8;"></small>
+<div class="progress-container" id="progress-limpar-flatpak-sistema">
+<div class="progress-bar"><div class="progress-fill" id="progress-fill-limpar-flatpak-sistema"></div></div>
+<div class="progress-text"><span class="status" id="progress-status-limpar-flatpak-sistema">⏳ Iniciando...</span><span class="percentage" id="progress-percent-limpar-flatpak-sistema">0%</span></div>
+</div>
+</div>
+
 <!-- ============================================================
 FILTROS — ESTADO + ORIGEM
 ============================================================
@@ -613,13 +630,6 @@ BLOCO NOVO — UTILITÁRIOS
 // SESSÃO 09: APLICATIVOS RECOMENDADOS
 // ============================================================
 
-function _t(chave, fallback) {
-    return (typeof tOr === 'function') ? tOr(chave, fallback) : fallback;
-}
-function _tVars(chave, fallback, vars) {
-    return (typeof tOr === 'function') ? tOr(chave, fallback, vars) : fallback;
-}
-
 // ============================================================
 // REGISTRY DE APPS FLATPAK (Flathub)
 // ============================================================
@@ -1084,7 +1094,7 @@ async function verificarSelinuxRustDesk() {
             if (logBox) {
                 var erroLine = document.createElement('div');
                 erroLine.className = 'log-line error';
-                erroLine.textContent = '❌ Não foi possível verificar o journal: ' + data.erro;
+                erroLine.textContent = _tVars('sessoes.aplicativos.journal_erro', '❌ Não foi possível verificar o journal: {erro}', { erro: data.erro });
                 logBox.appendChild(erroLine);
                 logBox.scrollTop = logBox.scrollHeight;
             }
@@ -1131,8 +1141,8 @@ async function verificarSelinuxRustDesk() {
         if (logBox) {
             var errLine = document.createElement('div');
             errLine.className = 'log-line error';
-            errLine.textContent = '❌ ' + _tVars('comum.erro_conexao',
-                'Erro de conexão: {msg}', { msg: e.message });
+            errLine.textContent = _tVars('comum.erro_conexao',
+                '❌ Erro de conexão: {msg}', { msg: e.message });
             logBox.appendChild(errLine);
             logBox.scrollTop = logBox.scrollHeight;
         }
@@ -1673,7 +1683,7 @@ async function abrirInstaladorAffinity() {
         if (logBox) {
             const errorLine = document.createElement('div');
             errorLine.className = 'log-line error';
-            errorLine.textContent = '❌ Erro: ' + e.message;
+            errorLine.textContent = _tVars('comum.erro_generico', '❌ Erro: {msg}', { msg: e.message });
             logBox.appendChild(errorLine);
             logBox.scrollTop = logBox.scrollHeight;
         }
@@ -1761,17 +1771,17 @@ async function instalarArtCraftLauncher() {
         if (logBox) {
             var err = document.createElement('div');
             err.className = 'log-line error';
-            err.textContent = '❌ Não foi possível resolver a URL do RPM x86_64 mais recente do ArtCraft Launcher.';
+            err.textContent = _t('sessoes.aplicativos.artcraft_url_falhou', '❌ Não foi possível resolver a URL do RPM x86_64 mais recente do ArtCraft Launcher.');
             logBox.appendChild(err);
 
             var hint1 = document.createElement('div');
             hint1.className = 'log-line info';
-            hint1.textContent = '   Verifique manualmente: https://github.com/storytold/craft-launcher/releases/latest';
+            hint1.textContent = '   ' + _t('sessoes.aplicativos.artcraft_verifique', 'Verifique manualmente:') + ' https://github.com/storytold/craft-launcher/releases/latest';
             logBox.appendChild(hint1);
 
             var hint2 = document.createElement('div');
             hint2.className = 'log-line info';
-            hint2.textContent = '   Causa provável: rate limit do GitHub API (60 req/h por IP). Aguarde alguns minutos e tente de novo.';
+            hint2.textContent = '   ' + _t('sessoes.aplicativos.artcraft_rate_limit', 'Causa provável: rate limit do GitHub API (60 req/h por IP). Aguarde alguns minutos e tente de novo.');
             logBox.appendChild(hint2);
 
             logBox.scrollTop = logBox.scrollHeight;
@@ -1902,6 +1912,64 @@ async function restaurarEstadoSessao() {
 
     console.log('📦 Componente aplicativos carregado!');
 })();
+
+// ============================================================
+// FLATPAKS EM NÍVEL DE SISTEMA (root)
+// ============================================================
+//
+// O FAP instala Flatpaks sempre com --user. Flatpaks antigos no
+// sistema duplicam o remoto "flathub" e quebram `flatpak install`
+// ("Nenhum remoto escolhido"). Aqui o usuário vê a lista e remove.
+var _fpSistemaIds = [];
+
+async function verificarFlatpaksSistema() {
+    var caixa = document.getElementById('aviso-flatpak-sistema');
+    if (!caixa) return;
+    try {
+        var r = await fetch(API_URL + '/flatpak-diagnostico', { cache: 'no-store' });
+        if (!r.ok) return;
+        var d = await r.json();
+        var sistema = Array.isArray(d.sistema) ? d.sistema : [];
+        if (sistema.length === 0 && !d.conflitoFlathub) { caixa.style.display = 'none'; return; }
+        // Sem apps no sistema não há o que limpar pelo FAP.
+        if (sistema.length === 0) { caixa.style.display = 'none'; return; }
+        _fpSistemaIds = sistema.map(function(a) { return a.id; });
+        document.getElementById('fp-sys-titulo').textContent = _t('sessoes.aplicativos.fp_sys_titulo', '⚠️ Flatpaks instalados no sistema (root) detectados');
+        document.getElementById('fp-sys-desc').textContent = _t('sessoes.aplicativos.fp_sys_desc', 'O FAP instala Flatpaks como usuário.');
+        var c = document.getElementById('fp-sys-conflito');
+        if (d.conflitoFlathub) {
+            c.textContent = _t('sessoes.aplicativos.fp_sys_conflito', 'O remoto "flathub" existe no sistema e no usuário.');
+            c.style.display = '';
+        } else { c.style.display = 'none'; }
+        var ul = document.getElementById('fp-sys-lista');
+        ul.textContent = '';
+        sistema.forEach(function(a) {
+            var li = document.createElement('li');
+            li.textContent = (a.nome && a.nome !== a.id) ? a.nome + ' (' + a.id + ')' : a.id;
+            ul.appendChild(li);
+        });
+        var b = document.getElementById('btn-limpar-flatpak-sistema');
+        b.textContent = _t('sessoes.aplicativos.fp_sys_btn', '🧹 Remover Flatpaks do sistema');
+        document.getElementById('fp-sys-dica').textContent = _t('sessoes.aplicativos.fp_sys_dica', 'Pode pedir autenticação.');
+        caixa.style.display = 'block';
+    } catch (e) { /* diagnóstico é opcional */ }
+}
+
+function limparFlatpaksSistema() {
+    if (!_fpSistemaIds.length) return;
+    var msg = _tVars('sessoes.aplicativos.fp_sys_confirma', 'Isso remove {n} app(s) Flatpak do sistema, com seus dados. Continuar?', { n: _fpSistemaIds.length });
+    if (!confirm(msg)) return;
+    var comando = 'flatpak uninstall --system -y --delete-data ' + _fpSistemaIds.join(' ');
+    executarComandoGenerico('limpar-flatpak-sistema', comando,
+        _t('sessoes.aplicativos.fp_sys_acao', 'Remover Flatpaks do sistema'),
+        async function() {
+            try { await desmarcarComoExecutado('limpar-flatpak-sistema'); } catch (e) { /* ignore */ }
+            if (typeof SystemState !== 'undefined' && SystemState.invalidar) { SystemState.invalidar(); }
+            verificarFlatpaksSistema();
+        }, true);
+}
+
+verificarFlatpaksSistema();
 </script>
 </body>
 </html>
