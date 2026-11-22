@@ -70,8 +70,7 @@ const IDS_DINAMICOS_CONHECIDOS = new Set([
 // `aplicarEstadoToggle`).
 const PARES_TOGGLE_SEM_BOTAO_HTML = new Set([
     'qemu-kvm-remove',
-    'virtualbox-remove',
-    'gnome-boxes-remove'
+    'virtualbox-remove'
 ]);
 
 // `data-logbox` criado dinamicamente pelo `<script>` inline da
@@ -265,16 +264,6 @@ function extrairSessoes(texto) {
     return resultado;
 }
 
-function extrairMapaOrigem(texto) {
-    const mapa = {};
-    const m = texto.match(/_MAPA_ORIGEM\s*=\s*\{([\s\S]*?)\n\};/);
-    if (!m) return mapa;
-    const re = /'([^']+)'\s*:\s*'([^']+)'/g;
-    let mm;
-    while ((mm = re.exec(m[1])) !== null) mapa[mm[1]] = mm[2];
-    return mapa;
-}
-
 function extrairChamadasRegistrar(texto, nomeFuncao) {
     const resultado = {};
     const re = new RegExp(nomeFuncao + '\\s*\\(\\s*[\'"]([^\'"]+)[\'"]\\s*,\\s*\\{', 'g');
@@ -336,7 +325,6 @@ const htmlsTodos = htmlsSessao.concat(htmlsEspeciais);
 const scriptJs = ler('script.js');
 const sessoes = extrairSessoes(scriptJs);
 const funcoesScript = extrairFuncoes(scriptJs);
-const mapaOrigem = extrairMapaOrigem(scriptJs);
 
 const appsRemoviveis = {};
 const abrirRegistros = {};

@@ -108,7 +108,7 @@ pkill -9 -f "fof-container" 2>/dev/null
 # root (via sudo), `pkill` alcança os dois.
 pkill -9 -f "fap-cmd-" 2>/dev/null
 pkill -9 -f "pkexec /tmp/fap-cmd-" 2>/dev/null
-lsof -t -i:3000 2>/dev/null | xargs -r kill -9 2>/dev/null
+lsof -t -i:3000 -sTCP:LISTEN 2>/dev/null | xargs -r kill -9 2>/dev/null
 sleep 1
 echo "  OK"
 
@@ -290,7 +290,7 @@ if pgrep -f "fap-container" > /dev/null 2>&1; then
     echo "  ⚠️  Processo fap-container ainda rodando"
     REMANESCENTES=$((REMANESCENTES + 1))
 fi
-if lsof -t -i:3000 > /dev/null 2>&1; then
+if lsof -t -i:3000 -sTCP:LISTEN > /dev/null 2>&1; then
     echo "  ⚠️  Porta 3000 ainda ocupada"
     REMANESCENTES=$((REMANESCENTES + 1))
 fi
