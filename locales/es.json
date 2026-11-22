@@ -21,7 +21,6 @@
         "secureboot_chave_ok": "La clave de akmods ya fue generada. Falta el enrollment en el firmware (paso 2).",
         "secureboot_badge_titulo": "Secure Boot está activo — enrollment necesario",
         "secureboot_badge_desc": "Antes de instalar {ctx}, prepara la clave de akmods y haz el enrollment en el firmware. Sin eso, el módulo no carga en el próximo arranque. El paso a paso completo está en <strong>{sessao}</strong> → <strong>Secure Boot</strong>.",
-        "secureboot_badge_link": "Abrir {sessao}",
         "secureboot_badge_ok": "Secure Boot está activo — clave de akmods ya preparada. Si aún no hiciste el enrollment, complétalo en <strong>{sessao}</strong>.",
         "secureboot_ctx_nvidia": "el controlador NVIDIA",
         "secureboot_ctx_obs": "la cámara virtual de OBS",
@@ -40,24 +39,21 @@
         "secureboot_badge_old_key": "⚠️ La clave antigua de akmods está enrolled, pero la actual de FAP no. Antes de instalar nuevos akmods, haz el enrollment de la clave actual en <strong>{sessao}</strong> → <strong>Secure Boot</strong>.",
         "secureboot_badge_pending_import_combined": "⏳ La clave <strong>antigua</strong> de akmods está enrolled. La clave <strong>actual</strong> fue importada y espera <strong>reinicio</strong> + MOK Management para ser efectiva. Mientras tanto, los nuevos akmods de FAP no cargarán en el arranque.",
         "secureboot_badge_pending_import": "⏳ Clave de akmods importada. <strong>Reinicia</strong> el equipo y completa el MOK Management (pantalla azul) para finalizar el enrollment.",
+        "secureboot_mok_indet_titulo": "No se pudo verificar si la clave de akmods está registrada en el firmware.",
+        "secureboot_mok_indet_desc": "El archivo <code>/etc/pki/akmods/certs/public_key.der</code> existe, pero <code>mokutil --test-key</code> no devolvió un resultado concluyente. Esto puede ocurrir por un fallo transitorio (D-Bus, efivars). Si ya hiciste el registro, puedes ignorar este aviso. Si no, sigue los pasos de abajo.",
+        "secureboot_mok_indet_detalhe": "Detalle:",
+        "secureboot_mok_indet_btn": "Verificar de nuevo",
+        "secureboot_badge_mok_indet": "<strong>No se pudo verificar si la clave de akmods está registrada en el firmware.</strong> <code>mokutil --test-key</code> falló. Si ya hiciste el registro, puedes ignorarlo. Si no, verifica manualmente en <strong>{sessao}</strong> → <strong>Secure Boot</strong>.",
         "secureboot_badge_other_keys": "ℹ️ Una clave akmods de otra fuente ya está enrolled en el firmware. Los módulos firmados por ella siguen funcionando. Pero FAP firma sus propios akmods con la clave local, que debe ser enrolled en <strong>{sessao}</strong> → <strong>Secure Boot</strong> para que los akmods de FAP carguen en el arranque."
     },
 
     "comum": {
+        "erro_generico": "❌ Error: {msg}",
         "atualizacao_disponivel_titulo": "¡Nueva versión disponible! Haz clic para actualizar.",
         "voltar_inicio": "← Volver al inicio",
-        "btn_instalar": "Instalar",
-        "btn_desinstalar": "↩️ Desinstalar",
-        "btn_remover": "↩️ Eliminar",
         "btn_concluido": "✅ Completado",
-        "btn_abrir": "🚀 Abrir",
         "desinstalar_app": "Eliminar {nome}",
-        "desinstalar_app_generico": "🗑️ Eliminar aplicación",
-        "btn_desfazer_tudo": "🗑️ Eliminar completamente {nome}",
-        "desfazer_tudo_confirm1": "⚠️ ¿Eliminar completamente {nome}?\n\nEste botón elimina TODO lo que FAP instaló:\n• Paquetes del sistema\n• Archivos de configuración creados\n• Grupos de usuario y servicios\n\nAcción irreversible.",
-        "desfazer_tudo_confirm2": "🔄 ¡Última confirmación!\n\nTodos los rastros de {nome} serán eliminados.\n\n¿Estás absolutamente seguro?",
         "confirmar_desinstalar": "¿Desinstalar {nome}?",
-        "desinstalar_flatpak": "Desinstalar {nome}",
         "erro_conexao": "❌ Error de conexión: {msg}",
         "erro_http": "❌ Error HTTP: {status}",
         "log_execucao": "📋 Registro de ejecución",
@@ -73,7 +69,6 @@
         "btn_tentar_novamente": "🔄 Intentar de nuevo",
         "btn_anterior": "◀ Anterior",
         "btn_proximo": "Siguiente ▶",
-        "autenticacao_cancelada": "❌ Autenticación cancelada por el usuario.",
         "ja_executado": "Este comando ya ha sido ejecutado anteriormente.",
         "nao_instalado": "{nome} no está instalado.",
         "status_iniciando": "⏳ Iniciando...",
@@ -89,7 +84,6 @@
         "notif_tarefa_concluida_titulo": "FAP — Tarea completada",
         "notif_tarefa_concluida_corpo": "La tarea ha finalizado. Consulta el registro para más detalles.",
         "status_pacote": "Paquete {atual} de {total}",
-        "badge_atualizar": "Actualizar",
         "badge_atualizando": "🔄 Actualizando FAP...",
         "badge_ja_atualizando": "⏳ Actualización ya en curso...",
         "navegacao_bloqueada": "Espera a que terminen los comandos de esta sesión antes de cambiar de sesión.",
@@ -121,8 +115,7 @@
         "footer_link_github": "GitHub",
         "footer_link_doc": "Documentación",
         "footer_link_bug": "Reportar error",
-        "footer_legal": "Fedora es una marca registrada de Red Hat, Inc. Este proyecto no está afiliado a Red Hat.",
-        "seletor_idioma_label": "🌐 Idioma:"
+        "footer_legal": "Fedora es una marca registrada de Red Hat, Inc. Este proyecto no está afiliado a Red Hat."
     },
 
     "guiado": {
@@ -139,12 +132,9 @@
             "titulo": "🚀 Primeros Pasos",
             "descricao": "Antes de cualquier configuración, actualiza el sistema y habilita los repositorios esenciales. Estos pasos son prerrequisito para todas las próximas sesiones.",
 
-            "atualizacao_titulo": "🔄 Actualizar Fedora",
-            "atualizacao_desc": "Actualiza el índice de repositorios, sincroniza las claves de seguridad y descarga las versiones más recientes de todos los componentes del sistema.",
-            "btn_atualizar": "🔄 Actualizar Fedora",
+            "atencao_titulo": "⚠️ Atención: mantén Fedora siempre actualizado",
+            "atencao_texto": "Mantener Fedora siempre actualizado es esencial. Algunas sesiones y funciones de FAP funcionan mejor con Fedora completamente actualizado. Un sistema desactualizado puede causar problemas con el propio sistema, comprometer la seguridad del usuario y afectar los numerosos recursos que ofrece FAP. Actualiza el sistema desde Software o desde la terminal (sudo dnf upgrade --refresh) antes de continuar.",
             "log_iniciando": "🚀 Iniciando actualización...",
-            "aviso_reboot_necessario": "Reinicia el equipo para aplicar las actualizaciones.",
-            "aviso_reboot_nao_verificado": "No se pudo verificar si es necesario reiniciar. Verifica en la terminal: <code>dnf needs-restarting -r</code>",
 
             "repositorios_titulo": "📦 Repositorios de Fedora",
 
@@ -218,6 +208,7 @@
         },
 
         "hardware": {
+            "nvidia_verificacao_falhou": "⚠️ <strong>No se pudo verificar la disponibilidad del driver <code>{pkg}</code> en RPM Fusion.</strong><br><span style=\"font-size: 0.85rem;\">Motivo: {motivo}. El botón \"Instalar driver NVIDIA\" sigue habilitado — haz clic para intentarlo. Si el paquete no existe, <code>dnf install</code> mostrará el error real en el log.</span>",
             "nome": "Hardware",
             "titulo": "🖥️ Hardware",
             "descricao": "Configuraciones específicas de tu hardware. Elige abajo el tipo de GPU (AMD, NVIDIA o Intel) para ver los controladores y herramientas correspondientes. Para mandos, webcams, Wi-Fi y otros periféricos, usa la sesión <strong>Dispositivos y Periféricos</strong>.",
@@ -282,6 +273,11 @@
             "nvidia_driver_indisponivel_panel": "Tu GPU (<strong>{modelo}</strong>) requiere el driver <code>{pkg}</code>, que <strong>aún NO está disponible</strong> en RPM Fusion para tu versión de Fedora. El FAP <strong>no instalará</strong> el driver propietario tradicional — es incompatible con tu tarjeta y puede dejar el sistema sin interfaz gráfica. Verifica de nuevo en unos días o consulta la documentación de RPM Fusion.",
             "nvidia_serie_legado_bloqueada": "La serie <strong>{nome}</strong> requiere el servidor gráfico <strong>Xorg</strong>, que Fedora 44+ ya no soporta oficialmente. El driver propietario <strong>no está disponible</strong> para esta tarjeta. Sigue usando <code>nouveau</code> (código abierto, ya incluido en Fedora).",
             "nvidia_panel_rpmfusion_aviso": "⚠️ <strong>RPM Fusion Nonfree no está activo.</strong> Actívalo en la sesión <strong>Primeros Pasos</strong> antes de instalar el controlador.",
+            "nvidia_secureboot_nao_registrada": "⚠️ Secure Boot está activo y la clave de akmods NO está registrada en el firmware.\n\nEl driver se compilará y firmará, pero el kernel RECHAZARÁ el módulo al arrancar: puedes quedarte sin el driver NVIDIA (o sin aceleración).\n\nRecomendado: cancela, completa el registro en {sessao} → Secure Boot (importar la clave + reiniciar + MOK Management) e instala después.\n\n¿Instalar de todos modos?",
+            "nvidia_secureboot_nao_registrada_curto": "Secure Boot está activo y la clave de akmods aún no está registrada en el firmware. Completa el registro en {sessao} → Secure Boot; si no, el módulo no cargará al arrancar.",
+            "nvidia_vaapi_env_confirmar": "Este botón escribe variables de entorno para toda tu sesión (vigentes tras un nuevo inicio de sesión):\n\n• MOZ_DISABLE_RDD_SANDBOX=1 — desactiva el sandbox del proceso de decodificación de vídeo de Firefox (lo exige libva-nvidia-driver; reduce la protección de ese proceso).\n• LIBVA_DRIVER_NAME=nvidia — fuerza a VA-API a usar NVIDIA en TODAS las aplicaciones.\n\nPara deshacer, usa el botón Revertir.",
+            "nvidia_vaapi_env_hibrido": "⚠️ También se detectó una GPU Intel/AMD (¿portátil híbrido?). Con esta configuración, la decodificación por hardware de la GPU integrada deja de funcionar en las aplicaciones. Continúa solo si usas NVIDIA como GPU principal para vídeo.",
+            "nvidia_vaapi_env_continuar": "¿Continuar?",
             "nvidia_secureboot_bloqueio": "Secure Boot está activo y la clave de akmods no fue preparada. Usa el botón \"Preparar Secure Boot\" en {sessao} antes de instalar el driver.",
             "nvidia_cuda_indisponivel": "El paquete CUDA \"{cuda}\" (requerido por el driver \"{pkg}\") no está disponible en RPM Fusion para tu versión de Fedora.\n\nSin CUDA, el driver se instalaría, pero OBS, Kdenlive y la codificación por hardware no funcionarían. FAP no va a instalar un driver incompleto — no se hizo nada.\n\nVerifica de nuevo en unos días o consulta la documentación de RPM Fusion.",
             "nvidia_aviso_geracao_desconhecida": "⚠️ GPU NO RECONOCIDA en las generaciones conocidas del FAP.\n\nEl FAP detectó una GPU NVIDIA, pero el modelo no coincide con la regex de ninguna generación conocida (Fermi a Blackwell). Intentaré el driver moderno (akmod-nvidia, asume Turing+).\n\nRIESGOS:\n• Si tu GPU es más antigua (Kepler/Fermi), el driver compila pero el módulo se niega a cargar → pantalla negra en el próximo arranque.\n• Si es futura (RTX 60xx), el driver puede aún no soportarla.\n\nRECUPERACIÓN si el arranque se cuelga: añade `nomodeset` en GRUB (edita la entrada, agrega al final de la línea `linux`, F10).\n\nSi el FAP detecta un error de compilación, revierte automáticamente. Si el sistema se cuelga en el arranque, el rollback NO ocurre (udev ya cargó el módulo) — usa `nomodeset`.\n\n¿Continuar de todos modos?",
@@ -361,17 +357,19 @@
             "deteccao_titulo": "🎯 Detección automática de hardware",
             "deteccao_desc": "Haz clic en el botón de abajo para escanear tu equipo. FAP identificará GPUs, tarjetas de red y adaptadores USB que puedan necesitar drivers adicionales, cruzando los IDs de hardware con un mapa mantenido por la comunidad. <strong>Nada se instala automáticamente</strong> — cada sugerencia aparece como una tarjeta separada, con botones explícitos de instalar y revertir.",
             "btn_escanear": "🔍 Detectar mi hardware",
+            "cat_periferico": "Periférico",
+            "usb_qtd": "{n} dispositivos detectados",
+            "usb_precisa_driver": "Las funciones extra de este periférico (iluminación, DPI, macros) dependen de un controlador de la comunidad.",
+            "btn_ir_instalacao": "Ir a la instalación guiada",
             "escaneando": "Escaneando hardware...",
 
             "suplementos_titulo": "📦 Firmware y suplementos seguros",
-            "suplementos_desc": "Estos paquetes complementan el <code>linux-firmware</code> estándar de Fedora. Son seguros de instalar en cualquier sistema — no entran en conflicto con los controladores existentes y cubren hardware que Red Hat no distribuye por razones de licencia o porque está fuera del alcance de Fedora.",
+            "suplementos_desc": "El <code>linux-firmware</code> de Fedora se divide en subpaquetes por fabricante y tipo de hardware. El botón de abajo se asegura de que estén instalados — útil en instalaciones mínimas o con dependencias débiles desactivadas. Son archivos pasivos, seguros en cualquier sistema.",
 
-            "firmware_vendor_titulo": "Firmware adicional de fabricantes",
-            "firmware_vendor_desc": "El paquete <code>linux-firmware-vendor</code> trae firmware que no está en el paquete principal — chips Wi-Fi Realtek recientes (RTL8852), algunos modelos Intel, y firmware de fabricantes que requiere redistribución restringida. Es complementario a <code>linux-firmware</code>, no lo sustituye.",
-            "btn_firmware_vendor_instalar": "📦 Instalar firmware adicional",
-            "btn_firmware_vendor_reverter": "↩️ Revertir",
-            "texto_concluido_firmware_vendor": "✅ Firmwares adicionales instalados",
-            "texto_concluido_firmware_vendor_remove": "✅ Firmwares revertidos",
+            "firmware_vendor_titulo": "Firmware de hardware (Wi-Fi, Bluetooth, video y audio)",
+            "firmware_vendor_desc": "Instala los subpaquetes de firmware de <code>linux-firmware</code> para Wi-Fi y Bluetooth (Realtek, Intel, MediaTek, Atheros, Broadcom, NXP, Texas Instruments), tarjetas gráficas (AMD, Intel, NVIDIA) y audio (Intel, Cirrus). Lo que ya esté instalado se mantiene; lo que no exista en su versión de Fedora se omite.",
+            "btn_firmware_vendor_instalar": "📦 Instalar firmware de hardware",
+            "texto_concluido_firmware_vendor": "✅ Firmware de hardware instalado",
 
             "copr_titulo": "🌐 Drivers de la comunidad (COPR)",
             "copr_aviso": "⚠️ <strong>Atención antes de continuar:</strong><br>• Estos repositorios son <strong>mantenidos por terceros</strong> (individuos o pequeños grupos de la comunidad), no por Red Hat ni por RPM Fusion.<br>• FAP <strong>no controla</strong> el contenido, la frecuencia de actualización ni la seguridad de los paquetes.<br>• Un COPR puede ser descontinuado en cualquier momento — si eso ocurre, el driver deja de recibir actualizaciones hasta que alguien publique una alternativa.<br>• Instala solo si tienes uno de los dispositivos listados.<br>• Si no sabes si lo necesitas, usa primero la <strong>detección automática</strong> en el acordeón de arriba — identifica el modelo exacto.",
@@ -432,12 +430,12 @@
                 "amd_apu": "APUs AMD con gráficos integrados (Ryzen con Radeon Vega o RDNA).",
                 "intel_gpu": "Aceleración de vídeo en iGPUs Intel Skylake (6ª generación) o más recientes. Chips más antiguos (Haswell o anteriores) usan el controlador i965, ya presente en Fedora.",
                 "broadcom_wifi": "Instalar solo si el controlador de código abierto (brcmfmac/b43) no funciona. akmod-wl entra en conflicto con ellos y puede tumbar un Wi-Fi que ya funcionaba.",
-                "realtek_ethernet": "Controlador alternativo para tarjetas Ethernet Realtek. El controlador predeterminado (r8169) funciona en la mayoría de los casos — instalar akmod-r8168 solo si el cable no es reconocido."
+                "realtek_ethernet": "Controlador alternativo para tarjetas Ethernet Realtek. El controlador predeterminado (r8169) funciona en la mayoría de los casos — instalar akmod-r8168 solo si el cable no es reconocido.",
+                "razer_usb": "Dispositivo Razer detectado. Fedora reconoce teclados y ratones como dispositivos HID comunes, pero la iluminación RGB, el DPI y las macros solo funcionan con OpenRazer. Usa la instalación guiada en el acordeón \"Controladores de la comunidad\"."
             },
             "instalando_driver": "Instalando driver...",
             "revertendo_driver": "Revirtiendo driver...",
             "instalando_suplemento": "Instalando suplemento...",
-            "revertendo_suplemento": "Revirtiendo suplemento...",
             "confirmar_reverter": "⚠️ ¡Atención!\n\nEstás a punto de revertir un driver.\n\nSi el dispositivo depende de este driver para funcionar (por ejemplo, un adaptador Wi-Fi), perderás la funcionalidad tras el reinicio.\n\nTen disponible una conexión alternativa antes de continuar.\n\n¿Continuar?"
         },
 
@@ -465,6 +463,17 @@
         },
 
         "aplicativos": {
+            "fp_sys_titulo": "⚠️ Se detectaron Flatpaks instalados en el sistema (root)",
+            "fp_sys_desc": "FAP instala los Flatpaks como usuario (recomendado: sin root, más seguro). Las apps de abajo están instaladas a nivel de sistema, lo que duplica el remoto \"flathub\" y puede romper instalaciones con \"Ningún remoto elegido\". Elimínelas aquí y reinstálelas desde FAP como usuario.",
+            "fp_sys_conflito": "El remoto \"flathub\" existe en las instalaciones de sistema y de usuario.",
+            "fp_sys_btn": "🧹 Eliminar Flatpaks del sistema",
+            "fp_sys_acao": "Eliminar Flatpaks del sistema",
+            "fp_sys_confirma": "Esto elimina {n} app(s) Flatpak instaladas a nivel de sistema, incluidos sus datos. ¿Continuar?",
+            "fp_sys_dica": "Puede pedirse autenticación. Tras eliminar, reinstale las apps desde FAP.",
+            "journal_erro": "❌ No se pudo verificar el journal: {erro}",
+            "artcraft_url_falhou": "❌ No se pudo resolver la URL del último RPM x86_64 de ArtCraft Launcher.",
+            "artcraft_verifique": "Verifica manualmente:",
+            "artcraft_rate_limit": "Causa probable: límite de peticiones de la API de GitHub (60 req/h por IP). Espera unos minutos e inténtalo de nuevo.",
             "nome": "Aplicaciones Recomendadas",
             "titulo": "📦 Aplicaciones Recomendadas",
             "descricao": "Software recomendado para el uso diario.",
@@ -745,7 +754,7 @@
             "texto_concluido_wine": "✅ Wine instalado",
             "texto_concluido_winetricks": "✅ Winetricks instalado",
             "texto_concluido_bottles": "✅ Bottles instalado",
-            "texto_concluido_ntsync": "✅ NTSYNC instalado",
+            "texto_concluido_ntsync": "✅ NTSYNC activado",
             "compat_info_extra": "ℹ️ <strong>Winetricks</strong> instala componentes extras (fuentes, bibliotecas) dentro de un prefijo Wine. <strong>Bottles</strong> es una alternativa moderna al Wine puro, con gestión visual de \"botellas\" (prefijos) y soporte para runners Proton-GE. <strong>NTSYNC</strong> es un módulo del kernel que aporta mejoras significativas de rendimiento y compatibilidad para juegos Windows vía Wine/Proton.",
             "ntsync_aviso": "⚠️ <strong>¿Qué es NTSYNC?</strong> Es un módulo del kernel Linux que implementa la sincronización de hilos de Windows nativamente en el kernel, reduciendo la sobrecarga de CPU y mejorando la fluidez en juegos (menos micro-stutters y frame times más estables). Es seguro activarlo — Fedora 44 ya lo habilita por defecto para Wine/Steam. <strong>Recomendado para usuarios de GE-Proton</strong>, donde el soporte de NTSYNC ya es nativo. El Wine estándar de los repositorios aún no se beneficia de NTSYNC — en ese caso, la ganancia real llega al ejecutar juegos vía Proton/GE-Proton. <strong>El módulo se cargará automáticamente</strong> y persistirá entre reinicios. Si algún juego aún no lo reconoce, reinicia el equipo.",
             "performance_titulo": "⚡ Rendimiento y Monitoreo",
@@ -831,7 +840,7 @@
         "virtualizacao": {
             "nome": "Virtualización",
             "titulo": "🖥️ Virtualización",
-            "descricao": "Herramientas para ejecutar máquinas virtuales en Fedora. Cada opción está pensada para un perfil diferente — QEMU/KVM es la stack nativa (más performática), VirtualBox ofrece una interfaz familiar para quien viene de Windows, y GNOME Boxes simplifica la experiencia para principiantes.",
+            "descricao": "Herramientas para ejecutar máquinas virtuales en Fedora. Cada opción está pensada para un perfil diferente — QEMU/KVM es la stack nativa (más performática), y VirtualBox ofrece una interfaz familiar para quien viene de Windows.",
             "acordeao_titulo": "🖥️ Máquinas Virtuales",
             "confirmar_remover": "⚠️ ¿Seguro que quieres eliminar {nome}?\n\nLas máquinas virtuales que creaste NO serán borradas — solo se eliminará el software del sistema.",
             "qemu_titulo": "QEMU/KVM + virt-manager",
@@ -849,18 +858,14 @@
             "btn_virtualbox_remove": "🗑️ Eliminar",
             "btn_abrir_virtualbox": "🚀 Abrir VirtualBox",
             "texto_concluido_virtualbox": "✅ VirtualBox instalado",
-            "texto_concluido_virtualbox_remove": "✅ VirtualBox eliminado",
-            "boxes_titulo": "GNOME Boxes",
-            "boxes_desc": "Interfaz gráfica simplificada para crear y gestionar máquinas virtuales. Usa QEMU/KVM por debajo, así que es performática como virt-manager — la diferencia está en la experiencia: en vez de configurar CPU, RAM y disco por separado, apuntas a un archivo <code>.iso</code> y él se encarga del resto.",
-            "boxes_info": "ℹ️ <strong>Recomendado para:</strong> quien está empezando con virtualización y quiere probar una distribución Linux o Windows sin configurar nada manualmente. Si ya tienes experiencia, prefiere virt-manager — ofrece más control sobre la VM.",
-            "btn_boxes": "📦 Instalar GNOME Boxes",
-            "btn_boxes_remove": "🗑️ Eliminar",
-            "btn_abrir_boxes": "🚀 Abrir GNOME Boxes",
-            "texto_concluido_boxes": "✅ GNOME Boxes instalado",
-            "texto_concluido_boxes_remove": "✅ GNOME Boxes eliminado"
+            "texto_concluido_virtualbox_remove": "✅ VirtualBox eliminado"
         },
 
         "diagnostico": {
+            "journal_sem_erros": "✅ Sin errores relevantes en las últimas 24 horas.",
+            "journal_agrupados": "Errores agrupados por origen (últimas 24h):",
+            "journal_ocorrencias": "{n} ocurrencia(s)",
+            "journal_exemplo": "Ejemplo:",
             "nome": "Diagnóstico",
             "titulo": "📊 Diagnóstico",
             "descricao": "Panel visual del estado del sistema. Muestra en tiempo real qué está pasando con CPU, memoria, disco y servicios — sin necesidad de abrir la terminal. Útil para investigar lentitud, uso de disco, temperatura y errores recientes.",
@@ -1068,99 +1073,14 @@
             "grub_preview_sem_mudancas": "La configuración actual ya coincide con la recomendada. No se cambiará nada.",
             "grub_preview_rodape": "{n} parámetro(s) serán modificados. Copia de seguridad automática en /etc/default/grub.fap-backup.",
             "texto_concluido_grub_aplicar": "✅ Configuración aplicada",
-            "texto_concluido_grub_restaurar": "✅ Predeterminado restaurado",
+            "texto_concluido_grub_restaurar": "✅ Predeterminado restaurado"
 
-            "upgrade_titulo": "⬆️ Actualización de Fedora",
-            "upgrade_carregando": "⏳ Verificando disponibilidad de la actualización...",
-            "upgrade_erro_consulta": "No se pudo verificar la disponibilidad de la actualización. Inténtalo de nuevo en unos minutos.",
-            "upgrade_ja_no_alvo": "Estás en Fedora {atual}.",
-            "upgrade_ja_no_alvo_desc": "No hay actualización disponible. Para mantener FAP actualizado, usa la sesión \"Acerca de FAP\".",
-            "upgrade_atomic_titulo": "Fedora Atomic detectado.",
-            "upgrade_atomic_desc": "Las variantes inmutables (Silverblue, Kinoite, Bazzite, Bluefin) usan rpm-ostree rebase — un método distinto de dnf-plugin-system-upgrade. Esta sección no aplica.",
-            "upgrade_unsupported_titulo": "Versión no soportada para salto directo.",
-            "upgrade_unsupported_desc": "Estás en Fedora {atual}. FAP solo ofrece actualización directa de {anterior} a {alvo}. Para actualizar tu versión actual, usa el método oficial de dnf-plugin-system-upgrade.",
-            "upgrade_aguardando_intro": "Esta sección permite actualizar Fedora de la versión {atual} a la {alvo} cuando se cumplan todas las condiciones de abajo. Mientras tanto, los botones de actualización permanecen ocultos.",
-            "upgrade_checagens_titulo": "🔍 Verificaciones automáticas:",
-            "upgrade_checagem_fedora_ok": "Fedora {alvo} lanzado oficialmente (GA)",
-            "upgrade_checagem_rpmfusion": "RPM Fusion {alvo} publicado",
-            "upgrade_checagem_versao": "Estás en Fedora {atual}",
-            "upgrade_checagem_atualizado": "Sistema completamente actualizado",
-            "upgrade_checagem_sem_reboot": "Sin reinicio pendiente",
-            "upgrade_checagem_espaco": "{livre} GB libres en /var (mínimo: {min} GB)",
-            "upgrade_aguardando": "Esperando",
-            "upgrade_ok": "OK",
-            "upgrade_aguardando_ga_msg": "No necesitas hacer nada ahora. Cuando se liberen Fedora {alvo} y RPM Fusion {alvo}, esta área mostrará el botón de actualización automáticamente. Solo abre FAP.",
-            "upgrade_aguardando_rpmfusion_msg": "Fedora {alvo} ya está disponible, pero RPM Fusion {alvo} aún no ha sido publicado. RPM Fusion proporciona códecs, drivers NVIDIA y otros paquetes esenciales. La actualización permanecerá bloqueada hasta que RPM Fusion {alvo} esté listo — normalmente 2 a 7 días después del lanzamiento de Fedora.",
-            "upgrade_outdated_titulo": "Actualiza Fedora {atual} primero",
-            "upgrade_outdated_intro": "La actualización entre versiones requiere que el Fedora actual esté completamente actualizado. Detectamos:",
-            "upgrade_outdated_updates": "Actualizaciones pendientes en Fedora {atual}",
-            "upgrade_outdated_reboot": "Reinicio pendiente",
-            "upgrade_outdated_acao": "Abre la sesión \"Primeros Pasos\" y haz clic en \"Actualizar Fedora\" antes de volver aquí.",
-            "upgrade_sem_espaco_titulo": "Espacio en disco insuficiente",
-            "upgrade_sem_espaco_desc": "La descarga de Fedora {alvo} requiere al menos {min} GB libres en /var. Tienes solo {livre} GB libres. Libera espacio e inténtalo de nuevo.",
-            "upgrade_pronto_titulo": "Todas las verificaciones pasaron. Puedes actualizar con seguridad.",
-            "upgrade_terceiros_titulo": "⚠️ Avisos sobre componentes de terceros:",
-            "upgrade_sem_terceiros": "✅ Ningún componente de terceros que requiera atención especial fue detectado.",
-            "upgrade_termos_titulo": "⚠️ Términos y responsabilidad",
-            "upgrade_termos_desc": "El botón de abajo DESCARGA los paquetes de Fedora {alvo} en tu computadora. Puede tomar de 30 min a 2 horas dependiendo de la conexión.",
-            "upgrade_recomendacoes_titulo": "Recomendamos continuar solo si:",
-            "upgrade_rec_backup": "Tienes copia de seguridad de tus datos",
-            "upgrade_rec_suporte": "Todas las apps y drivers que usas ya soportan Fedora {alvo}",
-            "upgrade_rec_estabilidade": "Puedes mantener la computadora encendida y sin interrupciones durante la descarga",
-            "upgrade_rec_nao_fechar": "NO cerrarás FAP durante la descarga",
-            "upgrade_nao_responsabilidade": "FAP proporciona este botón como una forma de facilitar el proceso, pero NO se responsabiliza si algo sale mal — incluyendo apagado accidental, pérdida de energía, o fallas en paquetes de terceros (drivers, COPRs, Terra). En caso de falla, la recuperación puede requerir terminal avanzada y/o claves de recuperación.",
-            "upgrade_checkbox": "He leído los avisos de arriba y entiendo los riesgos.",
-            "upgrade_btn_baixar": "📥 Descargar paquetes de Fedora {alvo}",
-            "upgrade_baixado_titulo": "¡Descarga completada!",
-            "upgrade_baixado_desc": "Los paquetes de Fedora {alvo} se descargaron correctamente. Ahora decides cuándo reiniciar. La actualización real ocurre en el próximo arranque, antes de cualquier inicio de sesión. Tiempo estimado: 20 a 40 minutos.",
-            "upgrade_baixado_aviso_titulo": "NO apagues la computadora durante el proceso de actualización.",
-            "upgrade_baixado_aviso_desc": "Si necesitas cancelar la actualización, usa el botón \"Cancelar actualización\" abajo. Elimina la descarga y vuelve al estado inicial.",
-            "upgrade_baixado_aviso_voltar": "Después de reiniciar y completar la actualización, vuelve a esta sesión para los próximos pasos (acciones recomendadas post-actualización).",
-            "upgrade_btn_reboot": "🔄 Reiniciar ahora y actualizar",
-            "upgrade_btn_cancelar": "🗑️ Cancelar actualización",
-            "upgrade_log_baixando": "📥 Descargando paquetes de Fedora {alvo}",
-            "upgrade_log_reiniciando": "🔄 Reiniciando para aplicar actualización",
-            "upgrade_log_cancelando": "🗑️ Cancelando actualización programada",
-            "upgrade_reboot_confirmar": "⚠️ ¿Reiniciar ahora y aplicar la actualización?\n\nLa computadora se reiniciará INMEDIATAMENTE y el proceso de actualización de Fedora comenzará antes de cualquier inicio de sesión. Puede tomar de 20 a 40 minutos.\n\nNO apagues la computadora durante el proceso.\n\n¿Continuar?",
-            "upgrade_cancelar_confirmar": "⚠️ ¿Cancelar la actualización programada?\n\nLos paquetes descargados se eliminarán del disco. Puedes descargarlos de nuevo cuando quieras.\n\n¿Continuar?",
-            "upgrade_warn_nvidia": "Driver NVIDIA instalado (akmod-nvidia o akmod-nvidia-open). Recomendamos reinstalar el driver después de la actualización, o el sistema usará nouveau hasta el próximo reinicio.",
-            "upgrade_check_failed_titulo": "No se pudo verificar el estado del sistema",
-            "upgrade_check_failed_desc": "La verificación de actualizaciones pendientes falló (red inestable o repositorio temporalmente no disponible). Inténtalo de nuevo en unos minutos. La actualización permanece bloqueada por seguridad.",
-            "upgrade_pos_limpeza_concluido": "✅ Limpieza post-actualización hecha",
-            "upgrade_pos_rpmconf_concluido": "✅ Configuraciones fusionadas",
-            "upgrade_pos_distrosync_concluido": "✅ Distro-sync hecho",
-            "upgrade_pos_fixfiles_concluido": "✅ Relabel SELinux programado",
-            "upgrade_pos_rescue_concluido": "✅ dracut-config-rescue instalado",
-            "upgrade_warn_broadcom": "Driver Broadcom akmod-wl instalado. Si RPM Fusion {alvo} aún no tiene el paquete, el Wi-Fi puede dejar de funcionar hasta la actualización.",
-            "upgrade_warn_terra": "Repositorio Terra activo. Puede ser necesario reactivarlo o eliminarlo antes de la actualización — dependiendo del estado de Terra para Fedora {alvo}.",
-            "upgrade_warn_razer": "Repositorio OpenRazer activo. Puede ser necesario reconfigurarlo después de la actualización.",
-            "upgrade_warn_xpadneo": "Driver xpadneo instalado. Los mandos Xbox Wireless pueden necesitar reinstalación después de la actualización.",
-            "upgrade_warn_realtek": "Driver Realtek r8168 instalado. Recomendamos reinstalar después de la actualización para mantener la conectividad Ethernet.",
-            "upgrade_warn_coprs": "{n} repositorio(s) COPR de terceros activo(s). Verifica que cada uno ya tenga paquetes para Fedora 45 antes de actualizar.",
-            "upgrade_pos_titulo": "¡Actualización completada! Estás en Fedora {atual}.",
-            "upgrade_pos_desc": "Abajo están las acciones recomendadas por la documentación oficial de Fedora tras una actualización de versión. Son opcionales, pero ayudan a mantener el sistema limpio y consistente.",
-            "upgrade_pos_limpeza_titulo": "🧹 Limpieza Post-Actualización",
-            "upgrade_pos_limpeza_desc": "Elimina paquetes que ya no existen en Fedora 45 (retired packages), versiones duplicadas, dependencias huérfanas y claves GPG antiguas. También limpia la caché de DNF. Seguro y recomendado.",
-            "upgrade_pos_limpeza_btn": "🧹 Ejecutar Limpieza",
-            "upgrade_pos_rpmconf_titulo": "⚙️ Fusionar Archivos de Configuración",
-            "upgrade_pos_rpmconf_desc": "Instala rpmconf y fusiona los archivos de configuración modificados durante la actualización. Acepta las acciones predeterminadas (-a). Los archivos no fusionados quedan como .rpmnew/.rpmsave para revisión manual.",
-            "upgrade_pos_rpmconf_btn": "⚙️ Fusionar Configuraciones",
-            "upgrade_pos_distrosync_titulo": "🔄 Distro-Sync (Avanzado)",
-            "upgrade_pos_distrosync_aviso": "Este comando alinea todos los paquetes con los repositorios de Fedora 45. Puede ELIMINAR paquetes de COPRs que aún no tienen versión para Fedora 45. Verifica los avisos de terceros antes de ejecutar. Úsalo solo si tienes problemas de dependencias.",
-            "upgrade_pos_distrosync_btn": "🔄 Distro-Sync",
-            "upgrade_pos_fixfiles_titulo": "🛡️ Relabel SELinux (Avanzado)",
-            "upgrade_pos_fixfiles_aviso": "Programa un relabel completo de SELinux para el próximo arranque. Puede tardar de 10 a 60 minutos dependiendo del tamaño del disco. NO apagues el equipo durante el relabel. Úsalo solo si tienes avisos de SELinux tras la actualización.",
-            "upgrade_pos_fixfiles_btn": "🛡️ Programar Relabel",
-            "upgrade_pos_rescue_titulo": "🛟 Regenerar Rescue Kernel",
-            "upgrade_pos_rescue_desc": "Instala el paquete dracut-config-rescue, que habilita la regeneración automática del rescue kernel en la próxima actualización de kernel. El rescue kernel actual no se elimina — el reemplazo ocurre cuando se instala un nuevo kernel.",
-            "upgrade_pos_rescue_btn": "🛟 Instalar dracut-config-rescue",
-            "upgrade_pos_concluido_titulo": "Acciones post-actualización completadas.",
-            "upgrade_pos_concluido_desc": "Marcaste que ya ejecutaste todo. Esta área no volverá a aparecer. Para deshacer, usa \"Restablecer progreso\" en la sesión Acerca de FAP.",
-            "upgrade_pos_checkbox_label": "Ya migré a Fedora 45 y ya ejecuté todos los botones post-actualización. Estos botones ya no son necesarios.",
-            "upgrade_pos_checkbox_aviso": "Al marcar esta casilla, confirmas que ya actualizaste y que no necesitas los botones extra. Esta área no volverá a aparecer (a menos que restablezcas el progreso de FAP)."
         },
 
         "estado-fedora": {
+            "deteccao_log": "✅ Detección: {tipo} ({gerenciador})",
+            "tipo_atomic": "Atomic",
+            "tipo_tradicional": "Tradicional",
             "nome": "Estado de Fedora",
             "titulo": "🐧 Estado de Fedora",
             "descricao": "Información y herramientas específicas de Fedora: verificación de la versión instalada, detección de Fedora Atomic/Silverblue (sistemas inmutables) y gestión de SELinux — el sistema de seguridad obligatorio de Fedora, frecuentemente mal comprendido por quien viene de otras distribuciones.",
@@ -1187,7 +1107,8 @@
             "btn_selinux_troubleshoot": "🔍 Verificar Avisos Recientes",
             "setroubleshoot_titulo": "🛠️ setroubleshoot — Asistente de Diagnóstico",
             "setroubleshoot_desc": "Instala <strong>setroubleshoot</strong>, un paquete oficial de Fedora que analiza automáticamente cada AVC y sugiere una corrección — en lenguaje claro, sin jerga de SELinux. Es lo que convierte \"usuário_u:role_r:tipo_t\" en \"Apache no puede leer archivos en /var/www/html, debes ejecutar tal comando\".",
-            "setroubleshoot_info": "ℹ️ <strong>Qué se instala:</strong> <code>setroubleshoot-server</code> (motor de análisis), <code>setools-console</code> (herramientas CLI) y <code>policycoreutils-python-utils</code> (utilidades de política). Los avisos aparecen automáticamente en el menú de notificaciones del escritorio cuando se genera un AVC.",
+            "setroubleshoot_info": "ℹ️ <strong>Qué se instala:</strong> <code>setroubleshoot</code> (interfaz gráfica, usada por el botón Abrir), <code>setroubleshoot-server</code> (motor de análisis), <code>setools-console</code> (herramientas CLI) y <code>policycoreutils-python-utils</code> (utilidades de política). Los avisos aparecen automáticamente en el menú de notificaciones del escritorio cuando se genera un AVC.",
+            "setroubleshoot_gui_faltando": "La interfaz gráfica de setroubleshoot (paquete \"setroubleshoot\") no está instalada. ¿Instalarla ahora?",
             "btn_setroubleshoot_install": "📦 Instalar setroubleshoot",
             "btn_setroubleshoot_abrir": "🚀 Abrir setroubleshoot",
             "texto_concluido_setroubleshoot": "✅ setroubleshoot instalado",
@@ -1231,6 +1152,10 @@
         },
 
         "sobre-fap": {
+            "log_acompanhar": "📋 Para seguir el progreso: tail -f /tmp/fap-install-*.log",
+            "changelog_vazio": "ℹ️ No se encontró ninguna entrada de changelog para la versión <strong>v{versao}</strong>.",
+            "changelog_erro": "⚠️ No se pudo cargar el changelog del servidor. Consulta el <a href=\"#\" onclick=\"abrirChangelogCompleto(); return false;\">changelog completo en GitHub</a>.",
+            "versao_mais_recente": "Ya estás en la versión más reciente (v{versao})",
             "nome": "Acerca de FAP",
             "titulo": "📖 Acerca de FAP",
 
@@ -1300,10 +1225,7 @@
         "intel_media_install": "Intel Media Driver ya estaba instalado antes de FAP. Eliminarlo aumenta el uso de CPU en reproducción de vídeo. Para revertir manualmente:\n\n  sudo dnf remove intel-media-driver",
         "libva_intel": "El controlador legado Intel (libva-intel-driver) ya estaba instalado antes de FAP. Para eliminar manualmente:\n\n  sudo dnf remove libva-intel-driver",
         "cups_install": "El soporte de impresión ya estaba activo antes de FAP. Eliminarlo deshabilita TODAS las impresoras (local y red). Para revertir manualmente:\n\n  sudo systemctl disable --now cups avahi-daemon\n  sudo dnf remove cups cups-filters avahi avahi-tools system-config-printer ghostscript",
-        "samba_install": "Samba ya estaba configurado antes de FAP. Eliminarlo deshabilita compartidos de archivos y acceso a carpetas Windows en la red. Para revertir manualmente:\n\n  sudo systemctl disable --now smb nmb\n  sudo dnf remove samba samba-client cifs-utils",
-        "qemu_kvm_install": "QEMU/KVM ya estaba configurado antes de FAP. Eliminarlo deshabilita la ejecución de máquinas virtuales (los discos de las VMs permanecen intactos). Para revertir manualmente:\n\n  sudo systemctl disable --now libvirtd\n  sudo dnf remove qemu-kvm libvirt virt-manager virt-install libvirt-daemon-config-network",
-        "virtualbox_install": "VirtualBox ya estaba instalado antes de FAP. Eliminarlo deshabilita las VMs (los discos .vdi permanecen). Para revertir manualmente:\n\n  sudo dnf remove VirtualBox akmod-VirtualBox VirtualBox-kmod",
-        "gnome_boxes_install": "GNOME Boxes ya estaba instalado antes de FAP. Eliminarlo deshabilita las VMs (los discos permanecen). Para revertir manualmente:\n\n  sudo dnf remove gnome-boxes"
+        "samba_install": "Samba ya estaba configurado antes de FAP. Eliminarlo deshabilita compartidos de archivos y acceso a carpetas Windows en la red. Para revertir manualmente:\n\n  sudo systemctl disable --now smb nmb\n  sudo dnf remove samba samba-client cifs-utils"
     },
 
     "origem": {
@@ -1346,7 +1268,15 @@
         "label_origem": "Origen",
         "label_comando": "Comando exacto",
         "label_atualizar": "Cómo actualizar",
-        "label_remover": "Cómo eliminar"
+        "label_remover": "Cómo eliminar",
+        "sobre_tooltip": "Sobre este software",
+        "sobre_titulo": "Sobre el software",
+        "label_o_que": "Qué es",
+        "label_para_que": "Para qué sirve",
+        "label_desenvolvedor": "Desarrollado por",
+        "label_site": "Sitio oficial",
+        "sobre_nao_confirmado": "Descripción no confirmada en una página oficial; consulte el sitio oficial.",
+        "sobre_indisponivel": "Aún no hay información disponible para esta app."
     },
 
     "busca": {
@@ -1363,8 +1293,7 @@
             "todos": "Todos",
             "nao_feitos": "No hechos",
             "feitos": "Hechos",
-            "preexistentes": "Preexistentes",
-            "pulados": "Omitidos"
+            "preexistentes": "Preexistentes"
         },
         "origem": {
             "todas": "Todas",
@@ -1376,16 +1305,6 @@
             "comunidade": "Comunidad"
         },
         "limpar": "Limpiar filtros"
-    },
-
-    "landing": {
-        "grupo_geral": "Uso general",
-        "grupo_gaming": "Gaming",
-        "grupo_producao": "Producción",
-        "grupo_seguranca": "Seguridad",
-        "faltam": "Faltan {n} pasos para dejar Fedora completo.",
-        "pronto": "Tu Fedora está listo. 🎉",
-        "calculando": "Calculando progreso..."
     },
 
     "sidebar": {
@@ -1401,12 +1320,6 @@
 
     "refresh": {
         "tooltip": "Recargar estado del sistema (útil tras instalar algo fuera de FAP)"
-    },
-
-    "seletor": {
-        "label": "🌐 Idioma:",
-        "pt": "Português",
-        "en": "English",
-        "es": "Español"
     }
+
 }

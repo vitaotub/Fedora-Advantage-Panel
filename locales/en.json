@@ -21,7 +21,6 @@
         "secureboot_chave_ok": "The akmods key has already been generated. The firmware enrollment (step 2) is still missing.",
         "secureboot_badge_titulo": "Secure Boot is enabled — enrollment required",
         "secureboot_badge_desc": "Before installing {ctx}, prepare the akmods key and enroll it in the firmware. Without it, the module won't load on the next boot. The full step-by-step is in <strong>{sessao}</strong> → <strong>Secure Boot</strong>.",
-        "secureboot_badge_link": "Open {sessao}",
         "secureboot_badge_ok": "Secure Boot is enabled — akmods key already prepared. If you haven't enrolled it yet, complete it in <strong>{sessao}</strong>.",
         "secureboot_ctx_nvidia": "the NVIDIA driver",
         "secureboot_ctx_obs": "the OBS virtual camera",
@@ -40,24 +39,21 @@
         "secureboot_badge_old_key": "⚠️ Old akmods key is enrolled, but FAP's current key is not. Before installing new akmods, enroll the current key in <strong>{sessao}</strong> → <strong>Secure Boot</strong>.",
         "secureboot_badge_pending_import_combined": "⏳ The <strong>old</strong> akmods key is enrolled. The <strong>current</strong> key was imported and awaits <strong>reboot</strong> + MOK Management to be effective. Meanwhile, new FAP akmods will not load at boot.",
         "secureboot_badge_pending_import": "⏳ Akmods key imported. <strong>Reboot</strong> the computer and complete MOK Management (blue screen) to finalize enrollment.",
+        "secureboot_mok_indet_titulo": "Could not verify whether the akmods key is enrolled in the firmware.",
+        "secureboot_mok_indet_desc": "The file <code>/etc/pki/akmods/certs/public_key.der</code> exists, but <code>mokutil --test-key</code> did not return a conclusive result. This can happen because of a transient failure (D-Bus, efivars). If you already enrolled the key, you can ignore this notice. Otherwise, follow the steps below.",
+        "secureboot_mok_indet_detalhe": "Detail:",
+        "secureboot_mok_indet_btn": "Check again",
+        "secureboot_badge_mok_indet": "<strong>Could not verify whether the akmods key is enrolled in the firmware.</strong> <code>mokutil --test-key</code> failed. If you already enrolled it, you can ignore this. Otherwise, check manually in <strong>{sessao}</strong> → <strong>Secure Boot</strong>.",
         "secureboot_badge_other_keys": "ℹ️ An akmods key from another source is already enrolled in the firmware. Modules signed by it continue to work. But FAP signs its own akmods with the local key, which must be enrolled in <strong>{sessao}</strong> → <strong>Secure Boot</strong> for FAP akmods to load at boot."
     },
 
     "comum": {
+        "erro_generico": "❌ Error: {msg}",
         "atualizacao_disponivel_titulo": "New version available! Click to update.",
         "voltar_inicio": "← Back to start",
-        "btn_instalar": "Install",
-        "btn_desinstalar": "↩️ Uninstall",
-        "btn_remover": "↩️ Remove",
         "btn_concluido": "✅ Done",
-        "btn_abrir": "🚀 Open",
         "desinstalar_app": "Remove {nome}",
-        "desinstalar_app_generico": "🗑️ Remove application",
-        "btn_desfazer_tudo": "🗑️ Completely remove {nome}",
-        "desfazer_tudo_confirm1": "⚠️ Completely remove {nome}?\n\nThis button removes EVERYTHING that FAP installed:\n• System packages\n• Configuration files created\n• User groups and services\n\nIrreversible action.",
-        "desfazer_tudo_confirm2": "🔄 Final confirmation!\n\nAll traces of {nome} will be removed.\n\nAre you absolutely sure?",
         "confirmar_desinstalar": "Uninstall {nome}?",
-        "desinstalar_flatpak": "Uninstall {nome}",
         "erro_conexao": "❌ Connection error: {msg}",
         "erro_http": "❌ HTTP error: {status}",
         "log_execucao": "📋 Execution log",
@@ -73,7 +69,6 @@
         "btn_tentar_novamente": "🔄 Try again",
         "btn_anterior": "◀ Previous",
         "btn_proximo": "Next ▶",
-        "autenticacao_cancelada": "❌ Authentication cancelled by user.",
         "ja_executado": "This command has already been executed.",
         "nao_instalado": "{nome} is not installed.",
         "status_iniciando": "⏳ Starting...",
@@ -89,7 +84,6 @@
         "notif_tarefa_concluida_titulo": "FAP — Task completed",
         "notif_tarefa_concluida_corpo": "The task has finished. Check the log for details.",
         "status_pacote": "Package {atual} of {total}",
-        "badge_atualizar": "Update",
         "badge_atualizando": "🔄 Updating FAP...",
         "badge_ja_atualizando": "⏳ Update already in progress...",
         "navegacao_bloqueada": "Wait for this session's commands to finish before switching sessions.",
@@ -121,8 +115,7 @@
         "footer_link_github": "GitHub",
         "footer_link_doc": "Documentation",
         "footer_link_bug": "Report Bug",
-        "footer_legal": "Fedora is a registered trademark of Red Hat, Inc. This project is not affiliated with Red Hat.",
-        "seletor_idioma_label": "🌐 Language:"
+        "footer_legal": "Fedora is a registered trademark of Red Hat, Inc. This project is not affiliated with Red Hat."
     },
 
     "guiado": {
@@ -139,12 +132,9 @@
             "titulo": "🚀 First Steps",
             "descricao": "Before any configuration, update the system and enable essential repositories. These steps are prerequisite for all upcoming sessions.",
 
-            "atualizacao_titulo": "🔄 Update Fedora",
-            "atualizacao_desc": "Updates the repository index, syncs security keys and downloads the latest versions of all system components.",
-            "btn_atualizar": "🔄 Update Fedora",
+            "atencao_titulo": "⚠️ Attention: always keep Fedora up to date",
+            "atencao_texto": "Keeping Fedora up to date is essential. Some FAP sessions and features work better with Fedora fully updated. An outdated system can cause problems with the system itself, put the user's security at risk and affect the many features FAP offers. Update the system through Software or the terminal (sudo dnf upgrade --refresh) before continuing.",
             "log_iniciando": "🚀 Starting update...",
-            "aviso_reboot_necessario": "Restart your computer to apply the updates.",
-            "aviso_reboot_nao_verificado": "Could not check if a reboot is needed. Check in the terminal: <code>dnf needs-restarting -r</code>",
 
             "repositorios_titulo": "📦 Fedora Repositories",
 
@@ -218,6 +208,7 @@
         },
 
         "hardware": {
+            "nvidia_verificacao_falhou": "⚠️ <strong>Could not verify the availability of driver <code>{pkg}</code> in RPM Fusion.</strong><br><span style=\"font-size: 0.85rem;\">Reason: {motivo}. The \"Install NVIDIA Driver\" button stays enabled — click it to try. If the package does not exist, <code>dnf install</code> will show the real error in the log.</span>",
             "nome": "Hardware",
             "titulo": "🖥️ Hardware",
             "descricao": "Hardware-specific settings. Choose your GPU type (AMD, NVIDIA or Intel) below to see the corresponding drivers and tools. For controllers, webcams, Wi-Fi and other peripherals, use the <strong>Devices and Peripherals</strong> session.",
@@ -282,6 +273,11 @@
             "nvidia_driver_indisponivel_panel": "Your GPU (<strong>{modelo}</strong>) requires the driver <code>{pkg}</code>, which is <strong>not yet available</strong> in RPM Fusion for your Fedora version. FAP will <strong>not install</strong> the traditional proprietary driver — it is incompatible with your card and may leave the system without a graphical interface. Check again in a few days or consult the RPM Fusion documentation.",
             "nvidia_serie_legado_bloqueada": "Series <strong>{nome}</strong> requires the <strong>Xorg</strong> display server, which Fedora 44+ no longer supports officially. The proprietary driver is <strong>not available</strong> for this card. Continue using <code>nouveau</code> (open source, already in Fedora).",
             "nvidia_panel_rpmfusion_aviso": "⚠️ <strong>RPM Fusion Nonfree is not active.</strong> Enable it in the <strong>First Steps</strong> session before installing the driver.",
+            "nvidia_secureboot_nao_registrada": "⚠️ Secure Boot is enabled and the akmods key is NOT enrolled in the firmware.\n\nThe driver will be built and signed, but the kernel will REFUSE the module at boot: you may end up without the NVIDIA driver (or without acceleration).\n\nRecommended: cancel, finish the enrollment in {sessao} → Secure Boot (import the key + reboot + MOK Management) and install afterwards.\n\nInstall anyway?",
+            "nvidia_secureboot_nao_registrada_curto": "Secure Boot is enabled and the akmods key is not enrolled in the firmware yet. Finish the enrollment in {sessao} → Secure Boot, otherwise the module will not load at boot.",
+            "nvidia_vaapi_env_confirmar": "This button writes environment variables for your whole session (effective after a new login):\n\n• MOZ_DISABLE_RDD_SANDBOX=1 — disables the sandbox of Firefox's video decoding process (required by libva-nvidia-driver; it lowers that process's protection).\n• LIBVA_DRIVER_NAME=nvidia — forces VA-API to use NVIDIA in ALL applications.\n\nTo undo, use the Revert button.",
+            "nvidia_vaapi_env_hibrido": "⚠️ An Intel/AMD GPU was also detected (hybrid laptop?). With this setup, hardware decoding on the integrated GPU stops working in applications. Only continue if you use NVIDIA as your main GPU for video.",
+            "nvidia_vaapi_env_continuar": "Continue?",
             "nvidia_secureboot_bloqueio": "Secure Boot is enabled and the akmods key has not been prepared. Use the \"Prepare Secure Boot\" button in {sessao} before installing the driver.",
             "nvidia_cuda_indisponivel": "The CUDA package \"{cuda}\" (required by driver \"{pkg}\") is not available in RPM Fusion for your Fedora version.\n\nWithout CUDA, the driver would install, but OBS, Kdenlive and hardware encoding would not work. FAP will not install an incomplete driver — nothing was done.\n\nCheck again in a few days or consult the RPM Fusion documentation.",
             "nvidia_aviso_geracao_desconhecida": "⚠️ GPU NOT RECOGNIZED in FAP's known generations.\n\nFAP detected an NVIDIA GPU, but the model doesn't match the regex for any known generation (Fermi to Blackwell). I'll try the modern driver (akmod-nvidia, assumes Turing+).\n\nRISKS:\n• If your GPU is older (Kepler/Fermi), the driver compiles but the module refuses to load → black screen on next boot.\n• If it's future (RTX 60xx), the driver may not support it yet.\n\nRECOVERY for a stuck boot: add `nomodeset` to GRUB (edit the entry, append to the `linux` line, F10).\n\nIf FAP detects a compilation error, it rolls back automatically. If the system hangs at boot, the rollback does NOT happen (the module was already loaded by udev) — use `nomodeset`.\n\nContinue anyway?",
@@ -361,17 +357,19 @@
             "deteccao_titulo": "🎯 Automatic hardware detection",
             "deteccao_desc": "Click the button below to scan your computer. FAP will identify GPUs, network cards and USB adapters that may need additional drivers, cross-referencing hardware IDs against a community-maintained map. <strong>Nothing is installed automatically</strong> — each suggestion appears as a separate card, with explicit install and revert buttons.",
             "btn_escanear": "🔍 Detect my hardware",
+            "cat_periferico": "Peripheral",
+            "usb_qtd": "{n} devices detected",
+            "usb_precisa_driver": "Extra features of this peripheral (lighting, DPI, macros) depend on a community driver.",
+            "btn_ir_instalacao": "Go to guided install",
             "escaneando": "Scanning hardware...",
 
             "suplementos_titulo": "📦 Firmware and safe supplements",
-            "suplementos_desc": "These packages complement Fedora's standard <code>linux-firmware</code>. They are safe to install on any system — they don't conflict with existing drivers and cover hardware that Red Hat doesn't distribute for licensing reasons or because it's outside Fedora's scope.",
+            "suplementos_desc": "Fedora's <code>linux-firmware</code> is split into subpackages by vendor and hardware type. The button below makes sure they are installed — useful on minimal installs or when weak dependencies are disabled. They are passive files, safe on any system.",
 
-            "firmware_vendor_titulo": "Additional vendor firmware",
-            "firmware_vendor_desc": "The <code>linux-firmware-vendor</code> package brings firmware that isn't in the main package — recent Realtek Wi-Fi chips (RTL8852), some Intel models, and vendor firmware that requires restricted redistribution. It complements <code>linux-firmware</code>, it doesn't replace it.",
-            "btn_firmware_vendor_instalar": "📦 Install additional firmware",
-            "btn_firmware_vendor_reverter": "↩️ Revert",
-            "texto_concluido_firmware_vendor": "✅ Additional firmwares installed",
-            "texto_concluido_firmware_vendor_remove": "✅ Firmwares reverted",
+            "firmware_vendor_titulo": "Hardware firmware (Wi-Fi, Bluetooth, video and audio)",
+            "firmware_vendor_desc": "Installs the <code>linux-firmware</code> subpackages for Wi-Fi and Bluetooth (Realtek, Intel, MediaTek, Atheros, Broadcom, NXP, Texas Instruments), graphics cards (AMD, Intel, NVIDIA) and audio (Intel, Cirrus). Anything already installed is kept; anything missing from your Fedora version is skipped.",
+            "btn_firmware_vendor_instalar": "📦 Install hardware firmware",
+            "texto_concluido_firmware_vendor": "✅ Hardware firmware installed",
 
             "copr_titulo": "🌐 Community drivers (COPR)",
             "copr_aviso": "⚠️ <strong>Attention before continuing:</strong><br>• These repositories are <strong>maintained by third parties</strong> (individuals or small community groups), not by Red Hat or RPM Fusion.<br>• FAP <strong>does not control</strong> the content, update frequency or security of the packages.<br>• A COPR can be discontinued at any time — if that happens, the driver stops receiving updates until someone publishes an alternative.<br>• Only install if you have one of the listed devices.<br>• If you don't know whether you need it, use the <strong>automatic detection</strong> in the accordion above first — it identifies the exact model.",
@@ -432,12 +430,12 @@
                 "amd_apu": "AMD APUs with integrated graphics (Ryzen with Radeon Vega or RDNA).",
                 "intel_gpu": "Video acceleration on Intel iGPUs Skylake (6th gen) or newer. Older chips (Haswell or earlier) use the i965 driver, already in Fedora.",
                 "broadcom_wifi": "Only install if the open-source driver (brcmfmac/b43) doesn't work. akmod-wl conflicts with them and can take down a working Wi-Fi.",
-                "realtek_ethernet": "Alternative driver for Realtek Ethernet cards. The default driver (r8169) works in most cases — only install akmod-r8168 if the cable isn't recognized."
+                "realtek_ethernet": "Alternative driver for Realtek Ethernet cards. The default driver (r8169) works in most cases — only install akmod-r8168 if the cable isn't recognized.",
+                "razer_usb": "Razer device detected. Fedora recognizes keyboards and mice as plain HID devices, but RGB lighting, DPI and macros only work with OpenRazer. Use the guided install in the \"Community drivers\" accordion."
             },
             "instalando_driver": "Installing driver...",
             "revertendo_driver": "Reverting driver...",
             "instalando_suplemento": "Installing supplement...",
-            "revertendo_suplemento": "Reverting supplement...",
             "confirmar_reverter": "⚠️ Attention!\n\nYou are about to revert a driver.\n\nIf the device depends on this driver to work (for example, a Wi-Fi adapter), you will lose functionality after reboot.\n\nHave an alternative connection available before continuing.\n\nContinue?"
         },
 
@@ -465,6 +463,17 @@
         },
 
         "aplicativos": {
+            "fp_sys_titulo": "⚠️ Flatpaks installed system-wide (root) detected",
+            "fp_sys_desc": "FAP installs Flatpaks as your user (recommended: no root, safer). The apps below are installed at system level, which makes the \"flathub\" remote exist twice and can break installs with \"No remote chosen\". Remove them here and reinstall through FAP as a user.",
+            "fp_sys_conflito": "The \"flathub\" remote exists in both system and user installations.",
+            "fp_sys_btn": "🧹 Remove system Flatpaks",
+            "fp_sys_acao": "Remove system Flatpaks",
+            "fp_sys_confirma": "This removes {n} Flatpak app(s) installed at system level, including their data. Continue?",
+            "fp_sys_dica": "Authentication may be requested. After removing, reinstall the apps from FAP.",
+            "journal_erro": "❌ Could not check the journal: {erro}",
+            "artcraft_url_falhou": "❌ Could not resolve the URL of the latest x86_64 RPM of ArtCraft Launcher.",
+            "artcraft_verifique": "Check manually:",
+            "artcraft_rate_limit": "Likely cause: GitHub API rate limit (60 req/h per IP). Wait a few minutes and try again.",
             "nome": "Recommended Apps",
             "titulo": "📦 Recommended Apps",
             "descricao": "Recommended software for everyday use.",
@@ -745,7 +754,7 @@
             "texto_concluido_wine": "✅ Wine installed",
             "texto_concluido_winetricks": "✅ Winetricks installed",
             "texto_concluido_bottles": "✅ Bottles installed",
-            "texto_concluido_ntsync": "✅ NTSYNC installed",
+            "texto_concluido_ntsync": "✅ NTSYNC enabled",
             "compat_info_extra": "ℹ️ <strong>Winetricks</strong> installs extra components (fonts, libraries) inside a Wine prefix. <strong>Bottles</strong> is a modern alternative to plain Wine, with visual management of \"bottles\" (prefixes) and support for Proton-GE runners. <strong>NTSYNC</strong> is a kernel module that brings significant performance and compatibility improvements for Windows games via Wine/Proton.",
             "ntsync_aviso": "⚠️ <strong>What is NTSYNC?</strong> It's a Linux kernel module that implements Windows thread synchronization natively in the kernel, reducing CPU overhead and improving game smoothness (fewer micro-stutters and more stable frame times). It's safe to enable — Fedora 44 already enables it by default for Wine/Steam. <strong>Recommended for GE-Proton users</strong>, where NTSYNC support is already native. The default Wine from repositories does not benefit from NTSYNC yet — in that case, the real gain comes when running games via Proton/GE-Proton. <strong>The module will be loaded automatically</strong> and will persist between reboots. If a game still doesn't recognize it, restart your computer.",
             "performance_titulo": "⚡ Performance and Monitoring",
@@ -831,7 +840,7 @@
         "virtualizacao": {
             "nome": "Virtualization",
             "titulo": "🖥️ Virtualization",
-            "descricao": "Tools to run virtual machines on Fedora. Each option targets a different user profile — QEMU/KVM is the native stack (most performant), VirtualBox offers a familiar interface for those coming from Windows, and GNOME Boxes simplifies the experience for beginners.",
+            "descricao": "Tools to run virtual machines on Fedora. Each option targets a different user profile — QEMU/KVM is the native stack (most performant), and VirtualBox offers a familiar interface for those coming from Windows.",
             "acordeao_titulo": "🖥️ Virtual Machines",
             "confirmar_remover": "⚠️ Are you sure you want to remove {nome}?\n\nVirtual machines you created will NOT be deleted — only the software will be removed from the system.",
             "qemu_titulo": "QEMU/KVM + virt-manager",
@@ -849,18 +858,14 @@
             "btn_virtualbox_remove": "🗑️ Remove",
             "btn_abrir_virtualbox": "🚀 Open VirtualBox",
             "texto_concluido_virtualbox": "✅ VirtualBox installed",
-            "texto_concluido_virtualbox_remove": "✅ VirtualBox removed",
-            "boxes_titulo": "GNOME Boxes",
-            "boxes_desc": "Simplified graphical interface to create and manage virtual machines. Uses QEMU/KVM under the hood, so it's as performant as virt-manager — the difference is the experience: instead of configuring CPU, RAM and disk separately, you point to an <code>.iso</code> file and it handles the rest.",
-            "boxes_info": "ℹ️ <strong>Recommended for:</strong> those starting with virtualization and wanting to test a Linux distribution or Windows without manually configuring anything. If you're already experienced, prefer virt-manager — it offers more control over the VM.",
-            "btn_boxes": "📦 Install GNOME Boxes",
-            "btn_boxes_remove": "🗑️ Remove",
-            "btn_abrir_boxes": "🚀 Open GNOME Boxes",
-            "texto_concluido_boxes": "✅ GNOME Boxes installed",
-            "texto_concluido_boxes_remove": "✅ GNOME Boxes removed"
+            "texto_concluido_virtualbox_remove": "✅ VirtualBox removed"
         },
 
         "diagnostico": {
+            "journal_sem_erros": "✅ No relevant errors in the last 24 hours.",
+            "journal_agrupados": "Errors grouped by source (last 24h):",
+            "journal_ocorrencias": "{n} occurrence(s)",
+            "journal_exemplo": "Example:",
             "nome": "Diagnostics",
             "titulo": "📊 Diagnostics",
             "descricao": "Visual panel of system state. Shows in real time what's happening with CPU, memory, disk and services — without needing to open the terminal. Useful for investigating slowness, disk usage, temperature and recent errors.",
@@ -1068,99 +1073,14 @@
             "grub_preview_sem_mudancas": "The current configuration already matches the recommended one. Nothing will be changed.",
             "grub_preview_rodape": "{n} parameter(s) will be changed. Automatic backup at /etc/default/grub.fap-backup.",
             "texto_concluido_grub_aplicar": "✅ Configuration applied",
-            "texto_concluido_grub_restaurar": "✅ Default restored",
+            "texto_concluido_grub_restaurar": "✅ Default restored"
 
-            "upgrade_titulo": "⬆️ Fedora Upgrade",
-            "upgrade_carregando": "⏳ Checking upgrade availability...",
-            "upgrade_erro_consulta": "Could not check upgrade availability. Try again in a few minutes.",
-            "upgrade_ja_no_alvo": "You are on Fedora {atual}.",
-            "upgrade_ja_no_alvo_desc": "No upgrade available. To keep FAP updated, use the \"About FAP\" session.",
-            "upgrade_atomic_titulo": "Fedora Atomic detected.",
-            "upgrade_atomic_desc": "Immutable variants (Silverblue, Kinoite, Bazzite, Bluefin) use rpm-ostree rebase — a different method from dnf-plugin-system-upgrade. This section does not apply.",
-            "upgrade_unsupported_titulo": "Version not supported for direct jump.",
-            "upgrade_unsupported_desc": "You are on Fedora {atual}. FAP only offers direct upgrade from {anterior} to {alvo}. To upgrade your current version, use the official dnf-plugin-system-upgrade method.",
-            "upgrade_aguardando_intro": "This section lets you upgrade Fedora from version {atual} to {alvo} once all conditions below are met. Until then, the upgrade buttons remain hidden.",
-            "upgrade_checagens_titulo": "🔍 Automatic checks:",
-            "upgrade_checagem_fedora_ok": "Fedora {alvo} officially released (GA)",
-            "upgrade_checagem_rpmfusion": "RPM Fusion {alvo} published",
-            "upgrade_checagem_versao": "You are on Fedora {atual}",
-            "upgrade_checagem_atualizado": "System fully up to date",
-            "upgrade_checagem_sem_reboot": "No pending reboot",
-            "upgrade_checagem_espaco": "{livre} GB free on /var (minimum: {min} GB)",
-            "upgrade_aguardando": "Waiting",
-            "upgrade_ok": "OK",
-            "upgrade_aguardando_ga_msg": "You don't need to do anything now. When Fedora {alvo} and RPM Fusion {alvo} are released, this area will show the upgrade button automatically. Just open FAP.",
-            "upgrade_aguardando_rpmfusion_msg": "Fedora {alvo} is available, but RPM Fusion {alvo} has not been published yet. RPM Fusion provides codecs, NVIDIA drivers and other essential packages. The upgrade will remain blocked until RPM Fusion {alvo} is ready — usually 2 to 7 days after Fedora's release.",
-            "upgrade_outdated_titulo": "Update Fedora {atual} first",
-            "upgrade_outdated_intro": "The upgrade between versions requires the current Fedora to be fully up to date. We detected:",
-            "upgrade_outdated_updates": "Pending updates in Fedora {atual}",
-            "upgrade_outdated_reboot": "Pending reboot",
-            "upgrade_outdated_acao": "Open the \"First Steps\" session and click \"Update Fedora\" before returning here.",
-            "upgrade_sem_espaco_titulo": "Not enough disk space",
-            "upgrade_sem_espaco_desc": "The Fedora {alvo} download needs at least {min} GB free on /var. You have only {livre} GB free. Free up space and try again.",
-            "upgrade_pronto_titulo": "All checks passed. You can upgrade safely.",
-            "upgrade_terceiros_titulo": "⚠️ Warnings about third-party components:",
-            "upgrade_sem_terceiros": "✅ No third-party component requiring special attention was detected.",
-            "upgrade_termos_titulo": "⚠️ Terms and responsibility",
-            "upgrade_termos_desc": "The button below DOWNLOADS the Fedora {alvo} packages to your computer. It may take 30 min to 2 hours depending on your connection.",
-            "upgrade_recomendacoes_titulo": "We recommend proceeding only if:",
-            "upgrade_rec_backup": "You have a backup of your data",
-            "upgrade_rec_suporte": "All apps and drivers you use already support Fedora {alvo}",
-            "upgrade_rec_estabilidade": "You can keep the computer powered on and uninterrupted during the download",
-            "upgrade_rec_nao_fechar": "You will NOT close FAP during the download",
-            "upgrade_nao_responsabilidade": "FAP provides this button as a way to facilitate the process, but is NOT responsible if anything goes wrong — including accidental shutdown, power loss, or failures in third-party packages (drivers, COPRs, Terra). In case of failure, recovery may require advanced terminal and/or recovery keys.",
-            "upgrade_checkbox": "I have read the warnings above and understand the risks.",
-            "upgrade_btn_baixar": "📥 Download Fedora {alvo} packages",
-            "upgrade_baixado_titulo": "Download complete!",
-            "upgrade_baixado_desc": "The Fedora {alvo} packages were successfully downloaded. You now decide when to reboot. The actual upgrade happens on the next boot, before any login. Estimated time: 20 to 40 minutes.",
-            "upgrade_baixado_aviso_titulo": "DO NOT shut down the computer during the upgrade process.",
-            "upgrade_baixado_aviso_desc": "If you need to cancel the upgrade, use the \"Cancel upgrade\" button below. It deletes the download and returns to the initial state.",
-            "upgrade_baixado_aviso_voltar": "After rebooting and completing the upgrade, come back to this session for the next steps (recommended post-upgrade actions).",
-            "upgrade_btn_reboot": "🔄 Reboot now and upgrade",
-            "upgrade_btn_cancelar": "🗑️ Cancel upgrade",
-            "upgrade_log_baixando": "📥 Downloading Fedora {alvo} packages",
-            "upgrade_log_reiniciando": "🔄 Rebooting to apply upgrade",
-            "upgrade_log_cancelando": "🗑️ Canceling scheduled upgrade",
-            "upgrade_reboot_confirmar": "⚠️ Reboot now and apply the upgrade?\n\nThe computer will restart IMMEDIATELY and the Fedora upgrade process will begin before any login. It may take 20 to 40 minutes.\n\nDO NOT shut down the computer during the process.\n\nContinue?",
-            "upgrade_cancelar_confirmar": "⚠️ Cancel the scheduled upgrade?\n\nThe downloaded packages will be deleted from disk. You can download them again whenever you want.\n\nContinue?",
-            "upgrade_warn_nvidia": "NVIDIA driver installed (akmod-nvidia or akmod-nvidia-open). We recommend reinstalling the driver after the upgrade, or the system will use nouveau until the next reboot.",
-            "upgrade_check_failed_titulo": "Could not check system state",
-            "upgrade_check_failed_desc": "The pending-updates check failed (unstable network or repository temporarily unavailable). Try again in a few minutes. The upgrade remains blocked for safety.",
-            "upgrade_pos_limpeza_concluido": "✅ Post-upgrade cleanup done",
-            "upgrade_pos_rpmconf_concluido": "✅ Configurations merged",
-            "upgrade_pos_distrosync_concluido": "✅ Distro-sync done",
-            "upgrade_pos_fixfiles_concluido": "✅ SELinux relabel scheduled",
-            "upgrade_pos_rescue_concluido": "✅ dracut-config-rescue installed",
-            "upgrade_warn_broadcom": "Broadcom akmod-wl driver installed. If RPM Fusion {alvo} does not have the package yet, Wi-Fi may stop working until the update.",
-            "upgrade_warn_terra": "Terra repository active. It may be necessary to reactivate or remove it before the upgrade — depending on Terra's state for Fedora {alvo}.",
-            "upgrade_warn_razer": "OpenRazer repository active. May need to be reconfigured after the upgrade.",
-            "upgrade_warn_xpadneo": "xpadneo driver installed. Xbox Wireless controllers may need to be reinstalled after the upgrade.",
-            "upgrade_warn_realtek": "Realtek r8168 driver installed. We recommend reinstalling after the upgrade to keep Ethernet connectivity.",
-            "upgrade_warn_coprs": "{n} third-party COPR repository(ies) active. Check that each one already has packages for Fedora 45 before upgrading.",
-            "upgrade_pos_titulo": "Upgrade complete! You are on Fedora {atual}.",
-            "upgrade_pos_desc": "Below are the actions recommended by the official Fedora documentation after a version upgrade. They are optional, but help keep the system clean and consistent.",
-            "upgrade_pos_limpeza_titulo": "🧹 Post-Upgrade Cleanup",
-            "upgrade_pos_limpeza_desc": "Removes packages that no longer exist in Fedora 45 (retired packages), duplicate versions, orphaned dependencies, and old GPG keys. Also cleans the DNF cache. Safe and recommended.",
-            "upgrade_pos_limpeza_btn": "🧹 Run Cleanup",
-            "upgrade_pos_rpmconf_titulo": "⚙️ Merge Configuration Files",
-            "upgrade_pos_rpmconf_desc": "Installs rpmconf and merges configuration files modified during the upgrade. Accepts default actions (-a). Unmerged files remain as .rpmnew/.rpmsave for manual review.",
-            "upgrade_pos_rpmconf_btn": "⚙️ Merge Configurations",
-            "upgrade_pos_distrosync_titulo": "🔄 Distro-Sync (Advanced)",
-            "upgrade_pos_distrosync_aviso": "This command aligns all packages with the Fedora 45 repositories. It may REMOVE packages from COPRs that don't have a Fedora 45 version yet. Check third-party warnings before running. Use only if you have dependency issues.",
-            "upgrade_pos_distrosync_btn": "🔄 Distro-Sync",
-            "upgrade_pos_fixfiles_titulo": "🛡️ SELinux Relabel (Advanced)",
-            "upgrade_pos_fixfiles_aviso": "Schedules a full SELinux relabel for the next boot. May take 10 to 60 minutes depending on disk size. Do NOT power off during the relabel. Use only if you have SELinux warnings after the upgrade.",
-            "upgrade_pos_fixfiles_btn": "🛡️ Schedule Relabel",
-            "upgrade_pos_rescue_titulo": "🛟 Regenerate Rescue Kernel",
-            "upgrade_pos_rescue_desc": "Installs the dracut-config-rescue package, which enables automatic rescue kernel regeneration on the next kernel update. The current rescue kernel is not removed — replacement happens when a new kernel is installed.",
-            "upgrade_pos_rescue_btn": "🛟 Install dracut-config-rescue",
-            "upgrade_pos_concluido_titulo": "Post-upgrade actions completed.",
-            "upgrade_pos_concluido_desc": "You marked that you already ran everything. This area will not appear again. To undo, use \"Reset progress\" in the About FAP session.",
-            "upgrade_pos_checkbox_label": "I already migrated to Fedora 45 and already ran all post-upgrade buttons. These buttons are no longer needed.",
-            "upgrade_pos_checkbox_aviso": "By checking this box, you confirm that you already upgraded and no longer need the extra buttons. This area will not appear again (unless you reset FAP progress)."
         },
 
         "estado-fedora": {
+            "deteccao_log": "✅ Detection: {tipo} ({gerenciador})",
+            "tipo_atomic": "Atomic",
+            "tipo_tradicional": "Traditional",
             "nome": "Fedora Status",
             "titulo": "🐧 Fedora Status",
             "descricao": "Fedora-specific information and tools: installed version check, Fedora Atomic/Silverblue (immutable systems) detection and SELinux management — Fedora's mandatory security system, often poorly understood by those coming from other distributions.",
@@ -1187,7 +1107,8 @@
             "btn_selinux_troubleshoot": "🔍 Check Recent Warnings",
             "setroubleshoot_titulo": "🛠️ setroubleshoot — Diagnostic Assistant",
             "setroubleshoot_desc": "Installs <strong>setroubleshoot</strong>, an official Fedora package that automatically analyzes each AVC and suggests a fix — in plain language, without SELinux jargon. It's what turns \"usuário_u:role_r:tipo_t\" into \"Apache cannot read files in /var/www/html, you should run such command\".",
-            "setroubleshoot_info": "ℹ️ <strong>What is installed:</strong> <code>setroubleshoot-server</code> (analysis engine), <code>setools-console</code> (CLI tools) and <code>policycoreutils-python-utils</code> (policy utilities). Warnings appear automatically in the desktop notification menu when an AVC is generated.",
+            "setroubleshoot_info": "ℹ️ <strong>What is installed:</strong> <code>setroubleshoot</code> (graphical interface, used by the Open button), <code>setroubleshoot-server</code> (analysis engine), <code>setools-console</code> (CLI tools) and <code>policycoreutils-python-utils</code> (policy utilities). Warnings appear automatically in the desktop notification menu when an AVC is generated.",
+            "setroubleshoot_gui_faltando": "The setroubleshoot graphical interface (package \"setroubleshoot\") is not installed. Install it now?",
             "btn_setroubleshoot_install": "📦 Install setroubleshoot",
             "btn_setroubleshoot_abrir": "🚀 Open setroubleshoot",
             "texto_concluido_setroubleshoot": "✅ setroubleshoot installed",
@@ -1231,6 +1152,10 @@
         },
 
         "sobre-fap": {
+            "log_acompanhar": "📋 To follow along: tail -f /tmp/fap-install-*.log",
+            "changelog_vazio": "ℹ️ No changelog entry found for version <strong>v{versao}</strong>.",
+            "changelog_erro": "⚠️ Could not load the changelog from the server. See the <a href=\"#\" onclick=\"abrirChangelogCompleto(); return false;\">full changelog on GitHub</a>.",
+            "versao_mais_recente": "You are already on the latest version (v{versao})",
             "nome": "About FAP",
             "titulo": "📖 About FAP",
 
@@ -1300,10 +1225,7 @@
         "intel_media_install": "Intel Media Driver was already installed before FAP. Removing it increases CPU usage in video playback. To revert manually:\n\n  sudo dnf remove intel-media-driver",
         "libva_intel": "The legacy Intel driver (libva-intel-driver) was already installed before FAP. To remove manually:\n\n  sudo dnf remove libva-intel-driver",
         "cups_install": "Printing support was already active before FAP. Removing it disables ALL printers (local and network). To revert manually:\n\n  sudo systemctl disable --now cups avahi-daemon\n  sudo dnf remove cups cups-filters avahi avahi-tools system-config-printer ghostscript",
-        "samba_install": "Samba was already configured before FAP. Removing it disables file sharing and access to Windows folders on the network. To revert manually:\n\n  sudo systemctl disable --now smb nmb\n  sudo dnf remove samba samba-client cifs-utils",
-        "qemu_kvm_install": "QEMU/KVM was already configured before FAP. Removing it disables running virtual machines (VM disks remain intact). To revert manually:\n\n  sudo systemctl disable --now libvirtd\n  sudo dnf remove qemu-kvm libvirt virt-manager virt-install libvirt-daemon-config-network",
-        "virtualbox_install": "VirtualBox was already installed before FAP. Removing it disables VMs (the .vdi disks remain). To revert manually:\n\n  sudo dnf remove VirtualBox akmod-VirtualBox VirtualBox-kmod",
-        "gnome_boxes_install": "GNOME Boxes was already installed before FAP. Removing it disables VMs (disks remain). To revert manually:\n\n  sudo dnf remove gnome-boxes"
+        "samba_install": "Samba was already configured before FAP. Removing it disables file sharing and access to Windows folders on the network. To revert manually:\n\n  sudo systemctl disable --now smb nmb\n  sudo dnf remove samba samba-client cifs-utils"
     },
 
     "origem": {
@@ -1346,7 +1268,15 @@
         "label_origem": "Origin",
         "label_comando": "Exact command",
         "label_atualizar": "How to update",
-        "label_remover": "How to remove"
+        "label_remover": "How to remove",
+        "sobre_tooltip": "About this software",
+        "sobre_titulo": "About the software",
+        "label_o_que": "What it is",
+        "label_para_que": "What it is for",
+        "label_desenvolvedor": "Developed by",
+        "label_site": "Official site",
+        "sobre_nao_confirmado": "Description not confirmed on an official page; check the official site.",
+        "sobre_indisponivel": "No information available for this app yet."
     },
 
     "busca": {
@@ -1363,8 +1293,7 @@
             "todos": "All",
             "nao_feitos": "Not done",
             "feitos": "Done",
-            "preexistentes": "Pre-existing",
-            "pulados": "Skipped"
+            "preexistentes": "Pre-existing"
         },
         "origem": {
             "todas": "All",
@@ -1376,16 +1305,6 @@
             "comunidade": "Community"
         },
         "limpar": "Clear filters"
-    },
-
-    "landing": {
-        "grupo_geral": "General use",
-        "grupo_gaming": "Gaming",
-        "grupo_producao": "Production",
-        "grupo_seguranca": "Security",
-        "faltam": "{n} steps left to get Fedora ready.",
-        "pronto": "Your Fedora is ready. 🎉",
-        "calculando": "Calculating progress..."
     },
 
     "sidebar": {
@@ -1401,12 +1320,6 @@
 
     "refresh": {
         "tooltip": "Reload system state (useful after installing something outside FAP)"
-    },
-
-    "seletor": {
-        "label": "🌐 Language:",
-        "pt": "Português",
-        "en": "English",
-        "es": "Español"
     }
+
 }
